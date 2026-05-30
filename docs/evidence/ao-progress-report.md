@@ -1,17 +1,30 @@
-# AO Progress Report - 2026-05-30 05:13 CEST
+# AO Progress Report - 2026-05-30 05:15 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0478 driver apply
-validation hook proof refresh ending at `fbddac7d2`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0479 driver audit
+evidence redaction proof refresh ending at `bebf85c54`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 338 are
-  checked from integrated evidence and 662 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 339 are
+  checked from integrated evidence and 661 remain open.
+- `RPP-0479` is now checked with focused driver audit evidence redaction
+  variant-4 evidence in
+  `docs/evidence/rpp-0479-driver-audit-evidence-redaction-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0479-driver-audit-evidence-redaction-v4.test.js`. `node --check
+  test/rpp-0479-driver-audit-evidence-redaction-v4.test.js` exited 0, `node
+  --test test/rpp-0479-driver-audit-evidence-redaction-v4.test.js` passed 2/2,
+  and the adjacent audit/options/owner identity plugin-driver slice passed 6/6,
+  proving remote owner-context drift and stale live-remote row drift preserve
+  plugin-owned remote data before mutation, planner audit and driver decision
+  evidence stays hash-only, blocker/error/proof envelopes stay redacted,
+  checklist lint, artifact redaction scan, and `git diff --check` while final
+  release remains **NO-GO**.
 - `RPP-0478` is now checked with focused driver apply validation hook
   variant-4 evidence in
   `docs/evidence/rpp-0478-driver-apply-validation-hook-v4.md`,

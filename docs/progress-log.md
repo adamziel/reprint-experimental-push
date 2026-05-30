@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:13 CEST.
+- Last update: 2026-05-30 05:15 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0478 driver apply validation hook proof merge ending at
-  `fbddac7d2`.
+  the RPP-0479 driver audit evidence redaction proof merge ending at
+  `bebf85c54`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 338
-  items checked and leaves 662 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 339
+  items checked and leaves 661 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  62 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  63 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 57 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused driver audit evidence redaction variant-4 refresh: the current lane
+  now contains `RPP-0479` evidence in
+  `docs/evidence/rpp-0479-driver-audit-evidence-redaction-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0479-driver-audit-evidence-redaction-v4.test.js`. `node --check
+  test/rpp-0479-driver-audit-evidence-redaction-v4.test.js` exited 0, the
+  focused RPP-0479 test passed 2/2, and the adjacent audit/options/owner
+  identity plugin-driver slice passed 6/6. The proof covers remote owner-context
+  drift and stale live-remote row drift, preserves plugin-owned remote data
+  before mutation, and asserts planner audit, driver decision, blocker, error,
+  and proof envelopes stay hash-only. Checklist lint, artifact redaction scan,
+  and `git diff --check` also passed. Counts are now 339/661; final release
+  remains `NO-GO`.
 - Focused driver apply validation hook variant-4 refresh: the current lane now
   contains `RPP-0478` evidence in
   `docs/evidence/rpp-0478-driver-apply-validation-hook-v4.md`,
