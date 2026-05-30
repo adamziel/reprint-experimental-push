@@ -244,6 +244,9 @@ const requiredFamilies = [
   'wp-options-serialized-v3',
   'wp-options-serialized-v3-ready',
   'wp-options-serialized-v3-non-ready',
+  'wp-options-serialized-v4',
+  'wp-options-serialized-v4-ready',
+  'wp-options-serialized-v4-non-ready',
   'wp-options-update',
   'serialized-option',
   'serialized-option-update',
@@ -5388,13 +5391,116 @@ test('RPP-0146 wp_options serialized option changes variant 3 records redacted s
 });
 
 function generatedWpOptionsSerializedChangesVariant3Evidence(targetCoverage) {
+  return generatedWpOptionsSerializedChangesVariantEvidence(targetCoverage, {
+    target: 'wpOptionsSerializedChangesVariant3',
+    tag: 'wp-options-serialized-v3',
+    label: 'variant 3',
+  });
+}
+
+test('RPP-0166 wp_options serialized option changes variant 4 retains focused ready and non-ready regression coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpOptionsSerializedChangesVariant4;
+
+  assert.ok(coverage, 'missing wp_options serialized option changes variant 4 target coverage');
+  assert.equal(coverage.family, 'wp-options-serialized-variant4');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-options-serialized-v4']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.ok(coverage.statuses.ready > 0, 'variant 4 target should include ready serialized option cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 4 target should include non-ready serialized option cases');
+  assert.equal(report.summary.featureFamilies['wp-options-serialized-v4-ready'], 10);
+  assert.equal(report.summary.featureFamilies['wp-options-serialized-v4-non-ready'], 10);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const firstEvidence = generatedWpOptionsSerializedChangesVariant4Evidence(coverage);
+  const replayEvidence = generatedWpOptionsSerializedChangesVariant4Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0166 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 4 serialized option evidence changed between runs');
+  assert.equal(firstEvidence.target, 'wpOptionsSerializedChangesVariant4');
+  assert.equal(firstEvidence.family, 'wp-options-serialized-variant4');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.status),
+    ['ready', 'conflict'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.variant, 'ready');
+  assert.ok(readyCase.tags.includes('wp-options-serialized-v4'));
+  assert.ok(readyCase.tags.includes('wp-options-serialized-v4-ready'));
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.equal(readyCase.serializedMutation.action, 'put');
+  assert.equal(readyCase.serializedMutation.changeKind, 'update');
+  assert.equal(readyCase.serializedMutation.plannedMutation, true);
+  assert.equal(readyCase.serializedMutation.plannedPrecondition, true);
+  assert.equal(readyCase.serializedMutation.appliedHash, readyCase.surface.option.localHash);
+  assert.equal(
+    readyCase.serializedMutation.preconditionExpectedHash,
+    readyCase.serializedMutation.remoteBeforeHash,
+  );
+  assert.equal(readyCase.serializedMutation.redactedValue.redaction, EVIDENCE_REDACTION_MARKER);
+  assert.match(readyCase.serializedMutation.redactedValue.sha256, /^[a-f0-9]{64}$/);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(nonReadyCase.variant, 'non-ready');
+  assert.ok(nonReadyCase.tags.includes('wp-options-serialized-v4'));
+  assert.ok(nonReadyCase.tags.includes('wp-options-serialized-v4-non-ready'));
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.equal(nonReadyCase.conflict.resourceKey, nonReadyCase.surface.option.resourceKey);
+  assert.equal(nonReadyCase.conflict.plannedMutation, false);
+  assert.match(nonReadyCase.conflict.conflictHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('base-private-serialized'), false, 'variant 4 evidence leaked base serialized payload');
+  assert.equal(evidenceText.includes('local-private-serialized'), false, 'variant 4 evidence leaked local serialized payload');
+  assert.equal(evidenceText.includes('remote-private-serialized'), false, 'variant 4 evidence leaked remote serialized payload');
+  assert.equal(evidenceText.includes('ready-wp-options-serialized'), false, 'variant 4 evidence leaked ready serialized public label');
+  assert.equal(evidenceText.includes('conflict-wp-options-serialized'), false, 'variant 4 evidence leaked conflict serialized public label');
+  assert.equal(evidenceText.includes('private_notes'), false, 'variant 4 evidence leaked serialized private key');
+  assert.equal(evidenceText.includes('auth_token'), false, 'variant 4 evidence leaked serialized token key');
+});
+
+function generatedWpOptionsSerializedChangesVariant4Evidence(targetCoverage) {
+  return generatedWpOptionsSerializedChangesVariantEvidence(targetCoverage, {
+    target: 'wpOptionsSerializedChangesVariant4',
+    tag: 'wp-options-serialized-v4',
+    label: 'variant 4',
+  });
+}
+
+function generatedWpOptionsSerializedChangesVariantEvidence(targetCoverage, { target, tag, label }) {
   const perTier = {};
   const statuses = {};
   const selectedCases = new Map();
   let totalCases = 0;
 
   for (const testCase of generatePushHarnessCases()) {
-    if (!testCase.tags.has('wp-options-serialized-v3')) {
+    if (!testCase.tags.has(tag)) {
       continue;
     }
 
@@ -5412,14 +5518,14 @@ function generatedWpOptionsSerializedChangesVariant3Evidence(targetCoverage) {
   const sortedPerTier = sortNumericObject(perTier);
   const sortedStatuses = sortStringObject(statuses);
 
-  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 serialized option target recount should match summary tiers');
-  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 serialized option target recount should match summary statuses');
-  assert.equal(totalCases, targetCoverage.total, 'variant 3 serialized option target recount should match summary total');
-  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready serialized option case');
-  assert.ok(selectedCases.has('non-ready'), 'variant 3 target should select one non-ready serialized option case');
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, `${label} serialized option target recount should match summary tiers`);
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, `${label} serialized option target recount should match summary statuses`);
+  assert.equal(totalCases, targetCoverage.total, `${label} serialized option target recount should match summary total`);
+  assert.ok(selectedCases.has('ready'), `${label} target should select one ready serialized option case`);
+  assert.ok(selectedCases.has('non-ready'), `${label} target should select one non-ready serialized option case`);
 
   return {
-    target: 'wpOptionsSerializedChangesVariant3',
+    target,
     family: targetCoverage.family,
     evidenceScope: 'local-generated-model',
     productionBacked: false,

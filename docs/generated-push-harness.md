@@ -56,7 +56,8 @@ The default generated run covers:
   before mutation, non-plugin-owned `wp_options` scalar changes with per-tier
   target counts plus explicit variant-3 and variant-4 scalar option coverage,
   serialized option changes with per-tier target counts and
-  redacted hash-only evidence for private serialized payloads, `wp_posts`
+  explicit variant-4 regression coverage, and redacted hash-only evidence for
+  private serialized payloads, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_postmeta` create/update/delete mixes with per-tier target
   counts, ready/conflict outcomes, stale replay rejection before mutation, and
@@ -141,6 +142,16 @@ redaction metadata, and hashes, verifies the ready case applies the planned
 serialized option update and rejects stale replay before mutation, then verifies
 the conflicting serialized option refuses apply without mutating the remote
 digest.
+
+RPP-0166 adds `wpOptionsSerializedChangesVariant4` coverage for the same regular
+serialized option update surface with an explicit variant-4 target tag. The
+deterministic roster emits 20 variant-4 target cases: 10 ready serialized option
+updates and 10 non-ready remote-drift conflicts, with two cases in every tier.
+The focused regression proof recounts the variant-4 summary, keeps private
+serialized payloads hash-only, verifies the ready mutation carries a matching
+precondition, applies the local serialized option hash, preserves unplanned
+remote data, and rejects stale replay before mutation, then verifies the
+conflicting serialized option refuses apply without mutating the remote digest.
 
 The `pluginOwnedOptionChange` target coverage records per-tier counts for
 plugin-owned `wp_options` rows that are explicitly allowed by the owning plugin
