@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T14:23:00+02:00">Last updated: May 30, 2026, 14:23 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T14:30:00+02:00">Last updated: May 30, 2026, 14:30 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>453</strong>
+        <strong>454</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>547</strong>
+        <strong>546</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -352,7 +352,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
-            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, exact custom-table allowlist proof with release-verifier carry-through, wp_postmeta and wp_termmeta release-verifier carry-through, driver apply-validation and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, supported/unsupported wp_usermeta, dry-run validation hook, and owner identity binding variants, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
+            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through, exact custom-table allowlist proof with release-verifier carry-through, wp_postmeta and wp_termmeta release-verifier carry-through, driver apply-validation and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, supported/unsupported wp_usermeta, dry-run validation hook, and owner identity binding variants, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Local production candidate checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0372</span>
+        <span>RPP-0488</span>
       </div>
-      <p>The latest refresh integrates RPP-0372 termmeta term graph identity evidence: the focused planner/apply regression blocks wp_termmeta.term_id references to missing or stale wp_terms targets with hash-only stale-wordpress-graph-identity evidence, keeps stale term targets remote, redacts raw local probe values to hashes, and refuses apply before mutation. Counts are now 453/547; final release remains NO-GO because this is local graph identity regression evidence, not externally hosted production topology proof. The broader npm test suite was not rerun for this slice; earlier lane evidence recorded a pre-existing RPP-0615 release-verifier assertion failure.</p>
+      <p>The latest refresh integrates RPP-0488 serialized option validator release-verifier evidence: the support-only proof carries a one-row serialized wp_options mutation through local production-shaped apply, proves invalid planner and forged apply payloads are refused before mutation, and keeps raw serialized option values out of evidence. Counts are now 454/546; final release remains NO-GO because this is local plugin-driver support evidence, not externally hosted production topology proof. The broader npm test suite was not rerun for this slice; earlier lane evidence recorded a pre-existing RPP-0615 release-verifier assertion failure.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0488 focused: 1/1</span>
+        <span class="tag">serialized option adjacent: 3/3</span>
+        <span class="tag">release-verifier adjacent: 17/17</span>
+        <span class="tag">production-shaped adjacent: 13/13</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0372 focused: 2/2</span>
         <span class="tag">termmeta graph adjacent: 5/5</span>
         <span class="tag">checklist/redaction/diff: pass</span>
