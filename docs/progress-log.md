@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 16:02 CEST +02:00.
+- Last update: 2026-05-30 16:05 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0632 blocked recovery classification merge ending at `678b51d74`.
+  the RPP-0714 large post table benchmark merge ending at `6d1ccc68c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 473
-  items checked and leaves 527 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 474
+  items checked and leaves 526 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
   81 plugin-driver boundary items, 28 executor/auth items, 34 recovery items,
-  17 storage/performance items, 3 production-topology items, 78 generated
+  18 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Large post table benchmark: the current lane now contains `RPP-0714` evidence
+  in `docs/evidence/rpp-0714-large-post-table-benchmark.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/bench/large-post-table-benchmark.js`, and
+  `test/rpp-0714-large-post-table-benchmark.test.js`. The benchmark exercises
+  the planner/apply path over a deterministic `wp_posts` table, records bounded
+  primary-key batch windows, requires one live remote precondition per changed
+  row, verifies the applied result against the plan, and reports hash/count
+  evidence without raw post titles, bodies, slugs, URLs, or paths. Validation
+  passed with Node syntax checks, focused RPP-0714 coverage 4/4, a large-site
+  benchmark run over 20,000 rows and 10,000 mutations in 7.07s with 20
+  primary-key batches, adjacent storage/batch coverage 17/17, checklist lint,
+  scoped artifact redaction scan, and merge diff whitespace checks. Counts are
+  now 474/526; final release remains `NO-GO` because this is in-memory
+  planner/apply benchmark evidence, not production database throughput or
+  production storage receipt proof.
 - Blocked recovery classification v2: the current lane now contains `RPP-0632`
   evidence in
   `docs/evidence/rpp-0632-blocked-recovery-classification-v2.md`,

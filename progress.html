@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T16:02:00+02:00">Last updated: May 30, 2026, 16:02 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T16:05:00+02:00">Last updated: May 30, 2026, 16:05 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>473</strong>
+        <strong>474</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>527</strong>
+        <strong>526</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -393,7 +393,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production chunking not checked">
-            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, and apply batch sizing, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
+            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, and a large post table planner/apply benchmark, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Release CI not checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0632</span>
+        <span>RPP-0714</span>
       </div>
-      <p>The latest refresh integrates RPP-0632 blocked recovery classification evidence: a separate Node process writes a claim-fenced JSONL recovery journal, fails during the second committed mutation, and the restarted reader proves blocked-recovery with two new targets, six old targets, no unknown drift, no completed marker, monotonic durable rows, and hash-only contents. Counts are now 473/527; final release remains NO-GO because this is local process-restart recovery evidence, not external WordPress crash/restart durability proof.</p>
+      <p>The latest refresh integrates RPP-0714 large post table benchmark evidence: the benchmark exercises the planner/apply path over deterministic wp_posts rows, records bounded primary-key batch windows, requires one live remote precondition per changed row, verifies the applied result, and emits hash/count evidence only. Counts are now 474/526; final release remains NO-GO because this is in-memory planner/apply benchmark evidence, not production database throughput or production storage receipt proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0714 focused: 4/4</span>
+        <span class="tag">large-site benchmark: 7.07s</span>
+        <span class="tag">storage/batch adjacent: 17/17</span>
+        <span class="tag">10,000 mutations / 20 batches</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0632 focused: 1/1</span>
         <span class="tag">recovery classification adjacent: 7/7</span>
         <span class="tag">recovery journal full: 37/37</span>
