@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 23:05 CEST +02:00.
+- Last update: 2026-05-30 23:08 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0331 custom taxonomy fail-closed reference variant 2 merge ending at
-  `0a32945`.
+  the RPP-0191 wp_terms/wp_termmeta graph release-verifier variant 5 merge
+  ending at `2032aaa`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 532
-  items checked and leaves 468 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 533
+  items checked and leaves 467 open.
 - Checked slices: 100 release-gate foundation items, 76 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 90 generated
+  23 storage/performance items, 3 production-topology items, 91 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- WP terms/termmeta graph release-verifier v5 carry-through: the current lane
+  now checks `RPP-0191` with deterministic generated-harness support-only proof
+  for `wp_terms` and `wp_termmeta` graph changes. The generator exposes
+  `wpTermsTermmetaGraphReleaseVerifierVariant5` target coverage with 20 cases
+  across tiers 0 through 9: 10 ready term/termmeta graph creates and 10 stale
+  non-ready graph references, with two cases in every tier. The focused proof
+  verifies the summary, per-tier counts, ready/non-ready statuses, and stale
+  replay refusal before mutation, while keeping term names, slugs, meta keys,
+  and termmeta values hash-only. Validation passed with Node syntax checks,
+  focused RPP-0191 coverage 2/2, adjacent RPP-0151/RPP-0171/RPP-0191 generated
+  graph coverage 4/4, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 533/467; final release remains `NO-GO` because this is
+  local generated release-verifier evidence, not production-backed release
+  proof.
 - Custom taxonomy fail-closed reference variant-2 proof: the current lane now
   checks `RPP-0331` with focused graph-identity evidence for unsupported custom
   taxonomy references. The proof verifies `product_cat` term-taxonomy targets
