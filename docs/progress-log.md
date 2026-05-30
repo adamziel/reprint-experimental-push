@@ -6,20 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 18:25 CEST +02:00.
+- Last update: 2026-05-30 18:28 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0390 post_tag taxonomy reference release-verifier proof merge ending
-  at `0913c45c`.
+  the RPP-0391 custom taxonomy fail-closed reference release-verifier proof
+  merge ending at `d2c7f9c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 500
-  items checked and leaves 500 open.
-- Checked slices: 100 release-gate foundation items, 60 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 501
+  items checked and leaves 499 open.
+- Checked slices: 100 release-gate foundation items, 61 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Custom taxonomy fail-closed reference release-verifier proof v5: the current
+  lane now contains `RPP-0391` evidence in
+  `docs/evidence/rpp-0391-custom-taxonomy-fail-closed-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0391-custom-taxonomy-fail-closed-reference-release-verifier-v5.test.js`.
+  The release-verifier proof keeps unsupported custom taxonomy movement
+  fail-closed without explicit identity-map evidence, proves an identity-map
+  rewrite can carry a dependent relationship through live precondition and
+  apply revalidation, and fails closed when the rewritten row is omitted from
+  revalidation. Validation passed with Node syntax checks, focused RPP-0391
+  coverage 3/3, adjacent taxonomy graph coverage 8/8, verifier-adjacent
+  coverage 10/10, checklist lint, scoped artifact redaction scan, raw fixture
+  scan, and merge diff whitespace checks. Counts are now 501/499; final release
+  remains `NO-GO` because this is local support-only release-verifier evidence,
+  not production-backed release evidence.
 - Post_tag taxonomy reference release-verifier proof v5: the current lane now
   contains `RPP-0390` evidence in
   `docs/evidence/rpp-0390-post-tag-taxonomy-reference-release-verifier-v5.md`,
