@@ -6,20 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 21:43 CEST +02:00.
+- Last update: 2026-05-30 21:55 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0183 file type-swap conflict release-verifier v5 merge ending at
-  `3cfe2d`.
+  the RPP-0184 row create/update/delete mix release-verifier v5 merge ending
+  at `a4366cd`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 519
-  items checked and leaves 481 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 520
+  items checked and leaves 480 open.
 - Checked slices: 100 release-gate foundation items, 70 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 83 generated
+  23 storage/performance items, 3 production-topology items, 84 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Row create/update/delete mix release-verifier v5 carry-through: the current
+  lane now checks `RPP-0184` with generated-harness release-verifier
+  support-only proof for the generic row create/update/delete mix. The
+  generator exposes `rowCreateUpdateDeleteMixReleaseVerifierVariant5` target
+  coverage with 20 cases across tiers 0 through 9: 10 ready row-mix cases and
+  10 conflict cases, with two cases in every tier. The focused proof verifies
+  ready create/update/delete apply, remote-only row preservation, stale replay
+  refusal with `PRECONDITION_FAILED` before the mutation callback, non-ready
+  row-conflict refusal with `PLAN_NOT_READY` before the mutation callback, and
+  hash-only evidence. Validation passed with Node syntax checks, focused
+  RPP-0184 coverage 2/2, adjacent RPP-0144/RPP-0164/RPP-0184 row-mix coverage
+  4/4, generated summary checks for the RPP-0184 target coverage surface,
+  checklist lint, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 520/480; final release remains `NO-GO` because this is local
+  generated/release-verifier evidence, not production-backed release proof.
 - File type-swap conflict release-verifier v5 carry-through: the current lane
   now checks `RPP-0183` with generated-harness release-verifier support-only
   proof for file-to-directory type swaps and remote-descendant topology
