@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 09:02 CEST.
+- Last update: 2026-05-30 09:09 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0246 remote-only plugin metadata preservation variant-3
-  merge-invariant merge ending at `f32e02ba3`.
+  the RPP-0177 stale remote after dry-run variant-4 generated-harness merge
+  ending at `80f9a0f4d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 378
-  items checked and leaves 622 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 379
+  items checked and leaves 621 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 76 generated
+  11 storage/performance items, 3 production-topology items, 77 generated
   harness items, and 45 merge-invariant items. No release-ops items are checked
   yet.
+- Stale remote after dry-run variant-4 refresh: the current lane now contains
+  `RPP-0177` evidence in
+  `docs/evidence/rpp-0177-stale-remote-after-dry-run-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0177 test passed 1/1, the adjacent
+  stale-remote variants passed 4/4, and `npm run test:generated-push-harness`
+  passed 84/84 across 620 deterministic generated cases. Checklist lint,
+  scoped artifact redaction scan, and merge diff whitespace checks also
+  passed. Counts are now 379/621; final release remains `NO-GO`.
 - Remote-only plugin metadata preservation variant-3 refresh: the current lane
   now contains `RPP-0246` evidence in
   `docs/evidence/rpp-0246-remote-only-plugin-metadata-preservation-v3.md`,

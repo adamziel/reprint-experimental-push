@@ -1,19 +1,31 @@
-# AO Progress Report - 2026-05-30 09:02 CEST
+# AO Progress Report - 2026-05-30 09:09 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0246 remote-only
-plugin metadata preservation variant-3 merge-invariant refresh ending at
-`f32e02ba3`.
+`lane/evidence-integration-20260527` through the current RPP-0177 stale remote
+after dry-run variant-4 generated-harness refresh ending at `80f9a0f4d`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 378 are
-  checked from integrated evidence and 622 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 379 are
+  checked from integrated evidence and 621 remain open.
+- `RPP-0177` is now checked with stale remote after dry-run variant-4
+  generated-harness evidence in
+  `docs/evidence/rpp-0177-stale-remote-after-dry-run-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0177 test passed 1/1, the adjacent
+  RPP-0117/RPP-0137/RPP-0157/RPP-0177 stale-remote slice passed 4/4, and
+  `npm run test:generated-push-harness` passed 84/84 across 620 deterministic
+  generated cases. Checklist lint, scoped artifact redaction scan, and merge
+  diff whitespace checks also passed. This remains deterministic
+  generated-model coverage, not production endpoint proof.
 - `RPP-0246` is now checked with focused remote-only plugin metadata
   preservation variant-3 merge-invariant evidence in
   `docs/evidence/rpp-0246-remote-only-plugin-metadata-preservation-v3.md`,
@@ -2237,7 +2249,7 @@ tracks the near-to-far slices used to supervise the AO team:
 | Range | Goal slice | Checked / total |
 | --- | --- | --- |
 | `RPP-0001`-`RPP-0100` | Release gate foundation | 100 / 100 |
-| `RPP-0101`-`RPP-0200` | Generated harness expansion | 76 / 100 |
+| `RPP-0101`-`RPP-0200` | Generated harness expansion | 77 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 45 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 29 / 100 |
 | `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 73 / 100 |
