@@ -317,6 +317,10 @@ const requiredFamilies = [
   'wp-term-taxonomy-graph-v3-ready',
   'wp-term-taxonomy-graph-v3-stale',
   'wp-term-taxonomy-graph-v3-non-ready',
+  'wp-term-taxonomy-graph-v4',
+  'wp-term-taxonomy-graph-v4-ready',
+  'wp-term-taxonomy-graph-v4-stale',
+  'wp-term-taxonomy-graph-v4-non-ready',
   'wp-terms-create',
   'wp-term-taxonomy-create',
   'wp-terms-remote-drift',
@@ -8545,19 +8549,136 @@ test('RPP-0152 wp_term_taxonomy graph variant 3 records per-tier ready and stale
   assert.equal(evidenceText.includes('remote-stale-term-taxonomy-graph-'), false, 'variant 3 evidence leaked remote term slug');
 });
 
+test('RPP-0172 wp_term_taxonomy graph variant 4 rejects stale replay before mutation', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpTermTaxonomyGraphVariant4;
+
+  assert.ok(coverage, 'missing wp_term_taxonomy graph variant 4 target coverage');
+  assert.equal(coverage.family, 'wp-term-taxonomy-graph-variant4');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-term-taxonomy-graph-v4']);
+  assert.equal(coverage.total, 20);
+  assert.equal(coverage.statuses.ready, 10);
+  assert.equal(nonReadyTargetCount(coverage), 10);
+  assert.ok(coverage.statuses.ready > 0, 'variant 4 target should include ready term-taxonomy graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 4 target should include non-ready stale graph cases');
+  assert.equal(report.summary.featureFamilies['wp-term-taxonomy-graph-v4-ready'], 10);
+  assert.equal(report.summary.featureFamilies['wp-term-taxonomy-graph-v4-stale'], 10);
+  assert.equal(report.summary.featureFamilies['wp-term-taxonomy-graph-v4-non-ready'], 10);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const firstEvidence = generatedWpTermTaxonomyGraphVariant4Evidence(coverage);
+  const replayEvidence = generatedWpTermTaxonomyGraphVariant4Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0172 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 4 term-taxonomy evidence changed between runs');
+  assert.equal(firstEvidence.target, 'wpTermTaxonomyGraphVariant4');
+  assert.equal(firstEvidence.family, 'wp-term-taxonomy-graph-variant4');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.variant),
+    ['ready', 'stale-non-ready'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.status, 'ready');
+  assert.ok(readyCase.tags.includes('wp-term-taxonomy-graph-v4'));
+  assert.ok(readyCase.tags.includes('wp-term-taxonomy-graph-v4-ready'));
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.deepEqual(readyCase.plannedChangeKinds, { create: 2 });
+  assert.equal(readyCase.graphMutations.term.changeKind, 'create');
+  assert.equal(readyCase.graphMutations.taxonomy.changeKind, 'create');
+  assert.equal(readyCase.graphMutations.term.plannedPrecondition, true);
+  assert.equal(readyCase.graphMutations.taxonomy.plannedPrecondition, true);
+  assert.equal(readyCase.graphMutations.term.appliedHash, readyCase.surface.term.localHash);
+  assert.equal(readyCase.graphMutations.taxonomy.appliedHash, readyCase.surface.taxonomy.localHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.notEqual(nonReadyCase.status, 'ready');
+  assert.ok(nonReadyCase.tags.includes('wp-term-taxonomy-graph-v4'));
+  assert.ok(nonReadyCase.tags.includes('wp-term-taxonomy-graph-v4-non-ready'));
+  assert.ok(nonReadyCase.tags.includes('wp-term-taxonomy-graph-v4-stale'));
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.equal(nonReadyCase.staleBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(nonReadyCase.staleBlocker.resourceKey, nonReadyCase.surface.taxonomy.resourceKey);
+  assert.equal(nonReadyCase.staleBlocker.targetResourceKey, nonReadyCase.surface.term.resourceKey);
+  assert.equal(nonReadyCase.staleBlocker.plannedMutation, false);
+  assert.deepEqual(nonReadyCase.staleBlocker.relationshipKeys, ['wp_term_taxonomy.term_id']);
+  assert.match(nonReadyCase.staleBlocker.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Generated term taxonomy graph target'), false, 'variant 4 evidence leaked term name');
+  assert.equal(evidenceText.includes('generated-term-taxonomy-graph-'), false, 'variant 4 evidence leaked term slug');
+  assert.equal(evidenceText.includes('generated term taxonomy graph '), false, 'variant 4 evidence leaked taxonomy description');
+  assert.equal(evidenceText.includes('Remote stale term taxonomy graph target'), false, 'variant 4 evidence leaked remote term drift');
+  assert.equal(evidenceText.includes('remote-stale-term-taxonomy-graph-'), false, 'variant 4 evidence leaked remote term slug');
+});
+
 function generatedWpTermTaxonomyGraphVariant3Evidence(targetCoverage) {
+  return generatedWpTermTaxonomyGraphVariantEvidence(targetCoverage, {
+    target: 'wpTermTaxonomyGraphVariant3',
+    tag: 'wp-term-taxonomy-graph-v3',
+    readyTag: 'wp-term-taxonomy-graph-v3-ready',
+    staleTag: 'wp-term-taxonomy-graph-v3-stale',
+    variantLabel: 'variant 3',
+  });
+}
+
+function generatedWpTermTaxonomyGraphVariant4Evidence(targetCoverage) {
+  return generatedWpTermTaxonomyGraphVariantEvidence(targetCoverage, {
+    target: 'wpTermTaxonomyGraphVariant4',
+    tag: 'wp-term-taxonomy-graph-v4',
+    readyTag: 'wp-term-taxonomy-graph-v4-ready',
+    staleTag: 'wp-term-taxonomy-graph-v4-stale',
+    variantLabel: 'variant 4',
+  });
+}
+
+function generatedWpTermTaxonomyGraphVariantEvidence(targetCoverage, {
+  target,
+  tag,
+  readyTag,
+  staleTag,
+  variantLabel,
+}) {
   const perTier = {};
   const statuses = {};
   const selectedCases = new Map();
   let totalCases = 0;
 
   for (const testCase of generatePushHarnessCases()) {
-    if (!testCase.tags.has('wp-term-taxonomy-graph-v3')) {
+    if (!testCase.tags.has(tag)) {
       continue;
     }
 
     const result = validateGeneratedCase(testCase);
-    const evidence = generatedWpTermTaxonomyGraphVariant3CaseEvidence(testCase, result);
+    const evidence = generatedWpTermTaxonomyGraphVariant3CaseEvidence(testCase, result, {
+      readyTag,
+      staleTag,
+      variantLabel,
+    });
     const selectedKey = result.status === 'ready' ? 'ready' : 'stale-non-ready';
     totalCases += 1;
     incrementCount(perTier, testCase.tier);
@@ -8570,14 +8691,14 @@ function generatedWpTermTaxonomyGraphVariant3Evidence(targetCoverage) {
   const sortedPerTier = sortNumericObject(perTier);
   const sortedStatuses = sortStringObject(statuses);
 
-  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 term-taxonomy target recount should match summary tiers');
-  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 term-taxonomy target recount should match summary statuses');
-  assert.equal(totalCases, targetCoverage.total, 'variant 3 term-taxonomy target recount should match summary total');
-  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready term-taxonomy case');
-  assert.ok(selectedCases.has('stale-non-ready'), 'variant 3 target should select one stale non-ready term-taxonomy case');
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, `${variantLabel} term-taxonomy target recount should match summary tiers`);
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, `${variantLabel} term-taxonomy target recount should match summary statuses`);
+  assert.equal(totalCases, targetCoverage.total, `${variantLabel} term-taxonomy target recount should match summary total`);
+  assert.ok(selectedCases.has('ready'), `${variantLabel} target should select one ready term-taxonomy case`);
+  assert.ok(selectedCases.has('stale-non-ready'), `${variantLabel} target should select one stale non-ready term-taxonomy case`);
 
   return {
-    target: 'wpTermTaxonomyGraphVariant3',
+    target,
     family: targetCoverage.family,
     evidenceScope: 'local-generated-model',
     productionBacked: false,
@@ -8593,17 +8714,21 @@ function generatedWpTermTaxonomyGraphVariant3Evidence(targetCoverage) {
   };
 }
 
-function generatedWpTermTaxonomyGraphVariant3CaseEvidence(testCase, result) {
-  const staleTarget = testCase.tags.has('wp-term-taxonomy-graph-v3-stale');
+function generatedWpTermTaxonomyGraphVariant3CaseEvidence(testCase, result, {
+  readyTag = 'wp-term-taxonomy-graph-v3-ready',
+  staleTag = 'wp-term-taxonomy-graph-v3-stale',
+  variantLabel = 'variant 3',
+} = {}) {
+  const staleTarget = testCase.tags.has(staleTag);
   assert.equal(
     staleTarget,
     testCase.family === 'wp-term-taxonomy-graph-stale',
-    `${testCase.id} variant 3 stale tag should match stale graph family`,
+    `${testCase.id} ${variantLabel} stale tag should match stale graph family`,
   );
   assert.equal(
-    testCase.tags.has('wp-term-taxonomy-graph-v3-ready'),
+    testCase.tags.has(readyTag),
     testCase.family === 'wp-term-taxonomy-graph-ready',
-    `${testCase.id} variant 3 ready tag should match ready graph family`,
+    `${testCase.id} ${variantLabel} ready tag should match ready graph family`,
   );
   const shape = assertTermTaxonomyGraphShape(testCase, { staleTarget });
   const plan = createPushPlan({
