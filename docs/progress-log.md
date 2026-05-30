@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 20:49 CEST +02:00.
+- Last update: 2026-05-30 20:53 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0611 new-remote recovery classification ancestry merge ending at
-  `5de0bb`.
+  the RPP-0612 blocked recovery classification ancestry merge ending at
+  `6b67b3`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -20,6 +20,20 @@ linked implementation artifacts.
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Blocked recovery classification SQLite refinement: the current lane now
+  preserves the older `session/rpp-612` RPP-0612 ancestry while retaining the
+  stronger current file-backed process-restart proof. The shared
+  `test/recovery-journal.test.js` suite now also covers an RPP-0612
+  SQLite-backed blocked-recovery restart path: a child writer records a
+  hash-only partial remote state, copies it into a schema-versioned SQLite
+  recovery table, exits, and the parent reopens the table to prove monotonic
+  rows, a restart-readable committed-state envelope, 2 new targets, 6 old
+  targets, and no raw fixture payload retention. Validation passed with Node
+  syntax checks, focused RPP-0612 coverage 1/1, focused RPP-0612/RPP-0632
+  recovery-journal coverage 2/2, recovery journal/repair coverage 50/50,
+  checklist lint, scoped artifact redaction scan, and diff whitespace checks.
+  Counts remain 514/486; final release remains `NO-GO` because this is local
+  file/SQLite recovery evidence, not production-backed durability proof.
 - New-remote recovery classification ancestry refinement: the current lane now
   preserves the older `session/rpp-611` RPP-0611 SQLite restart-classification
   ancestry while retaining the stronger current classifier proof. The
