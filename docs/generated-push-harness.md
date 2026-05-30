@@ -67,8 +67,9 @@ The default generated run covers:
   `wp_postmeta` semantics cases that label local/support-only and
   production-backed release-gate evidence scope while keeping final release
   `NO-GO`,
-  `wp_comments` + `wp_commentmeta` graph cases with per-tier target counts and
-  ready/stale non-ready outcomes, `wp_terms` + `wp_termmeta` graph cases
+  `wp_comments` + `wp_commentmeta` graph cases with per-tier target counts,
+  ready/stale non-ready outcomes, and explicit release-verifier variant-5
+  carry-through, `wp_terms` + `wp_termmeta` graph cases
   with per-tier target counts, ready/stale non-ready outcomes, and explicit
   variant-3 terms/termmeta graph coverage, `wp_users` + `wp_usermeta` graph
   cases with per-tier target counts and
@@ -489,6 +490,19 @@ preconditions and stale replay refusal, and verifies the stale comment target
 blocks the new commentmeta row and refuses apply without mutating the remote
 digest. Evidence remains hash-only and omits generated comment content,
 commentmeta keys, and commentmeta values.
+
+RPP-0190 adds `wpCommentsCommentmetaGraphReleaseVerifierVariant5` coverage for
+the same `wp_comments` and `wp_commentmeta` graph surface with an explicit
+release-verifier-v5 target tag. The deterministic roster emits 20 variant-5
+target cases: 10 ready comment/commentmeta graph creates and 10 stale non-ready
+comment drift cases, with two cases in every tier. The focused proof keeps the
+evidence hash-only, verifies every ready case applies both graph rows with
+matching live-remote preconditions, preserves unplanned remote data, and rejects
+stale replay against both rows with `PRECONDITION_FAILED` before mutation. The
+stale cases keep the remote-drifted comment as non-ready support evidence, emit
+no graph-row mutation or precondition, and refuse apply with `PLAN_NOT_READY`
+before mutation. This is local generated-model support evidence only; release
+posture remains `NO-GO` without production-backed release-gate validation.
 
 The `wpTermsTermmetaGraph` target coverage records per-tier counts for generated
 `wp_terms` rows and their `wp_termmeta` graph relationships. Ready cases create

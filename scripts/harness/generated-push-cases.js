@@ -346,6 +346,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-comments-commentmeta-graph-variant4',
     tag: 'wp-comments-commentmeta-graph-v4',
   },
+  wpCommentsCommentmetaGraphReleaseVerifierVariant5: {
+    family: 'wp-comments-commentmeta-graph-release-verifier-v5',
+    tag: 'wp-comments-commentmeta-graph-release-verifier-v5',
+  },
   commentmetaCommentGraph: {
     family: 'wp-comments-commentmeta-graph-ready',
     tag: 'commentmeta-comment-graph',
@@ -4358,6 +4362,7 @@ function addWpCommentsCommentmetaGraph(local, remote, allocator, tags, { staleTa
 
   tags.add('wp-comments-commentmeta-graph');
   tags.add('wp-comments-commentmeta-graph-v4');
+  tags.add('wp-comments-commentmeta-graph-release-verifier-v5');
   tags.add('wp-comments-create');
   tags.add('wp-commentmeta-create');
   tags.add('commentmeta-comment-graph');
@@ -4369,8 +4374,11 @@ function addWpCommentsCommentmetaGraph(local, remote, allocator, tags, { staleTa
     tags.add('wp-comments-remote-drift');
     tags.add('wp-comments-commentmeta-graph-v4-stale');
     tags.add('wp-comments-commentmeta-graph-v4-non-ready');
+    tags.add('wp-comments-commentmeta-graph-release-verifier-v5-stale');
+    tags.add('wp-comments-commentmeta-graph-release-verifier-v5-non-ready');
   } else {
     tags.add('wp-comments-commentmeta-graph-v4-ready');
+    tags.add('wp-comments-commentmeta-graph-release-verifier-v5-ready');
   }
 }
 
