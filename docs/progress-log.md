@@ -6,20 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 00:06 CEST +02:00.
+- Last update: 2026-05-31 00:13 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0275 focused keep-remote decision variant 4 merge ending at
-  `cd18552`.
+  the RPP-0195 plugin-owned custom-table release-verifier v5 merge ending at
+  `38a1bafcc`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 544
-  items checked and leaves 456 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 545
+  items checked and leaves 455 open.
 - Checked slices: 100 release-gate foundation items, 81 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 94 generated
+  23 storage/performance items, 3 production-topology items, 95 generated
   harness items, and 81 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin-owned custom-table release-verifier v5 carry-through: the current lane
+  now checks `RPP-0195` with deterministic generated-harness support-only proof
+  for plugin-owned custom-table changes handled by the supported forms
+  `fixture-forms-lab-table` driver. The generator exposes
+  `pluginOwnedCustomTableChangesReleaseVerifierVariant5` target coverage with
+  10 cases across tiers 0 through 9, one case per tier, and status counts of 5
+  ready and 5 conflict. The focused proof verifies ready custom-table row
+  updates apply with live preconditions, preserve the unplanned remote-only
+  file, redact private row payloads, reject stale replay before mutation with
+  `PRECONDITION_FAILED`, and keep stale remote-drift cases non-ready with no
+  mutation or precondition. Validation passed with Node syntax checks, focused
+  RPP-0195 coverage 2/2, adjacent RPP-0155/RPP-0175/RPP-0195/plugin-owned
+  custom-table coverage 6/6, the full `test/generated-push-harness.test.js`
+  suite 90/90, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 545/455; final release remains `NO-GO` because this is local
+  generated release-verifier evidence, not production-backed release proof.
 - Focused keep-remote decision variant-4 proof: the current lane now checks
   `RPP-0275` with focused planner/apply regression evidence for remote-only
   create, update, and delete decisions. The proof verifies each keep-remote

@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T00:06:00+02:00">Last updated: May 31, 2026, 00:06 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T00:13:00+02:00">Last updated: May 31, 2026, 00:13 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>544</strong>
+        <strong>545</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>456</strong>
+        <strong>455</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -336,7 +336,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Generated harness checked">
-            <span><strong>Generated push harness</strong>89/89 generated harness tests pass across 620 deterministic three-way push cases, with release-verifier variant-5 carry-through now covering file create/update/delete mix, directory descendant conflict, file type-swap conflict, row create/update/delete mix, wp_options scalar option targets, wp_options serialized option targets, wp_posts create/update/delete targets, wp_postmeta create/update/delete targets, wp_users/wp_usermeta graph targets, wp_comments/wp_commentmeta graph targets, wp_terms/wp_termmeta graph targets, wp_term_taxonomy graph targets, wp_term_relationships graph targets, and plugin-owned option targets, plus GUID/slug collision ready/stale targets, same independent content variant-4, stale remote after dry-run variant-4, atomic plugin install stack variant-4, plugin-owned custom-table changes variant-4, plugin-owned option changes variant-4, wp_term_relationships graph variant-4, wp_term_taxonomy graph variant-4, wp_terms/wp_termmeta graph variant-4, wp_comments/wp_commentmeta graph variant-4, wp_users/wp_usermeta graph variant-4, wp_postmeta create/update/delete variant-4, wp_posts create/update/delete variant-4, wp_options serialized option changes variant-4, wp_options scalar option changes variant-4, row create/update/delete mix variant-4, file type-swap conflict variant-4, directory descendant conflict variant-4, file create/update/delete mix variant-4, large ready plan tier variant-3, remote-only preservation variant-3, wp_postmeta variant-3, same independent content variant-3, wp_terms/wp_termmeta variant-3, wp_term_taxonomy variant-3, wp_term_relationships variant-3, plugin-owned option variant-3, plugin-owned custom-table variant-3, stale remote after dry-run variant-3, post-author graph targets, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
+            <span><strong>Generated push harness</strong>90/90 generated harness tests pass across 620 deterministic three-way push cases, with release-verifier variant-5 carry-through now covering file create/update/delete mix, directory descendant conflict, file type-swap conflict, row create/update/delete mix, wp_options scalar option targets, wp_options serialized option targets, wp_posts create/update/delete targets, wp_postmeta create/update/delete targets, wp_users/wp_usermeta graph targets, wp_comments/wp_commentmeta graph targets, wp_terms/wp_termmeta graph targets, wp_term_taxonomy graph targets, wp_term_relationships graph targets, plugin-owned option targets, and plugin-owned custom-table changes targets, plus GUID/slug collision ready/stale targets, same independent content variant-4, stale remote after dry-run variant-4, atomic plugin install stack variant-4, plugin-owned custom-table changes variant-4, plugin-owned option changes variant-4, wp_term_relationships graph variant-4, wp_term_taxonomy graph variant-4, wp_terms/wp_termmeta graph variant-4, wp_comments/wp_commentmeta graph variant-4, wp_users/wp_usermeta graph variant-4, wp_postmeta create/update/delete variant-4, wp_posts create/update/delete variant-4, wp_options serialized option changes variant-4, wp_options scalar option changes variant-4, row create/update/delete mix variant-4, file type-swap conflict variant-4, directory descendant conflict variant-4, file create/update/delete mix variant-4, large ready plan tier variant-3, remote-only preservation variant-3, wp_postmeta variant-3, same independent content variant-3, wp_terms/wp_termmeta variant-3, wp_term_taxonomy variant-3, wp_term_relationships variant-3, plugin-owned option variant-3, plugin-owned custom-table variant-3, stale remote after dry-run variant-3, post-author graph targets, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
@@ -406,16 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0275</span>
+        <span>RPP-0195</span>
       </div>
-      <p>The latest refresh checks RPP-0275 with focused keep-remote decision variant 4: remote-only create, update, and delete decisions emit no mutation or precondition, preserve the live remote value during apply, reject forged overlapping mutations before journal writes, and keep decision/refusal proof envelopes hash-only. Counts are now 544/456; final release remains NO-GO because this is local focused evidence, not production-backed release proof.</p>
+      <p>The latest refresh checks RPP-0195 with generated-harness release-verifier variant 5 proof for plugin-owned custom-table changes: ready forms-lab table updates apply with live preconditions, preserve the unplanned remote-only file, redact private row payloads, reject stale replay before mutation, and keep stale remote-drift cases non-ready with no mutation or precondition. Counts are now 545/455; final release remains NO-GO because this is local generated evidence, not production-backed release proof.</p>
       <div class="tag-row" aria-label="Latest validation">
-        <span class="tag">RPP-0275 focused: 1/1</span>
-        <span class="tag">RPP-0215/0235/0275: 4/4</span>
-        <span class="tag">push-planner: 148/148</span>
-        <span class="tag">remote-only create/update/delete</span>
-        <span class="tag">forged overlap refused</span>
-        <span class="tag">keep-remote preserved</span>
+        <span class="tag">RPP-0195 focused: 2/2</span>
+        <span class="tag">RPP-0155/0175/0195: 6/6</span>
+        <span class="tag">generated harness: 90/90</span>
+        <span class="tag">plugin-owned custom table</span>
+        <span class="tag">stale replay refused</span>
+        <span class="tag">remote-only preserved</span>
         <span class="tag">hash-only evidence: pass</span>
         <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0270 focused: 1/1</span>
