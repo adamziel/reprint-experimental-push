@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T14:12:00+02:00">Last updated: May 30, 2026, 14:12 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T14:16:00+02:00">Last updated: May 30, 2026, 14:16 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>450</strong>
+        <strong>451</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>550</strong>
+        <strong>549</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -348,7 +348,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
-            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, production importer/exporter identity-map metadata, post_parent page hierarchy local and release-verifier proof, postmeta post_id release-verifier proof, comment post, comment parent, comment user, and commentmeta comment release-verifier proof, featured image fail-closed release-verifier proof, post-author release-verifier proof, focused post_author stale-target regression, focused comment_post_ID rewrite and stale-target regression, focused comment_parent stable-target and rewrite regression, focused comment user stale-target and unsupported-target regression, focused commentmeta comment generated-model regression, focused category taxonomy apply regression, featured image attachment references, term relationship taxonomy references, nav menu item fail-closed references, `wp_navigation` fail-closed references, cross-table create batch mapping, post_tag taxonomy proof, serialized block reference detection, GUID/slug collision handling, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
+            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, production importer/exporter identity-map metadata, post_parent page hierarchy local and release-verifier proof, postmeta post_id release-verifier proof, comment post, comment parent, comment user, and commentmeta comment release-verifier proof, featured image fail-closed release-verifier proof, post-author release-verifier proof, focused post_author stale-target regression, focused comment_post_ID rewrite and stale-target regression, focused comment_parent stable-target and rewrite regression, focused comment user stale-target and unsupported-target regression, focused commentmeta comment generated-model regression, focused category taxonomy apply regression, focused post_tag taxonomy identity-map rewrite and fail-closed regression, featured image attachment references, term relationship taxonomy references, nav menu item fail-closed references, `wp_navigation` fail-closed references, cross-table create batch mapping, post_tag taxonomy proof, serialized block reference detection, GUID/slug collision handling, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
@@ -406,10 +406,13 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0369</span>
+        <span>RPP-0370</span>
       </div>
-      <p>The latest refresh integrates RPP-0369 category taxonomy graph identity evidence: the focused planner/apply regression creates a category term graph, verifies the wp_term_taxonomy mutation carries term_taxonomy_id, term_id, and taxonomy:"category" with live-remote preconditions, and proves the applied resource hash matches the planned local hash without leaking raw fixture values. Counts are now 450/550; final release remains NO-GO because this is local graph identity regression evidence, not externally hosted production topology proof. A broader npm test run still fails on a pre-existing RPP-0615 release-verifier assertion reproduced on pre-merge lane commit 97ba8f0da.</p>
+      <p>The latest refresh integrates RPP-0370 post_tag taxonomy graph identity evidence: the focused planner/apply regression rewrites a post_tag relationship from a local wp_term_taxonomy id to an explicitly mapped remote target, carries live-remote preconditions through the planned mutation, and fails closed when a taxonomy map omits equivalent term evidence. Counts are now 451/549; final release remains NO-GO because this is local graph identity regression evidence, not externally hosted production topology proof. The broader npm test suite was not rerun for this slice; earlier lane evidence recorded a pre-existing RPP-0615 release-verifier assertion failure.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0370 focused: 2/2</span>
+        <span class="tag">taxonomy/reference adjacent: 8/8</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0369 focused: 2/2</span>
         <span class="tag">RPP-0309 adjacent: 3/3</span>
         <span class="tag">checklist/redaction/diff: pass</span>
