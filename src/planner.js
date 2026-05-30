@@ -3458,9 +3458,12 @@ function remotePluginRemovalOwnerContextRefusalEvidence({ resource, owner, stale
 
 function pluginOwnedDriverDeleteSupportRefusalEvidence({ resource, owner, support }) {
   return {
+    schemaVersion: 1,
     reasonCode: 'PLUGIN_DRIVER_DELETE_UNSUPPORTED',
     operation: 'refuse-before-mutation',
     attemptedAction: 'delete',
+    redaction: 'metadata-only',
+    rawValuesIncluded: false,
     resourceKey: resource.key,
     pluginOwner: owner,
     driver: support.driver || null,
