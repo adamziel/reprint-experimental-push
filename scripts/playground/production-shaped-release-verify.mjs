@@ -15,7 +15,7 @@ import {
 } from '../../src/authenticated-http-push-client.js';
 import { applyPlan, PushPlanError } from '../../src/apply.js';
 import { createPushPlan } from '../../src/planner.js';
-import { resourceHash, getResource } from '../../src/resources.js';
+import { resourceHash, getResource, setResource } from '../../src/resources.js';
 import { ABSENT, digest } from '../../src/stable-json.js';
 import {
   describeAuthSessionSourceMetadataDrift,
@@ -59,6 +59,10 @@ import {
   shouldUseProductionSnapshotExport,
 } from './production-shaped-live-release-verify-lib.js';
 import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
+import {
+  generatePushHarnessCases,
+  validateGeneratedCase,
+} from '../harness/generated-push-cases.js';
 import {
   arbitraryPluginFixturePackageBoundary,
   summarizeArbitraryPluginFixturePackageEvidence,
@@ -480,6 +484,13 @@ export const driverApplyValidationHookReleaseVerifierBoundary = Object.freeze({
   }),
 });
 
+export const remoteOnlyPluginMetadataReleaseVerifierBoundary = Object.freeze({
+  pluginName: 'forms',
+  resourceKey: 'plugin:forms',
+  generatedPluginName: 'reprint-push-forms-fixture',
+  generatedResourceKey: 'plugin:reprint-push-forms-fixture',
+});
+
 const coreWordPressDriverBoundaryTables = new Set([
   'wp_options',
   'wp_postmeta',
@@ -551,6 +562,579 @@ export function summarizeDriverAuditEvidenceRedactionReleaseVerifierProof({
       },
     };
   }
+}
+
+export function summarizeRemoteOnlyPluginMetadataReleaseVerifierProof({
+  now = new Date('2026-05-30T10:28:06.000Z'),
+  generatedNow = new Date('2026-05-28T00:00:00.000Z'),
+} = {}) {
+  try {
+    return buildRemoteOnlyPluginMetadataReleaseVerifierProof({ now, generatedNow });
+  } catch (error) {
+    return {
+      rpp: 'RPP-0286',
+      evidenceSource: 'release-verifier-remote-only-plugin-metadata-preservation-v5',
+      status: 'blocked',
+      verdict: 'REMOTE_ONLY_PLUGIN_METADATA_PRESERVATION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      evidenceScope: 'local-generated-release-verifier',
+      resource: {
+        pluginName: remoteOnlyPluginMetadataReleaseVerifierBoundary.pluginName,
+        resourceKey: remoteOnlyPluginMetadataReleaseVerifierBoundary.resourceKey,
+      },
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+      proofHash: sha256Evidence({
+        rpp: 'RPP-0286',
+        verdict: 'REMOTE_ONLY_PLUGIN_METADATA_PRESERVATION_REQUIRED',
+      }),
+    };
+  }
+}
+
+function summarizeReleaseVerifierMergeInvariantProofs() {
+  return {
+    remoteOnlyPluginMetadata: summarizeRemoteOnlyPluginMetadataReleaseVerifierProof(),
+  };
+}
+
+function buildRemoteOnlyPluginMetadataReleaseVerifierProof({ now, generatedNow }) {
+  const focused = buildFocusedRemoteOnlyPluginMetadataReleaseVerifierEvidence(now);
+  const generated = buildGeneratedRemoteOnlyPluginMetadataReleaseVerifierEvidence(generatedNow);
+  const rawFixtures = [
+    ...focused.rawFixtures,
+    ...generated.rawFixtures,
+  ];
+  const releaseVerifier = {
+    checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+    check: 'remote-only-plugin-metadata-preservation',
+    variant: 'v5',
+    focusedFixtureCovered: focused.evidence.ok === true,
+    generatedHarnessCovered: generated.evidence.ok === true,
+    remoteOnlyMetadataDecision: 'keep-remote',
+  };
+  const proof = {
+    rpp: 'RPP-0286',
+    evidenceSource: 'release-verifier-remote-only-plugin-metadata-preservation-v5',
+    status: focused.evidence.ok && generated.evidence.ok ? 'support_only' : 'blocked',
+    verdict: focused.evidence.ok && generated.evidence.ok
+      ? 'REMOTE_ONLY_PLUGIN_METADATA_PRESERVED_BY_RELEASE_VERIFIER'
+      : 'REMOTE_ONLY_PLUGIN_METADATA_PRESERVATION_REQUIRED',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    evidenceScope: 'local-generated-release-verifier',
+    resource: {
+      pluginName: remoteOnlyPluginMetadataReleaseVerifierBoundary.pluginName,
+      resourceKey: remoteOnlyPluginMetadataReleaseVerifierBoundary.resourceKey,
+      generatedPluginName: remoteOnlyPluginMetadataReleaseVerifierBoundary.generatedPluginName,
+      generatedResourceKey: remoteOnlyPluginMetadataReleaseVerifierBoundary.generatedResourceKey,
+    },
+    releaseVerifier,
+    focused: focused.evidence,
+    generated: generated.evidence,
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      checkedFixtureCount: rawFixtures.length,
+      surfaces: [
+        'focused-release-verifier-proof',
+        'generated-release-verifier-proof',
+        'stale-precondition-details',
+        'durable-journal-resource-keys',
+      ],
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    releaseVerifier: proof.releaseVerifier,
+    focused: proof.focused,
+    generated: proof.generated,
+    redaction: proof.redaction,
+  });
+
+  const serializedProof = JSON.stringify(proof);
+  const rawValuesIncluded = rawFixtures.some((raw) => raw && serializedProof.includes(raw));
+  if (rawValuesIncluded) {
+    return {
+      rpp: proof.rpp,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'REMOTE_ONLY_PLUGIN_METADATA_EVIDENCE_REDACTION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      evidenceScope: proof.evidenceScope,
+      resource: proof.resource,
+      rawValuesIncluded: true,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: true,
+        checkedFixtureCount: rawFixtures.length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'REMOTE_ONLY_PLUGIN_METADATA_EVIDENCE_REDACTION_REQUIRED',
+        resource: proof.resource,
+      }),
+    };
+  }
+
+  return proof;
+}
+
+function buildFocusedRemoteOnlyPluginMetadataReleaseVerifierEvidence(now) {
+  const base = remoteOnlyPluginMetadataFocusedBaseSite();
+  const local = cloneReleaseVerifierJson(base);
+  const remote = cloneReleaseVerifierJson(base);
+  const localFileFixture = '<?php echo "rpp-0286-release-verifier-local-file-private";';
+  const localPostFixture = 'rpp-0286-release-verifier-local-post-private';
+  const remotePluginMetadata = {
+    version: 'rpp-0286-release-verifier-remote-plugin-version-private',
+    active: false,
+    updateChannel: 'rpp-0286-release-verifier-remote-channel-private',
+    release: {
+      note: 'rpp-0286-release-verifier-remote-note-private',
+      integrity: 'rpp-0286-release-verifier-remote-integrity-private',
+    },
+    capabilities: ['rpp-0286-release-verifier-remote-capability-private'],
+  };
+  const rawFixtures = [
+    localFileFixture,
+    localPostFixture,
+    ...remoteOnlyPluginMetadataStringLeaves(remotePluginMetadata),
+  ];
+
+  local.files['index.php'] = localFileFixture;
+  local.db.wp_posts['ID:1'].post_title = localPostFixture;
+  remote.plugins[remoteOnlyPluginMetadataReleaseVerifierBoundary.pluginName] = remotePluginMetadata;
+
+  const plan = createPushPlan({ base, local, remote, now });
+  const durableJournal = capturingReleaseVerifierDurableJournal();
+  const applied = applyPlan(cloneReleaseVerifierJson(remote), plan, { durableJournal });
+  const metadataDecision = remoteOnlyPluginMetadataDecisionEvidence({
+    plan,
+    base,
+    local,
+    remote,
+    pluginName: remoteOnlyPluginMetadataReleaseVerifierBoundary.pluginName,
+    label: 'RPP-0286 focused release verifier',
+  });
+  const staleReplay = remoteOnlyPluginMetadataStaleReplayEvidence({
+    plan,
+    remote,
+    pluginName: remoteOnlyPluginMetadataReleaseVerifierBoundary.pluginName,
+    expectedMetadataHash: metadataDecision.remoteHash,
+    staleFixture: 'rpp-0286-release-verifier-focused-stale-private',
+    label: 'RPP-0286 focused release verifier',
+  });
+  const mutationResourceKeys = plan.mutations.map((mutation) => mutation.resourceKey);
+  const preconditionResourceKeys = plan.preconditions.map((precondition) => precondition.resourceKey);
+  const noPluginJournalEvents = durableJournal.events.every(
+    (event) => event.resourceKey !== remoteOnlyPluginMetadataReleaseVerifierBoundary.resourceKey,
+  );
+  const appliedMetadataHash = resourceHash(
+    applied.site,
+    remoteOnlyPluginMetadataResource(remoteOnlyPluginMetadataReleaseVerifierBoundary.pluginName),
+  );
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(applied.appliedMutations, plan.mutations.length);
+  assert.equal(`sha256:${appliedMetadataHash}`, metadataDecision.remoteHash);
+  assert.equal(noPluginJournalEvents, true);
+
+  return {
+    rawFixtures: [...rawFixtures, 'rpp-0286-release-verifier-focused-stale-private'],
+    evidence: {
+      ok: true,
+      fixture: 'focused',
+      plan: {
+        status: plan.status,
+        summary: {
+          mutations: plan.summary.mutations,
+          decisions: plan.summary.decisions,
+          conflicts: plan.summary.conflicts,
+          blockers: plan.summary.blockers,
+          atomicGroups: plan.summary.atomicGroups,
+        },
+        mutationCount: plan.mutations.length,
+        preconditionCount: plan.preconditions.length,
+        hash: sha256Evidence(plan),
+      },
+      metadata: metadataDecision,
+      independentMutations: {
+        count: plan.mutations.length,
+        resourceKeysHash: sha256Evidence(mutationResourceKeys),
+        preconditionResourceKeysHash: sha256Evidence(preconditionResourceKeys),
+        everyMutationHasLiveRemotePrecondition:
+          remoteOnlyPluginMetadataEveryMutationHasLiveRemotePrecondition(plan),
+      },
+      apply: {
+        appliedMutations: applied.appliedMutations,
+        appliedMetadataHash: `sha256:${appliedMetadataHash}`,
+        remoteMetadataPreserved: `sha256:${appliedMetadataHash}` === metadataDecision.remoteHash,
+        durableJournalEventCount: durableJournal.events.length,
+        durableJournalResourceKeysHash: sha256Evidence(
+          durableJournal.events.map((event) => event.resourceKey || null),
+        ),
+        noPluginMetadataJournalEvents: noPluginJournalEvents,
+      },
+      staleReplay,
+      proofHash: sha256Evidence({
+        metadata: metadataDecision,
+        staleReplay,
+        summary: plan.summary,
+      }),
+    },
+  };
+}
+
+function buildGeneratedRemoteOnlyPluginMetadataReleaseVerifierEvidence(generatedNow) {
+  const generatedCases = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'remote-only-plugin-metadata');
+  assert.equal(generatedCases.length, 10);
+
+  const perTier = {};
+  const statuses = {};
+  const rawFixtures = [];
+  const cases = [];
+
+  for (const generatedCase of generatedCases) {
+    const pluginName = remoteOnlyPluginMetadataReleaseVerifierBoundary.generatedPluginName;
+    const pluginResource = remoteOnlyPluginMetadataResource(pluginName);
+    const remoteMetadata = generatedCase.remote.plugins[pluginName];
+    rawFixtures.push(...remoteOnlyPluginMetadataStringLeaves(remoteMetadata));
+
+    const plan = createPushPlan({
+      base: generatedCase.base,
+      local: generatedCase.local,
+      remote: generatedCase.remote,
+      now: generatedNow,
+    });
+    const validation = validateGeneratedCase(generatedCase);
+    const durableJournal = capturingReleaseVerifierDurableJournal();
+    const applied = applyPlan(cloneReleaseVerifierJson(generatedCase.remote), plan, { durableJournal });
+    const metadataDecision = remoteOnlyPluginMetadataDecisionEvidence({
+      plan,
+      base: generatedCase.base,
+      local: generatedCase.local,
+      remote: generatedCase.remote,
+      pluginName,
+      label: `RPP-0286 generated release verifier ${generatedCase.id}`,
+    });
+    const staleFixture = `rpp-0286-release-verifier-generated-stale-${generatedCase.tier}-${generatedCase.id}`;
+    rawFixtures.push(staleFixture);
+    const staleReplay = remoteOnlyPluginMetadataStaleReplayEvidence({
+      plan,
+      remote: generatedCase.remote,
+      pluginName,
+      expectedMetadataHash: metadataDecision.remoteHash,
+      staleFixture,
+      label: `RPP-0286 generated release verifier ${generatedCase.id}`,
+    });
+    const appliedMetadataHash = resourceHash(applied.site, pluginResource);
+    const noPluginJournalEvents = durableJournal.events.every(
+      (event) => event.resourceKey !== remoteOnlyPluginMetadataReleaseVerifierBoundary.generatedResourceKey,
+    );
+
+    assert.ok(generatedCase.tags.has('remote-preserve'));
+    assert.ok(generatedCase.tags.has('plugin-metadata-preserve'));
+    assert.equal(plan.status, 'ready');
+    assert.equal(validation.status, 'ready');
+    assert.equal(validation.applied, true);
+    assert.equal(validation.unplannedRemotePreserved, true);
+    assert.equal(validation.staleReplayRejected, true);
+    assert.equal(validation.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(validation.staleReplayRemoteUnchanged, true);
+    assert.equal(applied.appliedMutations, plan.mutations.length);
+    assert.equal(`sha256:${appliedMetadataHash}`, metadataDecision.remoteHash);
+    assert.equal(noPluginJournalEvents, true);
+
+    incrementReleaseVerifierCount(perTier, generatedCase.tier);
+    incrementReleaseVerifierCount(statuses, plan.status);
+    cases.push({
+      id: generatedCase.id,
+      tier: generatedCase.tier,
+      family: generatedCase.family,
+      status: plan.status,
+      tags: [...generatedCase.tags].sort(),
+      plan: {
+        summary: {
+          mutations: plan.summary.mutations,
+          decisions: plan.summary.decisions,
+          conflicts: plan.summary.conflicts,
+          blockers: plan.summary.blockers,
+          atomicGroups: plan.summary.atomicGroups,
+        },
+        mutationCount: plan.mutations.length,
+        preconditionCount: plan.preconditions.length,
+        hash: sha256Evidence(plan),
+      },
+      validation: {
+        applied: validation.applied,
+        unplannedRemotePreserved: validation.unplannedRemotePreserved,
+        staleReplayRejected: validation.staleReplayRejected,
+        staleReplayRejectionCode: validation.staleReplayRejectionCode,
+        staleReplayRemoteUnchanged: validation.staleReplayRemoteUnchanged,
+      },
+      metadata: {
+        ...metadataDecision,
+        appliedMetadataHash: `sha256:${appliedMetadataHash}`,
+        appliedRemoteHashPreserved: `sha256:${appliedMetadataHash}` === metadataDecision.remoteHash,
+      },
+      apply: {
+        appliedMutations: applied.appliedMutations,
+        noPluginMetadataJournalEvents: noPluginJournalEvents,
+        durableJournalResourceKeysHash: sha256Evidence(
+          durableJournal.events.map((event) => event.resourceKey || null),
+        ),
+      },
+      staleReplay,
+      proofHash: sha256Evidence({
+        metadata: metadataDecision,
+        staleReplay,
+        validation,
+      }),
+    });
+  }
+
+  const sortedCases = cases.sort((left, right) => left.tier - right.tier || left.id.localeCompare(right.id));
+  return {
+    rawFixtures,
+    evidence: {
+      ok: sortedCases.length === 10
+        && sortedCases.every((entry) => entry.status === 'ready')
+        && sortedCases.every((entry) => entry.metadata.appliedRemoteHashPreserved === true)
+        && sortedCases.every((entry) => entry.metadata.plannedMutation === false)
+        && sortedCases.every((entry) => entry.metadata.plannedPrecondition === false)
+        && sortedCases.every((entry) => entry.staleReplay.remoteUnchanged === true),
+      fixture: 'generated',
+      family: 'remote-only-plugin-metadata',
+      totalCases: sortedCases.length,
+      perTier: sortReleaseVerifierCountObject(perTier, { numeric: true }),
+      statuses: sortReleaseVerifierCountObject(statuses),
+      cases: sortedCases,
+      proofHash: sha256Evidence({
+        perTier,
+        statuses,
+        cases: sortedCases.map((entry) => ({
+          id: entry.id,
+          metadata: entry.metadata,
+          staleReplay: entry.staleReplay,
+        })),
+      }),
+    },
+  };
+}
+
+function remoteOnlyPluginMetadataFocusedBaseSite() {
+  return {
+    files: {
+      'index.php': '<?php echo "base";',
+      'wp-content/plugins/forms/forms.php': '<?php /* forms 1.0 */',
+    },
+    plugins: {
+      forms: { version: '1.0.0', active: true },
+    },
+    db: {
+      wp_options: {
+        'option_name:blogname': { option_name: 'blogname', option_value: 'Base Site' },
+      },
+      wp_posts: {
+        'ID:1': { ID: 1, post_title: 'Base post', post_status: 'publish' },
+      },
+    },
+  };
+}
+
+function remoteOnlyPluginMetadataResource(pluginName) {
+  return { type: 'plugin', name: pluginName, key: `plugin:${pluginName}` };
+}
+
+function remoteOnlyPluginMetadataDecisionEvidence({ plan, base, local, remote, pluginName, label }) {
+  const resource = remoteOnlyPluginMetadataResource(pluginName);
+  const decision = plan.decisions.find((entry) => entry.resourceKey === resource.key) || null;
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === resource.key) || null;
+  const precondition = plan.preconditions.find((entry) => entry.resourceKey === resource.key) || null;
+  const baseHash = resourceHash(base, resource);
+  const localHash = resourceHash(local, resource);
+  const remoteHash = resourceHash(remote, resource);
+  const exactKeepRemote = decision?.decision === 'keep-remote'
+    && decision?.change?.localChange === 'unchanged'
+    && decision?.change?.remoteChange === 'update'
+    && decision?.baseHash === baseHash
+    && decision?.remoteHash === remoteHash
+    && baseHash === localHash
+    && remoteHash !== baseHash
+    && mutation === null
+    && precondition === null;
+
+  assert.ok(decision, `${label} missing plugin metadata decision`);
+  assert.equal(exactKeepRemote, true, `${label} should preserve remote-only plugin metadata`);
+
+  const evidence = {
+    resourceKey: resource.key,
+    decision: decision.decision,
+    localChange: decision.change.localChange,
+    remoteChange: decision.change.remoteChange,
+    baseHash: `sha256:${baseHash}`,
+    localHash: `sha256:${localHash}`,
+    remoteHash: `sha256:${remoteHash}`,
+    exactKeepRemote,
+    plannedMutation: mutation !== null,
+    plannedPrecondition: precondition !== null,
+  };
+  return {
+    ...evidence,
+    decisionHash: sha256Evidence(evidence),
+  };
+}
+
+function remoteOnlyPluginMetadataStaleReplayEvidence({
+  plan,
+  remote,
+  pluginName,
+  expectedMetadataHash,
+  staleFixture,
+  label,
+}) {
+  const mutation = plan.mutations.at(-1);
+  assert.ok(mutation, `${label} requires an independent local mutation`);
+  const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation.id) || null;
+  assert.ok(precondition, `${label} missing live remote precondition`);
+  assert.equal(precondition.resourceKey, mutation.resourceKey, `${label} precondition resource key`);
+  assert.equal(precondition.expectedHash, mutation.remoteBeforeHash, `${label} precondition hash`);
+
+  const staleRemote = cloneReleaseVerifierJson(remote);
+  const targetHashBeforeDrift = resourceHash(staleRemote, mutation.resource);
+  assert.equal(targetHashBeforeDrift, precondition.expectedHash, `${label} stale target should start current`);
+  setResource(
+    staleRemote,
+    mutation.resource,
+    remoteOnlyPluginMetadataStaleResourceValue(
+      mutation.resource,
+      getResource(staleRemote, mutation.resource),
+      staleFixture,
+    ),
+  );
+  const actualHash = resourceHash(staleRemote, mutation.resource);
+  const remoteHashBefore = sha256Evidence(staleRemote);
+  let error = null;
+  try {
+    applyPlan(staleRemote, plan);
+  } catch (candidate) {
+    error = candidate;
+  }
+  const remoteHashAfter = sha256Evidence(staleRemote);
+  const metadataHashAfter = resourceHash(staleRemote, remoteOnlyPluginMetadataResource(pluginName));
+
+  assert.ok(error instanceof PushPlanError, `${label} stale replay should fail`);
+  assert.equal(error.code, 'PRECONDITION_FAILED', `${label} stale replay code`);
+  assert.equal(error.details?.expectedHash, precondition.expectedHash, `${label} stale expected hash`);
+  assert.equal(error.details?.actualHash, actualHash, `${label} stale actual hash`);
+  assert.notEqual(actualHash, precondition.expectedHash, `${label} stale target must drift`);
+  assert.equal(remoteHashAfter, remoteHashBefore, `${label} stale replay mutated remote`);
+  assert.equal(`sha256:${metadataHashAfter}`, expectedMetadataHash, `${label} metadata hash changed`);
+
+  return {
+    preMutation: true,
+    code: error.code,
+    resourceKey: mutation.resourceKey,
+    expectedHash: `sha256:${error.details.expectedHash}`,
+    actualHash: `sha256:${error.details.actualHash}`,
+    targetHashBeforeDrift: `sha256:${targetHashBeforeDrift}`,
+    expectedHashMatchesMutation: error.details.expectedHash === mutation.remoteBeforeHash,
+    actualHashMatchesDriftedTarget: error.details.actualHash === actualHash,
+    remoteHashBefore,
+    remoteHashAfter,
+    remoteUnchanged: remoteHashAfter === remoteHashBefore,
+    metadataHashAfter: `sha256:${metadataHashAfter}`,
+    metadataPreserved: `sha256:${metadataHashAfter}` === expectedMetadataHash,
+    detailsHash: sha256Evidence(error.details || null),
+    preconditionHash: sha256Evidence(precondition),
+  };
+}
+
+function remoteOnlyPluginMetadataStaleResourceValue(resource, currentValue, staleFixture) {
+  if (resource.type === 'file') {
+    return { type: 'file', content: staleFixture };
+  }
+
+  if (resource.type === 'plugin') {
+    return {
+      ...(currentValue && typeof currentValue === 'object' ? currentValue : {}),
+      version: staleFixture,
+    };
+  }
+
+  if (currentValue && typeof currentValue === 'object' && !Array.isArray(currentValue)) {
+    return {
+      ...currentValue,
+      __rpp0286StaleReplay: staleFixture,
+    };
+  }
+
+  return {
+    observed: currentValue === ABSENT ? 'absent-before-rpp-0286-stale-replay' : 'present-before-rpp-0286-stale-replay',
+    __rpp0286StaleReplay: staleFixture,
+  };
+}
+
+function remoteOnlyPluginMetadataEveryMutationHasLiveRemotePrecondition(plan) {
+  if (plan.preconditions.length !== plan.mutations.length) {
+    return false;
+  }
+  const preconditionsByMutationId = new Map(
+    plan.preconditions.map((precondition) => [precondition.mutationId, precondition]),
+  );
+  return plan.mutations.every((mutation) => {
+    const precondition = preconditionsByMutationId.get(mutation.id);
+    return precondition?.resourceKey === mutation.resourceKey
+      && precondition.expectedHash === mutation.remoteBeforeHash
+      && precondition.checkedAgainst === 'live-remote';
+  });
+}
+
+function capturingReleaseVerifierDurableJournal() {
+  return {
+    claimFenced: true,
+    claimHash: '2'.repeat(64),
+    events: [],
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      const record = { sequence: this.nextSequence, type, ...payload };
+      this.events.push(record);
+      this.nextSequence += 1;
+      return record;
+    },
+  };
+}
+
+function remoteOnlyPluginMetadataStringLeaves(value) {
+  if (typeof value === 'string') {
+    return [value];
+  }
+  if (!value || typeof value !== 'object') {
+    return [];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap(remoteOnlyPluginMetadataStringLeaves);
+  }
+  return Object.values(value).flatMap(remoteOnlyPluginMetadataStringLeaves);
+}
+
+function incrementReleaseVerifierCount(object, key) {
+  object[key] = (object[key] || 0) + 1;
+}
+
+function sortReleaseVerifierCountObject(object, { numeric = false } = {}) {
+  return Object.fromEntries(
+    Object.entries(object).sort(([left], [right]) =>
+      numeric ? Number(left) - Number(right) : left.localeCompare(right)),
+  );
 }
 
 function buildDriverAuditEvidenceRedactionReleaseVerifierProof(now) {
@@ -3426,6 +4010,7 @@ try {
           },
           ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
         };
+        const mergeInvariantProof = summarizeReleaseVerifierMergeInvariantProofs();
         process.stdout.write(
           JSON.stringify(
             {
@@ -3478,6 +4063,7 @@ try {
               readRetryEvidence: proof.readRetryEvidence || null,
               latestReadRetryEvidence: proof.latestReadRetryEvidence || null,
               pluginDriver: pluginDriverProof,
+              mergeInvariants: mergeInvariantProof,
             },
             null,
             2,
@@ -3737,6 +4323,7 @@ try {
         },
         ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
       };
+      const mergeInvariantProof = summarizeReleaseVerifierMergeInvariantProofs();
       const checkedProductionPluginDriverAccepted = packagedSourceFixture !== null
         ? productionPluginDriverProof.verdict === 'PACKAGED_PLUGIN_DRIVER_BOUNDARY_OK'
         : productionPluginDriverProof.verdict === 'LIVE_PLUGIN_DRIVER_BOUNDARY_OK';
@@ -3789,6 +4376,7 @@ try {
               authSessionLifecycle: proof.authSessionLifecycle,
               authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
               pluginDriver: pluginDriverProof,
+              mergeInvariants: mergeInvariantProof,
             },
             null,
             2,
@@ -3857,6 +4445,7 @@ try {
               },
               authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
               pluginDriver: pluginDriverProof,
+              mergeInvariants: mergeInvariantProof,
             },
             null,
             2,
@@ -3956,6 +4545,7 @@ try {
                 liveLeaseFence: proof.dbJournal.leaseFence || null,
                 checkedAccepted: checkedDurableJournalAccepted,
               },
+              mergeInvariants: mergeInvariantProof,
               ...(packagedPluginDriverProof ? { pluginDriver: packagedPluginDriverProof } : {}),
             },
             null,
@@ -4052,6 +4642,7 @@ try {
                 checkedAccepted: checkedDurableJournalAccepted,
               },
               pluginDriver: pluginDriverProof,
+              mergeInvariants: mergeInvariantProof,
             },
             null,
             2,
@@ -4143,6 +4734,7 @@ try {
                 checkedAccepted: checkedDurableJournalAccepted,
               },
               pluginDriver: pluginDriverProof,
+              mergeInvariants: mergeInvariantProof,
             },
             null,
             2,
@@ -4255,6 +4847,7 @@ try {
               },
               replayAndRetry: proof.replayAndRetry || null,
               pluginDriver: pluginDriverProof,
+              mergeInvariants: mergeInvariantProof,
             },
             null,
             2,
@@ -4333,6 +4926,7 @@ try {
               checkedAccepted: checkedDurableJournalAccepted,
             },
             pluginDriver: pluginDriverProof,
+            mergeInvariants: mergeInvariantProof,
           },
           null,
           2,
