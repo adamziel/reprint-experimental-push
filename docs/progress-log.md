@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 13:31 CEST.
+- Last update: 2026-05-30 13:37 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0625 claim expiry policy v2 merge ending at `1c2107a98`.
+  the RPP-0516 same-key same-body replay merge ending at `832cbf2ec`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 441
-  items checked and leaves 559 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 442
+  items checked and leaves 558 open.
 - Checked slices: 100 release-gate foundation items, 46 graph identity items,
-  73 plugin-driver boundary items, 23 executor/auth items, 28 recovery items,
+  73 plugin-driver boundary items, 24 executor/auth items, 28 recovery items,
   13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key same-body replay: the current lane now contains `RPP-0516` evidence
+  in `docs/evidence/rpp-0516-same-key-same-body-replay.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `src/authenticated-http-push-client.js`,
+  `scripts/playground/rpp-0516-same-key-same-body-replay-smoke.mjs`, and
+  `test/authenticated-http-push-client.test.js`. The authenticated push client
+  records hash-only `sameKeySameBodyReplay` evidence for a duplicate `/apply`
+  request with the same idempotency key and identical body, requiring replayed
+  idempotency, no fresh mutation work, replay-equivalent response evidence, and
+  matching signed content hashes. The live-local disposable WordPress
+  Playground endpoint proof emitted `SAME_KEY_SAME_BODY_REPLAY_PROVEN` with
+  matching apply/replay content hashes and an `apply-replayed` DB journal event.
+  Validation passed with Node syntax checks, focused RPP-0516 coverage 1/1, the
+  full authenticated HTTP push client suite 132/132, the merged-lane live-local
+  RPP-0516 smoke, checklist lint, scoped artifact redaction scan, and merge
+  diff whitespace checks. Counts are now 442/558; final release remains
+  `NO-GO` because this is live-local disposable endpoint evidence, not
+  production-backed source URL, credential, or external durability proof.
 - Claim expiry policy v2: the current lane now contains `RPP-0625` evidence in
   `docs/evidence/rpp-0625-claim-expiry-policy-v2.md`,
   `docs/reprint-push-completion-checklist.md`, and

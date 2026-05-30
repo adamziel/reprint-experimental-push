@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T13:31:00+02:00">Last updated: May 30, 2026, 13:31 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T13:37:00+02:00">Last updated: May 30, 2026, 13:37 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>441</strong>
+        <strong>442</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>559</strong>
+        <strong>558</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -406,10 +406,14 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0625</span>
+        <span>RPP-0516</span>
       </div>
-      <p>The latest refresh integrates RPP-0625 claim expiry policy v2 evidence: the SQLite-backed regression advances an expired production recovery claim, reloads the durable table through the SQLite journal reader, proves the restarted state remains old-remote, and feeds that same state into the release proof while keeping local fixture evidence out of the checked live durable-journal boundary. Counts are now 441/559; final release remains NO-GO because this is local SQLite-backed durability evidence, not checked live production journal ownership and lease-fence evidence.</p>
+      <p>The latest refresh integrates RPP-0516 same-key same-body replay evidence: the authenticated push client now records hash-only proof that a duplicate apply with the same idempotency key and identical request body replays without fresh mutation work, with matching signed content hashes and replay-equivalent response evidence. The live-local disposable WordPress Playground endpoint emitted SAME_KEY_SAME_BODY_REPLAY_PROVEN and an apply-replayed DB journal event. Counts are now 442/558; final release remains NO-GO because this is live-local endpoint evidence, not production-backed source URL, credential, or external durability proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0516 focused: 1/1</span>
+        <span class="tag">auth client suite: 132/132</span>
+        <span class="tag">live-local smoke: pass</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0625 focused: 1/1</span>
         <span class="tag">claim/stale/expiry: 9/9</span>
         <span class="tag">recovery journal: 31/31</span>
