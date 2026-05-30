@@ -82,8 +82,11 @@ The default generated run covers:
   per-tier ready/stale target counts and hash-only stale-user blockers,
   featured-image attachment references with ready postmeta/attachment closure
   and stale attachment blockers,
-  supported and unsupported plugin-owned data, plugin owner-context drift,
-  explicit plugin-owned resource refusal variant-3 ready/changed/stale
+  supported and unsupported plugin-owned data, driver owner identity binding
+  variant-3 generated cases with one supported exact-owner policy and four
+  fail-closed unsupported owner-policy/context/apply-revalidation variants,
+  plugin owner-context drift, explicit plugin-owned resource refusal
+  variant-3 ready/changed/stale
   targets, supported forms-lab custom-table rows, plugin-owned custom-table
   update variant-1 cases, explicit plugin-owned custom-table variant-3
   and variant-4 update coverage, and delete refusal with per-tier target
@@ -181,6 +184,17 @@ hash-only, verifies the ready case carries owner/driver evidence, applies the
 planned option hash, preserves unplanned remote resources, and rejects stale
 replay with `PRECONDITION_FAILED` before mutation, then verifies the conflicting
 plugin-owned option refuses apply without mutating the remote digest.
+
+RPP-0442 adds `generateDriverOwnerIdentityBindingCases()` coverage for
+driver owner identity binding variant 3. The generated case set emits five
+plugin-owned `wp_options` cases: one supported exact-owner policy that plans and
+applies a `forms`/`wp-option` mutation, plus four unsupported variants for a
+wrong policy owner, missing owner policy, local owner drift caught by apply
+revalidation, and stale owner plugin metadata. `test/generated-push-harness.test.js`
+now validates those cases through `validateDriverOwnerIdentityBindingCase()`,
+keeps evidence local-generated and non-production-backed, and asserts the
+generated private markers stay out of mutation, blocker, error, and journal
+evidence.
 
 The `fileCreateUpdateDeleteMix` target coverage records per-tier counts for the
 file create/update/delete surface. Ready cases create one file, update one file,

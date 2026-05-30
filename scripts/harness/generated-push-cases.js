@@ -568,6 +568,9 @@ export function validateDriverOwnerIdentityBindingCase(testCase) {
     status: plan.status,
     mutations: plan.mutations.length,
     blockers: plan.blockers.length,
+    evidenceScope: 'local-generated',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
     proofHash: digest({
       id: testCase.id,
       status: plan.status,

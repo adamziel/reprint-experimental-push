@@ -7,10 +7,12 @@ import {
   MIN_GENERATED_PUSH_CASES,
   generateDriverDeleteSupportFlagCases,
   generateDriverDryRunValidationHookCases,
+  generateDriverOwnerIdentityBindingCases,
   generatePushHarnessCases,
   runGeneratedPushHarness,
   validateDriverDeleteSupportFlagCase,
   validateDriverDryRunValidationHookCase,
+  validateDriverOwnerIdentityBindingCase,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
@@ -2430,6 +2432,67 @@ test('RPP-0230 generated planner summary counts match emitted evidence determini
   assert.equal(aggregate.totalPreconditions, aggregate.totalMutations);
   assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
   assert.equal(JSON.stringify(evidenceEnvelope).includes('confidential'), false);
+});
+
+test('RPP-0442 generated driver owner identity binding v3 covers supported and unsupported variants', () => {
+  const cases = generateDriverOwnerIdentityBindingCases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'supported-exact-owner-policy',
+    'unsupported-wrong-policy-owner',
+    'unsupported-missing-owner-policy',
+    'unsupported-local-owner-drift',
+    'unsupported-stale-owner-context',
+  ]);
+  assert.equal(cases.every((testCase) => testCase.family === 'driver-owner-identity-binding'), true);
+  assert.equal(cases.every((testCase) => testCase.tags.has('driver-owner-identity-binding')), true);
+  assert.equal(cases.every((testCase) => testCase.tags.has('plugin-owned-generated')), true);
+  assert.equal(cases.filter((testCase) => testCase.tags.has('driver-owner-identity-supported')).length, 1);
+  assert.equal(cases.filter((testCase) => testCase.tags.has('driver-owner-identity-unsupported')).length, 4);
+  assert.equal(cases.every((testCase) => testCase.resourceKey.startsWith('row:["wp_options"')), true);
+
+  const results = cases.map(validateDriverOwnerIdentityBindingCase);
+  const outcomes = Object.fromEntries(results.map((result) => [result.variant, result.outcome]));
+  assert.deepEqual(outcomes, {
+    'supported-exact-owner-policy': 'ready',
+    'unsupported-wrong-policy-owner': 'planner-blocked',
+    'unsupported-missing-owner-policy': 'planner-blocked',
+    'unsupported-local-owner-drift': 'apply-refused',
+    'unsupported-stale-owner-context': 'planner-blocked',
+  });
+
+  const byVariant = Object.fromEntries(results.map((result) => [result.variant, result]));
+  assert.equal(byVariant['supported-exact-owner-policy'].status, 'ready');
+  assert.equal(byVariant['supported-exact-owner-policy'].mutations, 1);
+  assert.equal(byVariant['supported-exact-owner-policy'].blockers, 0);
+  assert.equal(byVariant['supported-exact-owner-policy'].applied, true);
+  assert.equal(byVariant['unsupported-wrong-policy-owner'].status, 'blocked');
+  assert.equal(byVariant['unsupported-missing-owner-policy'].status, 'blocked');
+  assert.equal(byVariant['unsupported-stale-owner-context'].status, 'blocked');
+  assert.equal(byVariant['unsupported-local-owner-drift'].status, 'ready');
+  assert.equal(byVariant['unsupported-local-owner-drift'].mutations, 1);
+  assert.equal(byVariant['unsupported-local-owner-drift'].applied, false);
+
+  const evidence = {
+    evidenceScope: 'local-generated',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    supportedVariants: results.filter((result) => result.outcome === 'ready').length,
+    unsupportedVariants: results.filter((result) => result.outcome !== 'ready').length,
+    outcomeHash: `sha256:${digest(outcomes)}`,
+    resultHash: `sha256:${digest(results)}`,
+  };
+
+  assert.equal(evidence.supportedVariants, 1);
+  assert.equal(evidence.unsupportedVariants, 4);
+  assert.match(evidence.outcomeHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.resultHash, /^sha256:[a-f0-9]{64}$/);
+  for (const result of results) {
+    assert.equal(result.evidenceScope, 'local-generated');
+    assert.equal(result.productionBacked, false);
+    assert.equal(result.releaseGate, 'NO-GO');
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+  }
 });
 
 test('RPP-0417 generated driver dry-run validation hook covers supported and unsupported variants', () => {
