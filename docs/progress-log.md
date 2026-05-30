@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 23:54 CEST +02:00.
+- Last update: 2026-05-31 00:02 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0194 plugin-owned option release-verifier variant 5 merge ending at
-  `8834f27`.
+  the RPP-0265 local file type-swap remote-descendant variant 4 merge ending
+  at `e057508`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 541
-  items checked and leaves 459 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 542
+  items checked and leaves 458 open.
 - Checked slices: 100 release-gate foundation items, 81 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 94 generated
-  harness items, and 78 merge-invariant items. No release-ops items are checked
+  harness items, and 79 merge-invariant items. No release-ops items are checked
   yet.
+- Local file type-swap versus remote descendant variant-4 proof: the current
+  lane now checks `RPP-0265` with focused planner/apply regression evidence for
+  a local directory-to-file type swap while the live remote created a
+  descendant. The proof verifies the unsafe type swap emits no mutation or
+  precondition, preserves the remote descendant as `keep-remote`, leaves an
+  unrelated local mutation live-preconditioned for audit, refuses apply with
+  `PLAN_NOT_READY` before durable journal or remote mutation, and keeps the
+  serialized command/caveat evidence hash-only. Validation passed with a Node
+  syntax check, focused RPP-0265 coverage 1/1, adjacent
+  RPP-0205/RPP-0225/RPP-0265 file-type-swap planner coverage 3/3, the full
+  `test/push-planner.test.js` suite 148/148, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 542/458; final release remains
+  `NO-GO` because this is local focused planner evidence, not
+  production-backed release proof.
 - Plugin-owned option release-verifier v5 carry-through: the current lane now
   checks `RPP-0194` with deterministic generated-harness support-only proof for
   plugin-owned option changes. The generator exposes
