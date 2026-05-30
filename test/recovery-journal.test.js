@@ -1521,6 +1521,175 @@ test('restart inspection classifies fail-before mutation journal as old remote',
   assert.ok(inspection.targets.every((target) => target.state === 'old'));
 });
 
+test('RPP-0630 old-remote restart classification carries through release proof', () => {
+  const filePath = tempJournalPath();
+  fs.chmodSync(path.dirname(filePath), 0o700);
+  const base = baseSite();
+  const local = clone(base);
+  const remote = clone(base);
+  const plannedOne = 'local-private-content-rpp-0630-old-remote-one';
+  const plannedTwo = 'local-private-content-rpp-0630-old-remote-two';
+  const activeClaimId = 'rpp-0630-old-remote-active-claim';
+  const retryClaimId = 'rpp-0630-old-remote-retry-claim';
+  const staleThresholdMs = 1_000;
+  const artifactRefs = {
+    releaseProof: 'artifact://rpp-0630-old-remote-release-proof',
+  };
+  local.files['file-1.txt'] = plannedOne;
+  local.files['file-2.txt'] = plannedTwo;
+  const plan = planFor(base, local, remote);
+  assert.equal(plan.mutations.length, 2);
+
+  const recoveryJournalModule = new URL('../src/recovery-journal.js', import.meta.url).href;
+  const plannerModule = new URL('../src/planner.js', import.meta.url).href;
+  const childScript = `
+    import { openProductionRecoveryJournal } from ${JSON.stringify(recoveryJournalModule)};
+    import { createPushPlan } from ${JSON.stringify(plannerModule)};
+
+    const fixedNow = new Date('2026-05-24T00:00:00.000Z');
+    const filePath = process.env.RPP0630_JOURNAL_PATH;
+    const base = JSON.parse(process.env.RPP0630_BASE_SITE);
+    const local = JSON.parse(process.env.RPP0630_LOCAL_SITE);
+    const remote = JSON.parse(process.env.RPP0630_REMOTE_SITE);
+    const plan = createPushPlan({ base, local, remote, now: fixedNow });
+    const journal = openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: ${JSON.stringify(artifactRefs)},
+      now: fixedNow,
+      claimId: ${JSON.stringify(activeClaimId)},
+      claimStaleThresholdMs: ${staleThresholdMs},
+    });
+    journal.close();
+    process.exit(0);
+  `;
+
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', childScript], {
+    env: {
+      ...process.env,
+      RPP0630_JOURNAL_PATH: filePath,
+      RPP0630_BASE_SITE: JSON.stringify(base),
+      RPP0630_LOCAL_SITE: JSON.stringify(local),
+      RPP0630_REMOTE_SITE: JSON.stringify(remote),
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(child.error, undefined);
+  assert.equal(child.status, 0, child.stderr || child.stdout);
+
+  const restartedAfterOpen = readRecoveryJournal(filePath);
+  assert.equal(restartedAfterOpen.integrity.status, 'ok');
+  assert.equal(
+    restartedAfterOpen.records.filter((record) => record.type === 'target-planned').length,
+    plan.mutations.length,
+  );
+  assert.equal(
+    restartedAfterOpen.records.some((record) => record.type === 'mutation-observed'),
+    false,
+  );
+  assert.equal(
+    restartedAfterOpen.records.some((record) => record.type === 'journal-completed'),
+    false,
+  );
+  assert.equal(restartedAfterOpen.openState.restartReadable, true);
+  assert.equal(restartedAfterOpen.openState.latestOpenType, 'journal-opened');
+  assert.ok(restartedAfterOpen.records.every((record) => record.fsync.requested === true));
+  assert.doesNotThrow(() => {
+    for (const record of restartedAfterOpen.records) {
+      assertJournalRecordHasNoRawValues(record);
+    }
+  });
+
+  const firstRestartInspection = inspectRecoveryJournal({
+    journal: restartedAfterOpen,
+    plan,
+    current: remote,
+  });
+  assert.equal(firstRestartInspection.status, 'old-remote');
+  assert.equal(firstRestartInspection.reason, 'Every planned target currently matches its journaled before hash.');
+  assert.deepEqual(firstRestartInspection.counts, {
+    old: plan.mutations.length,
+    new: 0,
+    blockedUnknown: 0,
+  });
+  assert.ok(firstRestartInspection.targets.every((target) => target.state === 'old'));
+  assert.ok(firstRestartInspection.targets.every((target) => target.observedHash === target.beforeHash));
+  assert.ok(firstRestartInspection.targets.every((target) => target.observedHash !== target.afterHash));
+
+  const retry = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: new Date(fixedNow.getTime() + 5_000),
+    truncate: false,
+    claimId: retryClaimId,
+    claimStaleThresholdMs: staleThresholdMs,
+  });
+  const productionInspection = retry.inspect();
+  retry.close();
+
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(productionInspection), true);
+  assert.equal(productionInspection.claim.activeClaimId, retryClaimId);
+  assert.equal(productionInspection.claim.previousClaimId, activeClaimId);
+  assert.equal(productionInspection.journal.staleClaimRejected, true);
+  assert.equal(productionInspection.journal.claimExpiry.previousClaimExpired, true);
+  assert.equal(productionInspection.journal.openState.restartReadable, true);
+
+  const restartedAfterRetry = readRecoveryJournal(filePath);
+  const finalRestartInspection = inspectRecoveryJournal({
+    journal: restartedAfterRetry,
+    plan,
+    current: remote,
+  });
+  assert.equal(finalRestartInspection.status, 'old-remote');
+  assert.deepEqual(finalRestartInspection.counts, {
+    old: plan.mutations.length,
+    new: 0,
+    blockedUnknown: 0,
+  });
+  assert.ok(finalRestartInspection.targets.every((target) => target.state === 'old'));
+  assert.ok(restartedAfterRetry.records.every((record) => record.fsync.requested === true));
+
+  const oldRemoteRecovery = {
+    source: 'RPP-0630 old remote restart classification',
+    status: 200,
+    state: finalRestartInspection.status,
+    observedState: firstRestartInspection.status,
+    counts: {
+      ...finalRestartInspection.counts,
+      total: plan.mutations.length,
+    },
+  };
+  const releaseProof = buildDurableRecoveryJournalReleaseProof({
+    releaseSummary: buildRecoveryReleaseSummary({
+      inspection: productionInspection,
+      plan,
+      mutationEvents: plan.mutations.length,
+      oldRemoteRecovery,
+    }),
+    applyRevalidation: buildBlockedApplyRevalidation(),
+  });
+
+  assert.equal(releaseProof.ok, true);
+  assert.equal(releaseProof.gate, 'GATE-2');
+  assert.equal(releaseProof.gateStatus, 'proven');
+  assert.equal(releaseProof.sameReleaseBoundary, true);
+  assert.equal(releaseProof.checks.oldState, true);
+  assert.equal(releaseProof.partialStates.old.proved, true);
+  assert.equal(releaseProof.partialStates.old.source, oldRemoteRecovery.source);
+  assert.equal(releaseProof.partialStates.old.state, 'old-remote');
+  assert.equal(releaseProof.partialStates.old.observedState, 'old-remote');
+  assert.deepEqual(releaseProof.partialStates.old.counts, oldRemoteRecovery.counts);
+  assert.equal(releaseProof.recoveryInspectAfterRestart.proved, true);
+
+  const journalText = fs.readFileSync(filePath, 'utf8');
+  assert.equal(journalText.includes(plannedOne), false);
+  assert.equal(journalText.includes(plannedTwo), false);
+});
+
 test('restart inspection classifies fail-after-2 as blocked recovery with two new and six old', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
