@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const routeSourcePath = path.join(repoRoot, 'scripts/playground/push-remote-rest-plugin.php');
 const routeSource = readFileSync(routeSourcePath, 'utf8');
+const liveSmokeSourcePath = path.join(repoRoot, 'scripts/playground/production-apply-route-live-smoke.mjs');
+const liveSmokeSource = readFileSync(liveSmokeSourcePath, 'utf8');
 
 function functionBody(name) {
   const declaration = `function ${name}`;
@@ -46,6 +48,14 @@ function assertBefore(body, first, second) {
   assert.notEqual(firstIndex, -1, `missing ${first}`);
   assert.notEqual(secondIndex, -1, `missing ${second}`);
   assert.ok(firstIndex < secondIndex, `${first} must appear before ${second}`);
+}
+
+function sourceSlice(source, startNeedle, endNeedle) {
+  const start = source.indexOf(startNeedle);
+  assert.notEqual(start, -1, `missing ${startNeedle}`);
+  const end = source.indexOf(endNeedle, start);
+  assert.notEqual(end, -1, `missing ${endNeedle} after ${startNeedle}`);
+  return source.slice(start, end);
 }
 
 test('production apply route is a signed POST route behind authenticated permission', () => {
@@ -120,4 +130,74 @@ test('production apply revalidates live source hashes after claim start and befo
   assert.match(revalidationEvidence, /'phase'\s*=>\s*\(string\) \(\$live_revalidation\['phase'\]/);
   assert.match(revalidationEvidence, /'checkedAgainst'\s*=>\s*\(string\) \(\$live_revalidation\['checkedAgainst'\]/);
   assert.match(revalidationEvidence, /'liveSource'\s*=>\s*\[/);
+});
+
+test('RPP-0524 apply proof uses the real production-shaped route over sandbox-local loopback', () => {
+  assert.match(liveSmokeSource, /apply:\s*'\/wp-json\/reprint\/v1\/push\/apply'/);
+  assert.match(liveSmokeSource, /apply:\s*'\/reprint\/v1\/push\/apply'/);
+  assert.match(liveSmokeSource, /assertRoute\(index\.body, routeIndexPaths\.apply, 'POST'\)/);
+
+  assert.match(liveSmokeSource, /assert\.equal\(noAuthApply\.status, 401, `no-auth production apply HTTP \$\{noAuthApply\.status\}`\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(noAuthApply\.body\?\.code, 'reprint_push_lab_auth_required'\)/);
+  assert.match(liveSmokeSource, /assertCurrentSurface\(client, snapshots\.base, 'no-auth production apply must not mutate'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(unsignedApply\.status, 401, `unsigned production apply HTTP \$\{unsignedApply\.status\}`\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(unsignedApply\.body\?\.code, 'SIGNED_HEADER_REQUIRED'\)/);
+  assert.match(liveSmokeSource, /assertCurrentSurface\(client, snapshots\.base, 'unsigned production apply must not mutate'\)/);
+  assert.match(liveSmokeSource, /countJournalEvents\(preApplyRows, 'mutation-applied'\), 0/);
+
+  assert.match(
+    liveSmokeSource,
+    /authenticatedHttpClient\(\{\s+sourceUrl: server\.baseUrl,\s+credential: credentials,\s+routeProfile: 'production-shaped',/s,
+  );
+  assert.match(liveSmokeSource, /const preflight = await client\.signedGet\('\/preflight'\)/);
+  assert.match(liveSmokeSource, /const dryRun = await client\.signedPost\('\/dry-run', \{ plan: readyPlan \}/);
+  assert.match(liveSmokeSource, /const apply = await client\.signedPost\('\/apply', applyPayload/);
+  assert.match(liveSmokeSource, /assert\.equal\(apply\.status, 200, `production-shaped apply HTTP \$\{apply\.status\}`\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(apply\.request\?\.pathname, endpointPaths\.apply\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(apply\.body\?\.signedRequest\?\.request\?\.path, endpointPaths\.apply\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(apply\.body\?\.auth\?\.session\?\.type, 'production-auth-session'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(apply\.body\?\.applyRevalidation\?\.phase, 'before-first-mutation'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(apply\.body\?\.applyRevalidation\?\.checkedAgainst, 'live-remote'\)/);
+  assert.match(liveSmokeSource, /assertVisibleSurfaceEqual\(afterApply\.body\.snapshot, localSnapshot, 'production-shaped apply final source'\)/);
+
+  assert.match(liveSmokeSource, /host: '127\.0\.0\.1'/);
+  assert.match(liveSmokeSource, /port: 'ephemeral'/);
+  assert.match(liveSmokeSource, /exposure: 'sandbox-local-loopback-only'/);
+  assert.match(liveSmokeSource, /tunnel: 'none'/);
+  assert.match(liveSmokeSource, /http\.Server\.prototype\.listen = function reprintPushLocalhostListen/);
+  assert.doesNotMatch(liveSmokeSource, /\b(?:ngrok|cloudflared|localtunnel|serveo|localhost\.run|lhr\.life|Tailscale Funnel)\b/i);
+});
+
+test('RPP-0524 live proof summary reports apply-path success and fail-closed evidence without credentials', () => {
+  const summaryInitializer = sourceSlice(liveSmokeSource, 'const summary = {', 'try {');
+  assert.match(summaryInitializer, /rpp: 'RPP-0524'/);
+  assert.match(summaryInitializer, /routeProfile: 'production-shaped'/);
+  assert.match(summaryInitializer, /endpoint: endpointPaths\.apply/);
+  assert.match(summaryInitializer, /liveUrl: \{/);
+  assert.match(summaryInitializer, /exposure: 'sandbox-local-loopback-only'/);
+  assert.match(summaryInitializer, /tunnel: 'none'/);
+
+  const unauthorizedSummary = sourceSlice(liveSmokeSource, 'summary.unauthorized = {', '    summary.preflight = {');
+  assert.match(unauthorizedSummary, /noAuth: \{ status: noAuthApply\.status, code: noAuthApply\.body\?\.code \|\| null \}/);
+  assert.match(unauthorizedSummary, /unsigned: \{ status: unsignedApply\.status, code: unsignedApply\.body\?\.code \|\| null, mode: unsignedApply\.body\?\.mode \|\| null \}/);
+  assert.match(unauthorizedSummary, /mutationEventsBeforeApply: countJournalEvents\(preApplyRows, 'mutation-applied'\)/);
+  assert.doesNotMatch(unauthorizedSummary, /authorization|Basic|password|credential/i);
+
+  const applySummary = sourceSlice(liveSmokeSource, 'summary.apply = {', '    summary.final = {');
+  assert.match(applySummary, /requestPath: apply\.request\.pathname/);
+  assert.match(applySummary, /signedRequestPath: apply\.body\.signedRequest\.request\.path/);
+  assert.match(applySummary, /freshMutationWork: apply\.body\.idempotency\.freshMutationWork/);
+  assert.match(applySummary, /authSessionType: apply\.body\.auth\.session\.type/);
+  assert.match(applySummary, /phase: apply\.body\.applyRevalidation\.phase/);
+  assert.match(applySummary, /checkedAgainst: apply\.body\.applyRevalidation\.checkedAgainst/);
+  assert.match(applySummary, /snapshotHashLength: String\(apply\.body\.applyRevalidation\.liveSource\.snapshotHash \|\| ''\)\.length/);
+  assert.match(applySummary, /sourceHashLength: String\(apply\.body\.applyRevalidation\.liveSource\.sourceHash \|\| ''\)\.length/);
+  assert.match(applySummary, /sourceUrlHashLength: String\(apply\.body\.applyRevalidation\.liveSource\.sourceUrlHash \|\| ''\)\.length/);
+  assert.doesNotMatch(applySummary, /authorization|Basic|applicationPassword|password|credentialHash|signingKey:|sessionHash:/i);
+
+  const finalSummary = sourceSlice(liveSmokeSource, 'summary.final = {', '    summary.ok = true;');
+  assert.match(finalSummary, /finalMatchesLocal: digest\(visibleSurface\(afterApply\.body\.snapshot\)\) === digest\(visibleSurface\(localSnapshot\)\)/);
+  assert.match(finalSummary, /mutationApplied: countJournalEvents\(afterRows, 'mutation-applied'\)/);
+  assert.match(finalSummary, /journalEvents: \[\.\.\.new Set\(afterRows\.map\(\(entry\) => entry\.event\)\)\]\.sort\(\)/);
+  assert.doesNotMatch(finalSummary, /authorization|Basic|password|credential/i);
 });
