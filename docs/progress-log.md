@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 23:21 CEST +02:00.
+- Last update: 2026-05-30 23:23 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0337 serialized block reference detection variant 2 merge ending at
-  `dcb5344`.
+  the RPP-0336 wp_navigation fail-closed reference variant 2 merge ending at
+  `60a0278`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 536
-  items checked and leaves 464 open.
-- Checked slices: 100 release-gate foundation items, 79 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 537
+  items checked and leaves 463 open.
+- Checked slices: 100 release-gate foundation items, 80 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 91 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- WP navigation fail-closed reference variant-2 proof: the current lane now
+  checks `RPP-0336` with focused graph-identity evidence for `wp_navigation`
+  references through postmeta targets. The proof verifies unmapped
+  `wp_navigation` metadata references fail closed with hash-only
+  `stale-wordpress-graph-identity` evidence, proves apply refuses before
+  mutation, and verifies an explicit identity-map path rewrites the dependent
+  `wp_postmeta.post_id` reference only when the remote target identity is
+  proven. Validation passed with Node syntax checks, focused RPP-0336 coverage
+  2/2, adjacent RPP-0316/RPP-0376/RPP-0396 wp_navigation coverage 9/9, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 537/463;
+  final release remains `NO-GO` because this is local graph-identity evidence,
+  not production-backed release proof.
 - Serialized block reference detection variant-2 proof: the current lane now
   checks `RPP-0337` with focused graph-identity evidence for unsupported
   serialized block references. The proof builds a `core/media-text` block in

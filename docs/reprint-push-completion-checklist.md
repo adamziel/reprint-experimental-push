@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 536.
-- Remaining open: 464.
+- Verified complete: 537.
+- Remaining open: 463.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -362,7 +362,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [x] RPP-0333 (Mid / graph-identity) Prove term relationship object reference, variant 2. Success: generated harness includes ready and stale cases.
 - [x] RPP-0334 (Mid / graph-identity) Prove term relationship taxonomy reference, variant 2. Success: local production verifier carries the target through apply.
 - [x] RPP-0335 (Mid / graph-identity) Prove nav menu item fail-closed reference, variant 2. Success: docs state remaining unmapped WordPress surfaces.
-- [ ] RPP-0336 (Mid / graph-identity) Prove wp_navigation fail-closed reference, variant 2. Success: mapper rewrites or proves stable identity for the target.
+- [x] RPP-0336 (Mid / graph-identity) Prove wp_navigation fail-closed reference, variant 2. Success: mapper rewrites or proves stable identity for the target.
 - [x] RPP-0337 (Mid / graph-identity) Prove serialized block reference detection, variant 2. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0338 (Mid / graph-identity) Prove GUID and slug collision handling, variant 2. Success: generated harness includes ready and stale cases.
 - [ ] RPP-0339 (Mid / graph-identity) Prove cross-table create batch mapping, variant 2. Success: local production verifier carries the target through apply.
