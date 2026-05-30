@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:15 CEST.
+- Last update: 2026-05-30 04:19 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0154 plugin-owned option generated coverage merge ending at
-  `72dda86f9`.
+  the RPP-0440 arbitrary plugin fixture package proof merge ending at
+  `f8a878f6f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 321
-  items checked and leaves 679 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 322
+  items checked and leaves 678 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  47 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  48 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 55 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused arbitrary plugin fixture package variant-2 refresh: the current lane
+  now contains `RPP-0440` evidence in
+  `docs/evidence/rpp-0440-arbitrary-plugin-fixture-package-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0440-arbitrary-plugin-fixture-package-v2.test.js`. `node --check
+  test/rpp-0440-arbitrary-plugin-fixture-package-v2.test.js` exited 0, `node
+  --test test/rpp-0440-arbitrary-plugin-fixture-package-v2.test.js` passed
+  4/4, `node --test test/production-plugin-package-scenarios.test.js` passed
+  9/9, and the production-shaped packaged-driver credential guard slice passed
+  2/2. The proof keeps local fixture-package evidence support-only, accepts
+  production-backed evidence only when checks pass, and preserves the release
+  gate distinction between local support evidence and production-backed proof.
+  Checklist lint, artifact redaction scan, and `git diff --check` also passed.
+  Counts are now 322/678; final release remains `NO-GO`.
 - Generated plugin-owned option variant-3 refresh: the current lane now
   contains `RPP-0154` evidence in
   `docs/evidence/rpp-0154-plugin-owned-option-changes-v3.md`,
