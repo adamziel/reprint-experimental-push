@@ -6,20 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 15:18 CEST.
+- Last update: 2026-05-30 15:23 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0629 restart-readable committed-state merge ending at
-  `c7f751d3d`.
+  the RPP-0713 apply batch sizing merge ending at `974d10b1a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 464
-  items checked and leaves 536 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 465
+  items checked and leaves 535 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
   77 plugin-driver boundary items, 27 executor/auth items, 31 recovery items,
-  16 storage/performance items, 3 production-topology items, 78 generated
+  17 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Apply batch sizing: the current lane now contains `RPP-0713` evidence in
+  `docs/evidence/rpp-0713-apply-batch-sizing.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/push-remote-lib.php`,
+  `scripts/playground/push-remote-rest-plugin.php`, and
+  `test/rpp-0713-apply-batch-sizing.test.js`. The route accepts bounded
+  `applyBatchSize` / `apply_batch_size` values from 1 through 500, defaults to
+  500, rejects invalid values before mutation, records `applyBatchSizing` at
+  apply start, partitions mutations into batches, revalidates each batch from a
+  fresh live snapshot before mutation work, journals and emits
+  `apply-batch-revalidated` and `apply-batch-committed`, preserves per-mutation
+  `storage-boundary-cas`, and stores hash/count/resource-key batch evidence
+  without row, file, option, post, or payload values. Validation passed with PHP
+  syntax checks for both route files, Node syntax checks, focused RPP-0713
+  coverage 3/3, apply-route adjacent coverage 10/10, checklist lint, scoped
+  artifact redaction scan, and merge diff whitespace checks. Counts are now
+  465/535; final release remains `NO-GO` because this is deterministic/local
+  source-path evidence, not live production throughput or durability proof.
 - Restart-readable committed-state recovery v2: the current lane now contains
   `RPP-0629` evidence in
   `docs/evidence/rpp-0629-restart-readable-committed-state-v2.md`,
