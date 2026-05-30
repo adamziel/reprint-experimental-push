@@ -1,17 +1,29 @@
-# AO Progress Report - 2026-05-30 04:24 CEST
+# AO Progress Report - 2026-05-30 04:27 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0463 custom table
-allowlist proof refresh ending at `1edaa985f`. It separates committed proof
-from visible AO worker output that is still branch-local or in progress.
+`lane/evidence-integration-20260527` through the current RPP-0464 wp_options
+driver semantics proof refresh ending at `70071a6ab`. It separates committed
+proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 324 are
-  checked from integrated evidence and 676 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 325 are
+  checked from integrated evidence and 675 remain open.
+- `RPP-0464` is now checked with focused wp_options driver semantics variant-4
+  evidence in
+  `docs/evidence/rpp-0464-wp-options-driver-semantics-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0464-wp-options-driver-semantics-v4.test.js`. `node --check
+  test/rpp-0464-wp-options-driver-semantics-v4.test.js` exited 0, `node
+  --test test/rpp-0464-wp-options-driver-semantics-v4.test.js` passed 2/2, the
+  adjacent plugin-driver audit/delete/dry-run slice passed 9/9, and the focused
+  push-planner wp_options slice passed 11/11, proving exact plugin-owned
+  option-row planning/apply behavior, stale drift refusal before mutation with
+  remote data preserved, hash-only evidence, checklist lint, artifact redaction
+  scan, and `git diff --check` while final release remains **NO-GO**.
 - `RPP-0463` is now checked with focused custom table allowlist exact-match
   variant-4 evidence in
   `docs/evidence/rpp-0463-custom-table-allowlist-exact-match-v4.md`,

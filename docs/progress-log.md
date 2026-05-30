@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:24 CEST.
+- Last update: 2026-05-30 04:27 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0463 custom table allowlist proof merge ending at `1edaa985f`.
+  the RPP-0464 wp_options driver semantics proof merge ending at `70071a6ab`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 324
-  items checked and leaves 676 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 325
+  items checked and leaves 675 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  50 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  51 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 55 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused wp_options driver semantics variant-4 refresh: the current lane now
+  contains `RPP-0464` evidence in
+  `docs/evidence/rpp-0464-wp-options-driver-semantics-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0464-wp-options-driver-semantics-v4.test.js`. `node --check
+  test/rpp-0464-wp-options-driver-semantics-v4.test.js` exited 0, `node
+  --test test/rpp-0464-wp-options-driver-semantics-v4.test.js` passed 2/2,
+  the adjacent plugin-driver audit/delete/dry-run slice passed 9/9, and the
+  focused push-planner wp_options slice passed 11/11. The proof plans and
+  applies the exact plugin-owned `wp_options` row, preserves plugin-owned
+  remote data on stale drift before mutation, and keeps planner, driver,
+  journal, and proof evidence hash-only. Checklist lint, artifact redaction
+  scan, and `git diff --check` also passed. Counts are now 325/675; final
+  release remains `NO-GO`.
 - Focused custom table allowlist exact-match variant-4 refresh: the current
   lane now contains `RPP-0463` evidence in
   `docs/evidence/rpp-0463-custom-table-allowlist-exact-match-v4.md`,
