@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:57 CEST.
+- Last update: 2026-05-30 06:00 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0514 receipt expiry validation proof merge ending at `8f3ed60bf`.
+  the RPP-0486 wp_termmeta release-verifier proof merge ending at `91a511ae8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 350
-  items checked and leaves 650 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 351
+  items checked and leaves 649 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  69 plugin-driver boundary items, 20 executor/auth items, 19 recovery items,
+  70 plugin-driver boundary items, 20 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 59 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Release verifier wp_termmeta driver semantics variant-5 refresh: the current
+  lane now contains `RPP-0486` evidence in
+  `docs/evidence/rpp-0486-wp-termmeta-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0486-wp-termmeta-release-verifier-v5.test.js`. `node --check`
+  passed for the changed release verifier and focused test, the focused
+  RPP-0486 test passed 4/4, the adjacent wp_termmeta slice passed 16/16,
+  `test/production-plugin-package-scenarios.test.js` passed 9/9, and
+  `npm run test:playground:production-plugin-driver-verifier-guards` completed
+  all requested local guard scenarios successfully. The proof carries
+  wp_termmeta driver mutation evidence as hash-only support evidence unless a
+  checked production-backed verifier path supplies the release boundary.
+  Checklist lint, artifact redaction scan, and merge diff whitespace checks also
+  passed. Counts are now 351/649; final release remains `NO-GO`.
 - Receipt expiry validation refresh: the current lane now contains `RPP-0514`
   evidence in `docs/evidence/rpp-0514-receipt-expiry-validation.md`,
   `docs/reprint-push-completion-checklist.md`,
