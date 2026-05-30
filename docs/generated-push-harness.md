@@ -255,6 +255,16 @@ tier, then the focused proof recounts the variant-4 summary, verifies the ready
 directory delete path applies and rejects stale replay, and verifies the remote
 descendant conflict path refuses apply without mutating the remote digest.
 
+RPP-0182 adds `directoryDescendantConflictReleaseVerifierVariant5` coverage for
+the same directory descendant target with an explicit release-verifier variant-5
+tag. The deterministic roster exposes 20 target cases: 10 ready directory
+deletes and 10 non-ready descendant conflicts, with two cases in every tier. The
+focused proof recounts `summary.targetCoverage` for this target, verifies the
+ready directory delete path applies, preserves remote-only data, and rejects
+stale replay, then verifies the descendant conflict path keeps the remote
+descendant, suppresses the conflicted directory mutation/precondition, and
+refuses apply without mutating the remote digest.
+
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
 only the planned post create, update, and delete while preserving every
