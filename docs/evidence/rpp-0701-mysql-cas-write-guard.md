@@ -4,23 +4,10 @@ Evidence for RPP-0701. This slice implements the MySQL-style single-statement
 compare-and-swap write boundary used by guarded row updates and records a
 benchmark report with runtime, resource usage, and pass/fail gates.
 
-## Command
+## Guard behavior
 
-- `npm run bench:mysql-cas-write-guard`
-
-The command emits JSON with:
-
-- runtime: elapsed milliseconds, Node/platform metadata, CPU count, and MySQL
-  runtime capability status;
-- resources: process memory/CPU counters, guarded write totals, logical table
-  coverage, compared columns, and SQL shape hashes;
-- gates: deterministic guard behavior, applied/stale outcomes, single-statement
-  SQL shape checks, hash-only evidence checks, MySQL capability recording, and
-  resource-budget checks.
-
-## Guard behavior covered
-
-The deterministic benchmark exercises each allowlisted MySQL row surface:
+The benchmark builds single-statement `UPDATE` shapes for these MySQL row
+surfaces:
 
 - `wp_posts`
 - `wp_options`
@@ -28,10 +15,17 @@ The deterministic benchmark exercises each allowlisted MySQL row surface:
 - `wp_reprint_push_forms_lab`
 - `wp_reprint_push_release_state`
 
-For every surface it runs matching-storage, drifted-storage, and absent-storage
-cases. Matching storage yields one guarded row update. Drifted or absent storage
-yields zero affected rows with `stale-at-write` evidence and leaves the fixture
-row unchanged.
+Each shape uses null-safe `<=> ?` predicates for compared storage columns. The
+`wp_postmeta` shape also carries a same-statement duplicate-key guard for the
+logical `(post_id, meta_key)` key so ambiguous duplicate rows are rejected
+instead of updating an arbitrary row.
+
+For every surface the deterministic coverage exercises matching storage,
+drifted storage, and absent storage. Matching storage yields one guarded row
+update. Drifted or absent storage yields zero affected rows with
+`stale-at-write` evidence and leaves the fixture row unchanged. The postmeta
+duplicate-key case also yields zero affected rows, records
+`duplicateKeyRejected`, and reports no unsafe multiple-match writes.
 
 ## Focused Validation
 
@@ -41,12 +35,13 @@ Command:
 
 Result:
 
-- 6 tests, 6 ok, 0 failed
+- 7 tests, 7 ok, 0 failed
 
 The focused test covers deterministic guard behavior, single-statement SQL
-shapes, hash-only storage evidence, missing connection settings, redacted
-connection-probe failure evidence, and a redacted successful probe path that
-explicitly states it did not run live CAS DML.
+null-safe SQL shapes, duplicate-key rejection, hash-only storage evidence,
+missing connection settings, redacted connection-probe failure evidence, and a
+redacted successful probe path that explicitly states it did not run live CAS
+DML.
 
 Command:
 
@@ -56,13 +51,15 @@ Result summary:
 
 - `ok: true`
 - mode: `deterministic-no-mysql-runtime`
-- guarded writes attempted: 75
+- guarded writes attempted: 80
 - applied writes: 25
 - stale-at-write rejections: 25
 - absent-at-write rejections: 25
+- duplicate-key rejections: 5
+- unsafe multiple-match writes: 0
 - gates: deterministic guard behavior, applied/stale outcomes,
-  single-statement CAS shapes, hash-only evidence, MySQL runtime capability
-  recording, and runtime resource budget
+  duplicate-key guard, single-statement CAS shapes, hash-only evidence, MySQL
+  runtime capability recording, and runtime resource budget
 
 ## Sandbox MySQL capability
 
