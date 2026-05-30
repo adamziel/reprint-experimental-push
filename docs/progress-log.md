@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:52 CEST.
+- Last update: 2026-05-30 04:54 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0473 owner context stale plugin file proof merge ending at
-  `35beadf2a`.
+  the RPP-0474 owner context stale metadata proof merge ending at `64619c959`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 332
-  items checked and leaves 668 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 333
+  items checked and leaves 667 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  57 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  58 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 56 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused owner context stale metadata refusal variant-4 refresh: the current
+  lane now contains `RPP-0474` evidence in
+  `docs/evidence/rpp-0474-owner-context-stale-metadata-refusal-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0474-owner-context-stale-metadata-refusal-v4.test.js`. `node
+  --check test/rpp-0474-owner-context-stale-metadata-refusal-v4.test.js` exited
+  0, the focused test passed 2/2, and the adjacent owner-context /
+  plugin-driver metadata refusal slice passed 16/16. The proof refuses stale
+  owner plugin metadata before postmeta mutation, rejects stale ready-plan replay
+  before mutation hooks, preserves plugin-owned remote row and full remote
+  hashes, and keeps evidence hash-only. Checklist lint, artifact redaction scan,
+  and `git diff --check` also passed. Counts are now 333/667; final release
+  remains `NO-GO`.
 - Focused owner context stale plugin file refusal variant-4 refresh: the
   current lane now contains `RPP-0473` evidence in
   `docs/evidence/rpp-0473-owner-context-stale-plugin-file-refusal-v4.md`,

@@ -1,17 +1,31 @@
-# AO Progress Report - 2026-05-30 04:52 CEST
+# AO Progress Report - 2026-05-30 04:54 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0473 owner context
-stale plugin file proof refresh ending at `35beadf2a`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0474 owner context
+stale metadata proof refresh ending at `64619c959`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 332 are
-  checked from integrated evidence and 668 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 333 are
+  checked from integrated evidence and 667 remain open.
+- `RPP-0474` is now checked with focused owner context stale metadata refusal
+  variant-4 evidence in
+  `docs/evidence/rpp-0474-owner-context-stale-metadata-refusal-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0474-owner-context-stale-metadata-refusal-v4.test.js`. `node
+  --check test/rpp-0474-owner-context-stale-metadata-refusal-v4.test.js` exited
+  0, `node --test
+  test/rpp-0474-owner-context-stale-metadata-refusal-v4.test.js` passed 2/2,
+  and the adjacent owner-context / plugin-driver metadata refusal slice passed
+  16/16, proving stale owner plugin metadata refuses before postmeta mutation,
+  stale ready-plan replay rejects before mutation hooks, plugin-owned remote row
+  and full remote hashes remain preserved, evidence stays hash-only, checklist
+  lint, artifact redaction scan, and `git diff --check` while final release
+  remains **NO-GO**.
 - `RPP-0473` is now checked with focused owner context stale plugin file
   refusal variant-4 evidence in
   `docs/evidence/rpp-0473-owner-context-stale-plugin-file-refusal-v4.md`,
