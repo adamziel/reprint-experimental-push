@@ -6,19 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 12:45 CEST.
+- Last update: 2026-05-30 12:49 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0612 blocked recovery classification merge ending at `88dcc97e`.
+  the RPP-0615 same-key replay after rejection merge ending at `563b2fe6`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 431
-  items checked and leaves 569 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 432
+  items checked and leaves 568 open.
 - Checked slices: 100 release-gate foundation items, 45 graph identity items,
-  73 plugin-driver boundary items, 23 executor/auth items, 21 recovery items,
+  73 plugin-driver boundary items, 23 executor/auth items, 22 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key replay after rejection: the current lane now contains `RPP-0615`
+  evidence in
+  `docs/evidence/rpp-0615-same-key-replay-after-rejection.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-live-release-verify-lib.js`,
+  `test/production-shaped-proof.test.js`, `test/recovery-journal.test.js`, and
+  `test/rpp-0615-same-key-replay-after-rejection.test.js`. The durable recovery
+  release proof now requires rejected same-key replay evidence on the checked
+  recovery path: `PRECONDITION_FAILED` before the first mutation, `replayed:
+  true`, no fresh mutation work, preserved remote state, ordered
+  `apply-rejected` before `apply-replayed`, and no committed apply row. Focused
+  RPP-0615/recovery verifier coverage passed 35/35, the targeted
+  production-shaped proof subset passed 3/3, the full production-shaped proof
+  suite passed 123/134 with 11 skipped live-only cases, and the
+  apply-revalidation smoke passed with ordered rejected replay evidence.
+  Checklist lint, scoped artifact redaction scan, and merge diff whitespace
+  checks also passed. Counts are now 432/568; final release remains `NO-GO`
+  because this is local release-verifier evidence, not production-backed
+  durability proof.
 - Blocked recovery classification: the current lane now contains `RPP-0612`
   evidence in
   `docs/evidence/rpp-0612-blocked-recovery-classification.md`,
