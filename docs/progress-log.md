@@ -6,20 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 08:57 CEST.
+- Last update: 2026-05-30 08:59 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0242 independent local row plus remote file edit variant-3
-  merge-invariant merge ending at `5bc0c2cf1`.
+  the RPP-0243 local delete versus remote edit variant-3 merge-invariant merge
+  ending at `1a4d662b4`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 375
-  items checked and leaves 625 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 376
+  items checked and leaves 624 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 76 generated
-  harness items, and 42 merge-invariant items. No release-ops items are checked
+  harness items, and 43 merge-invariant items. No release-ops items are checked
   yet.
+- Local delete versus remote edit variant-3 refresh: the current lane now
+  contains `RPP-0243` evidence in
+  `docs/evidence/rpp-0243-local-delete-remote-edit-v3.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0243-local-delete-remote-edit-v3.test.js`. `node --check` passed
+  for the focused test, the focused RPP-0243 test passed 1/1, and the adjacent
+  planner slice passed 3/3. Checklist lint, scoped artifact redaction scan,
+  and merge diff whitespace checks also passed. Counts are now 376/624; final
+  release remains `NO-GO`.
 - Independent local row plus remote file edit variant-3 refresh: the current
   lane now contains `RPP-0242` evidence in
   `docs/evidence/rpp-0242-independent-local-row-remote-file-v3.md`,
