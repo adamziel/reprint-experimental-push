@@ -82,8 +82,9 @@ The default generated run covers:
   graph coverage, and explicit release-verifier variant-5 carry-through,
   plugin-owned `wp_options` update cases with
   ready/conflict outcomes, stale replay rejection before mutation, and explicit
-  variant-3 and variant-4 plugin-owned option coverage plus explicit
-  variant-3 `wp-option` driver semantics coverage,
+  variant-3 and variant-4 plugin-owned option coverage, explicit
+  release-verifier variant-5 carry-through, plus explicit variant-3
+  `wp-option` driver semantics coverage,
   `wp_posts.post_author` cases with per-tier ready/stale target counts and
   hash-only stale-user blockers, `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
@@ -213,6 +214,17 @@ hash-only, verifies the ready case carries owner/driver evidence, applies the
 planned option hash, preserves unplanned remote resources, and rejects stale
 replay with `PRECONDITION_FAILED` before mutation, then verifies the conflicting
 plugin-owned option refuses apply without mutating the remote digest.
+
+RPP-0194 adds `pluginOwnedOptionChangeReleaseVerifierVariant5` coverage for the
+same plugin-owned `wp_options` update surface with an explicit
+release-verifier-v5 target tag. The deterministic roster emits 20 variant-5
+target cases: 10 ready plugin-owned option updates and 10 non-ready remote-drift
+conflicts, with two cases in every tier. The focused proof keeps option payloads
+hash-only, verifies the ready mutation carries forms/`wp-option` owner-driver
+evidence and a matching live-remote precondition, then drifts the remote option
+before replay and observes `PRECONDITION_FAILED` before the mutation callback.
+The conflicting option suppresses the mutation/precondition and refuses apply
+with `PLAN_NOT_READY` before mutation.
 
 RPP-0442 adds `generateDriverOwnerIdentityBindingCases()` coverage for
 driver owner identity binding variant 3. The generated case set emits five
@@ -719,7 +731,9 @@ remotely and must refuse apply without losing the remote value. RPP-0134 keeps
 private plugin-owned option tokens and notes out of summary and planner evidence
 while retaining redacted hashes and plugin owner/driver metadata. RPP-0174 adds
 the variant-4 target and proves the ready replay guard still fails before the
-plugin-owned option mutation.
+plugin-owned option mutation. RPP-0194 adds the release-verifier-v5 target for
+the same surface and proves stale remote replay fails before mutation while the
+conflict path keeps the plugin-owned row remote-preserving and non-ready.
 
 The `pluginOwnedCustomTableChanges` target coverage records per-tier counts for
 forms-lab custom table rows owned by the forms plugin. Ready cases apply through
@@ -869,7 +883,7 @@ stack from the real generated harness, checks per-tier summary counts, and
 keeps dependency hashes, resource keys, and blockers without serializing plugin
 file contents or private install option values.
 
-At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 345 ready, 201 conflict, and 74 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 10 `sameIndependentContent` cases, 10 `sameIndependentContentVariant3` cases, 20 `postAuthorGraph` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 20 `atomicPluginInstallStackV2` cases, 20 `atomicPluginInstallStackV4` cases, 20 `wpOptionsDriverSemanticsVariant3` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, 9 `remoteOnlyPreservation` cases, 9 `remoteOnlyPreservationVariant3` cases, 344 `staleRemoteAfterDryRun` ready-plan stale-replay precondition cases, 344 `staleRemoteAfterDryRunVariant3` ready-plan stale-replay precondition cases, and 344 `staleRemoteAfterDryRunVariant4` ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
+At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 345 ready, 201 conflict, and 74 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 10 `sameIndependentContent` cases, 10 `sameIndependentContentVariant3` cases, 20 `postAuthorGraph` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 20 `atomicPluginInstallStackV2` cases, 20 `atomicPluginInstallStackV4` cases, 20 `wpOptionsDriverSemanticsVariant3` cases, 20 `pluginOwnedOptionChangeReleaseVerifierVariant5` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, 9 `remoteOnlyPreservation` cases, 9 `remoteOnlyPreservationVariant3` cases, 344 `staleRemoteAfterDryRun` ready-plan stale-replay precondition cases, 344 `staleRemoteAfterDryRunVariant3` ready-plan stale-replay precondition cases, and 344 `staleRemoteAfterDryRunVariant4` ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
 
 ## Extension Rule
 

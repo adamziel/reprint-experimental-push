@@ -450,6 +450,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'plugin-owned-option-change-variant4',
     tag: 'plugin-owned-option-change-v4',
   },
+  pluginOwnedOptionChangeReleaseVerifierVariant5: {
+    family: 'plugin-owned-option-change-release-verifier-v5',
+    tag: 'plugin-owned-option-change-release-verifier-v5',
+  },
   pluginOwnedCustomTableChanges: {
     family: 'plugin-owned-custom-table-changes',
     tag: 'plugin-owned-custom-table-target',
@@ -4257,6 +4261,10 @@ function addPluginOwnedOptionChange(base, local, remote, allocator, tags, { conf
   tags.add(conflict ? 'wp-options-driver-semantics-v3-non-ready' : 'wp-options-driver-semantics-v3-ready');
   tags.add('plugin-owned-option-change-v4');
   tags.add(conflict ? 'plugin-owned-option-change-v4-non-ready' : 'plugin-owned-option-change-v4-ready');
+  tags.add('plugin-owned-option-change-release-verifier-v5');
+  tags.add(conflict
+    ? 'plugin-owned-option-change-release-verifier-v5-non-ready'
+    : 'plugin-owned-option-change-release-verifier-v5-ready');
   tags.add('plugin-owned-supported');
 
   if (conflict) {
