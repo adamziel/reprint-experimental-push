@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 16:43 CEST +02:00.
+- Last update: 2026-05-30 16:49 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0716 large plugin file benchmark merge ending at `7dac66669`.
+  the RPP-0636 different-body idempotency conflict merge ending at `380e1f24f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 481
-  items checked and leaves 519 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 482
+  items checked and leaves 518 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  83 plugin-driver boundary items, 29 executor/auth items, 36 recovery items,
+  83 plugin-driver boundary items, 29 executor/auth items, 37 recovery items,
   20 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Different-body idempotency conflict v2: the current lane now contains
+  `RPP-0636` evidence in
+  `docs/evidence/rpp-0636-different-body-idempotency-conflict-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/recovery-journal.test.js`. The SQLite-backed proof records the original
+  same-key request, a committed apply, a same-body replay, and then a different
+  request body returning `409` `IDEMPOTENCY_KEY_CONFLICT` without fresh mutation
+  work. It proves the conflict row is hash-only, the target snapshot hash stays
+  unchanged, no apply-started or mutation-applied event occurs after the
+  conflict sequence, and the current durable release-proof summary flips false
+  if a post-conflict mutation event is appended. Validation passed with Node
+  syntax checks, focused RPP-0636 coverage 1/1, adjacent recovery
+  idempotency/classification coverage 10/10, full recovery-journal coverage
+  40/40, file-journal restart smoke, checklist lint, scoped artifact redaction
+  scan, raw fixture scan, and merge diff whitespace checks. Counts are now
+  482/518; final release remains `NO-GO` because this is SQLite-backed local
+  durable recovery evidence, not external WordPress crash/restart durability
+  proof.
 - Large plugin file benchmark: the current lane now contains `RPP-0716`
   evidence in
   `docs/evidence/rpp-0716-large-plugin-file-benchmark.md`,

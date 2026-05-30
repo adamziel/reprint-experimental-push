@@ -54,7 +54,7 @@ git diff --check
 
 Observed result: all listed commands exited 0. The focused RPP-0636 run reported
 1 pass / 0 fail; the adjacent recovery idempotency/classification run reported
-10 pass / 0 fail; the full recovery journal suite reported 29 pass / 0 fail;
+10 pass / 0 fail; the full recovery journal suite reported 40 pass / 0 fail;
 the recovery file-journal smoke preserved old, blocked, completed-replay, and
 drift classifications; checklist lint returned `"ok": true`; and the scoped
 redaction scan returned `"ok": true`.
