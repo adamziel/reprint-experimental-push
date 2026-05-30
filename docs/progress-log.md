@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 06:00 CEST.
+- Last update: 2026-05-30 06:03 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0486 wp_termmeta release-verifier proof merge ending at `91a511ae8`.
+  the RPP-0521 production preflight route proof merge ending at `3af8ba3ff`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 351
-  items checked and leaves 649 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 352
+  items checked and leaves 648 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  70 plugin-driver boundary items, 20 executor/auth items, 19 recovery items,
+  70 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 59 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Production preflight route refresh: the current lane now contains `RPP-0521`
+  evidence in `docs/evidence/rpp-0521-production-preflight-route-v2.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/push-remote-rest-plugin.php`, and
+  `test/production-preflight-route.test.js`. `php -l` passed for the REST
+  plugin, the focused production preflight route test passed 5/5, the
+  sandbox-local loopback live smoke proved the production-shaped
+  `/wp-json/reprint/v1/push/preflight` route rejects unsigned requests and
+  returns hash-only session evidence, and the route-proof/authenticated client
+  regression suite exited cleanly. The proof is explicitly local-lab backed
+  with `labBacked: true`, no tunnel, and no external production endpoint.
+  Checklist lint, artifact redaction scan, and merge diff whitespace checks also
+  passed. Counts are now 352/648; final release remains `NO-GO`.
 - Release verifier wp_termmeta driver semantics variant-5 refresh: the current
   lane now contains `RPP-0486` evidence in
   `docs/evidence/rpp-0486-wp-termmeta-release-verifier-v5.md`,
