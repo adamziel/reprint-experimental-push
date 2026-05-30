@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 21:19 CEST +02:00.
+- Last update: 2026-05-30 21:21 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0179 remote-only preservation variant-4 merge ending at `184a90`.
+  the RPP-0181 file create/update/delete release-verifier v5 merge ending at
+  `bbf12b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 516
-  items checked and leaves 484 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 517
+  items checked and leaves 483 open.
 - Checked slices: 100 release-gate foundation items, 70 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 80 generated
+  23 storage/performance items, 3 production-topology items, 81 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- File create/update/delete release-verifier v5 carry-through: the current lane
+  now checks `RPP-0181` with generated-harness and production-shaped release
+  verifier support-only proof for file create, update, delete mix coverage. The
+  generator exposes 20 variant-5 file-mix cases across tiers 0 through 9: 10
+  ready cases and 10 conflict cases. The release verifier carries through ready
+  apply evidence, non-ready remote-unchanged evidence, stale replay refusal, and
+  release-gate `NO-GO` support-only scoping with hash-only artifact summaries.
+  Validation passed with Node syntax checks, focused RPP-0181 coverage 3/3,
+  RPP-0180 regression coverage 1/1 after the shared generator merge, adjacent
+  RPP-0161 generated-harness coverage 1/1, adjacent RPP-0181/RPP-0281 release
+  verifier coverage 6/6, generated summary checks for RPP-0181 and RPP-0180
+  target coverage, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 517/483; final release remains `NO-GO` because this is local
+  generated/release-verifier evidence, not production-backed release proof.
 - Remote-only preservation variant-4 coverage: the current lane now checks
   `RPP-0179` with focused generated-harness coverage proving that remote-only
   `wp_posts` drift remains a keep-remote decision while stale replay fails
