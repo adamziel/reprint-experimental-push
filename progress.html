@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T23:54:00+02:00">Last updated: May 30, 2026, 23:54 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T00:02:00+02:00">Last updated: May 31, 2026, 00:02 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>541</strong>
+        <strong>542</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>459</strong>
+        <strong>458</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -340,7 +340,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
-            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, mutation/precondition one-to-one mapping, remoteBeforeHash binding, localHash binding, already-in-sync no-op safety, blocked plan apply refusal before mutation or journal writes, conflict plan apply refusal with forged conflict-mutation rejection, forged ready plan hash-redaction defense, keep-remote preservation, forged ready plan defense, raw-value redaction, same-content, large plans, remote-only plugin metadata preservation and release-verifier carry-through, stale plugin owner-context refusal, local plugin data stale owner-context release-verifier carry-through, unknown plugin-owned resource refusal, conflict hash redaction, independent file/row and row/file preservation, local delete/remote edit refusal, and local directory delete/remote descendant create refusal.</span>
+            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, mutation/precondition one-to-one mapping, remoteBeforeHash binding, localHash binding, already-in-sync no-op safety, blocked plan apply refusal before mutation or journal writes, conflict plan apply refusal with forged conflict-mutation rejection, forged ready plan hash-redaction defense, keep-remote preservation, forged ready plan defense, raw-value redaction, same-content, large plans, remote-only plugin metadata preservation and release-verifier carry-through, stale plugin owner-context refusal, local plugin data stale owner-context release-verifier carry-through, unknown plugin-owned resource refusal, conflict hash redaction, independent file/row and row/file preservation, local delete/remote edit refusal, local directory delete/remote descendant create refusal, and local file type-swap/remote descendant refusal.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
@@ -406,10 +406,18 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0194</span>
+        <span>RPP-0265</span>
       </div>
-      <p>The latest refresh checks RPP-0194 with generated release-verifier proof for plugin-owned option changes variant 5: target coverage exposes 20 cases across tiers 0 through 9, two cases per tier, with 10 ready and 10 conflict statuses, ready option updates apply with live preconditions and stale replay refuses before mutation, while conflicts remain non-ready without planned rows. Counts are now 541/459; final release remains NO-GO because this is local generated evidence, not production-backed release proof.</p>
+      <p>The latest refresh checks RPP-0265 with focused planner/apply proof for local file type swap versus remote descendant variant 4: the unsafe directory-to-file swap emits no mutation or precondition, the remote descendant remains a keep-remote decision, an unrelated local mutation stays live-preconditioned for audit, apply refuses with PLAN_NOT_READY before journal or remote mutation, and command/caveat evidence stays hash-only. Counts are now 542/458; final release remains NO-GO because this is local focused evidence, not production-backed release proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0265 focused: 1/1</span>
+        <span class="tag">RPP-0205/0225/0265: 3/3</span>
+        <span class="tag">push-planner: 148/148</span>
+        <span class="tag">type swap blocked</span>
+        <span class="tag">remote descendant kept</span>
+        <span class="tag">PLAN_NOT_READY before mutation</span>
+        <span class="tag">hash-only evidence: pass</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0194 focused: 2/2</span>
         <span class="tag">RPP-0154/0174/0194: 5/5</span>
         <span class="tag">target cases: 20</span>
