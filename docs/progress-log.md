@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 06:03 CEST.
+- Last update: 2026-05-30 06:13 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0521 production preflight route proof merge ending at `3af8ba3ff`.
+  the RPP-0160 large ready plan tier variant-3 generated-harness merge ending
+  at `b85866278`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 352
-  items checked and leaves 648 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 353
+  items checked and leaves 647 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   70 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 59 generated
+  11 storage/performance items, 3 production-topology items, 60 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Large ready plan tier variant-3 refresh: the current lane now contains
+  `RPP-0160` evidence in
+  `docs/evidence/rpp-0160-large-ready-plan-tier-v3.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0160 test passed 1/1, the adjacent
+  RPP-0120/RPP-0140/RPP-0160 large-plan slice passed 3/3, and
+  `npm run test:generated-push-harness` passed 67/67 across 620 deterministic
+  generated cases. Checklist lint, artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 353/647; final release remains
+  `NO-GO`.
 - Production preflight route refresh: the current lane now contains `RPP-0521`
   evidence in `docs/evidence/rpp-0521-production-preflight-route-v2.md`,
   `docs/reprint-push-completion-checklist.md`,

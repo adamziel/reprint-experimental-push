@@ -1,17 +1,30 @@
-# AO Progress Report - 2026-05-30 06:03 CEST
+# AO Progress Report - 2026-05-30 06:13 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0521 production
-preflight route proof refresh ending at `3af8ba3ff`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0160 large ready
+plan tier variant-3 generated-harness refresh ending at `b85866278`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 352 are
-  checked from integrated evidence and 648 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 353 are
+  checked from integrated evidence and 647 remain open.
+- `RPP-0160` is now checked with focused large ready plan tier variant-3
+  generated-harness evidence in
+  `docs/evidence/rpp-0160-large-ready-plan-tier-v3.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0160 test passed 1/1, the adjacent
+  RPP-0120/RPP-0140/RPP-0160 large-plan slice passed 3/3, and
+  `npm run test:generated-push-harness` passed 67/67 across 620 deterministic
+  generated cases. Checklist lint, artifact redaction scan, and merge diff
+  whitespace checks also passed. This remains deterministic generated-model
+  coverage, not production endpoint proof.
 - `RPP-0521` is now checked with focused production preflight route evidence in
   `docs/evidence/rpp-0521-production-preflight-route-v2.md`,
   `docs/reprint-push-completion-checklist.md`,
