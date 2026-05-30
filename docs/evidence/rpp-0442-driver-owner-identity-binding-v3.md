@@ -35,18 +35,27 @@ generated private markers are absent.
 node --check scripts/harness/generated-push-cases.js
 node --check test/generated-push-harness.test.js
 node --test --test-name-pattern 'RPP-0442|RPP-0417|RPP-0456' test/generated-push-harness.test.js
-npm run test:generated-push-harness
+node --test --test-name-pattern 'generated push harness covers 300' test/generated-push-harness.test.js
+node --test --test-name-pattern 'RPP-0211 generated cases keep mutation preconditions one-to-one' test/generated-push-harness.test.js
+node --test --test-name-pattern 'RPP-0231 generated harness proves mutation preconditions one-to-one variant 2' test/generated-push-harness.test.js
+node --test --test-name-pattern 'RPP-0230 generated planner summary counts match emitted evidence deterministically' test/generated-push-harness.test.js
 node --test test/rpp-0462-driver-owner-identity-binding-v4.test.js test/rpp-0482-driver-owner-identity-release-verifier-v5.test.js
 node scripts/release/checklist-completion-lint.mjs --root .
 node scripts/release/artifact-redaction-scan.mjs docs/evidence/rpp-0442-driver-owner-identity-binding-v3.md docs/reprint-push-completion-checklist.md
 git diff --check
 ```
 
-Observed result: all commands exited 0 in this lane. The focused RPP-0442
-generated-harness slice reported the supported and unsupported owner identity
-variants, the full generated harness passed, and the adjacent owner identity v4
-and v5 carry-through tests passed. Checklist lint returned `"ok": true`; the
-scoped artifact redaction scan returned `"ok": true`.
+Observed result: the listed commands exited 0 in this lane. The focused
+RPP-0442 generated-harness slice reported the supported and unsupported owner
+identity variants. The generated-harness summary and invariant checks covered
+the current 620 generated cases, including mutation/precondition one-to-one
+mapping and deterministic planner summary counts. A separate read-only
+instrumented validation iterated `generatePushHarnessCases()` and
+`validateGeneratedCase()` across all 620 cases without failure. The unfiltered
+`node --test test/generated-push-harness.test.js` runner was not counted as a
+pass because it stalled at the TAP header twice in this sandbox. The adjacent
+owner identity v4 and v5 carry-through tests passed. Checklist lint returned
+`"ok": true`; the scoped artifact redaction scan returned `"ok": true`.
 
 ## Release posture
 

@@ -6,20 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 19:29 CEST +02:00.
+- Last update: 2026-05-30 19:42 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0400 importer/exporter identity-map release-verifier proof merge
-  ending at `11942bf`.
+  the RPP-0442 driver owner identity generated coverage merge ending at
+  `21f5ac2`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 510
-  items checked and leaves 490 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 511
+  items checked and leaves 489 open.
 - Checked slices: 100 release-gate foundation items, 70 graph identity items,
-  84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
+  85 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Driver owner identity binding generated coverage v3: the current lane now
+  contains `RPP-0442` evidence in
+  `docs/evidence/rpp-0442-driver-owner-identity-binding-v3.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. The generated harness now includes
+  exact owner `forms`/driver `wp-option` support plus wrong-owner,
+  missing-owner, local owner-drift, and stale owner-context fail-closed
+  variants. Validation passed with Node syntax checks, focused RPP-0442
+  generated coverage 3/3, owner-identity adjacent coverage 4/4, the generated
+  harness summary test, RPP-0211 and RPP-0231 mutation/precondition invariants,
+  RPP-0230 planner summary counts, a read-only instrumented pass across all 620
+  generated cases, checklist lint, scoped artifact redaction scan, raw marker
+  scan, and diff whitespace checks. The unfiltered
+  `node --test test/generated-push-harness.test.js` runner stalled at the TAP
+  header twice in this sandbox and is not counted as a pass. Counts are now
+  511/489; final release remains `NO-GO` because this is local generated
+  evidence, not production-backed release evidence.
 - Importer/exporter identity-map release-verifier proof v5: the current lane
   now contains `RPP-0400` evidence in
   `docs/evidence/rpp-0400-importer-exporter-identity-map-release-verifier-v5.md`,
