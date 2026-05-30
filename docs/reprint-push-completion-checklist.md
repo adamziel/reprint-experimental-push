@@ -193,7 +193,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0174 (Near / generated-harness) Add focused regression coverage for plugin-owned option changes, variant 4. Success: stale remote replay fails before mutation.
 - [x] RPP-0175 (Near / generated-harness) Add focused regression coverage for plugin-owned custom-table changes, variant 4. Success: docs/generated-push-harness.md records the surface and invariant.
 - [x] RPP-0176 (Near / generated-harness) Add focused regression coverage for atomic plugin install stack, variant 4. Success: generator emits at least one ready case and one non-ready case for this target.
-- [ ] RPP-0177 (Near / generated-harness) Add focused regression coverage for stale remote after dry-run, variant 4. Success: summary exposes per-tier counts for this target.
+- [x] RPP-0177 (Near / generated-harness) Add focused regression coverage for stale remote after dry-run, variant 4. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0178 (Near / generated-harness) Add focused regression coverage for same independent content, variant 4. Success: ready cases apply with no unplanned remote overwrite.
 - [ ] RPP-0179 (Near / generated-harness) Add focused regression coverage for remote-only preservation, variant 4. Success: stale remote replay fails before mutation.
 - [ ] RPP-0180 (Near / generated-harness) Add focused regression coverage for large ready plan tier, variant 4. Success: docs/generated-push-harness.md records the surface and invariant.
