@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T16:52:00+02:00">Last updated: May 30, 2026, 16:52 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T16:57:00+02:00">Last updated: May 30, 2026, 16:57 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>483</strong>
+        <strong>484</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>517</strong>
+        <strong>516</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -393,7 +393,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production chunking not checked">
-            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, a large post table planner/apply benchmark, a large media library storage/row-precondition benchmark, and a large plugin file atomic-group benchmark, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
+            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, a large post table planner/apply benchmark, a large media library storage/row-precondition benchmark, a large plugin file atomic-group benchmark, and a filesystem memory-ceiling proof, but production storage receipts, row batch execution, timeout budgets, and atomic-group commit receipts are pending.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Release CI not checked">
@@ -406,10 +406,18 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0637</span>
+        <span>RPP-0717</span>
       </div>
-      <p>The latest refresh integrates RPP-0637 process kill before mutation set v2 evidence: a child writer fsyncs the claim/open, target-planned, staged, dependency, and apply-committing rows, blocks before the first mutation, is killed with SIGKILL, and then restart readback proves old-remote state before recovery repair replays every planned mutation exactly once. Counts are now 483/517; final release remains NO-GO because this is local file-backed recovery evidence, not external WordPress crash/restart durability proof.</p>
+      <p>The latest refresh integrates RPP-0717 memory ceiling proof evidence: planned file bytes stream into a same-directory temp file in bounded chunks, live storage is re-read and compared after the streamed temp write, matching storage renames, and stale storage is preserved without an unsafe rename. Counts are now 484/516; final release remains NO-GO because this is local filesystem storage-performance evidence, not production remote storage receipt, durability, timeout, or release-verifier proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0717 focused: 7/7</span>
+        <span class="tag">large-site benchmark: pass</span>
+        <span class="tag">runtime: 5095.47 ms</span>
+        <span class="tag">heap: 10,352,448 bytes</span>
+        <span class="tag">max buffered: 65,536 bytes</span>
+        <span class="tag">stale rejects: 8/8</span>
+        <span class="tag">storage/perf adjacent: 36/36</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0637 focused: 1/1</span>
         <span class="tag">recovery adjacent: 11/11</span>
         <span class="tag">recovery journal full: 41/41</span>
@@ -1125,7 +1133,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 483/1000</span>
+        <span class="tag">checked goals: 484/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>

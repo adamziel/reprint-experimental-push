@@ -6,19 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 16:52 CEST +02:00.
+- Last update: 2026-05-30 16:57 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0637 process kill before mutation set merge ending at `60fa17796`.
+  the RPP-0717 memory ceiling proof merge ending at `315f35d0`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 483
-  items checked and leaves 517 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 484
+  items checked and leaves 516 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
   83 plugin-driver boundary items, 29 executor/auth items, 38 recovery items,
-  20 storage/performance items, 3 production-topology items, 78 generated
+  21 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Memory ceiling proof: the current lane now contains `RPP-0717` evidence in
+  `docs/evidence/rpp-0717-memory-ceiling-proof.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `src/filesystem-memory-ceiling-proof.js`,
+  `scripts/bench/filesystem-memory-ceiling-proof.js`, and
+  `test/filesystem-memory-ceiling-proof*.test.js`. The proof streams planned
+  file bytes to a same-directory temp file in bounded chunks, reads the live
+  storage descriptor after the streamed temp write, compares that descriptor
+  with the expected hash-only storage state, and only then renames the temp
+  file into place. The large-site profile attempted 40 guarded writes, applied
+  32, rejected 8 stale-at-write cases without unsafe rename, held the maximum
+  observed buffered payload at 65,536 bytes, and leaked no temp files.
+  Validation passed with focused RPP-0717 coverage 7/7, a large-site benchmark
+  run at 5095.47 ms and 10,352,448 heap bytes with all 8 gates passing,
+  adjacent storage/performance coverage 36/36, checklist lint, scoped artifact
+  redaction scan, raw fixture scan, and merge diff whitespace checks. Counts
+  are now 484/516; final release remains `NO-GO` because this is local
+  filesystem storage-performance evidence, not production remote storage
+  receipt, filesystem durability, row batching, timeout, or release-verifier
+  carry-through proof.
 - Process kill before mutation set v2: the current lane now contains
   `RPP-0637` evidence in
   `docs/evidence/rpp-0637-process-kill-before-mutation-set-v2.md`,
