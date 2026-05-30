@@ -163,6 +163,14 @@ non-ready case, records only resource keys and hashes, verifies the ready case
 applies the planned create/update/delete while preserving the remote-only file,
 and verifies the conflicting updated file refuses apply before mutation.
 
+RPP-0161 adds `fileCreateUpdateDeleteMixVariant4` coverage as a focused
+regression target for the same file mix surface with an explicit variant-4
+target tag. The deterministic roster emits 20 variant-4 target cases: 10 ready
+cases and 10 non-ready conflict cases, with two cases in every tier. The focused
+proof recounts the summary, selects one ready case and one non-ready case, and
+keeps the evidence hash-only while verifying ready apply, remote-only
+preservation, stale replay refusal, and non-ready conflict apply refusal.
+
 The `directoryDescendantConflict` target coverage records per-tier counts for
 local directory deletes where the remote either still only has the directory or
 has added a descendant beneath it. Ready cases delete the unchanged remote
