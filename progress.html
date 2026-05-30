@@ -406,10 +406,17 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0458</span>
+        <span>RPP-0487</span>
       </div>
-      <p>The latest refresh integrates RPP-0458 generated driver apply-validation coverage: the focused generated cases prove one fixture forms-lab custom-table mutation reaches the apply-validation hook with redacted accepted evidence, and forged driver evidence is rejected before the hook runs or the remote row changes. Counts are now 514/486; final release remains NO-GO because this is local generated-model plugin-driver evidence, not external production-backed release evidence.</p>
+      <p>The latest refresh preserves the RPP-0487 wp_usermeta release-verifier ancestry while retaining the stronger current verifier surface: generated supported and unsupported wp_usermeta coverage is now carried in the verifier summary itself, local/generated support-only evidence remains release-gate NO-GO, and production-backed evidence is accepted only when checked production proof is supplied. Counts remain 514/486; final release remains NO-GO because this is local/generated plugin-driver evidence, not external production-backed release evidence.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0487 focused: 6/6</span>
+        <span class="tag">wp_usermeta adjacent: 16/16</span>
+        <span class="tag">RPP-0487/0467/0427/0407: 16/16</span>
+        <span class="tag">generated harness: 90/90</span>
+        <span class="tag">package scenarios: 9/9</span>
+        <span class="tag">package verifier guards: pass</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0458 focused: 1/1</span>
         <span class="tag">RPP-0442/0445/0458: 3/3</span>
         <span class="tag">RPP-0417/0456/0458: 3/3</span>
@@ -600,9 +607,9 @@
         <span class="tag">receipt-only resume</span>
         <span class="tag">duplicate mutation work: 0</span>
         <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0487 focused: 5/5</span>
-        <span class="tag">wp_usermeta adjacent: 15/15</span>
-        <span class="tag">generated harness: 85/85</span>
+        <span class="tag">RPP-0487 focused: 6/6</span>
+        <span class="tag">wp_usermeta adjacent: 16/16</span>
+        <span class="tag">generated harness: 90/90</span>
         <span class="tag">package scenarios: 9/9</span>
         <span class="tag">package verifier guards: pass</span>
         <span class="tag">support-only NO-GO</span>
