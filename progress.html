@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>496</strong>
+        <strong>497</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>504</strong>
+        <strong>503</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -348,7 +348,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
-            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, production importer/exporter identity-map metadata, post_parent page hierarchy local and release-verifier proof, postmeta post_id release-verifier proof, comment post, comment parent, comment user, and commentmeta comment release-verifier proof, featured image fail-closed release-verifier proof, post-author release-verifier proof, focused post_author stale-target regression, focused featured image attachment stale/unsupported-target regression, focused comment_post_ID rewrite and stale-target regression, focused comment_parent stable-target and rewrite regression, focused comment user stale-target and unsupported-target regression, focused commentmeta comment generated-model regression, focused category taxonomy apply regression, focused post_tag taxonomy identity-map rewrite and fail-closed regression, focused custom taxonomy fail-closed and identity-map rewrite regression, focused termmeta term fail-closed regression, featured image attachment references, term relationship taxonomy references, nav menu item fail-closed references, `wp_navigation` fail-closed references, cross-table create batch mapping, post_tag taxonomy proof, serialized block reference detection, GUID/slug collision handling, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
+            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, production importer/exporter identity-map metadata, post_parent page hierarchy local and release-verifier proof, postmeta post_id release-verifier proof, comment post, comment parent, comment user, and commentmeta comment release-verifier proof, featured image fail-closed release-verifier proof, post-author release-verifier proof, focused post_author stale-target regression, focused featured image attachment stale/unsupported-target regression, focused postmeta post_id rewrite and stale-target regression, focused comment_post_ID rewrite and stale-target regression, focused comment_parent stable-target and rewrite regression, focused comment user stale-target and unsupported-target regression, focused commentmeta comment generated-model regression, focused category taxonomy apply regression, focused post_tag taxonomy identity-map rewrite and fail-closed regression, focused custom taxonomy fail-closed and identity-map rewrite regression, focused termmeta term fail-closed regression, featured image attachment references, term relationship taxonomy references, nav menu item fail-closed references, `wp_navigation` fail-closed references, cross-table create batch mapping, post_tag taxonomy proof, serialized block reference detection, GUID/slug collision handling, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0362</span>
+        <span>RPP-0364</span>
       </div>
-      <p>The latest refresh integrates RPP-0362 featured image attachment reference variant-4 evidence: stale remote attachment targets and unsupported non-attachment _thumbnail_id targets now block before mutation with zero preconditions, zero mutations, and hash-only blocker/reference evidence. Counts are now 496/504; final release remains NO-GO because this is local focused graph regression evidence, not production-backed release evidence.</p>
+      <p>The latest refresh integrates RPP-0364 postmeta post_id reference variant-4 evidence: an explicit WordPress graph identity map now rewrites a dependent wp_postmeta.post_id row to the proven remote post ID, applies only the rewritten postmeta row, and refuses stale target identity before mutation with hash-only blocker/reference evidence. Counts are now 497/503; final release remains NO-GO because this is local focused planner/apply evidence, not production-backed release evidence.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0364 focused: 2/2</span>
+        <span class="tag">postmeta graph adjacent: 3/3</span>
+        <span class="tag">post_id rewrite</span>
+        <span class="tag">stale target refusal</span>
+        <span class="tag">raw fixtures redacted</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0362 focused: 2/2</span>
         <span class="tag">featured-image adjacent: 5/5</span>
         <span class="tag">zero mutations</span>
@@ -1214,7 +1220,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 496/1000</span>
+        <span class="tag">checked goals: 497/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>

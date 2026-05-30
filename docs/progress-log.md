@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 18:11 CEST +02:00.
+- Last update: 2026-05-30 18:14 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0362 featured image attachment reference variant-4 proof merge ending
-  at `f0be820e`.
+  the RPP-0364 postmeta post_id reference variant-4 proof merge ending at
+  `64e06269`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 496
-  items checked and leaves 504 open.
-- Checked slices: 100 release-gate foundation items, 56 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 497
+  items checked and leaves 503 open.
+- Checked slices: 100 release-gate foundation items, 57 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Postmeta post_id reference variant-4 proof: the current lane now contains
+  `RPP-0364` evidence in
+  `docs/evidence/rpp-0364-postmeta-post-id-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0364-postmeta-post-id-reference-v4.test.js`. The focused
+  planner/apply regression proves an explicit WordPress graph identity map can
+  rewrite a dependent `wp_postmeta.post_id` row to the proven remote post ID,
+  apply only the rewritten postmeta row, and refuse stale target identity before
+  mutation with hash-only blocker/reference evidence. Validation passed with
+  Node syntax checks, focused RPP-0364 coverage 2/2, adjacent postmeta graph
+  coverage 3/3, checklist lint, scoped artifact redaction scan, raw fixture
+  scan, and merge diff whitespace checks. Counts are now 497/503; final release
+  remains `NO-GO` because this is local focused planner/apply evidence, not a
+  production-backed release run.
 - Featured image attachment reference variant-4 proof: the current lane now
   contains `RPP-0362` evidence in
   `docs/evidence/rpp-0362-featured-image-attachment-reference-v4.md`,
