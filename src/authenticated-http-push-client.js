@@ -1419,6 +1419,7 @@ export async function runAuthenticatedHttpPush({
     const afterConflictSurfaceHash = digest(visibleSurface(afterConflict.body.snapshot));
     summary.idempotencyConflict.targetSnapshotUnchanged = beforeConflictSurfaceHash === afterConflictSurfaceHash;
     summary.idempotencyConflict.finalMatchesLocal = digest(visibleSurface(afterConflict.body.snapshot)) === digest(visibleSurface(local));
+    summary.idempotencyConflict.hashOnly = hasHashOnlyIdempotencyConflictEvidence(conflict.body?.idempotency);
     summary.after = summarizeSnapshot(afterConflict, local);
     updateRetryAttempts(summary, summary.after);
     summary.afterObject = afterConflict.body.snapshot;
@@ -1429,6 +1430,7 @@ export async function runAuthenticatedHttpPush({
       || conflict.body?.code !== 'IDEMPOTENCY_KEY_CONFLICT'
       || conflict.body?.idempotency?.conflict !== true
       || conflict.body?.idempotency?.freshMutationWork !== false
+      || summary.idempotencyConflict.hashOnly !== true
       || summary.idempotencyConflict.targetSnapshotUnchanged !== true
     ) {
       summary.code = conflict.body?.code || 'IDEMPOTENCY_CONFLICT_PROOF_FAILED';
@@ -2114,6 +2116,16 @@ function summarizePlan(plan) {
   };
 }
 
+function hasHashOnlyIdempotencyConflictEvidence(idempotency) {
+  return idempotency?.conflict === true
+    && isBareSha256(idempotency?.idempotencyKeyHash)
+    && isBareSha256(idempotency?.requestHash);
+}
+
+function isBareSha256(value) {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+
 function summarizeResponse(response) {
   const body = response.body || {};
   return {
@@ -2142,13 +2154,7 @@ function summarizeResponse(response) {
       signingKeyHash: body.signedRequest.signingKeyHash,
       request: body.signedRequest.request,
     } : undefined,
-    idempotency: body.idempotency ? {
-      replayed: body.idempotency.replayed === true,
-      freshMutationWork: body.idempotency.freshMutationWork === true,
-      staleClaimRetry: body.idempotency.staleClaimRetry === true,
-      status: body.idempotency.status,
-      conflict: body.idempotency.conflict === true,
-    } : undefined,
+    idempotency: summarizeIdempotency(body.idempotency),
     applyRevalidation: summarizeApplyRevalidation(body),
     storageGuard: body.storageGuard ? {
       boundary: body.storageGuard.boundary,
@@ -2161,6 +2167,26 @@ function summarizeResponse(response) {
       retryable: response.request.retryable === true,
     } : undefined,
   };
+}
+
+function summarizeIdempotency(idempotency) {
+  if (!idempotency || typeof idempotency !== 'object') {
+    return undefined;
+  }
+
+  const summary = {
+    replayed: idempotency.replayed === true,
+    freshMutationWork: idempotency.freshMutationWork === true,
+    staleClaimRetry: idempotency.staleClaimRetry === true,
+    status: idempotency.status,
+    conflict: idempotency.conflict === true,
+  };
+  for (const field of ['idempotencyKeyHash', 'requestHash']) {
+    if (typeof idempotency[field] === 'string' && idempotency[field].trim().length > 0) {
+      summary[field] = idempotency[field].trim();
+    }
+  }
+  return summary;
 }
 
 function summarizeSessionUserIdentityBinding({ receipt, observations = [] } = {}) {

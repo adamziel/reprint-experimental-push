@@ -245,6 +245,16 @@ try {
     assert.equal(replay.body.idempotency.freshMutationWork, false);
     await assertCurrentSurface(client, routeLocalSnapshot, 'production-shaped replay must not mutate');
 
+    const journalBeforeConflict = await client.signedGet('/db-journal?limit=80', {
+      session,
+      idempotencyKey: 'production-shaped-before-conflict-journal',
+    });
+    assert.equal(journalBeforeConflict.status, 200);
+    const entriesBeforeConflict = journalBeforeConflict.body.dbJournal.latestRows;
+    const mutationEventsBeforeConflict = countJournalEvents(entriesBeforeConflict, 'mutation-applied');
+    const applyStartedBeforeConflict = countJournalEvents(entriesBeforeConflict, 'apply-started');
+    const idempotencyOpenedBeforeConflict = countJournalEvents(entriesBeforeConflict, 'idempotency-opened');
+
     const conflict = await client.signedPost('/apply', {
       ...applyBody,
       labDelayAfterIdempotencyOpenMs: 0,
@@ -256,6 +266,25 @@ try {
     assert.equal(conflict.body.ok, false);
     assert.equal(conflict.body.code, 'IDEMPOTENCY_KEY_CONFLICT');
     assert.equal(conflict.body.idempotency.freshMutationWork, false);
+    assert.deepEqual(Object.keys(conflict.body.idempotency).sort(), [
+      'conflict',
+      'freshMutationWork',
+      'idempotencyKeyHash',
+      'replayed',
+      'requestHash',
+    ]);
+    assertBareSha256(conflict.body.idempotency.idempotencyKeyHash, 'conflict idempotency key hash');
+    assertBareSha256(conflict.body.idempotency.requestHash, 'conflict request hash');
+    assert.equal(conflict.body.idempotency.idempotencyKeyHash, apply.body.idempotency.idempotencyKeyHash);
+    assert.notEqual(conflict.body.idempotency.requestHash, apply.body.idempotency.requestHash);
+    assert.equal(conflict.body.dbJournal.event, 'idempotency-key-conflict');
+    assert.equal(conflict.body.dbJournal.idempotencyKeyHash, conflict.body.idempotency.idempotencyKeyHash);
+    assert.equal(conflict.body.dbJournal.requestHash, conflict.body.idempotency.requestHash);
+    assertBareSha256(conflict.body.dbJournal.resultHash, 'conflict db-journal result hash');
+    const serializedConflict = JSON.stringify(conflict.body);
+    assert.equal(serializedConflict.includes(idempotencyKey), false, 'conflict leaked raw idempotency key');
+    assert.equal(serializedConflict.includes('labDelayAfterIdempotencyOpenMs'), false, 'conflict leaked different request body');
+    assert.equal(serializedConflict.includes('durableJournalBoundaryProbe'), false, 'conflict leaked probe body');
     await assertCurrentSurface(client, routeLocalSnapshot, 'production-shaped different-body conflict must not mutate');
 
     const dbJournal = await client.signedGet('/db-journal?limit=80', {
@@ -267,7 +296,10 @@ try {
     assert.ok(entries.some((entry) => entry.event === 'apply-committed'), 'DB journal missing apply-committed');
     assert.ok(entries.some((entry) => entry.event === 'apply-replayed'), 'DB journal missing apply-replayed');
     assert.ok(entries.some((entry) => entry.event === 'idempotency-key-conflict'), 'DB journal missing idempotency-key-conflict');
-    assert.equal(entries.filter((entry) => entry.event === 'mutation-applied').length, readyPlan.mutations.length);
+    assert.equal(countJournalEvents(entries, 'mutation-applied'), mutationEventsBeforeConflict);
+    assert.equal(countJournalEvents(entries, 'apply-started'), applyStartedBeforeConflict);
+    assert.equal(countJournalEvents(entries, 'idempotency-opened'), idempotencyOpenedBeforeConflict);
+    assert.equal(countJournalEvents(entries, 'mutation-applied'), readyPlan.mutations.length);
 
     const recovery = await client.signedPost('/recovery/inspect', applyBody, {
       session,
@@ -314,6 +346,11 @@ try {
       status: conflict.status,
       code: conflict.body.code,
       freshMutationWork: conflict.body.idempotency.freshMutationWork,
+      hashOnly: true,
+      idempotencyKeyHash: conflict.body.idempotency.idempotencyKeyHash,
+      requestHash: conflict.body.idempotency.requestHash,
+      mutationEventsBeforeConflict,
+      mutationEventsAfterConflict: countJournalEvents(entries, 'mutation-applied'),
     };
     summary.journal = {
       events: [...new Set(entries.map((entry) => entry.event))].sort(),
@@ -685,6 +722,14 @@ function withoutUnmappedGraphPostmeta(snapshot) {
 function assertVisibleSurfaceEqual(actual, expected, label) {
   assert.deepEqual(visibleSurface(actual), visibleSurface(expected), `${label} mismatch`);
   assert.equal(digest(visibleSurface(actual)), digest(visibleSurface(expected)), `${label} digest mismatch`);
+}
+
+function countJournalEvents(entries, event) {
+  return (Array.isArray(entries) ? entries : []).filter((entry) => entry.event === event).length;
+}
+
+function assertBareSha256(value, label) {
+  assert.match(String(value || ''), /^[a-f0-9]{64}$/, label);
 }
 
 function visibleSurface(snapshot) {

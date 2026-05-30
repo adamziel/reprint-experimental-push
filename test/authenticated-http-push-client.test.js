@@ -6435,6 +6435,267 @@ test('production-shaped authenticated push accepts replay-equivalent committed r
   }
 });
 
+test('RPP-0517 production-shaped authenticated push rejects same-key different-body conflict with hash-only proof before mutation', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  const sessionId = 'psh_01j00000000000000000000000';
+  const idempotencyKey = 'idem-rpp-0517-different-body';
+  const idempotencyKeyHash = 'a'.repeat(64);
+  const applyRequestHash = 'b'.repeat(64);
+  const conflictRequestHash = 'c'.repeat(64);
+  const baseSnapshot = {
+    files: { 'wp-content/uploads/rpp-0517.txt': 'base' },
+    db: {},
+    plugins: {},
+  };
+  const localSnapshot = {
+    files: { 'wp-content/uploads/rpp-0517.txt': 'local' },
+    db: {},
+    plugins: {},
+  };
+  const auth = {
+    identity: { userLogin: credential.username },
+    session: {
+      type: 'production-auth-session',
+      status: 'active',
+      id: sessionId,
+      expiresAt: '2030-01-01T00:00:00Z',
+    },
+  };
+  const storageGuard = {
+    boundary: 'filesystem-compare-rename',
+    operation: 'update',
+    outcome: 'applied',
+  };
+  const writerLease = {
+    strategy: 'claim-fenced-single-writer',
+    claimId: sessionId,
+    claimKeyHash: idempotencyKeyHash,
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: storageGuard.boundary,
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: false,
+  };
+  let currentSnapshot = baseSnapshot;
+  let applyCount = 0;
+  let sequence = 0;
+  const journalRows = [];
+  const appendJournalRow = (event, requestHash, extra = {}) => {
+    sequence += 1;
+    journalRows.push({
+      sequence,
+      event,
+      idempotencyKeyHash,
+      requestHash,
+      ...extra,
+    });
+  };
+  const jsonResponse = (body, status = 200) => new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
+  const applyResponse = (overrides = {}) => ({
+    ok: true,
+    mode: 'apply',
+    applied: 1,
+    code: 'APPLIED',
+    responseSchemaVersion: 1,
+    auth,
+    receipt: { receiptHash: 'receipt-rpp-0517' },
+    storageGuard,
+    signedRequest: {
+      signed: true,
+      schemaVersion: 1,
+      contentHash: 'content-rpp-0517',
+      timestamp: '2026-05-30T00:00:00.000Z',
+      nonceHash: 'nonce-rpp-0517',
+      sessionHash: 'session-rpp-0517',
+      signingKeyHash: 'signing-key-rpp-0517',
+      request: { planHash: 'plan-rpp-0517' },
+    },
+    idempotency: {
+      replayed: false,
+      freshMutationWork: true,
+      conflict: false,
+      status: 'fresh',
+      idempotencyKeyHash,
+      requestHash: applyRequestHash,
+    },
+    ...overrides,
+  });
+  const eventSummaries = () => Object.entries(
+    journalRows.reduce((counts, row) => {
+      counts[row.event] = (counts[row.event] || 0) + 1;
+      return counts;
+    }, {}),
+  ).map(([event, count]) => ({ event, count }));
+
+  global.fetch = async (url, options = {}) => {
+    seen.push({ url: String(url), options });
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return jsonResponse({
+        ok: true,
+        auth,
+        session: { id: sessionId },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return jsonResponse({
+        ok: true,
+        snapshot: currentSnapshot,
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return jsonResponse({
+        ok: true,
+        auth,
+        receipt: {
+          receiptHash: 'receipt-rpp-0517',
+          authBinding: { expiresAt: '2030-01-01T00:00:00Z' },
+        },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return jsonResponse({
+        ok: true,
+        auth,
+        recovery: {
+          state: 'fully-updated-remote',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: { integrity: { status: 'ok' } },
+        },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      const body = JSON.parse(options.body);
+      if (body.durableJournalBoundaryProbe) {
+        appendJournalRow('idempotency-key-conflict', conflictRequestHash, {
+          errorCode: 'IDEMPOTENCY_KEY_CONFLICT',
+        });
+        return jsonResponse({
+          ok: false,
+          code: 'IDEMPOTENCY_KEY_CONFLICT',
+          mode: 'apply',
+          auth,
+          idempotency: {
+            replayed: false,
+            conflict: true,
+            freshMutationWork: false,
+            idempotencyKeyHash,
+            requestHash: conflictRequestHash,
+          },
+        }, 409);
+      }
+
+      applyCount += 1;
+      if (applyCount === 1) {
+        currentSnapshot = localSnapshot;
+        appendJournalRow('idempotency-opened', applyRequestHash);
+        appendJournalRow('apply-started', applyRequestHash);
+        appendJournalRow('mutation-applied', applyRequestHash, { appliedCount: 1 });
+        appendJournalRow('apply-committed', applyRequestHash, { appliedCount: 1 });
+        return jsonResponse(applyResponse());
+      }
+
+      appendJournalRow('apply-replayed', applyRequestHash, { appliedCount: 0 });
+      return jsonResponse(applyResponse({
+        code: 'BATCH_ALREADY_COMMITTED',
+        idempotency: {
+          replayed: true,
+          freshMutationWork: false,
+          conflict: false,
+          status: 'replayed',
+          idempotencyKeyHash,
+          requestHash: applyRequestHash,
+        },
+      }));
+    }
+    if (pathname.includes('/db-journal')) {
+      return jsonResponse({
+        ok: true,
+        auth,
+        dbJournal: {
+          scope: trustedDbJournalScope,
+          latestRows: journalRows,
+          rowCount: journalRows.length,
+          readback: { pages: 1, complete: true, truncated: false },
+          eventSummaries: eventSummaries(),
+          claim: {
+            status: 'active',
+            activeClaimId: sessionId,
+            activeClaimKeyHash: idempotencyKeyHash,
+            activeClaimSequence: 1,
+            activeClaimEvent: 'idempotency-opened',
+            staleClaimRejected: false,
+          },
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: storageGuard.boundary,
+          },
+          writerLease,
+          leaseFence: {
+            boundary: storageGuard.boundary,
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+            writerLease,
+          },
+        },
+        storageGuard,
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: baseSnapshot,
+      local: localSnapshot,
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey,
+      routeProfile: 'production-shaped',
+      proveDurableJournalBoundary: true,
+      now: new Date('2026-05-30T00:00:00.000Z'),
+    });
+
+    assert.equal(summary.ok, true);
+    assert.equal(summary.idempotencyConflict.status, 409);
+    assert.equal(summary.idempotencyConflict.code, 'IDEMPOTENCY_KEY_CONFLICT');
+    assert.equal(summary.idempotencyConflict.hashOnly, true);
+    assert.equal(summary.idempotencyConflict.targetSnapshotUnchanged, true);
+    assert.equal(summary.idempotencyConflict.finalMatchesLocal, true);
+    assert.equal(summary.idempotencyConflict.idempotency.conflict, true);
+    assert.equal(summary.idempotencyConflict.idempotency.freshMutationWork, false);
+    assert.equal(summary.idempotencyConflict.idempotency.idempotencyKeyHash, idempotencyKeyHash);
+    assert.equal(summary.idempotencyConflict.idempotency.requestHash, conflictRequestHash);
+    assert.notEqual(summary.idempotencyConflict.idempotency.requestHash, applyRequestHash);
+    assert.match(summary.idempotencyConflict.idempotency.idempotencyKeyHash, /^[a-f0-9]{64}$/);
+    assert.match(summary.idempotencyConflict.idempotency.requestHash, /^[a-f0-9]{64}$/);
+    assert.equal(summary.dbJournal.mutationApplied, 1);
+    assert.equal(summary.dbJournal.eventCounts['idempotency-key-conflict'], 1);
+    assert.equal(
+      summary.dbJournal.latestEvents.find((entry) => entry.event === 'idempotency-key-conflict')?.requestHash,
+      conflictRequestHash,
+    );
+    assert.equal(applyCount, 2);
+    assert.equal(seen.filter(({ url }) => url.includes('/apply')).length, 3);
+    const serializedConflict = JSON.stringify(summary.idempotencyConflict);
+    assert.doesNotMatch(serializedConflict, new RegExp(idempotencyKey));
+    assert.doesNotMatch(serializedConflict, /durableJournalBoundaryProbe/);
+    assert.doesNotMatch(serializedConflict, /wp-content\/uploads\/rpp-0517\.txt/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push paginates durable db journal readback across older windows', async () => {
   const originalFetch = global.fetch;
   const seen = [];
