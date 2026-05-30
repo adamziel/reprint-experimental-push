@@ -49,7 +49,7 @@ function claimFencedDurableJournal(events) {
   };
 }
 
-function assertRpp0211GeneratedMutationPreconditionOneToOne(testCase, plan) {
+function assertGeneratedMutationPreconditionOneToOne(testCase, plan) {
   assert.equal(
     plan.preconditions.length,
     plan.mutations.length,
@@ -86,6 +86,65 @@ function assertRpp0211GeneratedMutationPreconditionOneToOne(testCase, plan) {
       `${testCase.id} missing precondition for ${mutation.id}`,
     );
   }
+}
+
+function assertRpp0211GeneratedMutationPreconditionOneToOne(testCase, plan) {
+  assertGeneratedMutationPreconditionOneToOne(testCase, plan);
+}
+
+function rpp0231GeneratedMutationPreconditionEvidence() {
+  const cases = generatePushHarnessCases();
+  const evidence = {
+    totalCases: cases.length,
+    statuses: {},
+    totals: {
+      mutations: 0,
+      preconditions: 0,
+    },
+    maxMutations: 0,
+    readyCasesWithMutations: 0,
+    nonReadyCasesWithMutations: 0,
+    statusByTier: {},
+    mutationResourceProofs: [],
+  };
+
+  for (const testCase of cases) {
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    assertGeneratedMutationPreconditionOneToOne(testCase, plan);
+
+    incrementCount(evidence.statuses, plan.status);
+    evidence.statusByTier[plan.status] ||= {};
+    incrementCount(evidence.statusByTier[plan.status], testCase.tier);
+    evidence.totals.mutations += plan.mutations.length;
+    evidence.totals.preconditions += plan.preconditions.length;
+    evidence.maxMutations = Math.max(evidence.maxMutations, plan.mutations.length);
+    if (plan.mutations.length > 0) {
+      if (plan.status === 'ready') {
+        evidence.readyCasesWithMutations++;
+      } else {
+        evidence.nonReadyCasesWithMutations++;
+      }
+    }
+    evidence.mutationResourceProofs.push({
+      id: testCase.id,
+      family: testCase.family,
+      tier: testCase.tier,
+      status: plan.status,
+      mutationCount: plan.mutations.length,
+      preconditionCount: plan.preconditions.length,
+      mutationResourceKeys: plan.mutations.map((mutation) => mutation.resourceKey).sort(),
+      preconditionResourceKeys: plan.preconditions.map((precondition) => precondition.resourceKey).sort(),
+      mutationIds: plan.mutations.map((mutation) => mutation.id).sort(),
+      preconditionMutationIds: plan.preconditions.map((precondition) => precondition.mutationId).sort(),
+    });
+  }
+
+  return evidence;
 }
 
 const requiredFamilies = [
@@ -357,6 +416,38 @@ test('RPP-0211 generated cases keep mutation preconditions one-to-one', () => {
   assert.ok(summary.mutations > cases.length, 'generated RPP-0211 proof needs broad mutation coverage');
   assert.equal(summary.preconditions, summary.mutations);
   assert.ok(summary.maxMutations >= 15, 'generated RPP-0211 proof needs high-mutation fixtures');
+});
+
+test('RPP-0231 generated harness proves mutation preconditions one-to-one variant 2', () => {
+  const firstEvidence = rpp0231GeneratedMutationPreconditionEvidence();
+  const replayEvidence = rpp0231GeneratedMutationPreconditionEvidence();
+  const report = runGeneratedPushHarness();
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0231 test/generated-push-harness.test.js',
+    caveat: 'Local deterministic Node generated-harness proof; release remains gated separately.',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    totals: firstEvidence.totals,
+  };
+
+  assert.deepEqual(
+    firstEvidence,
+    replayEvidence,
+    'RPP-0231 generated mutation/precondition evidence changed between runs',
+  );
+  assert.equal(firstEvidence.totalCases, DEFAULT_GENERATED_PUSH_CASES);
+  assert.equal(firstEvidence.totalCases, report.summary.totalCases);
+  assert.equal(firstEvidence.totals.preconditions, firstEvidence.totals.mutations);
+  assert.equal(firstEvidence.totals.preconditions, report.summary.totalPreconditions);
+  assert.equal(firstEvidence.totals.mutations, report.summary.totalMutations);
+  assert.ok(firstEvidence.statuses.ready > 0, 'RPP-0231 generated proof needs ready cases');
+  assert.ok(firstEvidence.statuses.conflict > 0, 'RPP-0231 generated proof needs conflict cases');
+  assert.ok(firstEvidence.statuses.blocked > 0, 'RPP-0231 generated proof needs blocked cases');
+  assert.ok(
+    firstEvidence.nonReadyCasesWithMutations > 0,
+    'RPP-0231 generated proof needs non-ready cases that still emit safe planned mutations',
+  );
+  assert.ok(firstEvidence.maxMutations >= 15, 'RPP-0231 generated proof needs high-mutation cases');
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
 });
 
 test('RPP-0407 generated harness covers supported and unsupported wp_usermeta driver variants', () => {

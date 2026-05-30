@@ -755,7 +755,7 @@ function rpp0211MutationPreconditionMappingFixture() {
   };
 }
 
-function assertRpp0211MutationPreconditionOneToOne(plan, remote, label) {
+function assertMutationPreconditionOneToOne(plan, remote, label) {
   assert.equal(
     plan.preconditions.length,
     plan.mutations.length,
@@ -796,6 +796,86 @@ function assertRpp0211MutationPreconditionOneToOne(plan, remote, label) {
       `${label} missing precondition for ${mutation.id}`,
     );
   }
+}
+
+function assertRpp0211MutationPreconditionOneToOne(plan, remote, label) {
+  assertMutationPreconditionOneToOne(plan, remote, label);
+}
+
+function rpp0231FocusedMappingFixtures() {
+  const readyFixture = rpp0211MutationPreconditionMappingFixture();
+
+  const conflictBase = cloneJson(baseSite());
+  const conflictLocal = cloneJson(conflictBase);
+  const conflictRemote = cloneJson(conflictBase);
+  conflictLocal.files['index.php'] = '<?php echo "rpp0231-conflict-independent-file";';
+  conflictLocal.db.wp_posts['ID:1'].post_title = 'rpp0231-local-conflict-title';
+  conflictRemote.db.wp_posts['ID:1'].post_title = 'rpp0231-remote-conflict-title';
+
+  const blockedBase = cloneJson(baseSite());
+  const blockedLocal = cloneJson(blockedBase);
+  const blockedRemote = cloneJson(blockedBase);
+  const blockedResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  blockedLocal.files['index.php'] = '<?php echo "rpp0231-blocked-independent-file";';
+  blockedLocal.db.wp_posts['ID:1'].post_title = 'rpp0231-blocked-local-post-title';
+  blockedLocal.db.wp_options['option_name:forms_settings'].option_value.mode = 'rpp0231-blocked-option-mode';
+  blockedLocal.pushIntents = [
+    {
+      id: 'rpp-0231-atomic-blocked-group',
+      kind: 'change-set',
+      requireAtomic: true,
+      resources: [
+        'file:index.php',
+        'row:["wp_posts","ID:1"]',
+        blockedResourceKey,
+      ],
+    },
+  ];
+
+  return [
+    {
+      label: 'RPP-0231 ready mixed resource fixture',
+      base: readyFixture.base,
+      local: readyFixture.local,
+      remote: readyFixture.remote,
+      expectedStatus: 'ready',
+      expectedMutationResourceKeys: readyFixture.mutationResourceKeys,
+      absentMutationResourceKeys: [],
+      privateValues: readyFixture.privateValues,
+    },
+    {
+      label: 'RPP-0231 conflict fixture with independent mutation',
+      base: conflictBase,
+      local: conflictLocal,
+      remote: conflictRemote,
+      expectedStatus: 'conflict',
+      expectedMutationResourceKeys: ['file:index.php'],
+      absentMutationResourceKeys: ['row:["wp_posts","ID:1"]'],
+      privateValues: [
+        conflictLocal.files['index.php'],
+        conflictLocal.db.wp_posts['ID:1'].post_title,
+        conflictRemote.db.wp_posts['ID:1'].post_title,
+      ],
+    },
+    {
+      label: 'RPP-0231 blocked atomic propagation fixture',
+      base: blockedBase,
+      local: blockedLocal,
+      remote: blockedRemote,
+      expectedStatus: 'blocked',
+      expectedMutationResourceKeys: [
+        'file:index.php',
+        'row:["wp_posts","ID:1"]',
+      ],
+      absentMutationResourceKeys: [blockedResourceKey],
+      expectedAtomicGroupId: 'rpp-0231-atomic-blocked-group',
+      privateValues: [
+        blockedLocal.files['index.php'],
+        blockedLocal.db.wp_posts['ID:1'].post_title,
+        blockedLocal.db.wp_options['option_name:forms_settings'].option_value.mode,
+      ],
+    },
+  ];
 }
 
 function buildRpp0210SummaryCountCases() {
@@ -1078,6 +1158,136 @@ test('RPP-0211 executor rejects forged mutation/precondition mappings before mut
       `${forgedCase.label} should report ${forgedCase.issueCode}`,
     );
     assert.equal(digest(remoteBefore), remoteBeforeHash, `${forgedCase.label} mutated the remote`);
+    assertHashOnlyEvidenceRedacted(error.details, privateValues);
+  }
+});
+
+test('RPP-0231 focused plans keep every mutation and precondition one-to-one', () => {
+  for (const fixture of rpp0231FocusedMappingFixtures()) {
+    const plan = planFor(fixture.base, fixture.local, fixture.remote);
+    const replay = planFor(
+      cloneJson(fixture.base),
+      cloneJson(fixture.local),
+      cloneJson(fixture.remote),
+    );
+    const evidence = mergeInvariantHashOnlyPlanEvidence(plan);
+
+    assert.equal(plan.status, fixture.expectedStatus, `${fixture.label} status`);
+    assertPlannerSummaryMatchesEvidence(plan, fixture.label);
+    assertMutationPreconditionOneToOne(plan, fixture.remote, fixture.label);
+    assert.deepEqual(
+      plan.mutations.map((mutation) => mutation.resourceKey).sort(),
+      [...fixture.expectedMutationResourceKeys].sort(),
+      `${fixture.label} mutation resource set`,
+    );
+    assert.deepEqual(
+      plan.preconditions.map((precondition) => precondition.resourceKey).sort(),
+      [...fixture.expectedMutationResourceKeys].sort(),
+      `${fixture.label} precondition resource set`,
+    );
+    assert.deepEqual(
+      evidence,
+      mergeInvariantHashOnlyPlanEvidence(replay),
+      `${fixture.label} evidence changed between deterministic runs`,
+    );
+    assertHashOnlyEvidenceRedacted(evidence, fixture.privateValues);
+
+    for (const resourceKey of fixture.absentMutationResourceKeys) {
+      assert.equal(
+        plan.mutations.some((mutation) => mutation.resourceKey === resourceKey),
+        false,
+        `${fixture.label} emitted an unsafe mutation for ${resourceKey}`,
+      );
+      assert.equal(
+        plan.preconditions.some((precondition) => precondition.resourceKey === resourceKey),
+        false,
+        `${fixture.label} emitted an extra precondition for ${resourceKey}`,
+      );
+    }
+
+    if (fixture.expectedAtomicGroupId) {
+      const group = plan.atomicGroups.find((entry) => entry.id === fixture.expectedAtomicGroupId);
+      const propagatedBlockers = plan.blockers.filter(
+        (blocker) => blocker.class === 'atomic-group-blocker-propagation',
+      );
+
+      assert.equal(group?.status, 'blocked', `${fixture.label} atomic group status`);
+      assert.equal(propagatedBlockers.length, 2, `${fixture.label} propagated blocker count`);
+      assert.deepEqual(
+        propagatedBlockers
+          .map((blocker) => blocker.mutationId)
+          .sort(),
+        plan.mutations.map((mutation) => mutation.id).sort(),
+        `${fixture.label} propagated blockers should point at emitted mutations`,
+      );
+    }
+  }
+});
+
+test('RPP-0231 executor rejects extra preconditions before any mutation', () => {
+  const {
+    base,
+    local,
+    remote,
+    privateValues,
+  } = rpp0211MutationPreconditionMappingFixture();
+  const plan = planFor(base, local, remote);
+  const targetPrecondition = plan.preconditions[0];
+  const extraResource = {
+    type: 'file',
+    path: 'wp-content/uploads/rpp-0231-extra-precondition.txt',
+    key: 'file:wp-content/uploads/rpp-0231-extra-precondition.txt',
+  };
+  const trapJournal = (events) => ({
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, ...payload };
+    },
+  });
+
+  assert.equal(plan.status, 'ready');
+  assertMutationPreconditionOneToOne(plan, remote, 'RPP-0231 extra-precondition baseline');
+
+  const forgedCases = [
+    {
+      name: 'orphan extra precondition for unplanned resource',
+      issueCode: 'PRECONDITION_WITHOUT_MUTATION',
+      forge(forged) {
+        forged.preconditions.push({
+          mutationId: 'mutation-rpp0231-extra-precondition',
+          resource: extraResource,
+          resourceKey: extraResource.key,
+          expectedHash: resourceHash(remote, extraResource),
+          checkedAgainst: 'live-remote',
+        });
+      },
+    },
+    {
+      name: 'duplicate extra precondition for planned mutation',
+      issueCode: 'DUPLICATE_LIVE_REMOTE_PRECONDITION',
+      forge(forged) {
+        forged.preconditions.push(cloneJson(targetPrecondition));
+      },
+    },
+  ];
+
+  for (const forgedCase of forgedCases) {
+    const forged = tamperReadyPlan(plan, forgedCase.forge);
+    const applyRemote = cloneJson(remote);
+    const beforeRemoteHash = digest(applyRemote);
+    const journalEvents = [];
+    const error = captureError(() => applyPlan(applyRemote, forged, {
+      durableJournal: trapJournal(journalEvents),
+    }));
+
+    assert.ok(error instanceof PushPlanError, forgedCase.name);
+    assert.equal(error.code, 'PLAN_INVARIANT_VIOLATION', forgedCase.name);
+    assert.ok(
+      error.details.issues.some((issue) => issue.code === forgedCase.issueCode),
+      `${forgedCase.name} missing ${forgedCase.issueCode}`,
+    );
+    assert.equal(digest(applyRemote), beforeRemoteHash, `${forgedCase.name} mutated remote before refusal`);
+    assert.deepEqual(journalEvents, [], `${forgedCase.name} wrote durable journal events before refusal`);
     assertHashOnlyEvidenceRedacted(error.details, privateValues);
   }
 });
