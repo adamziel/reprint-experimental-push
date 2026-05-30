@@ -6,6 +6,7 @@ import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { pathToFileURL } from 'node:url';
 import { applyPlan, PushPlanError } from '../../src/apply.js';
+import { buildChunkReplayIdempotencyEvidence } from '../../src/chunk-replay-idempotency.js';
 import { createPushPlan } from '../../src/planner.js';
 import {
   appendRecoveryClaimOpened,
@@ -122,6 +123,10 @@ export const ROLLOUT_SAFETY_GATE_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'receipt-only-resume',
     requirement: 'resume skips transfer work only from exact durable receipts and blocks mismatched receipts',
+  }),
+  Object.freeze({
+    id: 'chunk-replay-idempotency',
+    requirement: 'exact chunk replays return durable receipts without duplicate bytes and stay inside budgets',
   }),
   Object.freeze({
     id: 'live-remote-preconditions',
@@ -280,6 +285,14 @@ export function productionThroughputBlockers(report) {
     blockers.push('missing-receipt-only-resume-evidence');
   }
   if (
+    report.evidence.chunkReplayIdempotency?.status !== 'passed'
+    || report.evidence.chunkReplayIdempotency?.attempts?.duplicateChunkBytes !== 0
+    || report.evidence.chunkReplayIdempotency?.budgets
+      ?.largeSiteRunFinishesInsideDocumentedBudgets !== true
+  ) {
+    blockers.push('missing-chunk-replay-idempotency');
+  }
+  if (
     report.evidence.transactionBoundaryPolicy?.status !== 'passed'
     || report.evidence.transactionBoundaryPolicy?.apply?.noDuplicateMutationWork !== true
   ) {
@@ -380,7 +393,7 @@ function stageGeneratedFileBytes({
   const fd = fs.openSync(stagingPath, 'w');
   const fileHash = crypto.createHash('sha256');
   const chunkCount = Math.ceil(fileBytes / chunkSizeBytes);
-  const manifestEntries = [];
+  const pendingEntries = [];
   let bytesMoved = 0;
 
   try {
@@ -390,37 +403,17 @@ function stageGeneratedFileBytes({
       const chunk = deterministicChunk(sizeBytes, seed, chunkIndex);
       const chunkDigest = digestBuffer(chunk);
       const chunkDigestLabel = `sha256:${chunkDigest}`;
-      const idempotencyKey = `${planId}:${resourceKey}:chunk:${chunkIndex}`;
-      const receiptKey = `${planId}:${resourceKey}:${chunkIndex}:sha256:${chunkDigest}`;
-      const manifestEntry = {
+      const pendingEntry = {
         chunkIndex,
         offsetBytes,
         sizeBytes,
         chunkDigest: chunkDigestLabel,
-        idempotencyKey,
-        receiptKey,
         canonicalVisible: false,
       };
       fileHash.update(chunk);
       fs.writeSync(fd, chunk, 0, chunk.length, offsetBytes);
       bytesMoved += chunk.length;
-      manifestEntries.push(manifestEntry);
-      journal.appendEvent('chunk-receipt', {
-        planId,
-        resourceKey,
-        state: 'staged',
-        chunkIndex,
-        chunkCount,
-        offsetBytes,
-        sizeBytes,
-        chunkDigest: chunkDigestLabel,
-        canonicalVisible: false,
-        idempotencyKey,
-        receiptKey,
-        artifactRefs: {
-          staging: `bench-staging:${resourceKey}:${chunkIndex}`,
-        },
-      });
+      pendingEntries.push(pendingEntry);
     }
     fs.fsyncSync(fd);
   } finally {
@@ -428,6 +421,33 @@ function stageGeneratedFileBytes({
   }
 
   const assembledDigest = fileHash.digest('hex');
+  const localResourceHash = `sha256:${assembledDigest}`;
+  const manifestEntries = pendingEntries.map((entry) => ({
+    ...entry,
+    localResourceHash,
+    idempotencyKey: `${planId}:${resourceKey}:${localResourceHash}:chunk:${entry.chunkIndex}`,
+    receiptKey: `${planId}:${resourceKey}:${localResourceHash}:chunk:${entry.chunkIndex}:`
+      + `${entry.offsetBytes}:${entry.sizeBytes}:${entry.chunkDigest}`,
+  }));
+  for (const manifestEntry of manifestEntries) {
+    journal.appendEvent('chunk-receipt', {
+      planId,
+      resourceKey,
+      state: 'staged',
+      chunkIndex: manifestEntry.chunkIndex,
+      chunkCount,
+      offsetBytes: manifestEntry.offsetBytes,
+      sizeBytes: manifestEntry.sizeBytes,
+      localResourceHash,
+      chunkDigest: manifestEntry.chunkDigest,
+      canonicalVisible: false,
+      idempotencyKey: manifestEntry.idempotencyKey,
+      receiptKey: manifestEntry.receiptKey,
+      artifactRefs: {
+        staging: `bench-staging:${resourceKey}:${manifestEntry.chunkIndex}`,
+      },
+    });
+  }
   const stat = fs.statSync(stagingPath);
   const manifest = {
     planId,
@@ -435,7 +455,7 @@ function stageGeneratedFileBytes({
     fileBytes,
     chunkSizeBytes,
     chunkCount,
-    assembledHash: `sha256:${assembledDigest}`,
+    assembledHash: localResourceHash,
     entries: manifestEntries,
   };
   const manifestDigest = `sha256:${stableDigest(manifest)}`;
@@ -447,7 +467,7 @@ function stageGeneratedFileBytes({
     chunkSizeBytes,
     sizeBytes: stat.size,
     manifestDigest,
-    assembledHash: `sha256:${assembledDigest}`,
+    assembledHash: localResourceHash,
     canonicalVisible: false,
     idempotencyKey: `${planId}:${resourceKey}:chunk-manifest-finalize`,
     artifactRefs: {
@@ -460,7 +480,7 @@ function stageGeneratedFileBytes({
     state: 'staged-file-complete',
     chunkReceipts: chunkCount,
     sizeBytes: stat.size,
-    assembledHash: `sha256:${assembledDigest}`,
+    assembledHash: localResourceHash,
     canonicalVisible: false,
     idempotencyKey: `${planId}:${resourceKey}:file-staging-finalize`,
     artifactRefs: {
@@ -478,10 +498,10 @@ function stageGeneratedFileBytes({
     fileBytes: stat.size,
     manifestDigest,
     manifestEntries,
-    assembledHash: `sha256:${assembledDigest}`,
+    assembledHash: localResourceHash,
     descriptor: fileDescriptor({
       sizeBytes: stat.size,
-      contentDigest: `sha256:${assembledDigest}`,
+      contentDigest: localResourceHash,
       storage: 'bench-generated-chunk-staging',
     }),
   };
@@ -828,7 +848,7 @@ function runFailureProbe({ mode, plan, remote, tempDir, now, failDuringCommitAtM
   };
 }
 
-function buildGuardedTransferEvidence({ stagedFile, successPersisted }) {
+function buildGuardedTransferEvidence({ config, stagedFile, successPersisted, timings }) {
   const chunkReceiptRecords = successPersisted.records.filter((record) => record.type === 'chunk-receipt');
   const manifestRecord = successPersisted.records.find((record) =>
     record.type === 'chunk-manifest-finalized'
@@ -838,6 +858,26 @@ function buildGuardedTransferEvidence({ stagedFile, successPersisted }) {
     && record.assembledHash === stagedFile.assembledHash);
   const hashVerification = verifyChunkManifest(stagedFile);
   const resume = buildReceiptResumeProbe({ stagedFile, chunkReceiptRecords });
+  const replayStarted = performance.now();
+  // Measure the same deterministic replay-decision path that is reported below,
+  // then rebuild with the measured timing included in the budget evidence.
+  buildChunkReplayIdempotencyEvidence({
+    profile: config.profile,
+    planId: stagedFile.planId,
+    resourceKey: stagedFile.resourceKey,
+    manifestEntries: stagedFile.manifestEntries,
+    chunkReceiptRecords,
+    timings,
+  });
+  timings.chunkReplayDecisionMs = elapsedMs(replayStarted);
+  const replayIdempotencyWithTiming = buildChunkReplayIdempotencyEvidence({
+    profile: config.profile,
+    planId: stagedFile.planId,
+    resourceKey: stagedFile.resourceKey,
+    manifestEntries: stagedFile.manifestEntries,
+    chunkReceiptRecords,
+    timings,
+  });
   const byteRangeCoverage = manifestByteRangeCoverage(stagedFile.manifestEntries, stagedFile.fileBytes);
   const transactionBoundaryPolicy = buildChunkTransferTransactionBoundaryPolicy({
     planId: stagedFile.planId,
@@ -874,13 +914,16 @@ function buildGuardedTransferEvidence({ stagedFile, successPersisted }) {
       everyReceiptPlanScoped: chunkReceiptRecords.every((record) =>
         record.planId === stagedFile.planId
         && record.resourceKey === stagedFile.resourceKey
+        && record.localResourceHash === stagedFile.assembledHash
         && typeof record.receiptKey === 'string'
         && record.receiptKey.includes(stagedFile.planId)
-        && record.receiptKey.includes(stagedFile.resourceKey)),
+        && record.receiptKey.includes(stagedFile.resourceKey)
+        && record.receiptKey.includes(stagedFile.assembledHash)),
       canonicalVisibleBeforeFinalize: chunkReceiptRecords.some((record) => record.canonicalVisible === true),
     },
     hashVerification,
     resume,
+    replayIdempotency: replayIdempotencyWithTiming,
     transactionBoundaryPolicy,
     visibility: {
       finalizedRecordPresent: Boolean(finalizedRecord),
@@ -982,11 +1025,13 @@ function buildReceiptResumeProbe({ stagedFile, chunkReceiptRecords }) {
     resumeCursorFields: [
       'planId',
       'resourceKey',
+      'localResourceHash',
       'chunkIndex',
       'offsetBytes',
       'sizeBytes',
       'chunkDigest',
       'receiptKey',
+      'idempotencyKey',
     ],
   };
 }
@@ -999,6 +1044,7 @@ function receiptMatchesManifestEntry(record, stagedFile, entry) {
   return Boolean(record)
     && record.planId === stagedFile.planId
     && record.resourceKey === stagedFile.resourceKey
+    && record.localResourceHash === entry.localResourceHash
     && record.chunkIndex === entry.chunkIndex
     && record.offsetBytes === entry.offsetBytes
     && record.sizeBytes === entry.sizeBytes
@@ -1059,6 +1105,18 @@ function buildRolloutSafetyGates({ evidence, executorCapabilities }) {
       evidence: {
         chunksSkippedByReceipt: evidence.guardedTransfer.resume.chunksSkippedByReceipt,
         chunksToUpload: evidence.guardedTransfer.resume.chunksToUpload,
+      },
+    }),
+    'chunk-replay-idempotency': gateResult({
+      id: 'chunk-replay-idempotency',
+      passed: evidence.chunkReplayIdempotency.status === 'passed',
+      blocker: 'missing-chunk-replay-idempotency',
+      evidence: {
+        attemptedReplays: evidence.chunkReplayIdempotency.attempts.attemptedReplays,
+        duplicateChunkBytes: evidence.chunkReplayIdempotency.attempts.duplicateChunkBytes,
+        documentedBudgetProfile: evidence.chunkReplayIdempotency.budgets.documentedProfile,
+        largeSiteRunFinishesInsideDocumentedBudgets:
+          evidence.chunkReplayIdempotency.budgets.largeSiteRunFinishesInsideDocumentedBudgets,
       },
     }),
     'live-remote-preconditions': gateResult({
@@ -1192,7 +1250,12 @@ function buildReport({
     partialFailure.durableJournalHasNoRawValues,
   ].every(Boolean);
   const graphIdentityReport = buildGraphIdentityReport({ config, sites, plan });
-  const guardedTransfer = buildGuardedTransferEvidence({ stagedFile, successPersisted });
+  const guardedTransfer = buildGuardedTransferEvidence({
+    config,
+    stagedFile,
+    successPersisted,
+    timings,
+  });
   const shape = {
     largeUploadResourceKey: LARGE_UPLOAD_RESOURCE_KEY,
     fileBytes: config.fileBytes,
@@ -1240,6 +1303,7 @@ function buildReport({
   const evidence = {
     guardedTransfer,
     transactionBoundaryPolicy: guardedTransfer.transactionBoundaryPolicy,
+    chunkReplayIdempotency: guardedTransfer.replayIdempotency,
     chunkReceipts: {
       expected: stagedFile.chunkCount,
       recorded: chunkReceiptRecords.length,
