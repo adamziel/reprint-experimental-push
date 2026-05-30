@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 16:16 CEST +02:00.
+- Last update: 2026-05-30 16:21 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0633 unknown drift classification v2 merge ending at `660190c41`.
+  the RPP-0496 driver delete support release-verifier v5 merge ending at
+  `3b2b64d65`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 475
-  items checked and leaves 525 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 476
+  items checked and leaves 524 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  81 plugin-driver boundary items, 28 executor/auth items, 35 recovery items,
+  82 plugin-driver boundary items, 28 executor/auth items, 35 recovery items,
   18 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Driver delete support release-verifier v5: the current lane now contains
+  `RPP-0496` evidence in
+  `docs/evidence/rpp-0496-driver-delete-support-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0496-driver-delete-support-release-verifier-v5.test.js`. The
+  release verifier now emits support-only, hash-only
+  `pluginDriver.deleteSupport` proof for exact-driver delete-support binding,
+  supported delete apply, and forged delete refusal before mutation.
+  Validation passed with Node syntax checks, focused RPP-0496 coverage 2/2,
+  adjacent delete-support/refusal coverage 24/24, adjacent release-verifier
+  coverage 22/22, checklist lint, scoped artifact redaction scan, raw fixture
+  scan, and merge diff whitespace checks. Counts are now 476/524; final
+  release remains `NO-GO` because this is local support-only verifier evidence,
+  not production-backed plugin-driver proof.
 - Unknown drift classification v2: the current lane now contains `RPP-0633`
   evidence in
   `docs/evidence/rpp-0633-unknown-drift-classification-v2.md`,
