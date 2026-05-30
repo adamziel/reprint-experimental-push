@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 06:13 CEST.
+- Last update: 2026-05-30 06:23 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0160 large ready plan tier variant-3 generated-harness merge ending
-  at `b85866278`.
+  the RPP-0161 file create/update/delete mix variant-4 generated-harness merge
+  ending at `1d58c3179`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 353
-  items checked and leaves 647 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 354
+  items checked and leaves 646 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   70 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 60 generated
+  11 storage/performance items, 3 production-topology items, 61 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- File create/update/delete mix variant-4 refresh: the current lane now
+  contains `RPP-0161` evidence in
+  `docs/evidence/rpp-0161-file-create-update-delete-mix-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0161 test passed 1/1, the adjacent
+  RPP-0101/RPP-0121/RPP-0141/RPP-0161 file-mix slice passed 4/4, and
+  `npm run test:generated-push-harness` passed 68/68 across 620 deterministic
+  generated cases. Checklist lint, artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 354/646; final release remains
+  `NO-GO`.
 - Large ready plan tier variant-3 refresh: the current lane now contains
   `RPP-0160` evidence in
   `docs/evidence/rpp-0160-large-ready-plan-tier-v3.md`,
