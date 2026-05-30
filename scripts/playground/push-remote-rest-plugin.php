@@ -1712,8 +1712,11 @@ function reprint_push_lab_rest_apply_revalidation_evidence(
     $live_revalidation = isset($accepted['liveSourceRevalidation']) && is_array($accepted['liveSourceRevalidation'])
         ? $accepted['liveSourceRevalidation']
         : [];
+    $apply_batch_sizing = isset($accepted['applyBatchSizing']) && is_array($accepted['applyBatchSizing'])
+        ? $accepted['applyBatchSizing']
+        : null;
 
-    return [
+    $evidence = [
         'schemaVersion' => 1,
         'required' => 'fresh-live-hashes-before-first-mutation',
         'phase' => (string) ($live_revalidation['phase'] ?? 'before-first-mutation'),
@@ -1742,6 +1745,11 @@ function reprint_push_lab_rest_apply_revalidation_evidence(
             'staleClaimRetry' => is_array($stale_claim_retry),
         ],
     ];
+    if ($apply_batch_sizing !== null) {
+        $evidence['applyBatchSizing'] = reprint_push_lab_db_journal_sanitize_value($apply_batch_sizing);
+    }
+
+    return $evidence;
 }
 
 function reprint_push_lab_rest_apply_receipt_binding_evidence(array $accepted): array
@@ -2017,6 +2025,9 @@ function reprint_push_lab_rest_run_db_journal_apply(
         'requestHash' => $context['requestHash'],
         'dbJournalCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
     ], $options);
+    if (isset($result['applyBatchSizing']) && is_array($result['applyBatchSizing'])) {
+        $accepted['applyBatchSizing'] = $result['applyBatchSizing'];
+    }
     $result['applyRevalidation'] = reprint_push_lab_rest_apply_revalidation_evidence(
         $accepted,
         $claim_entry,
@@ -2076,9 +2087,42 @@ function reprint_push_lab_rest_run_db_journal_apply(
 function reprint_push_lab_rest_db_journal_mutation_callback(array $context, array $started_entry): callable
 {
     return static function (string $event, array $evidence) use ($context, $started_entry): void {
-        if (!in_array($event, ['mutation-prepared', 'mutation-storage-write-ready', 'mutation-precondition-failed', 'mutation-applied'], true)) {
+        if (!in_array($event, [
+            'apply-batch-revalidated',
+            'apply-batch-committed',
+            'mutation-prepared',
+            'mutation-storage-write-ready',
+            'mutation-precondition-failed',
+            'mutation-applied',
+        ], true)) {
             return;
         }
+
+        $resource_hash_evidence = in_array($event, ['apply-batch-revalidated', 'apply-batch-committed'], true)
+            ? reprint_push_lab_db_journal_sanitize_value([
+                'applyBatch' => [
+                    'batchId' => (string) ($evidence['batchId'] ?? ''),
+                    'batchIndex' => (int) ($evidence['batchIndex'] ?? 0),
+                    'batchCount' => (int) ($evidence['batchCount'] ?? 0),
+                    'applyBatchSize' => (int) ($evidence['applyBatchSize'] ?? 0),
+                    'mutationOffset' => (int) ($evidence['mutationOffset'] ?? 0),
+                    'mutationCount' => (int) ($evidence['mutationCount'] ?? 0),
+                    'verifiedPreconditionCount' => (int) ($evidence['verifiedPreconditionCount'] ?? 0),
+                    'appliedCount' => max(0, (int) ($evidence['appliedCount'] ?? 0)),
+                    'phase' => (string) ($evidence['phase'] ?? ''),
+                    'status' => (string) ($evidence['status'] ?? ''),
+                    'checkedAgainst' => (string) ($evidence['checkedAgainst'] ?? ''),
+                    'snapshotHash' => (string) ($evidence['snapshotHash'] ?? ''),
+                    'batchHash' => (string) ($evidence['batchHash'] ?? ''),
+                    'resourceKeys' => isset($evidence['resourceKeys']) && is_array($evidence['resourceKeys'])
+                        ? array_values(array_map('strval', $evidence['resourceKeys']))
+                        : [],
+                ],
+                'startedCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
+            ])
+            : reprint_push_lab_db_journal_mutation_evidence(array_merge($evidence, [
+                'startedCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
+            ]));
 
         $event_context = $context + [
             'planHash' => (string) ($evidence['planHash'] ?? ''),
@@ -2086,9 +2130,7 @@ function reprint_push_lab_rest_db_journal_mutation_callback(array $context, arra
             'planFingerprint' => (string) ($evidence['planFingerprint'] ?? ''),
             'mutationCount' => (int) ($evidence['mutationCount'] ?? 0),
             'appliedCount' => max(0, (int) ($evidence['appliedCount'] ?? 0)),
-            'resourceHashEvidence' => reprint_push_lab_db_journal_mutation_evidence(array_merge($evidence, [
-                'startedCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
-            ])),
+            'resourceHashEvidence' => $resource_hash_evidence,
         ];
 
         reprint_push_lab_db_journal_append_event($event, $event_context);
@@ -4491,6 +4533,12 @@ function reprint_push_lab_rest_receipt_payload(array $payload): ?array
 function reprint_push_lab_rest_lab_options(array $payload): array
 {
     $options = [];
+    if (array_key_exists('apply_batch_size', $payload)) {
+        $options['applyBatchSize'] = $payload['apply_batch_size'];
+    }
+    if (array_key_exists('applyBatchSize', $payload)) {
+        $options['applyBatchSize'] = $payload['applyBatchSize'];
+    }
     if (array_key_exists('labFailAfterMutations', $payload)) {
         $options['labFailAfterMutations'] = $payload['labFailAfterMutations'];
     }
