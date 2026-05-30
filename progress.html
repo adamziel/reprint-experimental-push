@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>491</strong>
+        <strong>492</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>509</strong>
+        <strong>508</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -406,18 +406,21 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0529</span>
+        <span>RPP-0530</span>
       </div>
-      <p>The latest refresh integrates RPP-0529 session source URL binding evidence: the production-shaped apply path preserves rejected apply-revalidation evidence from inside the apply runner, proving the live source URL binding was checked after apply-started and before mutation execution even when a stale write rejects the apply. Counts are now 491/509; final release remains NO-GO because this is sandbox-local production-shaped evidence, not external production WordPress topology and credential proof.</p>
+      <p>The latest refresh integrates RPP-0530 session user identity release-summary evidence: verify:release now carries exactly one hash-only authSessionUserIdentity block and requires issued/readback session and user identity hashes before reporting success. Counts are now 492/508; final release remains NO-GO because this is release-summary evidence, not a new external production host run.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0530 focused: 4/4</span>
+        <span class="tag">auth/session adjacent: 17/17</span>
+        <span class="tag">proof targeted: 3/3</span>
+        <span class="tag">release movement: 3/3</span>
+        <span class="tag">hash-only user identity</span>
+        <span class="tag">issued/readback hashes</span>
+        <span class="tag">single summary block</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0529 focused: 2/2</span>
-        <span class="tag">auth/apply adjacent: 18/18</span>
         <span class="tag">route/auth bundle: 147/147</span>
         <span class="tag">apply-revalidation smoke: pass</span>
-        <span class="tag">same source hash</span>
-        <span class="tag">same source URL hash</span>
-        <span class="tag">post-claim DB cursor</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0639 focused: 1/1</span>
         <span class="tag">recovery adjacent: 7/7</span>
         <span class="tag">recovery journal full: 43/43</span>
@@ -1183,7 +1186,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 491/1000</span>
+        <span class="tag">checked goals: 492/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>

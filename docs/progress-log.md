@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 17:42 CEST +02:00.
+- Last update: 2026-05-30 17:44 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0529 session source URL binding proof merge ending at `ad5b0d0`.
+  the RPP-0530 session user identity release-summary proof merge ending at
+  `b31c98c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 491
-  items checked and leaves 509 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 492
+  items checked and leaves 508 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  84 plugin-driver boundary items, 32 executor/auth items, 40 recovery items,
+  84 plugin-driver boundary items, 33 executor/auth items, 40 recovery items,
   22 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Session user identity release-summary proof: the current lane now contains
+  `RPP-0530` evidence in
+  `docs/evidence/rpp-0530-session-user-identity-release-summary.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-live-release-verify.mjs`, and
+  `test/rpp-0530-session-user-identity-release-summary.test.js`. The
+  release-summary boundary now carries exactly one hash-only
+  `authSessionUserIdentity` block and requires issued/readback session and user
+  identity hashes before reporting `ok: true`; continuity booleans remain
+  operator context rather than success inference. Validation passed with Node
+  syntax checks, PHP plugin syntax, focused RPP-0530 coverage 4/4, adjacent
+  auth/session route-summary coverage 17/17, production-shaped proof targeted
+  coverage 3/3, release-movement carry-through coverage 3/3, checklist lint,
+  scoped artifact redaction scan, raw fixture scan, and merge diff whitespace
+  checks. Counts are now 492/508; final release remains `NO-GO` because this is
+  release-summary/source-level evidence, not a new external production host run.
 - Session source URL binding proof v2: the current lane now contains `RPP-0529`
   evidence in
   `docs/evidence/rpp-0529-session-source-url-binding-v2.md`,
