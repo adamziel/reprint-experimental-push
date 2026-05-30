@@ -5,10 +5,12 @@ import { applyPlan, PushPlanError } from '../src/apply.js';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
+  generateDriverApplyValidationHookCases,
   generateDriverDeleteSupportFlagCases,
   generateDriverDryRunValidationHookCases,
   generatePushHarnessCases,
   runGeneratedPushHarness,
+  validateDriverApplyValidationHookCase,
   validateDriverDeleteSupportFlagCase,
   validateDriverDryRunValidationHookCase,
   validateGeneratedCase,
@@ -2455,6 +2457,54 @@ test('RPP-0417 generated driver dry-run validation hook covers supported and uns
   assert.equal(byVariant['unsupported-dry-run-hook-blocked'].status, 'blocked');
   assert.equal(byVariant['unsupported-dry-run-hook-blocked'].mutations, 0);
   assert.equal(byVariant['unsupported-dry-run-hook-blocked'].remotePreserved, true);
+  for (const result of results) {
+    assert.equal(result.evidenceScope, 'local-generated');
+    assert.equal(result.productionBacked, false);
+    assert.equal(result.releaseGate, 'NO-GO');
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+  }
+});
+
+test('RPP-0458 generated driver apply validation hook carries one mutation and rejects forged evidence', () => {
+  const cases = generateDriverApplyValidationHookCases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'supported-apply-hook-carries-mutation',
+    'forged-driver-evidence-rejected-before-mutation',
+  ]);
+  assert.equal(cases.every((testCase) => testCase.tags.has('driver-apply-validation-hook')), true);
+  assert.equal(cases.every((testCase) => testCase.dataResourceKey.startsWith('row:["wp_reprint_push_forms_lab"')), true);
+
+  const results = cases.map(validateDriverApplyValidationHookCase);
+  const outcomes = Object.fromEntries(results.map((result) => [result.variant, result.outcome]));
+  assert.deepEqual(outcomes, {
+    'supported-apply-hook-carries-mutation': 'applied-supported-apply-hook',
+    'forged-driver-evidence-rejected-before-mutation': 'rejected-forged-driver-evidence',
+  });
+
+  const byVariant = Object.fromEntries(results.map((result) => [result.variant, result]));
+  const accepted = byVariant['supported-apply-hook-carries-mutation'];
+  assert.equal(accepted.status, 'ready');
+  assert.equal(accepted.appliedMutations, 1);
+  assert.equal(accepted.hookCount, 1);
+  assert.equal(accepted.remoteChanged, true);
+  assert.equal(accepted.rowChanged, true);
+  assert.equal(accepted.driverApplyValidation.reasonCode, 'PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED');
+  assert.equal(accepted.driverApplyValidation.outcome, 'accepted');
+  assert.equal(accepted.driverApplyValidation.driver, 'fixture-forms-lab-table');
+  assert.match(accepted.driverApplyValidation.evidenceHash, /^[a-f0-9]{64}$/);
+
+  const rejected = byVariant['forged-driver-evidence-rejected-before-mutation'];
+  assert.equal(rejected.status, 'ready');
+  assert.equal(rejected.applied, false);
+  assert.equal(rejected.remotePreserved, true);
+  assert.equal(rejected.beforeMutationCalls, 0);
+  assert.equal(rejected.rejectionCode, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(rejected.applyValidationEvidence.reasonCode, 'PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED');
+  assert.equal(rejected.applyValidationEvidence.outcome, 'refused-before-mutation');
+  assert.equal(rejected.applyValidationEvidence.driverEvidence.remoteHash, '0'.repeat(64));
+  assert.match(rejected.applyValidationEvidence.evidenceHash, /^[a-f0-9]{64}$/);
+
   for (const result of results) {
     assert.equal(result.evidenceScope, 'local-generated');
     assert.equal(result.productionBacked, false);
