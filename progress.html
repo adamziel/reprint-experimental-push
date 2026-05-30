@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>307</strong>
+        <strong>308</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>693</strong>
+        <strong>692</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -340,7 +340,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
-            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, remoteBeforeHash binding, same-content, large plans, remote-only plugin metadata preservation, independent row/file preservation, and local delete/remote edit refusal.</span>
+            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, remoteBeforeHash binding, already-in-sync no-op safety, same-content, large plans, remote-only plugin metadata preservation, independent row/file preservation, and local delete/remote edit refusal.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
@@ -406,10 +406,13 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0433</span>
+        <span>RPP-0234</span>
       </div>
-      <p>The latest refresh integrates RPP-0433 stale owner plugin file refusal: focused tests prove local production-shaped owner-file context can carry one plugin-owned wp_postmeta mutation through apply, stale owner plugin file replay refuses before mutation, sibling owner file drift blocks plugin file mutation, remote data is preserved, and evidence remains hash-only. Counts are now 307/693; final release remains NO-GO.</p>
+      <p>The latest refresh integrates RPP-0234 already-in-sync decision safety: focused tests prove already-in-sync resources emit no mutations or preconditions, forged overwrite attempts fail before durable journal or mutation, the remote snapshot is preserved, and evidence remains hash-only. Counts are now 308/692; final release remains NO-GO.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0234 focused: 1/1</span>
+        <span class="tag">RPP-0234 pattern: 2/2</span>
+        <span class="tag">planner pair: 148/148</span>
         <span class="tag">RPP-0433 focused: 2/2</span>
         <span class="tag">owner context: 9/9</span>
         <span class="tag">audit redaction: 3/3</span>
@@ -482,7 +485,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 307/1000</span>
+        <span class="tag">checked goals: 308/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
