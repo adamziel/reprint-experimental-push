@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 11:09 CEST.
+- Last update: 2026-05-30 11:15 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0282 independent local row plus remote file release-verifier
-  carry-through merge ending at `dbb80450d`.
+  the RPP-0283 local delete versus remote edit release-verifier carry-through
+  merge ending at `30b3e3aaa`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 409
-  items checked and leaves 591 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 410
+  items checked and leaves 590 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 74 merge-invariant items. No release-ops items are checked
+  harness items, and 75 merge-invariant items. No release-ops items are checked
   yet.
+- Local delete versus remote edit release-verifier carry-through: the current
+  lane now contains `RPP-0283` evidence in
+  `docs/evidence/rpp-0283-local-delete-remote-edit-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0283-local-delete-remote-edit-release-verifier-v5.test.js`.
+  `node --check` passed for the verifier script and focused test, focused
+  RPP-0283 coverage passed 2/2, adjacent RPP-0243 coverage passed 1/1, the
+  RPP-0203/RPP-0223/local deletion planner and generated-harness slice passed
+  5/5, the adjacent plugin-driver release-verifier slices passed 12/12, and
+  the combined RPP-0281/RPP-0282/RPP-0283 release-verifier compatibility suite
+  passed 7/7. Checklist lint, scoped artifact redaction scan,
+  checklist/redaction guard tests, and merge diff whitespace checks also
+  passed. Counts are now 410/590; final release remains `NO-GO`.
 - Independent local row plus remote file release-verifier carry-through: the
   current lane now contains `RPP-0282` evidence in
   `docs/evidence/rpp-0282-independent-local-row-remote-file-release-verifier-v5.md`,
