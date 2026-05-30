@@ -648,6 +648,20 @@ and planner hashes, verifies the ready case applies both graph rows and rejects
 stale replay before mutation, then verifies the stale graph blocker refuses
 apply without mutating the remote digest.
 
+RPP-0192 adds `wpTermTaxonomyGraphReleaseVerifierVariant5` coverage for the
+same `wp_terms` and `wp_term_taxonomy` graph surface with an explicit
+release-verifier-v5 target tag. The deterministic roster emits 20 variant-5
+target cases: 10 ready term/taxonomy graph creates and 10 stale non-ready term
+drift cases, with two cases in every tier. The focused proof keeps the
+evidence hash-only, verifies every ready case applies both graph rows with
+matching live-remote preconditions, preserves unplanned remote data, and
+rejects stale replay against both rows with `PRECONDITION_FAILED` before
+mutation. The stale cases keep the remote-drifted term as non-ready support
+evidence, emit no graph-row mutation or precondition, and refuse apply with
+`PLAN_NOT_READY` before mutation. This is local generated-model support
+evidence only; release posture remains `NO-GO` without production-backed
+release-gate validation.
+
 The `wpTermRelationshipsGraph` target coverage records per-tier counts for
 generated `wp_term_relationships` rows and their `wp_term_taxonomy` targets.
 Ready cases create the term, taxonomy, and relationship in one plan, preserve
