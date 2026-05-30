@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:50 CEST.
+- Last update: 2026-05-30 05:53 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0485 wp_postmeta release-verifier proof merge ending at `fcba4fe9d`.
+  the RPP-0510 session user identity binding proof merge ending at `a4dab0c98`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 347
-  items checked and leaves 653 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 348
+  items checked and leaves 652 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  69 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  69 plugin-driver boundary items, 18 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 59 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Session user identity binding refresh: the current lane now contains
+  `RPP-0510` evidence in
+  `docs/evidence/rpp-0510-session-user-identity-binding.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/push-remote-rest-plugin.php`,
+  `scripts/playground/production-shaped-release-verify.mjs`,
+  `scripts/playground/production-shaped-live-release-verify.mjs`, and
+  `test/rpp-0510-session-user-identity-binding.test.js`. `php -l` passed for
+  the changed REST plugin, `node --check` passed for the changed verifier and
+  focused test files, the focused auth/session route slice passed 11/11, and
+  the release-verifier auth boundary slice passed 2/2. The proof keeps session
+  user identity evidence hash-only and route-scoped; final live endpoint proof
+  remains `NO-GO`. Checklist lint, artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 348/652.
 - Release verifier wp_postmeta driver semantics variant-5 refresh: the current
   lane now contains `RPP-0485` evidence in
   `docs/evidence/rpp-0485-wp-postmeta-release-verifier-v5.md`,

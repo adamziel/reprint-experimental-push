@@ -1,17 +1,30 @@
-# AO Progress Report - 2026-05-30 05:50 CEST
+# AO Progress Report - 2026-05-30 05:53 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0485 wp_postmeta
-release-verifier proof refresh ending at `fcba4fe9d`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0510 session user
+identity binding proof refresh ending at `a4dab0c98`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 347 are
-  checked from integrated evidence and 653 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 348 are
+  checked from integrated evidence and 652 remain open.
+- `RPP-0510` is now checked with focused session user identity binding evidence
+  in `docs/evidence/rpp-0510-session-user-identity-binding.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/push-remote-rest-plugin.php`,
+  `scripts/playground/production-shaped-release-verify.mjs`,
+  `scripts/playground/production-shaped-live-release-verify.mjs`, and
+  `test/rpp-0510-session-user-identity-binding.test.js`. `php -l` passed for
+  the changed REST plugin, `node --check` passed for the changed verifier and
+  focused test files, the focused auth/session route slice passed 11/11, and
+  the release-verifier auth boundary slice passed 2/2, proving session user
+  identity is carried as hash-only route/release evidence while final live
+  endpoint proof remains **NO-GO**. Checklist lint, artifact redaction scan,
+  and merge diff whitespace checks also passed.
 - `RPP-0485` is now checked with focused wp_postmeta driver semantics
   release-verifier variant-5 evidence in
   `docs/evidence/rpp-0485-wp-postmeta-release-verifier-v5.md`,
