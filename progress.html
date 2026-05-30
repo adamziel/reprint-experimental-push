@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T15:02:00+02:00">Last updated: May 30, 2026, 15:02 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T15:05:00+02:00">Last updated: May 30, 2026, 15:05 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>460</strong>
+        <strong>461</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>540</strong>
+        <strong>539</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, old-remote, new-remote, and blocked partial-remote classification, same-key rejected replay, different-body idempotency conflict, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, old-remote, new-remote, and blocked partial-remote classification, same-key rejected replay, different-body idempotency conflict, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0490</span>
+        <span>RPP-0628</span>
       </div>
-      <p>The latest refresh integrates RPP-0490 plugin update dependency release-verifier evidence: the verifier emits hash-only pluginUpdateDependencyValidator proof beside plugin-driver release evidence, builds a ready atomic plugin update plan for reprint-push-atomic-dependent-fixture with a live-remote dependency requirement on reprint-push-atomic-dependency-fixture, carries expectedVersion, version range, live remote hash, requirement hash, update mutation hash, and plugin-owned data evidence, applies the valid update while preserving dependency state and applying the plugin-owned row, refuses version mismatch, unsupported range, and stale dependency before mutation, preserves remote hashes, and differentiates local/support-only, production-scoped, and checked production-backed evidence. Counts are now 460/540; final release remains NO-GO because this is local/support-only release-verifier evidence, not production-backed plugin update proof.</p>
+      <p>The latest refresh integrates RPP-0628 restart-readable staged-state recovery evidence: a claim-fenced production recovery journal writes the target envelope, stages through applyPlan, stops at the injected post-staging boundary, and is read back from the parent process with integrity, monotonic sequence, fsync, ownership, active-claim, target-envelope, hash-only staged snapshot, and stagedState.restartReadable proof. A same-claim production retry appends a retry-open row and emits an inspection surface matching persisted openState and stagedState, then recovery repair replays only the planned old target while preserving remote-only changes from before the plan and after the simulated crash. Counts are now 461/539; final release remains NO-GO because this is local production-wrapper recovery evidence, not an external WordPress crash/restart durability run.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0628 focused: 1/1</span>
+        <span class="tag">restart-readable adjacent: 5/5</span>
+        <span class="tag">recovery journal full: 34/34</span>
+        <span class="tag">production wrapper retry</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0490 focused: 3/3</span>
         <span class="tag">planner adjacent: 3/3</span>
         <span class="tag">release-verifier adjacent: 24/24</span>
