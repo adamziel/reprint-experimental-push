@@ -102,6 +102,11 @@ function redactNode(value, context) {
     return cloneEvidenceValue(value);
   }
 
+  const pathReason = redactionReasonForPath(context.pathParts);
+  if (pathReason) {
+    return redactionSummary(value, pathReason);
+  }
+
   const reason = redactionReasonForKey(context.key);
   if (reason) {
     return redactionSummary(value, reason);
@@ -147,6 +152,12 @@ function redactNode(value, context) {
 
 function visitForIssues(value, context) {
   if (isRedactedEvidence(value)) {
+    return;
+  }
+
+  const pathReason = redactionReasonForPath(context.pathParts);
+  if (pathReason) {
+    context.issues.push(issueFor(value, pathReason, context.pathParts));
     return;
   }
 
@@ -214,6 +225,18 @@ function redactionReasonForKey(key) {
   }
   if (SENSITIVE_KEYS.has(normalized) || isSensitiveSuffixKey(normalized)) {
     return 'secret-or-session-field';
+  }
+  return null;
+}
+
+function redactionReasonForPath(pathParts) {
+  if (!Array.isArray(pathParts) || pathParts.length < 3) {
+    return null;
+  }
+  const normalized = pathParts.map(normalizeKey);
+  const tail = normalized.slice(-3);
+  if (tail[0] === 'recovery' && tail[1] === 'artifacts' && tail[2] === 'remote') {
+    return 'recovery-artifact-site-snapshot';
   }
   return null;
 }
