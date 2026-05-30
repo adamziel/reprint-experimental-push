@@ -10452,6 +10452,96 @@ test('RPP-0154 plugin-owned option changes variant 3 rejects stale replay before
   assert.equal(evidenceText.includes('private_notes'), false, 'variant 3 evidence leaked private note keys');
 });
 
+test('RPP-0444 generated wp_options driver semantics variant 3 preserves plugin-owned remote drift', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpOptionsDriverSemanticsVariant3;
+
+  assert.ok(coverage, 'missing wp_options driver semantics variant 3 target coverage');
+  assert.equal(coverage.family, 'wp-options-driver-semantics-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-options-driver-semantics-v3']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.equal(report.summary.featureFamilies['wp-options-driver-semantics-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['wp-options-driver-semantics-v3-non-ready'], 10);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+  assert.equal(JSON.stringify(report).includes('base-private-plugin-owned-option'), false);
+  assert.equal(JSON.stringify(report).includes('local-private-plugin-owned-option'), false);
+  assert.equal(JSON.stringify(report).includes('remote-private-plugin-owned-option'), false);
+
+  const firstEvidence = generatedWpOptionsDriverSemanticsVariant3Evidence(coverage);
+  const replayEvidence = generatedWpOptionsDriverSemanticsVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    rpp: 'RPP-0444',
+    command: 'node --test --test-name-pattern=RPP-0444 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; final release remains NO-GO.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    rawValuesIncluded: false,
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'RPP-0444 wp_options driver semantics evidence changed between runs');
+  assert.equal(firstEvidence.rpp, 'RPP-0444');
+  assert.equal(firstEvidence.target, 'wpOptionsDriverSemanticsVariant3');
+  assert.equal(firstEvidence.family, 'wp-options-driver-semantics-variant3');
+  assert.equal(firstEvidence.verdict, 'REMOTE_DRIFT_PRESERVES_PLUGIN_OWNED_REMOTE_DATA');
+  assert.equal(firstEvidence.releaseGate, 'NO-GO');
+  assert.equal(firstEvidence.productionBacked, false);
+  assert.equal(firstEvidence.rawValuesIncluded, false);
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+
+  const [readyCase, conflictCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.status, 'ready');
+  assert.ok(readyCase.tags.includes('wp-options-driver-semantics-v3-ready'));
+  assert.equal(readyCase.optionMutation.pluginOwner, 'forms');
+  assert.equal(readyCase.optionMutation.driver, 'wp-option');
+  assert.equal(readyCase.optionMutation.ownerContextRequired, true);
+  assert.equal(readyCase.optionMutation.supportsDelete, false);
+  assert.equal(readyCase.optionMutation.plannedMutation, true);
+  assert.equal(readyCase.optionMutation.plannedPrecondition, true);
+  assert.match(readyCase.optionMutation.auditEvidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(readyCase.optionMutation.driverDecisionEvidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(readyCase.staleReplay.code, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplay.expectedHash, readyCase.optionMutation.remoteBeforeHash);
+  assert.notEqual(readyCase.staleReplay.actualHash, readyCase.staleReplay.expectedHash);
+  assert.equal(readyCase.staleReplay.rowHashAfter, readyCase.staleReplay.rowHashBefore);
+  assert.equal(readyCase.staleReplay.remoteBeforeHash, readyCase.staleReplay.remoteAfterHash);
+  assert.equal(readyCase.staleReplay.remoteDataPreserved, true);
+  assert.match(readyCase.staleReplay.detailsHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(conflictCase.status, 'conflict');
+  assert.ok(conflictCase.tags.includes('wp-options-driver-semantics-v3-non-ready'));
+  assert.equal(conflictCase.applied, false);
+  assert.equal(conflictCase.conflict.class, 'plugin-data-conflict');
+  assert.equal(conflictCase.conflict.pluginOwner, 'forms');
+  assert.equal(conflictCase.conflict.plannedMutation, false);
+  assert.equal(conflictCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(conflictCase.refusal.remoteBeforeHash, conflictCase.refusal.remoteAfterHash);
+  assert.match(conflictCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('option_value'), false, 'RPP-0444 evidence leaked option_value fields');
+  assert.equal(evidenceText.includes('base-private-plugin-owned-option'), false, 'RPP-0444 evidence leaked base option value');
+  assert.equal(evidenceText.includes('local-private-plugin-owned-option'), false, 'RPP-0444 evidence leaked local option value');
+  assert.equal(evidenceText.includes('remote-private-plugin-owned-option'), false, 'RPP-0444 evidence leaked remote option value');
+  assert.equal(evidenceText.includes('plugin-owned-option-local-'), false, 'RPP-0444 evidence leaked local token value');
+  assert.equal(evidenceText.includes('plugin-owned-option-remote-'), false, 'RPP-0444 evidence leaked remote token value');
+  assert.equal(evidenceText.includes('rpp0444-stale-replay'), false, 'RPP-0444 evidence leaked stale replay value');
+  assert.equal(evidenceText.includes('private_token'), false, 'RPP-0444 evidence leaked private token keys');
+  assert.equal(evidenceText.includes('private_notes'), false, 'RPP-0444 evidence leaked private note keys');
+});
+
 test('RPP-0174 plugin-owned option changes variant 4 rejects stale replay before mutation', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.pluginOwnedOptionChangeVariant4;
@@ -10663,6 +10753,23 @@ function generatedPluginOwnedOptionChangeVariant4Evidence(targetCoverage) {
     label: 'variant 4',
     staleReplayPrefix: 'rpp0174',
   });
+}
+
+function generatedWpOptionsDriverSemanticsVariant3Evidence(targetCoverage) {
+  const evidence = generatedPluginOwnedOptionChangeVariantEvidence(targetCoverage, {
+    target: 'wpOptionsDriverSemanticsVariant3',
+    tag: 'wp-options-driver-semantics-v3',
+    label: 'RPP-0444 wp_options driver semantics variant 3',
+    staleReplayPrefix: 'rpp0444',
+  });
+
+  return {
+    rpp: 'RPP-0444',
+    verdict: 'REMOTE_DRIFT_PRESERVES_PLUGIN_OWNED_REMOTE_DATA',
+    releaseGate: 'NO-GO',
+    rawValuesIncluded: false,
+    ...evidence,
+  };
 }
 
 function generatedPluginOwnedOptionChangeVariantEvidence(
@@ -10877,6 +10984,8 @@ function pluginOwnedOptionVariantReadyMutationEvidence({ testCase, plan, applied
     remoteBeforeHash: mutation.remoteBeforeHash,
     preconditionExpectedHash: precondition.expectedHash,
     appliedHash,
+    auditEvidenceHash: `sha256:${digest(mutation.pluginOwnedResource.auditEvidence)}`,
+    driverDecisionEvidenceHash: `sha256:${digest(mutation.pluginOwnedResource.driverAuditEvidence)}`,
     plannedMutation: true,
     plannedPrecondition: true,
     mutationHash: `sha256:${digest({
@@ -10913,24 +11022,29 @@ function pluginOwnedOptionVariantReadyStaleReplayEvidence({
   assert.ok(precondition, `${testCase.id} should have a plugin-owned option precondition for stale replay`);
   setResource(driftedRemote, resource, staleRow);
   const remoteBeforeHash = digest(driftedRemote);
-  const actualHash = resourceHash(driftedRemote, resource);
+  const rowHashBefore = resourceHash(driftedRemote, resource);
   const error = captureError(() => applyPlan(driftedRemote, plan));
+  const rowHashAfter = resourceHash(driftedRemote, resource);
   const remoteAfterHash = digest(driftedRemote);
 
   assert.ok(error instanceof PushPlanError, `${testCase.id} stale plugin-owned option replay should fail`);
   assert.equal(error.code, 'PRECONDITION_FAILED');
   assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} stale replay mutated the remote`);
+  assert.equal(rowHashAfter, rowHashBefore, `${testCase.id} stale replay mutated the plugin-owned option row`);
   assert.deepEqual(getResource(driftedRemote, resource), staleRow, `${testCase.id} stale replay changed the drifted row`);
   assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
-  assert.notEqual(actualHash, precondition.expectedHash);
+  assert.notEqual(rowHashBefore, precondition.expectedHash);
 
   return {
     resourceKey: resource.key,
     code: error.code,
     expectedHash: precondition.expectedHash,
-    actualHash,
+    actualHash: rowHashBefore,
+    rowHashBefore,
+    rowHashAfter,
     remoteBeforeHash,
     remoteAfterHash,
+    remoteDataPreserved: rowHashAfter === rowHashBefore && remoteAfterHash === remoteBeforeHash,
     detailsHash: `sha256:${digest(error.details)}`,
     preconditionHash: `sha256:${digest(precondition)}`,
   };
