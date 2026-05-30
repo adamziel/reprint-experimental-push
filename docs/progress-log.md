@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 13:27 CEST.
+- Last update: 2026-05-30 13:31 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0710 parallel snapshot hashing merge ending at `665aded58`.
+  the RPP-0625 claim expiry policy v2 merge ending at `1c2107a98`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 440
-  items checked and leaves 560 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 441
+  items checked and leaves 559 open.
 - Checked slices: 100 release-gate foundation items, 46 graph identity items,
-  73 plugin-driver boundary items, 23 executor/auth items, 27 recovery items,
+  73 plugin-driver boundary items, 23 executor/auth items, 28 recovery items,
   13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Claim expiry policy v2: the current lane now contains `RPP-0625` evidence in
+  `docs/evidence/rpp-0625-claim-expiry-policy-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/recovery-journal.test.js`. The SQLite-backed regression advances an
+  expired active production recovery claim with a retry claim, reloads the
+  durable table through `readSqliteRecoveryJournalTable()`, proves the restarted
+  journal still inspects as `old-remote`, and feeds that same restarted state
+  into `buildDurableRecoveryJournalReleaseProof()` while keeping the checked
+  live durable-journal boundary closed for local SQLite fixture evidence.
+  Validation passed with the focused RPP-0625 test 1/1, adjacent
+  claim/stale/expiry coverage 9/9, full recovery-journal suite 31/31, checklist
+  lint, scoped artifact redaction scan, and merge diff whitespace checks.
+  Counts are now 441/559; final release remains `NO-GO` because this is local
+  SQLite-backed durability evidence, not checked live production journal
+  ownership and lease-fence evidence.
 - Parallel snapshot hashing: the current lane now contains `RPP-0710` evidence
   in `docs/evidence/rpp-0710-parallel-snapshot-hashing.md`,
   `docs/reprint-push-completion-checklist.md`,
