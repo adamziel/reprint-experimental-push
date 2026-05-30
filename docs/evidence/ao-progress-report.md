@@ -1,18 +1,33 @@
-# AO Progress Report - 2026-05-30 11:00 CEST
+# AO Progress Report - 2026-05-30 11:05 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0279 redacted raw
-value evidence variant-4 merge-invariant refresh ending at `32e851aa3`.
+`lane/evidence-integration-20260527` through the current RPP-0281 independent
+local file plus remote row release-verifier carry-through ending at
+`d520c33f7`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 407 are
-  checked from integrated evidence and 593 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 408 are
+  checked from integrated evidence and 592 remain open.
+- `RPP-0281` is now checked with support-only release-verifier carry-through
+  for independent local file plus remote row edit evidence in
+  `docs/evidence/rpp-0281-independent-local-file-remote-row-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0281-independent-local-file-remote-row-release-verifier-v5.test.js`.
+  `node --check` passed for the verifier script and focused test, focused
+  RPP-0281 coverage passed 3/3, adjacent RPP-0241/RPP-0281 coverage passed
+  5/5, the RPP-0221/RPP-0281 generated-harness slice passed 4/4, the
+  RPP-0484/RPP-0498/RPP-0281 release-verifier adjacency passed 7/7, and the
+  production-shaped proof/RPP-0281 slice passed 5/5. Checklist lint, scoped
+  artifact redaction scan, checklist/redaction guard tests, and merge diff
+  whitespace checks also passed. This remains local support-only
+  release-verifier evidence, not production endpoint proof.
 - `RPP-0279` is now checked with focused redacted raw value evidence variant-4
   merge-invariant evidence in
   `docs/evidence/rpp-0279-redacted-raw-value-evidence-v4.md`,
