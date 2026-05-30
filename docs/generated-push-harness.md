@@ -522,6 +522,16 @@ with two cases in every tier. The focused proof mirrors the variant-3 row-mix
 invariants and records only resource keys, planner summaries, refusal hashes,
 decision hashes, and model proof hashes.
 
+RPP-0184 adds `rowCreateUpdateDeleteMixReleaseVerifierVariant5` coverage over
+the same generic row mix surface with an explicit release-verifier-v5 target
+tag. The deterministic roster emits 20 variant-5 target cases: 10 ready cases
+and 10 non-ready conflict cases, with two cases in every tier. The focused
+proof records only resource keys, planner summaries, decision/refusal hashes,
+and model proof hashes, verifies the ready case applies the planned
+create/update/delete rows and preserves the remote-only row, rejects stale
+replay with `PRECONDITION_FAILED` before mutation, and verifies the conflicting
+updated row refuses apply with `PLAN_NOT_READY` before mutation.
+
 The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 `wp_term_taxonomy` rows and their `wp_terms` graph relationships. Ready cases
 create the term and taxonomy row in one plan, preserve unplanned remote
