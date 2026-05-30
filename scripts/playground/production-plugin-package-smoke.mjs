@@ -20,14 +20,23 @@ import {
   summarizeArbitraryPluginFixturePackageEvidence,
 } from './production-plugin-package-scenarios.js';
 import {
+  packagedProductionPluginPreflightReady,
+  packagedProductionPluginPreflightRetryable,
+  packagedProductionPluginRestIndexReady,
+  packagedProductionPluginRestIndexRetryable,
+  packagedProductionPluginServerReady,
+  packagedProductionPluginSnapshotReady,
+  packagedProductionPluginSnapshotRetryable,
+} from './packaged-production-plugin-readiness.js';
+import {
   productionPluginDriverBoundary,
   summarizeProductionPluginDriverBoundaryProof,
 } from './production-shaped-release-verify.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
-const serverStartupTimeoutMs = 20_000;
-const packagedDriverGuardStartupTimeoutMs = 45_000;
+const serverStartupTimeoutMs = 60_000;
+const packagedDriverGuardStartupTimeoutMs = 120_000;
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
 
@@ -1402,8 +1411,7 @@ async function startPlaygroundServer(name, blueprintPath, mountedPluginDir, { au
 async function waitForServer(child, baseUrl, logs, startupTimeoutMs = serverStartupTimeoutMs) {
   const deadline = Date.now() + startupTimeoutMs;
   let lastError = null;
-  let lastStatus = null;
-  let lastBody = null;
+  let lastProbe = null;
 
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
@@ -1411,7 +1419,15 @@ async function waitForServer(child, baseUrl, logs, startupTimeoutMs = serverStar
     }
 
     try {
-      const response = await requestJson(
+      const index = await requestJson(
+        baseUrl,
+        'GET',
+        '/wp-json/',
+        undefined,
+        {},
+        { attempts: 2 },
+      );
+      const snapshot = await requestJson(
         baseUrl,
         'GET',
         '/wp-json/reprint/v1/push/snapshot',
@@ -1419,12 +1435,28 @@ async function waitForServer(child, baseUrl, logs, startupTimeoutMs = serverStar
         authHeaders(),
         { attempts: 2 },
       );
-      if (response.status === 200 && response.body?.ok === true) {
+      const preflight = await requestJson(
+        baseUrl,
+        'GET',
+        '/wp-json/reprint/v1/push/preflight',
+        undefined,
+        signedHeadersForPreflight(),
+        { attempts: 2 },
+      );
+      lastProbe = summarizeReadinessProbe({ index, snapshot, preflight });
+      const indexReady = packagedProductionPluginRestIndexReady(index);
+      const snapshotReady = packagedProductionPluginSnapshotReady(snapshot);
+      const preflightReady = packagedProductionPluginPreflightReady(preflight);
+      if (indexReady && packagedProductionPluginServerReady({ snapshot, preflight })) {
         return;
       }
-      lastError = new Error(`Production plugin package snapshot readiness HTTP ${response.status}`);
-      lastStatus = response.status;
-      lastBody = response.body;
+      lastError = new Error(formatReadinessProbeError(lastProbe));
+      const retryable = (!indexReady && packagedProductionPluginRestIndexRetryable(index))
+        || (!snapshotReady && packagedProductionPluginSnapshotRetryable(snapshot))
+        || (!preflightReady && packagedProductionPluginPreflightRetryable(preflight));
+      if (!retryable) {
+        throw lastError;
+      }
     } catch (error) {
       lastError = error;
     }
@@ -1432,10 +1464,55 @@ async function waitForServer(child, baseUrl, logs, startupTimeoutMs = serverStar
     await sleep(500);
   }
 
-  const lastResponse = lastStatus === null
+  const lastResponse = lastProbe === null
     ? ''
-    : `\nLast snapshot probe status: ${lastStatus}\nLast snapshot probe body: ${JSON.stringify(lastBody, null, 2)}`;
+    : `\nLast readiness probe: ${JSON.stringify(lastProbe, null, 2)}`;
   throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${lastResponse}\n${logs.join('')}`);
+}
+
+function summarizeReadinessProbe({ index, snapshot, preflight }) {
+  return {
+    index: {
+      status: index?.status ?? null,
+      ready: packagedProductionPluginRestIndexReady(index),
+      retryable: packagedProductionPluginRestIndexRetryable(index),
+      namespaces: Array.isArray(index?.body?.namespaces) ? index.body.namespaces : [],
+      routeCount: index?.body?.routes && typeof index.body.routes === 'object'
+        ? Object.keys(index.body.routes).length
+        : 0,
+    },
+    snapshot: {
+      status: snapshot?.status ?? null,
+      code: snapshot?.body?.code || null,
+      ready: packagedProductionPluginSnapshotReady(snapshot),
+      retryable: packagedProductionPluginSnapshotRetryable(snapshot),
+      ok: snapshot?.body?.ok === true,
+    },
+    preflight: {
+      status: preflight?.status ?? null,
+      code: preflight?.body?.code || null,
+      ready: packagedProductionPluginPreflightReady(preflight),
+      retryable: packagedProductionPluginPreflightRetryable(preflight),
+      ok: preflight?.body?.ok === true,
+      routeProfile: preflight?.body?.routeProfile?.profile || null,
+      sessionType: preflight?.body?.auth?.session?.type || null,
+      sessionStatus: preflight?.body?.auth?.session?.status || null,
+    },
+  };
+}
+
+function formatReadinessProbeError(probe) {
+  const parts = [];
+  if (probe?.index) {
+    parts.push(`REST index HTTP ${probe.index.status}`);
+  }
+  if (probe?.snapshot) {
+    parts.push(`snapshot HTTP ${probe.snapshot.status}${probe.snapshot.code ? ` ${probe.snapshot.code}` : ''}`);
+  }
+  if (probe?.preflight) {
+    parts.push(`preflight HTTP ${probe.preflight.status}${probe.preflight.code ? ` ${probe.preflight.code}` : ''}`);
+  }
+  return `Production plugin package readiness incomplete: ${parts.join(', ') || 'no probe response'}`;
 }
 
 async function stopPlaygroundServer(server) {

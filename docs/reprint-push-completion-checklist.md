@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 486.
-- Remaining open: 514.
+- Verified complete: 487.
+- Remaining open: 513.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -518,7 +518,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [x] RPP-0484 (Mid / plugin-driver) Carry through the release verifier for wp_options driver semantics, variant 5. Success: remote drift preserves plugin-owned remote data.
 - [x] RPP-0485 (Mid / plugin-driver) Carry through the release verifier for wp_postmeta driver semantics, variant 5. Success: release gate notes whether evidence is local or production-backed.
 - [x] RPP-0486 (Mid / plugin-driver) Carry through the release verifier for wp_termmeta driver semantics, variant 5. Success: focused test proves exact driver behavior.
-- [ ] RPP-0487 (Mid / plugin-driver) Carry through the release verifier for wp_usermeta driver semantics, variant 5. Success: generated harness covers supported and unsupported variants.
+- [x] RPP-0487 (Mid / plugin-driver) Carry through the release verifier for wp_usermeta driver semantics, variant 5. Success: generated harness covers supported and unsupported variants.
 - [x] RPP-0488 (Mid / plugin-driver) Carry through the release verifier for serialized option validator, variant 5. Success: local production proof carries one real mutation through apply.
 - [x] RPP-0489 (Mid / plugin-driver) Carry through the release verifier for plugin activation dependency validator, variant 5. Success: remote drift preserves plugin-owned remote data.
 - [x] RPP-0490 (Mid / plugin-driver) Carry through the release verifier for plugin update dependency validator, variant 5. Success: release gate notes whether evidence is local or production-backed.
