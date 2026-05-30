@@ -15,7 +15,7 @@ import {
 } from '../../src/authenticated-http-push-client.js';
 import { applyPlan, PushPlanError } from '../../src/apply.js';
 import { createPushPlan } from '../../src/planner.js';
-import { resourceHash, getResource } from '../../src/resources.js';
+import { resourceHash, getResource, serializeResourceValue } from '../../src/resources.js';
 import { ABSENT, digest } from '../../src/stable-json.js';
 import {
   describeAuthSessionSourceMetadataDrift,
@@ -464,6 +464,19 @@ export const wpOptionsDriverReleaseVerifierBoundary = Object.freeze({
   }),
 });
 
+export const directActivePluginsMutationRefusalBoundary = Object.freeze({
+  driver: 'plugin-activation-driver',
+  owner: 'wordpress-core',
+  table: 'wp_options',
+  rowId: 'option_name:active_plugins',
+  resourceKey: 'row:["wp_options","option_name:active_plugins"]',
+  variants: Object.freeze([
+    'supported-plugin-managed-option-applies',
+    'unsupported-direct-active-plugins-blocked',
+    'forged-ready-active-plugins-rejected-before-mutation',
+  ]),
+});
+
 const coreWordPressDriverBoundaryTables = new Set([
   'wp_options',
   'wp_postmeta',
@@ -692,6 +705,647 @@ function buildWpOptionsDriverReleaseVerifierProof(now) {
     };
   }
   return proof;
+}
+
+export function summarizeDirectActivePluginsMutationRefusalReleaseVerifierProof({
+  now = new Date('2026-05-30T12:49:20.000Z'),
+} = {}) {
+  try {
+    return buildDirectActivePluginsMutationRefusalReleaseVerifierProof(now);
+  } catch (error) {
+    return {
+      rpp: 'RPP-0492',
+      evidenceSource: 'release-verifier-direct-active-plugins-mutation-refusal-v5',
+      status: 'blocked',
+      verdict: 'DIRECT_ACTIVE_PLUGINS_MUTATION_REFUSAL_REQUIRED',
+      evidenceScope: 'local-release-verifier',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      rawValuesIncluded: false,
+      resource: directActivePluginsMutationRefusalResourceEvidence(),
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildDirectActivePluginsMutationRefusalReleaseVerifierProof(now) {
+  const variants = directActivePluginsMutationRefusalBoundary.variants
+    .map((variant, index) => directActivePluginsMutationRefusalVariantProof({ variant, index, now }));
+  const outcomes = Object.fromEntries(variants.map((entry) => [entry.variant, entry.outcome]));
+  const supportedVariants = variants.filter((entry) => entry.supportedManagedPath === true);
+  const unsupportedVariants = variants.filter((entry) => entry.supportedManagedPath === false);
+  const failClosedUnsupportedVariants = unsupportedVariants.filter((entry) =>
+    entry.applyRefusal?.remotePreserved === true
+      && entry.applyRefusal?.beforeMutationCalls === 0);
+  const ok = variants.length === directActivePluginsMutationRefusalBoundary.variants.length
+    && supportedVariants.length === 1
+    && unsupportedVariants.length === 2
+    && failClosedUnsupportedVariants.length === 2
+    && outcomes['supported-plugin-managed-option-applies'] === 'applied-supported-plugin-managed-path'
+    && outcomes['unsupported-direct-active-plugins-blocked'] === 'blocked-direct-active-plugins'
+    && outcomes['forged-ready-active-plugins-rejected-before-mutation']
+      === 'rejected-forged-direct-active-plugins';
+
+  const proof = {
+    rpp: 'RPP-0492',
+    evidenceSource: 'release-verifier-direct-active-plugins-mutation-refusal-v5',
+    checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'DIRECT_ACTIVE_PLUGINS_MUTATION_REFUSAL_CARRIED'
+      : 'DIRECT_ACTIVE_PLUGINS_MUTATION_REFUSAL_REQUIRED',
+    evidenceScope: 'local-release-verifier',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    rawValuesIncluded: false,
+    resource: directActivePluginsMutationRefusalResourceEvidence(),
+    releaseVerifier: {
+      check: 'direct-active-plugins-mutation-refusal',
+      generatedHarnessVariantsCovered: true,
+      supportedVariants: supportedVariants.length,
+      unsupportedVariants: unsupportedVariants.length,
+      failClosedUnsupportedVariants: failClosedUnsupportedVariants.length,
+      outcomes,
+      variantSetHash: sha256Evidence(variants.map((entry) => ({
+        variant: entry.variant,
+        outcome: entry.outcome,
+        status: entry.status,
+        supportedManagedPath: entry.supportedManagedPath,
+        applyRefusal: entry.applyRefusal ? {
+          code: entry.applyRefusal.code,
+          reasonCode: entry.applyRefusal.reasonCode,
+          remotePreserved: entry.applyRefusal.remotePreserved,
+          beforeMutationCalls: entry.applyRefusal.beforeMutationCalls,
+        } : null,
+      }))),
+    },
+    variants,
+  };
+  proof.proofHash = sha256Evidence({
+    releaseVerifier: proof.releaseVerifier,
+    variants: proof.variants.map((entry) => ({
+      variant: entry.variant,
+      outcome: entry.outcome,
+      planHash: entry.plan.hash,
+      managedMutationHash: entry.managedMutation?.mutationHash || null,
+      blockerHash: entry.blocker?.blockerHash || null,
+      forgedPlanHash: entry.forgedReadyPlan?.planHash || null,
+      applyRefusalHash: entry.applyRefusal?.detailsHash || null,
+      activePluginsPreserved: entry.activePlugins.preserved,
+    })),
+  });
+  return proof;
+}
+
+function directActivePluginsMutationRefusalVariantProof({ variant, index, now }) {
+  const testCase = directActivePluginsMutationRefusalCase({ variant, index });
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now,
+  });
+  if (variant === 'supported-plugin-managed-option-applies') {
+    return directActivePluginsSupportedManagedPathProof({ testCase, plan });
+  }
+  if (variant === 'unsupported-direct-active-plugins-blocked') {
+    return directActivePluginsBlockedPathProof({ testCase, plan });
+  }
+  return directActivePluginsForgedReadyPathProof({ testCase, plan, now });
+}
+
+function directActivePluginsSupportedManagedPathProof({ testCase, plan }) {
+  const activeResource = directActivePluginsMutationRefusalResource();
+  const managedMutation = plan.mutations.find((entry) => entry.resourceKey === testCase.dataResourceKey) || null;
+  const activePluginsMutation = plan.mutations.find((entry) =>
+    entry.resourceKey === directActivePluginsMutationRefusalBoundary.resourceKey) || null;
+  const activePluginsHashBefore = resourceHash(testCase.remote, activeResource);
+  const applied = applyPlan(cloneReleaseVerifierJson(testCase.remote), plan);
+  const activePluginsHashAfter = resourceHash(applied.site, activeResource);
+  const ok = plan.status === 'ready'
+    && plan.mutations.length === 1
+    && plan.blockers.length === 0
+    && activePluginsMutation === null
+    && managedMutation?.pluginOwnedResource?.pluginOwner === testCase.pluginOwner
+    && managedMutation?.pluginOwnedResource?.driver === 'wp-option'
+    && applied.appliedMutations === 1
+    && activePluginsHashAfter === activePluginsHashBefore;
+
+  return {
+    variant: testCase.variant,
+    family: testCase.family,
+    outcome: ok ? 'applied-supported-plugin-managed-path' : 'unexpected-supported-path-result',
+    status: plan.status,
+    supportedManagedPath: true,
+    plan: directActivePluginsPlanEvidence(plan),
+    managedMutation: managedMutation ? {
+      resourceKey: managedMutation.resourceKey,
+      action: managedMutation.action,
+      pluginOwner: managedMutation.pluginOwnedResource?.pluginOwner || null,
+      driver: managedMutation.pluginOwnedResource?.driver || null,
+      policySource: managedMutation.pluginOwnedResource?.policySource || null,
+      ownerContextRequired: managedMutation.pluginOwnedResource?.ownerContextRequired === true,
+      baseHash: managedMutation.baseHash,
+      remoteBeforeHash: managedMutation.remoteBeforeHash,
+      localHash: managedMutation.localHash,
+      auditEvidenceHash: sha256Evidence(managedMutation.pluginOwnedResource?.auditEvidence || {}),
+      driverAuditEvidenceHash: sha256Evidence(managedMutation.pluginOwnedResource?.driverAuditEvidence || {}),
+      mutationHash: sha256Evidence(directActivePluginsMutationHashEvidence(managedMutation)),
+    } : null,
+    blocker: null,
+    forgedReadyPlan: null,
+    applyRefusal: null,
+    activePlugins: {
+      resourceKey: directActivePluginsMutationRefusalBoundary.resourceKey,
+      directMutationPlanned: false,
+      preserved: activePluginsHashAfter === activePluginsHashBefore,
+      beforeHash: activePluginsHashBefore,
+      afterHash: activePluginsHashAfter,
+    },
+    applied: {
+      appliedMutations: applied.appliedMutations,
+      journalHash: sha256Evidence(applied.journal),
+    },
+    proofHash: sha256Evidence({
+      variant: testCase.variant,
+      status: plan.status,
+      managedMutation: managedMutation ? directActivePluginsMutationHashEvidence(managedMutation) : null,
+      activePluginsHashBefore,
+      activePluginsHashAfter,
+      appliedMutations: applied.appliedMutations,
+    }),
+  };
+}
+
+function directActivePluginsBlockedPathProof({ testCase, plan }) {
+  const activeResource = directActivePluginsMutationRefusalResource();
+  const blocker = plan.blockers.find((entry) =>
+    entry.resourceKey === directActivePluginsMutationRefusalBoundary.resourceKey) || null;
+  const remote = cloneReleaseVerifierJson(testCase.remote);
+  const remoteBeforeHash = sha256Evidence(remote);
+  const activePluginsHashBefore = resourceHash(remote, activeResource);
+  let beforeMutationCalls = 0;
+  let refusalError = null;
+  try {
+    applyPlan(remote, plan, {
+      beforeMutation() {
+        beforeMutationCalls += 1;
+      },
+    });
+  } catch (error) {
+    refusalError = error;
+  }
+  const remoteAfterHash = sha256Evidence(remote);
+  const activePluginsHashAfter = resourceHash(remote, activeResource);
+  const remotePreserved = remoteAfterHash === remoteBeforeHash
+    && activePluginsHashAfter === activePluginsHashBefore;
+  const ok = plan.status === 'blocked'
+    && plan.mutations.length === 0
+    && plan.preconditions.length === 0
+    && blocker?.class === 'unsupported-active-plugins-direct-mutation'
+    && blocker.reasonCode === 'DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED'
+    && refusalError instanceof PushPlanError
+    && refusalError.code === 'PLAN_NOT_READY'
+    && beforeMutationCalls === 0
+    && remotePreserved;
+
+  return {
+    variant: testCase.variant,
+    family: testCase.family,
+    outcome: ok ? 'blocked-direct-active-plugins' : 'unexpected-blocked-path-result',
+    status: plan.status,
+    supportedManagedPath: false,
+    plan: directActivePluginsPlanEvidence(plan),
+    managedMutation: null,
+    blocker: blocker ? directActivePluginsBlockerEvidence(blocker) : null,
+    forgedReadyPlan: null,
+    applyRefusal: directActivePluginsApplyRefusalEvidence({
+      error: refusalError,
+      expectedCode: 'PLAN_NOT_READY',
+      expectedReasonCode: blocker?.reasonCode || null,
+      beforeMutationCalls,
+      remotePreserved,
+      remoteBeforeHash,
+      remoteAfterHash,
+      activePluginsHashBefore,
+      activePluginsHashAfter,
+    }),
+    activePlugins: {
+      resourceKey: directActivePluginsMutationRefusalBoundary.resourceKey,
+      directMutationPlanned: false,
+      preserved: activePluginsHashAfter === activePluginsHashBefore,
+      beforeHash: activePluginsHashBefore,
+      afterHash: activePluginsHashAfter,
+    },
+    applied: null,
+    proofHash: sha256Evidence({
+      variant: testCase.variant,
+      status: plan.status,
+      blocker: blocker ? directActivePluginsBlockerEvidence(blocker) : null,
+      remoteBeforeHash,
+      remoteAfterHash,
+      activePluginsHashBefore,
+      activePluginsHashAfter,
+    }),
+  };
+}
+
+function directActivePluginsForgedReadyPathProof({ testCase, plan, now }) {
+  const activeResource = directActivePluginsMutationRefusalResource();
+  const blocker = plan.blockers.find((entry) =>
+    entry.resourceKey === directActivePluginsMutationRefusalBoundary.resourceKey) || null;
+  const forgedPlan = directActivePluginsForgedReadyPlan(testCase, now);
+  const forgedMutation = forgedPlan.mutations[0] || null;
+  const remote = cloneReleaseVerifierJson(testCase.remote);
+  const remoteBeforeHash = sha256Evidence(remote);
+  const activePluginsHashBefore = resourceHash(remote, activeResource);
+  let beforeMutationCalls = 0;
+  let refusalError = null;
+  try {
+    applyPlan(remote, forgedPlan, {
+      beforeMutation() {
+        beforeMutationCalls += 1;
+      },
+    });
+  } catch (error) {
+    refusalError = error;
+  }
+  const remoteAfterHash = sha256Evidence(remote);
+  const activePluginsHashAfter = resourceHash(remote, activeResource);
+  const remotePreserved = remoteAfterHash === remoteBeforeHash
+    && activePluginsHashAfter === activePluginsHashBefore;
+  const ok = plan.status === 'blocked'
+    && blocker?.class === 'unsupported-active-plugins-direct-mutation'
+    && forgedPlan.status === 'ready'
+    && forgedPlan.mutations.length === 1
+    && forgedMutation?.resourceKey === directActivePluginsMutationRefusalBoundary.resourceKey
+    && refusalError instanceof PushPlanError
+    && refusalError.code === 'UNSUPPORTED_ACTIVE_PLUGINS_MUTATION'
+    && refusalError.details?.reasonCode === 'DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED'
+    && beforeMutationCalls === 0
+    && remotePreserved;
+
+  return {
+    variant: testCase.variant,
+    family: testCase.family,
+    outcome: ok ? 'rejected-forged-direct-active-plugins' : 'unexpected-forged-path-result',
+    status: plan.status,
+    supportedManagedPath: false,
+    plan: directActivePluginsPlanEvidence(plan),
+    managedMutation: null,
+    blocker: blocker ? directActivePluginsBlockerEvidence(blocker) : null,
+    forgedReadyPlan: {
+      status: forgedPlan.status,
+      mutationCount: forgedPlan.mutations.length,
+      preconditionCount: forgedPlan.preconditions.length,
+      resourceKey: forgedMutation?.resourceKey || null,
+      planHash: sha256Evidence(forgedPlan),
+      mutationHash: forgedMutation
+        ? sha256Evidence(directActivePluginsMutationHashEvidence(forgedMutation))
+        : null,
+    },
+    applyRefusal: directActivePluginsApplyRefusalEvidence({
+      error: refusalError,
+      expectedCode: 'UNSUPPORTED_ACTIVE_PLUGINS_MUTATION',
+      expectedReasonCode: 'DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED',
+      beforeMutationCalls,
+      remotePreserved,
+      remoteBeforeHash,
+      remoteAfterHash,
+      activePluginsHashBefore,
+      activePluginsHashAfter,
+    }),
+    activePlugins: {
+      resourceKey: directActivePluginsMutationRefusalBoundary.resourceKey,
+      directMutationPlanned: true,
+      preserved: activePluginsHashAfter === activePluginsHashBefore,
+      beforeHash: activePluginsHashBefore,
+      afterHash: activePluginsHashAfter,
+    },
+    applied: null,
+    proofHash: sha256Evidence({
+      variant: testCase.variant,
+      status: plan.status,
+      blocker: blocker ? directActivePluginsBlockerEvidence(blocker) : null,
+      forgedReadyPlan: {
+        planHash: sha256Evidence(forgedPlan),
+        mutationHash: forgedMutation
+          ? sha256Evidence(directActivePluginsMutationHashEvidence(forgedMutation))
+          : null,
+      },
+      remoteBeforeHash,
+      remoteAfterHash,
+      activePluginsHashBefore,
+      activePluginsHashAfter,
+    }),
+  };
+}
+
+function directActivePluginsMutationRefusalCase({ variant, index }) {
+  const activePluginsBaseEntry = `rpp0492-private-base-plugin-${index + 1}/rpp0492-private-base-plugin.php`;
+  const activePluginsLocalEntry = `rpp0492-private-local-plugin-${index + 1}/rpp0492-private-local-plugin.php`;
+  const managedOptionName = `rpp_0492_managed_option_${index + 1}`;
+  const managedRowId = `option_name:${managedOptionName}`;
+  const dataResourceKey = `row:${JSON.stringify(['wp_options', managedRowId])}`;
+  const base = directActivePluginsMutationRefusalSnapshot({
+    activePlugins: [activePluginsBaseEntry],
+    managedOptionName,
+    managedMode: 'base-managed-option',
+    managedToken: `rpp0492-private-base-managed-option-${index + 1}`,
+  });
+  const local = cloneReleaseVerifierJson(base);
+  const remote = cloneReleaseVerifierJson(base);
+  const testCase = {
+    variant,
+    family: 'direct-active-plugins-mutation-refusal',
+    pluginOwner: 'forms',
+    base,
+    local,
+    remote,
+    dataResourceKey,
+    dataRowId: managedRowId,
+  };
+
+  if (variant === 'supported-plugin-managed-option-applies') {
+    local.db.wp_options[managedRowId] = directActivePluginsManagedOptionRow({
+      optionName: managedOptionName,
+      mode: 'local-supported-plugin-managed-option',
+      token: `rpp0492-private-local-managed-option-${index + 1}`,
+    });
+    local.meta = {
+      pluginOwnedResources: {
+        allowedResources: [
+          {
+            resourceKey: dataResourceKey,
+            pluginOwner: testCase.pluginOwner,
+            driver: 'wp-option',
+            supportsDelete: false,
+          },
+        ],
+      },
+    };
+    return testCase;
+  }
+
+  local.db.wp_options[directActivePluginsMutationRefusalBoundary.rowId] =
+    directActivePluginsActivePluginsOptionRow([
+      activePluginsBaseEntry,
+      activePluginsLocalEntry,
+    ]);
+  return testCase;
+}
+
+function directActivePluginsMutationRefusalSnapshot({
+  activePlugins,
+  managedOptionName,
+  managedMode,
+  managedToken,
+}) {
+  return {
+    files: {
+      'wp-content/plugins/forms/forms.php': '<?php /* forms release verifier fixture */',
+    },
+    plugins: {
+      forms: { version: '1.0.0', active: true },
+    },
+    db: {
+      wp_options: {
+        [directActivePluginsMutationRefusalBoundary.rowId]:
+          directActivePluginsActivePluginsOptionRow(activePlugins),
+        [`option_name:${managedOptionName}`]: directActivePluginsManagedOptionRow({
+          optionName: managedOptionName,
+          mode: managedMode,
+          token: managedToken,
+        }),
+      },
+    },
+  };
+}
+
+function directActivePluginsActivePluginsOptionRow(optionValue) {
+  return {
+    option_name: 'active_plugins',
+    option_value: [...optionValue],
+    autoload: 'yes',
+  };
+}
+
+function directActivePluginsManagedOptionRow({ optionName, mode, token }) {
+  return {
+    option_name: optionName,
+    option_value: {
+      mode,
+      token,
+    },
+    autoload: 'no',
+    __pluginOwner: 'forms',
+  };
+}
+
+function directActivePluginsMutationRefusalResource() {
+  return {
+    type: 'row',
+    table: directActivePluginsMutationRefusalBoundary.table,
+    id: directActivePluginsMutationRefusalBoundary.rowId,
+    key: directActivePluginsMutationRefusalBoundary.resourceKey,
+  };
+}
+
+function directActivePluginsMutationRefusalResourceEvidence() {
+  return {
+    resourceKey: directActivePluginsMutationRefusalBoundary.resourceKey,
+    table: directActivePluginsMutationRefusalBoundary.table,
+    rowId: directActivePluginsMutationRefusalBoundary.rowId,
+    requiredDriver: directActivePluginsMutationRefusalBoundary.driver,
+  };
+}
+
+function directActivePluginsPlanEvidence(plan) {
+  return {
+    status: plan.status,
+    summary: {
+      mutations: plan.summary?.mutations ?? null,
+      blockers: plan.summary?.blockers ?? null,
+      conflicts: plan.summary?.conflicts ?? null,
+    },
+    mutationCount: plan.mutations?.length || 0,
+    blockerCount: plan.blockers?.length || 0,
+    preconditionCount: plan.preconditions?.length || 0,
+    hash: sha256Evidence(plan),
+  };
+}
+
+function directActivePluginsBlockerEvidence(blocker) {
+  return {
+    class: blocker.class,
+    reasonCode: blocker.reasonCode,
+    requiredDriver: blocker.requiredDriver,
+    resourceKey: blocker.resourceKey,
+    resolutionPolicy: blocker.resolutionPolicy,
+    localChange: blocker.change?.localChange || null,
+    remoteChange: blocker.change?.remoteChange || null,
+    baseHash: blocker.change?.base?.hash || null,
+    localHash: blocker.change?.local?.hash || null,
+    remoteHash: blocker.change?.remote?.hash || null,
+    blockerHash: sha256Evidence({
+      class: blocker.class,
+      reasonCode: blocker.reasonCode,
+      requiredDriver: blocker.requiredDriver,
+      resourceKey: blocker.resourceKey,
+      resolutionPolicy: blocker.resolutionPolicy,
+      change: blocker.change,
+    }),
+  };
+}
+
+function directActivePluginsMutationHashEvidence(mutation) {
+  return {
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    pluginOwner: mutation.pluginOwnedResource?.pluginOwner || null,
+    driver: mutation.pluginOwnedResource?.driver || null,
+    baseHash: mutation.baseHash,
+    remoteBeforeHash: mutation.remoteBeforeHash,
+    localHash: mutation.localHash,
+    changeKind: mutation.changeKind,
+    change: mutation.change ? {
+      localChange: mutation.change.localChange,
+      remoteChange: mutation.change.remoteChange,
+      baseHash: mutation.change.base?.hash || null,
+      localHash: mutation.change.local?.hash || null,
+      remoteHash: mutation.change.remote?.hash || null,
+    } : null,
+  };
+}
+
+function directActivePluginsApplyRefusalEvidence({
+  error,
+  expectedCode,
+  expectedReasonCode,
+  beforeMutationCalls,
+  remotePreserved,
+  remoteBeforeHash,
+  remoteAfterHash,
+  activePluginsHashBefore,
+  activePluginsHashAfter,
+}) {
+  return {
+    code: error?.code || null,
+    expectedCode,
+    codeMatchesExpected: error?.code === expectedCode,
+    reasonCode: error?.details?.reasonCode || expectedReasonCode || null,
+    requiredDriver: error?.details?.requiredDriver || directActivePluginsMutationRefusalBoundary.driver,
+    beforeMutationCalls,
+    preMutation: beforeMutationCalls === 0,
+    remotePreserved,
+    remoteBeforeHash,
+    remoteAfterHash,
+    activePluginsHashBefore,
+    activePluginsHashAfter,
+    detailsHash: sha256Evidence(error?.details || {}),
+  };
+}
+
+function directActivePluginsForgedReadyPlan(testCase, now) {
+  const resource = directActivePluginsMutationRefusalResource();
+  const baseValue = getResource(testCase.base, resource);
+  const localValue = getResource(testCase.local, resource);
+  const remoteValue = getResource(testCase.remote, resource);
+  const baseHash = resourceHash(testCase.base, resource);
+  const localHash = resourceHash(testCase.local, resource);
+  const remoteHash = resourceHash(testCase.remote, resource);
+  const mutationId = 'mutation-rpp-0492-forged-active-plugins';
+
+  return {
+    schemaVersion: 1,
+    id: `plan-${now.toISOString()}-rpp-0492-forged-active-plugins`,
+    generatedAt: now.toISOString(),
+    status: 'ready',
+    summary: {
+      mutations: 1,
+      decisions: 0,
+      conflicts: 0,
+      blockers: 0,
+      atomicGroups: 0,
+    },
+    mutations: [
+      {
+        id: mutationId,
+        resource,
+        resourceKey: resource.key,
+        action: 'put',
+        value: serializeResourceValue(localValue),
+        remoteBeforeHash: remoteHash,
+        baseHash,
+        localHash,
+        changeKind: 'update',
+        change: directActivePluginsChangeEvidence({
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        }),
+        atomicGroupId: null,
+      },
+    ],
+    preconditions: [
+      {
+        mutationId,
+        resource,
+        resourceKey: resource.key,
+        expectedHash: remoteHash,
+        checkedAgainst: 'live-remote',
+      },
+    ],
+    decisions: [],
+    conflicts: [],
+    blockers: [],
+    atomicGroups: [],
+  };
+}
+
+function directActivePluginsChangeEvidence({
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  return {
+    localChange: directActivePluginsChangeKind(baseValue, localValue, baseHash, localHash),
+    remoteChange: directActivePluginsChangeKind(baseValue, remoteValue, baseHash, remoteHash),
+    base: directActivePluginsChangeSide(baseValue, baseHash),
+    local: directActivePluginsChangeSide(localValue, localHash),
+    remote: directActivePluginsChangeSide(remoteValue, remoteHash),
+  };
+}
+
+function directActivePluginsChangeKind(baseValue, candidateValue, baseHash, candidateHash) {
+  if (candidateHash === baseHash) {
+    return 'unchanged';
+  }
+  if (baseValue === ABSENT) {
+    return 'create';
+  }
+  if (candidateValue === ABSENT) {
+    return 'delete';
+  }
+  return 'update';
+}
+
+function directActivePluginsChangeSide(value, hash) {
+  return {
+    state: value === ABSENT ? 'absent' : 'present',
+    hash,
+  };
 }
 
 function wpOptionsDriverReleaseVerifierResourceEvidence() {
@@ -2551,6 +3205,8 @@ try {
         const pluginDriverProof = {
           productionOwned: productionPluginDriverProof,
           wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
+          directActivePluginsMutationRefusal:
+            summarizeDirectActivePluginsMutationRefusalReleaseVerifierProof(),
           coreSemantics: {
             wpPostmeta: wpPostmetaReleaseVerifierEvidence,
             wpTermmeta: wpTermmetaReleaseVerifierEvidence,
@@ -2852,6 +3508,8 @@ try {
       const pluginDriverProof = {
         productionOwned: productionPluginDriverProof,
         wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
+        directActivePluginsMutationRefusal:
+          summarizeDirectActivePluginsMutationRefusalReleaseVerifierProof(),
         coreSemantics: {
           wpPostmeta: wpPostmetaReleaseVerifierEvidence,
           wpTermmeta: wpTermmetaReleaseVerifierEvidence,
