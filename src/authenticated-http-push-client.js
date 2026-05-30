@@ -181,6 +181,7 @@ export async function runAuthenticatedHttpPush({
   const preflightAuthEnvelope = {
     userId: normalizeObservedAuthIdentityUserId(preflight.body?.auth?.identity?.userId),
     userLogin: preflight.body.auth?.identity?.userLogin,
+    manageOptions: readAuthManageOptionsCapability(preflight.body?.auth),
     sessionId: preflight.body.auth?.session?.id,
     sessionType: preflight.body.auth?.session?.type,
     sessionStatus: preflight.body.auth?.session?.status,
@@ -576,7 +577,7 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
   if (dryRunAuthEnvelopeDrift) {
-    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.code = authSessionDriftCode(dryRunAuthEnvelopeDrift);
     summary.authSession = dryRunAuthEnvelopeDrift;
     setDurableJournalBoundary(summary, 'dry-run');
     return summary;
@@ -1091,7 +1092,7 @@ export async function runAuthenticatedHttpPush({
   }
   const recoveryInspectAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, recoveryInspect);
   if (recoveryInspectAuthEnvelopeDrift) {
-    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.code = authSessionDriftCode(recoveryInspectAuthEnvelopeDrift);
     summary.authSession = recoveryInspectAuthEnvelopeDrift;
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
@@ -1162,10 +1163,10 @@ export async function runAuthenticatedHttpPush({
     || hasProductionAuthSessionExpiryDrift(replay)
   );
   if (applyAuthEnvelopeDrift || recoveryInspectAuthEnvelopeDrift || replayAuthEnvelopeDrift) {
-    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = applyAuthEnvelopeDrift
       || recoveryInspectAuthEnvelopeDrift
       || replayAuthEnvelopeDrift;
+    summary.code = authSessionDriftCode(summary.authSession);
     setDurableJournalBoundary(summary, 'replay');
     return summary;
   }
@@ -1371,7 +1372,7 @@ export async function runAuthenticatedHttpPush({
     updateRetryAttempts(summary, summary.idempotencyConflict);
     const conflictAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, conflict);
     if (conflictAuthEnvelopeDrift) {
-      summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+      summary.code = authSessionDriftCode(conflictAuthEnvelopeDrift);
       summary.authSession = conflictAuthEnvelopeDrift;
       setDurableJournalBoundary(summary, 'replay');
       return summary;
@@ -1668,7 +1669,7 @@ export async function runAuthenticatedHttpPush({
     ? describeAuthEnvelopeDrift(preflightAuthEnvelope, dbJournal)
     : null;
   if (dbJournalAuthEnvelopeDrift) {
-    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.code = authSessionDriftCode(dbJournalAuthEnvelopeDrift);
     summary.authSession = dbJournalAuthEnvelopeDrift;
     setDurableJournalBoundary(summary, 'journal-inspect');
     return summary;
@@ -2827,6 +2828,19 @@ function summarizeAuthIdentityCapabilities(identity) {
   };
 }
 
+function readAuthManageOptionsCapability(auth) {
+  const capabilities = auth?.identity?.capabilities;
+  if (!capabilities || typeof capabilities !== 'object' || Array.isArray(capabilities)) {
+    return null;
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(capabilities, 'manage_options')) {
+    return null;
+  }
+
+  return capabilities.manage_options === true;
+}
+
 function summarizeAuthIdentityCapabilityFields(identity) {
   const authCapabilities = summarizeAuthIdentityCapabilities(identity);
   return Object.keys(authCapabilities).length > 0 ? { authCapabilities } : {};
@@ -3405,6 +3419,11 @@ function describeAuthEnvelopeDrift(expected, response) {
     };
   }
 
+  const capabilityDrift = describeAuthCapabilityDowngrade(expected, body.auth);
+  if (capabilityDrift) {
+    return capabilityDrift;
+  }
+
   const invalidObservedSessionField = resolveInvalidObservedAuthEnvelopeSessionField(body.auth?.session);
   if (invalidObservedSessionField) {
     return {
@@ -3481,6 +3500,30 @@ function describeAuthEnvelopeDrift(expected, response) {
   }
 
   return null;
+}
+
+function describeAuthCapabilityDowngrade(expected, auth) {
+  if (expected?.manageOptions !== true) {
+    return null;
+  }
+
+  const observed = readAuthManageOptionsCapability(auth);
+  if (observed === true) {
+    return null;
+  }
+
+  return {
+    field: 'auth.identity.capabilities.manage_options',
+    required: 'true',
+    observed: observed === false ? 'false' : 'missing',
+    verdict: 'AUTH_SESSION_CAPABILITY_DOWNGRADED',
+  };
+}
+
+function authSessionDriftCode(drift) {
+  return typeof drift?.verdict === 'string' && drift.verdict
+    ? drift.verdict
+    : 'AUTH_SESSION_LIFECYCLE_DRIFT';
 }
 
 function resolveProductionAuthSessionPreservationDrift(expected, response) {
