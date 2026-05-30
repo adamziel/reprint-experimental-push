@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T13:46:00+02:00">Last updated: May 30, 2026, 13:46 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T14:03:00+02:00">Last updated: May 30, 2026, 14:03 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>446</strong>
+        <strong>447</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>554</strong>
+        <strong>553</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -348,7 +348,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
-            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, production importer/exporter identity-map metadata, post_parent page hierarchy local and release-verifier proof, postmeta post_id release-verifier proof, comment post, comment parent, comment user, and commentmeta comment release-verifier proof, featured image fail-closed release-verifier proof, post-author release-verifier proof, focused post_author stale-target regression, focused comment_post_ID rewrite and stale-target regression, featured image attachment references, term relationship taxonomy references, nav menu item fail-closed references, `wp_navigation` fail-closed references, cross-table create batch mapping, post_tag taxonomy proof, serialized block reference detection, GUID/slug collision handling, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
+            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, production importer/exporter identity-map metadata, post_parent page hierarchy local and release-verifier proof, postmeta post_id release-verifier proof, comment post, comment parent, comment user, and commentmeta comment release-verifier proof, featured image fail-closed release-verifier proof, post-author release-verifier proof, focused post_author stale-target regression, focused comment_post_ID rewrite and stale-target regression, focused comment_parent stable-target and rewrite regression, featured image attachment references, term relationship taxonomy references, nav menu item fail-closed references, `wp_navigation` fail-closed references, cross-table create batch mapping, post_tag taxonomy proof, serialized block reference detection, GUID/slug collision handling, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
@@ -406,10 +406,14 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0365</span>
+        <span>RPP-0366</span>
       </div>
-      <p>The latest refresh integrates RPP-0365 comment_post_ID graph identity evidence: the focused local regression rewrites a comment target through an explicit WordPress graph identity map, applies the ready comment against the mapped remote post, and blocks drifted target posts with hash-only reference evidence before mutation. Counts are now 446/554; final release remains NO-GO because this is local graph identity regression evidence, not externally hosted production topology proof.</p>
+      <p>The latest refresh integrates RPP-0366 comment_parent graph identity evidence: the focused local regression preserves stable parent comment targets, rewrites mapped local parent IDs to remote parent IDs through explicit WordPress graph identity evidence, applies the ready child comment, and keeps raw parent and child fixture payloads out of the hash-only proof envelope. Counts are now 447/553; final release remains NO-GO because this is local graph identity regression evidence, not externally hosted production topology proof. A broader npm test run still fails on a pre-existing RPP-0615 release-verifier assertion reproduced on pre-merge lane commit 97ba8f0da.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0366 focused: 2/2</span>
+        <span class="tag">comment-parent planner: 4/4</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
+        <span class="tag">npm test: pre-existing RPP-0615 fail</span>
         <span class="tag">RPP-0365 focused: 2/2</span>
         <span class="tag">comment-post verifier: 2/2</span>
         <span class="tag">checklist/redaction/diff: pass</span>
