@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 23:42 CEST +02:00.
+- Last update: 2026-05-30 23:54 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0193 wp_term_relationships graph release-verifier variant 5 merge
-  ending at `034caee`.
+  the RPP-0194 plugin-owned option release-verifier variant 5 merge ending at
+  `8834f27`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 540
-  items checked and leaves 460 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 541
+  items checked and leaves 459 open.
 - Checked slices: 100 release-gate foundation items, 81 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 93 generated
+  23 storage/performance items, 3 production-topology items, 94 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin-owned option release-verifier v5 carry-through: the current lane now
+  checks `RPP-0194` with deterministic generated-harness support-only proof for
+  plugin-owned option changes. The generator exposes
+  `pluginOwnedOptionChangeReleaseVerifierVariant5` target coverage with 20
+  cases across tiers 0 through 9, two cases per tier, and status counts of 10
+  ready and 10 conflict. The focused proof verifies ready plugin-owned option
+  updates apply with live preconditions, redact private option payloads, reject
+  stale replay before mutation with `PRECONDITION_FAILED`, and keep conflicting
+  remote plugin-owned option rows non-ready with no mutation or precondition.
+  Validation passed with Node syntax checks, focused RPP-0194 coverage 2/2,
+  adjacent RPP-0154/RPP-0174/RPP-0194/plugin-owned-option coverage 5/5, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 541/459;
+  final release remains `NO-GO` because this is local generated
+  release-verifier evidence, not production-backed release proof.
 - WP term relationships graph release-verifier v5 carry-through: the current
   lane now checks `RPP-0193` with deterministic generated-harness support-only
   proof for `wp_term_relationships` graph changes. The generator exposes
