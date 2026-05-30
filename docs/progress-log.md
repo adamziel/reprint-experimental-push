@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 14:46 CEST.
+- Last update: 2026-05-30 14:52 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0701 MySQL compare-and-swap write guard merge ending at `cd96986a2`.
+  the RPP-0489 plugin activation dependency release-verifier merge ending at
+  `eae224ead`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 456
-  items checked and leaves 544 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 457
+  items checked and leaves 543 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  74 plugin-driver boundary items, 26 executor/auth items, 29 recovery items,
+  75 plugin-driver boundary items, 26 executor/auth items, 29 recovery items,
   14 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin activation dependency release-verifier carry-through: the current lane
+  now contains `RPP-0489` evidence in
+  `docs/evidence/rpp-0489-plugin-activation-dependency-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0489-plugin-activation-dependency-release-verifier-v5.test.js`.
+  The release verifier records hash-only
+  `pluginDriver.coreSemantics.pluginActivationDependency` proof; remote
+  dependency drift refuses with `ATOMIC_GROUP_DEPENDENCY_STALE` before
+  activation or plugin-owned row mutation; dependent activation and plugin-owned
+  `wp_options` updates remain unapplied; and the drifted remote row hash plus
+  full remote hash are preserved. Validation passed with Node syntax checks,
+  focused RPP-0489 coverage 2/2, adjacent RPP-0469/RPP-0470 plugin dependency
+  coverage 2/2, adjacent release-verifier coverage 21/21, checklist lint,
+  scoped artifact redaction scan, and merge diff whitespace checks. Counts are
+  now 457/543; final release remains `NO-GO` because this is support-only local
+  release-verifier evidence, not externally hosted production topology proof.
 - MySQL compare-and-swap write guard: the current lane now contains `RPP-0701`
   evidence in `docs/evidence/rpp-0701-mysql-cas-write-guard.md`,
   `docs/reprint-push-completion-checklist.md`,
