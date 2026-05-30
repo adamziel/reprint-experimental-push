@@ -1773,18 +1773,14 @@ const UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEYS = new Set([
   'menu_item_parent',
 ]);
 
-const SERIALIZED_BLOCK_REFERENCE_KEYS = new Set([
-  'attachmentId',
-  'attachment_id',
-  'id',
-  'ids',
-  'mediaId',
-  'media_id',
-  'pageId',
-  'page_id',
-  'postId',
-  'post_id',
-  'ref',
+const SERIALIZED_BLOCK_ATTACHMENT_REFERENCE_RULES = new Map([
+  ['core/audio', ['id']],
+  ['core/cover', ['id']],
+  ['core/file', ['id']],
+  ['core/gallery', ['ids']],
+  ['core/image', ['id']],
+  ['core/media-text', ['mediaId']],
+  ['core/video', ['id']],
 ]);
 
 export const SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES = Object.freeze([
@@ -2136,6 +2132,9 @@ function normalizeWordPressGraphRowForIdentityComparison(resource, value, identi
   }
 
   for (const reference of wordpressGraphReferences(resource, normalized)) {
+    if (!wordpressGraphReferenceSupportsScalarRewrite(reference)) {
+      continue;
+    }
     const referenceMapping = identityMap.bySourceKey.get(reference.targetResourceKey);
     if (!referenceMapping) {
       continue;
@@ -2245,6 +2244,9 @@ function rewriteWordPressGraphMutation({ resource, localValue, identityMap }) {
   const rewrites = [];
   const rewriteByField = new Map();
   for (const reference of wordpressGraphReferences(resource, rewrittenValue)) {
+    if (!wordpressGraphReferenceSupportsScalarRewrite(reference)) {
+      continue;
+    }
     const mapping = identityMap.bySourceKey.get(reference.targetResourceKey);
     if (!mapping?.usable) {
       continue;
@@ -2399,18 +2401,6 @@ function wordpressGraphSurfaceSupport(resource, value) {
     };
   }
 
-  if (suffix === 'posts') {
-    const serializedBlockReferences = unsupportedSerializedBlockReferences(resource, value);
-    if (serializedBlockReferences.length > 0) {
-      return {
-        supported: false,
-        className: 'stale-wordpress-graph-identity',
-        reason: `WordPress graph mutation ${resource.key} contains unsupported serialized block references that require parser-aware identity mapping.`,
-        references: serializedBlockReferences,
-      };
-    }
-  }
-
   if (suffix === 'postmeta' && UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEYS.has(value.meta_key)) {
     return {
       supported: false,
@@ -2442,77 +2432,6 @@ function wordpressGraphSurfaceSupport(resource, value) {
   }
 
   return { supported: true };
-}
-
-function unsupportedSerializedBlockReferences(resource, value) {
-  const references = [];
-  for (const field of ['post_content', 'post_excerpt']) {
-    const content = value[field];
-    if (typeof content !== 'string' || !content.includes('<!-- wp:')) {
-      continue;
-    }
-    const blockReferences = serializedBlockReferenceHints(content);
-    if (blockReferences.length === 0) {
-      continue;
-    }
-    references.push({
-      relationshipKey: `${resource.table}.${field}`,
-      relationshipType: 'serialized-block-reference',
-      sourceResourceKey: resource.key,
-      sourceTable: resource.table,
-      sourceRowId: resource.id,
-      field,
-      referenceCount: blockReferences.length,
-      referenceAttributePaths: [...new Set(blockReferences.map((reference) => reference.path))].sort(),
-    });
-  }
-  return references;
-}
-
-function serializedBlockReferenceHints(content) {
-  const references = [];
-  const blockPattern = /<!--\s+wp:[^\s]+(?:\s+({.*?}))?\s*\/?-->/gs;
-  let match;
-  while ((match = blockPattern.exec(content)) !== null) {
-    if (!match[1]) {
-      continue;
-    }
-    let attrs;
-    try {
-      attrs = JSON.parse(match[1]);
-    } catch {
-      references.push({ path: 'unparseable' });
-      continue;
-    }
-    collectSerializedBlockReferenceHints(attrs, [], references);
-  }
-  return references;
-}
-
-function collectSerializedBlockReferenceHints(value, path, references) {
-  if (Array.isArray(value)) {
-    value.forEach((entry, index) =>
-      collectSerializedBlockReferenceHints(entry, [...path, String(index)], references));
-    return;
-  }
-  if (!value || typeof value !== 'object') {
-    return;
-  }
-  for (const [key, entry] of Object.entries(value)) {
-    const nextPath = [...path, key];
-    if (SERIALIZED_BLOCK_REFERENCE_KEYS.has(key) && serializedBlockReferenceValueLooksLikeId(entry)) {
-      references.push({ path: nextPath.join('.') });
-      continue;
-    }
-    collectSerializedBlockReferenceHints(entry, nextPath, references);
-  }
-}
-
-function serializedBlockReferenceValueLooksLikeId(value) {
-  if (normalizePositiveInteger(value) != null) {
-    return true;
-  }
-  return Array.isArray(value) && value.some((entry) => normalizePositiveInteger(entry) != null);
 }
 
 function isUnsafeWordPressGraphReference(reference) {
@@ -2581,6 +2500,9 @@ export const SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS = Object.freeze([
   'post-parent',
   'post-author',
   'postmeta-post',
+  'serialized-block-attachment',
+  'serialized-block-post',
+  'serialized-block-reusable-block',
   'featured-image-attachment',
   'term-relationship-object',
   'term-relationship-taxonomy',
@@ -2638,6 +2560,7 @@ function wordpressGraphReferences(resource, value) {
       targetTable: 'users',
       targetId: value.post_author,
     });
+    references.push(...serializedBlockGraphReferences(resource, value));
   }
 
   if (suffix === 'comments') {
@@ -2792,6 +2715,173 @@ function wordpressGraphReferences(resource, value) {
   return references;
 }
 
+function serializedBlockGraphReferences(resource, value) {
+  const references = [];
+  for (const field of ['post_content', 'post_excerpt']) {
+    const content = value[field];
+    if (typeof content !== 'string' || !content.includes('<!-- wp:')) {
+      continue;
+    }
+    for (const candidate of serializedBlockReferenceCandidates(content)) {
+      const targetResource = wordpressGraphTargetResource({
+        sourceTable: resource.table,
+        targetSuffix: 'posts',
+        id: candidate.targetId,
+      });
+      references.push({
+        relationshipKey: `${resource.table}.${field}`,
+        relationshipType: candidate.relationshipType,
+        field,
+        rewriteSupported: false,
+        sourceResourceKey: resource.key,
+        sourceTable: resource.table,
+        sourceRowId: resource.id,
+        targetTable: targetResource.table,
+        targetId: targetResource.id,
+        targetResource,
+        targetResourceKey: targetResource.key,
+        serializedBlockName: candidate.blockName,
+        serializedBlockAttributePath: candidate.attributePath,
+      });
+    }
+  }
+  return references;
+}
+
+function serializedBlockReferenceCandidates(content) {
+  const references = [];
+  const blockPattern = /<!--\s+wp:([^\s>]+)([\s\S]*?)-->/gi;
+  let match;
+  while ((match = blockPattern.exec(content)) !== null) {
+    const blockName = normalizeSerializedBlockName(match[1]);
+    const attrsJson = serializedBlockAttributeJson(match[2]);
+    if (!blockName || !attrsJson) {
+      continue;
+    }
+    let attrs;
+    try {
+      attrs = JSON.parse(attrsJson);
+    } catch {
+      continue;
+    }
+    collectSerializedBlockReferenceCandidates(blockName, attrs, references);
+  }
+  return references;
+}
+
+function normalizeSerializedBlockName(blockName) {
+  if (typeof blockName !== 'string') {
+    return null;
+  }
+  const normalized = blockName.trim().toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+  return normalized.includes('/') ? normalized : `core/${normalized}`;
+}
+
+function serializedBlockAttributeJson(rawTail) {
+  if (typeof rawTail !== 'string') {
+    return null;
+  }
+  const trimmed = rawTail.trim().replace(/\s*\/\s*$/, '').trim();
+  return trimmed.startsWith('{') ? trimmed : null;
+}
+
+function collectSerializedBlockReferenceCandidates(blockName, attrs, references) {
+  for (const attributePath of SERIALIZED_BLOCK_ATTACHMENT_REFERENCE_RULES.get(blockName) || []) {
+    addSerializedBlockReferenceCandidate(references, {
+      attrs,
+      blockName,
+      attributePath,
+      relationshipType: 'serialized-block-attachment',
+    });
+  }
+
+  if (blockName === 'core/block') {
+    addSerializedBlockReferenceCandidate(references, {
+      attrs,
+      blockName,
+      attributePath: 'ref',
+      relationshipType: 'serialized-block-reusable-block',
+    });
+  }
+
+  if (blockName === 'core/post-featured-image') {
+    addSerializedBlockReferenceCandidate(references, {
+      attrs,
+      blockName,
+      attributePath: 'postId',
+      relationshipType: 'serialized-block-post',
+    });
+  }
+
+  if (blockName === 'core/navigation-link' && serializedNavigationLinkTargetsPost(attrs)) {
+    addSerializedBlockReferenceCandidate(references, {
+      attrs,
+      blockName,
+      attributePath: 'id',
+      relationshipType: 'serialized-block-post',
+    });
+  }
+}
+
+function addSerializedBlockReferenceCandidate(references, {
+  attrs,
+  blockName,
+  attributePath,
+  relationshipType,
+}) {
+  const value = readSerializedBlockAttribute(attrs, attributePath);
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) => {
+      const targetId = normalizePositiveInteger(entry);
+      if (targetId == null) {
+        return;
+      }
+      references.push({
+        blockName,
+        attributePath: `${attributePath}.${index}`,
+        relationshipType,
+        targetId,
+      });
+    });
+    return;
+  }
+
+  const targetId = normalizePositiveInteger(value);
+  if (targetId == null) {
+    return;
+  }
+  references.push({
+    blockName,
+    attributePath,
+    relationshipType,
+    targetId,
+  });
+}
+
+function readSerializedBlockAttribute(attrs, attributePath) {
+  return attributePath.split('.').reduce((value, pathPart) =>
+    (value && typeof value === 'object' ? value[pathPart] : undefined), attrs);
+}
+
+function serializedNavigationLinkTargetsPost(attrs) {
+  if (!attrs || typeof attrs !== 'object') {
+    return false;
+  }
+  const kind = typeof attrs.kind === 'string' ? attrs.kind.toLowerCase() : '';
+  const type = typeof attrs.type === 'string' ? attrs.type.toLowerCase() : '';
+  return kind === 'post-type'
+    || type === 'post-type'
+    || type === 'page'
+    || type === 'post';
+}
+
+function wordpressGraphReferenceSupportsScalarRewrite(reference) {
+  return reference.rewriteSupported !== false;
+}
+
 function wordpressGraphReferenceEvidence(
   reference,
   resources,
@@ -2821,7 +2911,7 @@ function wordpressGraphReferenceEvidence(
       resources,
       base,
       local,
-    remote,
+      remote,
       identityMap,
       seen: new Set([...seen, target.key]),
     });
@@ -2839,6 +2929,10 @@ function wordpressGraphReferenceEvidence(
     sourceResourceKey: reference.sourceResourceKey,
     sourceTable: reference.sourceTable,
     sourceRowId: reference.sourceRowId,
+    ...(reference.serializedBlockName ? {
+      serializedBlockName: reference.serializedBlockName,
+      serializedBlockAttributePath: reference.serializedBlockAttributePath,
+    } : {}),
     targetResource: target,
     targetResourceKey: target.key,
     targetTable: target.table,
@@ -2885,6 +2979,26 @@ function wordpressGraphRelationshipTargetSupport(reference, { baseValue, localVa
     return wordpressGraphCommentmetaCommentTargetSupport(reference, { baseValue, localValue, remoteValue });
   }
 
+  if (reference.relationshipType === 'serialized-block-attachment') {
+    return wordpressGraphPostTypeTargetSupport(reference, {
+      baseValue,
+      localValue,
+      remoteValue,
+      postType: 'attachment',
+      reason: `WordPress graph mutation ${reference.sourceResourceKey} references a serialized block attachment target that is not a supported attachment row.`,
+    });
+  }
+
+  if (reference.relationshipType === 'serialized-block-reusable-block') {
+    return wordpressGraphPostTypeTargetSupport(reference, {
+      baseValue,
+      localValue,
+      remoteValue,
+      postType: 'wp_block',
+      reason: `WordPress graph mutation ${reference.sourceResourceKey} references a serialized reusable block target that is not a supported wp_block row.`,
+    });
+  }
+
   if (reference.relationshipType !== 'featured-image-attachment') {
     return { supported: true };
   }
@@ -2903,6 +3017,37 @@ function wordpressGraphRelationshipTargetSupport(reference, { baseValue, localVa
       supported: false,
       className: 'stale-wordpress-graph-identity',
       reason: `WordPress graph mutation ${reference.sourceResourceKey} references a _thumbnail_id target that is not a supported attachment row.`,
+    };
+  }
+
+  return { supported: true };
+}
+
+function wordpressGraphPostTypeTargetSupport(reference, {
+  baseValue,
+  localValue,
+  remoteValue,
+  postType,
+  reason,
+}) {
+  const targetValue = wordpressGraphRelationshipTargetValue({ baseValue, localValue, remoteValue });
+  if (targetValue === ABSENT) {
+    return { supported: true };
+  }
+
+  const expectedPostId = wordpressGraphResourcePrimaryInteger(reference.targetResource);
+  const actualPostId = normalizePositiveInteger(targetValue?.ID);
+  if (
+    expectedPostId == null
+    || actualPostId !== expectedPostId
+    || !targetValue
+    || typeof targetValue !== 'object'
+    || String(targetValue.post_type || '') !== postType
+  ) {
+    return {
+      supported: false,
+      className: 'stale-wordpress-graph-identity',
+      reason,
     };
   }
 
