@@ -6,19 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 12:04 CEST.
+- Last update: 2026-05-30 12:08 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0383 post author release-verifier proof merge ending at `e90fb8b7`.
+  the RPP-0384 postmeta post_id release-verifier proof merge ending at
+  `4378f794`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 423
-  items checked and leaves 577 open.
-- Checked slices: 100 release-gate foundation items, 40 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 424
+  items checked and leaves 576 open.
+- Checked slices: 100 release-gate foundation items, 41 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Postmeta post_id reference release-verifier proof: the current lane now
+  contains `RPP-0384` evidence in
+  `docs/evidence/rpp-0384-postmeta-post-id-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0384-postmeta-post-id-reference-release-verifier-v5.test.js`.
+  `node --check` passed for the focused test, focused RPP-0384 coverage passed
+  3/3, adjacent postmeta planner graph coverage passed 4/4, and the adjacent
+  local-production/wp_postmeta release-verifier command passed 27/27. Checklist
+  lint, scoped artifact redaction scan, and merge diff whitespace checks also
+  passed. Counts are now 424/576; final release remains `NO-GO`.
 - Post author reference release-verifier proof: the current lane now contains
   `RPP-0383` evidence in
   `docs/evidence/rpp-0383-post-author-reference-release-verifier-v5.md`,

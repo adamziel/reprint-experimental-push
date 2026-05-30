@@ -1,18 +1,29 @@
-# AO Progress Report - 2026-05-30 12:04 CEST
+# AO Progress Report - 2026-05-30 12:08 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0383 post author
-release-verifier proof ending at `e90fb8b7`.
+`lane/evidence-integration-20260527` through the current RPP-0384 postmeta
+post_id release-verifier proof ending at `4378f794`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 423 are
-  checked from integrated evidence and 577 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 424 are
+  checked from integrated evidence and 576 remain open.
+- `RPP-0384` is now checked with local release-verifier carry-through proof for
+  `wp_postmeta.post_id` references in
+  `docs/evidence/rpp-0384-postmeta-post-id-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0384-postmeta-post-id-reference-release-verifier-v5.test.js`.
+  `node --check` passed for the focused test, focused RPP-0384 coverage passed
+  3/3, adjacent postmeta planner graph coverage passed 4/4, and the adjacent
+  local-production/wp_postmeta release-verifier command passed 27/27.
+  Checklist lint, scoped artifact redaction scan, and merge diff whitespace
+  checks also passed. This remains local graph release-verifier support
+  evidence, not production endpoint proof.
 - `RPP-0383` is now checked with local generated-harness release-verifier proof
   for `wp_posts.post_author` references in
   `docs/evidence/rpp-0383-post-author-reference-release-verifier-v5.md`,
@@ -2760,7 +2771,7 @@ tracks the near-to-far slices used to supervise the AO team:
 | `RPP-0001`-`RPP-0100` | Release gate foundation | 100 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 78 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 68 / 100 |
-| `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 29 / 100 |
+| `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 41 / 100 |
 | `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 73 / 100 |
 | `RPP-0501`-`RPP-0600` | Production executor and auth protocol | 22 / 100 |
 | `RPP-0601`-`RPP-0700` | Durable journal and recovery | 19 / 100 |
@@ -2781,10 +2792,15 @@ Checked IDs in this report are:
 - Merge invariants: `RPP-0201`, `RPP-0205`, `RPP-0207`, `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`,
   `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0221`, `RPP-0222`, `RPP-0223`, `RPP-0227`, `RPP-0228`, `RPP-0229`, `RPP-0230`,
   `RPP-0233`, `RPP-0237`, `RPP-0240`.
-- Graph identity: `RPP-0301`, `RPP-0304`, `RPP-0305`, `RPP-0310`, `RPP-0312`,
-  `RPP-0313`, `RPP-0314`, `RPP-0318`, `RPP-0319`, `RPP-0320`, `RPP-0321`,
-  `RPP-0324`, `RPP-0325`, `RPP-0332`, `RPP-0333`, `RPP-0334`, `RPP-0340`,
-  `RPP-0342`, `RPP-0347`.
+- Graph identity: `RPP-0301`, `RPP-0302`, `RPP-0303`, `RPP-0304`,
+  `RPP-0305`, `RPP-0306`, `RPP-0307`, `RPP-0308`, `RPP-0309`,
+  `RPP-0310`, `RPP-0311`, `RPP-0312`, `RPP-0313`, `RPP-0314`,
+  `RPP-0315`, `RPP-0316`, `RPP-0317`, `RPP-0318`, `RPP-0319`,
+  `RPP-0320`, `RPP-0321`, `RPP-0322`, `RPP-0324`, `RPP-0325`,
+  `RPP-0332`, `RPP-0333`, `RPP-0334`, `RPP-0340`, `RPP-0342`,
+  `RPP-0347`, `RPP-0374`, `RPP-0375`, `RPP-0376`, `RPP-0377`,
+  `RPP-0378`, `RPP-0379`, `RPP-0380`, `RPP-0381`, `RPP-0382`,
+  `RPP-0383`, `RPP-0384`.
 - Plugin driver: `RPP-0401`, `RPP-0402`, `RPP-0403`, `RPP-0404`, `RPP-0408`,
   `RPP-0409`, `RPP-0410`, `RPP-0412`, `RPP-0414`, `RPP-0415`, `RPP-0421`, `RPP-0422`,
   `RPP-0423`, `RPP-0424`,
