@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:40 CEST.
+- Last update: 2026-05-30 05:43 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0159 remote-only preservation generated variant-3 proof merge ending
-  at `2524c9c5`.
+  the RPP-0483 custom-table allowlist release-verifier proof merge ending at
+  `0fb695f7a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 344
-  items checked and leaves 656 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 345
+  items checked and leaves 655 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  66 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  67 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 59 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Release verifier custom-table allowlist variant-5 refresh: the current lane
+  now contains `RPP-0483` evidence in
+  `docs/evidence/rpp-0483-custom-table-allowlist-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0483-custom-table-allowlist-release-verifier-v5.test.js`. `node
+  --check` passed for the changed release verifier and focused test, the
+  focused RPP-0483 test passed 7 subtests, the adjacent custom-table slice
+  passed 13 subtests, the driver release-verifier slice passed 12 subtests, and
+  `test/production-plugin-package-scenarios.test.js` passed 9/9. The proof
+  carries exact custom-table owner/table/driver allowlist evidence through the
+  verifier, rejects near misses before mutation, and keeps evidence hash-only.
+  Checklist lint, artifact redaction scan, and `git diff --check` also passed.
+  Counts are now 345/655; final release remains `NO-GO`.
 - Generated remote-only preservation variant-3 refresh: the current lane now
   contains `RPP-0159` evidence in
   `docs/evidence/rpp-0159-remote-only-preservation-v3.md`,

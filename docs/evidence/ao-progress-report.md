@@ -1,17 +1,30 @@
-# AO Progress Report - 2026-05-30 05:40 CEST
+# AO Progress Report - 2026-05-30 05:43 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0159 remote-only
-preservation generated variant-3 proof refresh ending at `2524c9c5`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0483 custom-table
+allowlist release-verifier proof refresh ending at `0fb695f7a`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 344 are
-  checked from integrated evidence and 656 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 345 are
+  checked from integrated evidence and 655 remain open.
+- `RPP-0483` is now checked with focused custom-table allowlist
+  release-verifier variant-5 evidence in
+  `docs/evidence/rpp-0483-custom-table-allowlist-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0483-custom-table-allowlist-release-verifier-v5.test.js`. `node
+  --check` passed for the changed release verifier and focused test, the
+  focused RPP-0483 test passed 7 subtests, the adjacent custom-table slice
+  passed 13 subtests, the driver release-verifier slice passed 12 subtests, and
+  `test/production-plugin-package-scenarios.test.js` passed 9/9, proving exact
+  owner/table/driver allowlist carry-through, near-miss fail-closed behavior,
+  hash-only evidence, checklist lint, artifact redaction scan, and `git diff
+  --check` while final release remains **NO-GO**.
 - `RPP-0159` is now checked with generated remote-only preservation variant-3
   evidence in `docs/evidence/rpp-0159-remote-only-preservation-v3.md`,
   `docs/generated-push-harness.md`,
