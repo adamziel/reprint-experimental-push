@@ -44,11 +44,13 @@ umask 0022 && node --test --test-name-pattern 'RPP-0639' test/recovery-journal.t
 umask 0022 && node --test --test-name-pattern 'committed state survives restart|RPP-0639|refuses completion|completed replay|fully updated no-op state|appends monotonic sequences|supports paged restart readback|production recovery journal ownership record' test/recovery-journal.test.js
 umask 0022 && node --test test/recovery-journal.test.js
 umask 0022 && npm run test:recovery:file-journal
-umask 0022 && node scripts/release/checklist-completion-lint.mjs
+umask 0022 && node scripts/release/checklist-completion-lint.mjs --root .
 umask 0022 && node scripts/release/artifact-redaction-scan.mjs docs/evidence/rpp-0639-missing-commit-finalization-v2.md docs/reprint-push-completion-checklist.md
+git diff --check
+git diff --cached --check
 ```
 
-Observed results: focused RPP-0639 validation exited 0 with 1 subtest / 0 fail; adjacent recovery restart/finalization validation exited 0 with 7 subtests / 0 fail; full recovery journal suite exited 0 with 29 subtests / 0 fail; file journal restart smoke exited 0; checklist completion lint exited 0; scoped artifact redaction scan exited 0.
+Observed results: focused RPP-0639 validation exited 0 with 1 subtest / 0 fail; adjacent recovery restart/finalization validation exited 0 with 7 subtests / 0 fail; full recovery journal suite exited 0 with 43 subtests / 0 fail; file journal restart smoke exited 0; checklist completion lint exited 0; scoped artifact redaction scan exited 0; the raw fixture scan found no private RPP-0639 fixture values in touched docs; and merge diff whitespace checks exited 0.
 
 ## Residual scope
 

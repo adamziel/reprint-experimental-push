@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 17:32 CEST +02:00.
+- Last update: 2026-05-30 17:36 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0528 short-lived push session proof merge ending at `b91ec51d`.
+  the RPP-0639 missing commit finalization proof merge ending at `d61a387`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 489
-  items checked and leaves 511 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 490
+  items checked and leaves 510 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  84 plugin-driver boundary items, 31 executor/auth items, 39 recovery items,
+  84 plugin-driver boundary items, 31 executor/auth items, 40 recovery items,
   22 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Missing commit finalization v2: the current lane now contains `RPP-0639`
+  evidence in
+  `docs/evidence/rpp-0639-missing-commit-finalization-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/recovery-journal.test.js`. The file-backed recovery proof injects
+  failure after every planned mutation has a durable `mutation-observed` row but
+  before `journal-completed`, proves restart inspection is
+  `fully-updated-remote`, exposes lease owner identity on the latest mutation
+  row, reopens the same claim-fenced journal, appends only the missing
+  completion row, and then proves mutation rows are unchanged while lease owner
+  identity moves to the final `journal-completed` audit row. Validation passed
+  with Node syntax checks, focused RPP-0639 coverage 1/1, adjacent
+  restart/finalization coverage 7/7, full recovery-journal coverage 43/43,
+  file-journal restart smoke, checklist lint, scoped artifact redaction scan,
+  raw fixture scan, and merge diff whitespace checks. Counts are now 490/510;
+  final release remains `NO-GO` because this is local file-backed recovery
+  finalization evidence, not external WordPress crash/restart durability proof.
 - Short-lived push session proof v2: the current lane now contains `RPP-0528`
   evidence in
   `docs/evidence/rpp-0528-short-lived-push-session-v2.md`,
