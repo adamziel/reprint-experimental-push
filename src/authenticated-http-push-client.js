@@ -111,6 +111,7 @@ export async function runAuthenticatedHttpPush({
     apply: null,
     recoveryInspect: null,
     replay: null,
+    sameKeySameBodyReplay: null,
     idempotencyConflict: null,
     after: null,
     dbJournal: null,
@@ -1153,6 +1154,9 @@ export async function runAuthenticatedHttpPush({
   const replayEquivalence = summarizeReplayEquivalence(apply, replay, observationNow);
   summary.replayEquivalence = replayEquivalence;
   const replayEquivalent = replayEquivalence.equivalent;
+  const sameKeySameBodyReplay = summarizeSameKeySameBodyReplay(apply, replay, replayEquivalence);
+  summary.sameKeySameBodyReplay = sameKeySameBodyReplay;
+  const sameKeySameBodyReplayProven = sameKeySameBodyReplay.proven === true;
   const applyAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, apply);
   const replayAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, replay);
   const replayAuthSessionDrift = requireProductionAuthSession && (
@@ -1730,6 +1734,7 @@ export async function runAuthenticatedHttpPush({
     && replay.body?.ok === true
     && replay.body?.idempotency?.replayed === true
     && replay.body?.idempotency?.freshMutationWork === false
+    && sameKeySameBodyReplayProven
     && (!proveDurableJournalBoundary
       || (
         summary.idempotencyConflict?.status === 409
@@ -1769,10 +1774,16 @@ export async function runAuthenticatedHttpPush({
         || replayIdempotency?.freshMutationWork !== false
         || !replayEquivalent
       );
+    const sameKeySameBodyReplayFailed = replay.status === 200
+      && replay.body?.ok === true
+      && replayIdempotency
+      && !sameKeySameBodyReplayProven;
     summary.code = authEnvelopeDrift
       ? 'AUTH_SESSION_LIFECYCLE_DRIFT'
       : replayEquivalenceFailed
       ? 'REPLAY_NOT_EQUIVALENT'
+      : sameKeySameBodyReplayFailed
+      ? 'SAME_KEY_SAME_BODY_REPLAY_NOT_PROVEN'
       : journalProofFailed
         ? 'DURABLE_JOURNAL_NOT_PROVEN'
       : (replayIdempotency?.replayed !== true || replayIdempotency?.freshMutationWork !== false)
@@ -1977,6 +1988,7 @@ export function authenticatedHttpClient({
         requestTimeoutMs,
         {
           retryable: options.retryable === true && !hasSideEffectQueryParam(pathname),
+          requestEvidence: signedRequestEvidence('GET', pathname, '', options),
         },
       );
     },
@@ -2001,6 +2013,7 @@ export function authenticatedHttpClient({
         requestTimeoutMs,
         {
           retryable: options.retryable === true || (!readOnlyInspect && options.idempotencyKey !== undefined),
+          requestEvidence: signedRequestEvidence('POST', pathname, rawBody, options),
         },
       );
     },
@@ -2096,6 +2109,9 @@ function summarizeResponse(response) {
       method: response.request.method || null,
       pathname: response.request.pathname || null,
       retryable: response.request.retryable === true,
+      contentHash: response.request.contentHash || null,
+      idempotencyKeyHash: response.request.idempotencyKeyHash || null,
+      canonicalHash: response.request.canonicalHash || null,
     } : undefined,
   };
 }
@@ -3356,6 +3372,92 @@ function summarizeReplayEquivalence(applyResponse, replayResponse, now = new Dat
   };
 }
 
+function summarizeSameKeySameBodyReplay(applyResponse, replayResponse, replayEquivalence) {
+  const applyBody = applyResponse?.body || {};
+  const replayBody = replayResponse?.body || {};
+  const applyRequest = applyResponse?.request || {};
+  const replayRequest = replayResponse?.request || {};
+  const applySignedRequest = applyBody.signedRequest || {};
+  const replaySignedRequest = replayBody.signedRequest || {};
+  const applySignedRequestEnvelope = applySignedRequest.request || {};
+  const replaySignedRequestEnvelope = replaySignedRequest.request || {};
+
+  const applyContentHash = firstNonEmpty(
+    applyRequest.contentHash,
+    applySignedRequest.contentHash,
+  );
+  const replayContentHash = firstNonEmpty(
+    replayRequest.contentHash,
+    replaySignedRequest.contentHash,
+  );
+  const applyIdempotencyKeyHash = firstNonEmpty(
+    applyRequest.idempotencyKeyHash,
+    applySignedRequestEnvelope.idempotencyKeyHash,
+  );
+  const replayIdempotencyKeyHash = firstNonEmpty(
+    replayRequest.idempotencyKeyHash,
+    replaySignedRequestEnvelope.idempotencyKeyHash,
+  );
+  const applyCanonicalHash = firstNonEmpty(
+    applyRequest.canonicalHash,
+    applySignedRequestEnvelope.canonicalHash,
+  );
+  const replayCanonicalHash = firstNonEmpty(
+    replayRequest.canonicalHash,
+    replaySignedRequestEnvelope.canonicalHash,
+  );
+  const applyPath = firstNonEmpty(applyRequest.pathname, applySignedRequestEnvelope.path);
+  const replayPath = firstNonEmpty(replayRequest.pathname, replaySignedRequestEnvelope.path);
+  const applyMethod = firstNonEmpty(applyRequest.method, applySignedRequestEnvelope.method);
+  const replayMethod = firstNonEmpty(replayRequest.method, replaySignedRequestEnvelope.method);
+  const sameBody = hasNonEmptyString(applyContentHash)
+    && applyContentHash === replayContentHash;
+  const sameIdempotencyKey = hasNonEmptyString(applyIdempotencyKeyHash)
+    && applyIdempotencyKeyHash === replayIdempotencyKeyHash;
+  const sameCanonicalRequest = hasNonEmptyString(applyCanonicalHash) && hasNonEmptyString(replayCanonicalHash)
+    ? applyCanonicalHash === replayCanonicalHash
+    : (
+      hasNonEmptyString(applyPath)
+      && applyPath === replayPath
+      && hasNonEmptyString(applyMethod)
+      && applyMethod === replayMethod
+      && sameBody
+      && sameIdempotencyKey
+    );
+  const replayed = replayBody.idempotency?.replayed === true;
+  const noFreshMutationWork = replayBody.idempotency?.freshMutationWork === false;
+  const responseEquivalent = replayEquivalence?.equivalent === true;
+
+  return {
+    proven: sameBody
+      && sameIdempotencyKey
+      && sameCanonicalRequest
+      && replayed
+      && noFreshMutationWork
+      && responseEquivalent,
+    sameBody,
+    sameIdempotencyKey,
+    sameCanonicalRequest,
+    replayed,
+    noFreshMutationWork,
+    responseEquivalent,
+    apply: {
+      method: applyMethod || null,
+      pathname: applyPath || null,
+      contentHash: applyContentHash || null,
+      idempotencyKeyHash: applyIdempotencyKeyHash || null,
+      canonicalHash: applyCanonicalHash || null,
+    },
+    replay: {
+      method: replayMethod || null,
+      pathname: replayPath || null,
+      contentHash: replayContentHash || null,
+      idempotencyKeyHash: replayIdempotencyKeyHash || null,
+      canonicalHash: replayCanonicalHash || null,
+    },
+  };
+}
+
 function summarizeReplayAuthSessionLifecycle(session, now = new Date()) {
   if (!session || typeof session !== 'object') {
     return {
@@ -4246,6 +4348,9 @@ async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, he
           method,
           pathname,
           retryable,
+          ...(options.requestEvidence && typeof options.requestEvidence === 'object'
+            ? options.requestEvidence
+            : {}),
         },
       };
     } catch (error) {
@@ -4408,6 +4513,23 @@ function signedRequestHeaders(credential, method, pathname, rawBody, options = {
   }
 
   return headers;
+}
+
+function signedRequestEvidence(method, pathname, rawBody, options = {}) {
+  const contentHash = sha256Hex(rawBody);
+  const idempotencyKey = options.idempotencyKey || '';
+  const session = options.session || '';
+  return {
+    contentHash,
+    idempotencyKeyHash: idempotencyKey ? sha256Hex(idempotencyKey) : '',
+    canonicalHash: sha256Hex(pushCanonicalString({
+      method,
+      pathname,
+      contentHash,
+      session,
+      idempotencyKey,
+    })),
+  };
 }
 
 function signedNonceForAttempt(options = {}) {
@@ -4575,6 +4697,10 @@ function sha256Hex(data) {
 
 function hasNonEmptyString(value) {
   return typeof value === 'string' && value.length > 0;
+}
+
+function firstNonEmpty(...values) {
+  return values.find((value) => typeof value === 'string' && value.length > 0) || '';
 }
 
 function currentSignedTimestamp() {
