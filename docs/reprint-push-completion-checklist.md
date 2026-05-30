@@ -185,7 +185,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0166 (Near / generated-harness) Add focused regression coverage for wp_options serialized option changes, variant 4. Success: generator emits at least one ready case and one non-ready case for this target.
 - [ ] RPP-0167 (Near / generated-harness) Add focused regression coverage for wp_posts create/update/delete changes, variant 4. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0168 (Near / generated-harness) Add focused regression coverage for wp_postmeta create/update/delete changes, variant 4. Success: ready cases apply with no unplanned remote overwrite.
-- [ ] RPP-0169 (Near / generated-harness) Add focused regression coverage for wp_users and wp_usermeta graph changes, variant 4. Success: stale remote replay fails before mutation.
+- [x] RPP-0169 (Near / generated-harness) Add focused regression coverage for wp_users and wp_usermeta graph changes, variant 4. Success: stale remote replay fails before mutation.
 - [ ] RPP-0170 (Near / generated-harness) Add focused regression coverage for wp_comments and wp_commentmeta graph changes, variant 4. Success: docs/generated-push-harness.md records the surface and invariant.
 - [ ] RPP-0171 (Near / generated-harness) Add focused regression coverage for wp_terms and wp_termmeta graph changes, variant 4. Success: generator emits at least one ready case and one non-ready case for this target.
 - [ ] RPP-0172 (Near / generated-harness) Add focused regression coverage for wp_term_taxonomy graph changes, variant 4. Success: summary exposes per-tier counts for this target.
