@@ -620,6 +620,21 @@ export const localDeleteRemoteEditReleaseVerifierBoundary = Object.freeze({
   independentFileKey: 'file:wp-content/themes/reprint-push/rpp-0283.css',
 });
 
+export const serializedBlockReferenceReleaseVerifierBoundary = Object.freeze({
+  sourceTable: 'wp_posts',
+  sourceRowId: 'ID:397',
+  sourceResourceKey: 'row:["wp_posts","ID:397"]',
+  targetTable: 'wp_posts',
+  targetRowId: 'ID:8397',
+  targetResourceKey: 'row:["wp_posts","ID:8397"]',
+  relationshipKey: 'wp_posts.post_content',
+  relationshipType: 'serialized-block-attachment',
+  serializedBlockName: 'core/image',
+  serializedBlockAttributePath: 'id',
+  unsupportedTargetPostType: 'page',
+  evidenceScope: 'local-production-shaped',
+});
+
 export const directActivePluginsMutationRefusalBoundary = Object.freeze({
   driver: 'plugin-activation-driver',
   owner: 'wordpress-core',
@@ -700,6 +715,33 @@ export const independentLocalFileRemoteRowReleaseVerifierBoundary = Object.freez
   table: 'wp_posts',
   evidenceScope: 'local-production-shaped',
 });
+
+export function summarizeSerializedBlockReferenceReleaseVerifierProof({
+  now = new Date('2026-05-30T16:39:07.000Z'),
+} = {}) {
+  try {
+    return buildSerializedBlockReferenceReleaseVerifierProof(now);
+  } catch (error) {
+    return {
+      rpp: 'RPP-0397',
+      evidenceSource: 'release-verifier-serialized-block-reference-detection-v5',
+      status: 'blocked',
+      verdict: 'SERIALIZED_BLOCK_REFERENCE_RELEASE_VERIFIER_REQUIRED',
+      evidenceScope: serializedBlockReferenceReleaseVerifierBoundary.evidenceScope,
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      relationship: serializedBlockReferenceRelationshipEvidence(),
+      source: serializedBlockReferenceSourceResourceEvidence(),
+      target: serializedBlockReferenceTargetResourceEvidence(),
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
 
 export function summarizeWpOptionsDriverReleaseVerifierProof({
   now = new Date('2026-05-30T10:48:40.000Z'),
@@ -4804,6 +4846,436 @@ function localDeleteRemoteEditReleaseVerifierPlanEvidence({
   };
 }
 
+function buildSerializedBlockReferenceReleaseVerifierProof(now) {
+  const boundary = serializedBlockReferenceReleaseVerifierBoundary;
+  const sourceResource = serializedBlockReferenceSourceResource();
+  const targetResource = serializedBlockReferenceTargetResource();
+  const rawFixtures = {
+    sourceTitle: 'rpp-0397-release-verifier-local-private-serialized-block-title',
+    sourceCaption: 'rpp-0397-release-verifier-local-private-serialized-block-caption',
+    targetTitle: 'rpp-0397-release-verifier-base-private-page-target-title',
+    targetBody: 'rpp-0397-release-verifier-base-private-page-target-body',
+  };
+  const base = serializedBlockReferenceReleaseVerifierSnapshot({
+    targetTitle: rawFixtures.targetTitle,
+    targetBody: rawFixtures.targetBody,
+  });
+  const local = cloneReleaseVerifierJson(base);
+  const remote = cloneReleaseVerifierJson(base);
+  local.db[boundary.sourceTable][boundary.sourceRowId] = serializedBlockReferenceSourceRow({
+    title: rawFixtures.sourceTitle,
+    caption: rawFixtures.sourceCaption,
+  });
+
+  const plan = createPushPlan({ base, local, remote, now });
+  const sourceBlocker =
+    plan.blockers.find((entry) => entry.resourceKey === boundary.sourceResourceKey) || null;
+  const serializedReference = sourceBlocker?.references?.find((entry) =>
+    entry.relationshipType === boundary.relationshipType
+    && entry.relationshipKey === boundary.relationshipKey
+    && entry.targetResourceKey === boundary.targetResourceKey) || null;
+  const sourceMutation =
+    plan.mutations.find((entry) => entry.resourceKey === boundary.sourceResourceKey) || null;
+  const sourcePrecondition =
+    plan.preconditions.find((entry) => entry.resourceKey === boundary.sourceResourceKey) || null;
+  const targetMutation =
+    plan.mutations.find((entry) => entry.resourceKey === boundary.targetResourceKey) || null;
+  const targetPrecondition =
+    plan.preconditions.find((entry) => entry.resourceKey === boundary.targetResourceKey) || null;
+  const planEvidence = serializedBlockReferenceReleaseVerifierPlanEvidence({
+    plan,
+    sourceResourceKey: boundary.sourceResourceKey,
+    targetResourceKey: boundary.targetResourceKey,
+  });
+  const serializedPlanEvidence = JSON.stringify(planEvidence);
+  const durableJournal = releaseVerifierMemoryDurableJournal();
+  const replayRemote = cloneReleaseVerifierJson(remote);
+  const replayBefore = JSON.stringify(replayRemote);
+  const remoteHashBefore = sha256Evidence(replayRemote);
+  const sourceHashBefore = resourceHash(replayRemote, sourceResource);
+  const targetHashBefore = resourceHash(replayRemote, targetResource);
+  let beforeMutationCalls = 0;
+  let applyError = null;
+  try {
+    applyPlan(replayRemote, plan, {
+      durableJournal,
+      mutateRemote: true,
+      beforeMutation() {
+        beforeMutationCalls += 1;
+      },
+    });
+  } catch (error) {
+    applyError = error;
+  }
+  const remoteHashAfter = sha256Evidence(replayRemote);
+  const sourceHashAfter = resourceHash(replayRemote, sourceResource);
+  const targetHashAfter = resourceHash(replayRemote, targetResource);
+  const remoteDataPreserved =
+    JSON.stringify(replayRemote) === replayBefore
+    && remoteHashAfter === remoteHashBefore
+    && sourceHashAfter === sourceHashBefore
+    && targetHashAfter === targetHashBefore;
+  const unsupportedTargetFailsClosed =
+    plan.status === 'blocked'
+    && plan.summary.mutations === 0
+    && plan.summary.blockers === 1
+    && sourceBlocker?.class === 'stale-wordpress-graph-identity'
+    && sourceBlocker?.resolutionPolicy === 'preserve-remote-wordpress-graph-and-stop'
+    && sourceMutation === null
+    && sourcePrecondition === null
+    && targetMutation === null
+    && targetPrecondition === null
+    && serializedReference?.relationshipKey === boundary.relationshipKey
+    && serializedReference?.relationshipType === boundary.relationshipType
+    && serializedReference?.serializedBlockName === boundary.serializedBlockName
+    && serializedReference?.serializedBlockAttributePath === boundary.serializedBlockAttributePath
+    && serializedReference?.targetResourceKey === boundary.targetResourceKey
+    && serializedReference?.targetSupport?.supported === false
+    && serializedReference?.targetSupport?.className === 'stale-wordpress-graph-identity'
+    && /not a supported attachment row/.test(serializedReference?.targetSupport?.reason || '')
+    && serializedReference?.targetChange?.localChange === 'unchanged'
+    && serializedReference?.targetChange?.remoteChange === 'unchanged';
+  const refusalOk =
+    applyError instanceof PushPlanError
+    && applyError.code === 'PLAN_NOT_READY'
+    && beforeMutationCalls === 0
+    && durableJournal.events.length === 0
+    && remoteDataPreserved;
+  const rawPlanEvidenceValuesIncluded = Object.values(rawFixtures).some((raw) =>
+    serializedPlanEvidence.includes(raw));
+  const ok = unsupportedTargetFailsClosed
+    && refusalOk
+    && !rawPlanEvidenceValuesIncluded;
+
+  const proof = {
+    rpp: 'RPP-0397',
+    evidenceSource: 'release-verifier-serialized-block-reference-detection-v5',
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'SERIALIZED_BLOCK_UNSUPPORTED_TARGET_HASH_ONLY_EVIDENCE'
+      : 'SERIALIZED_BLOCK_REFERENCE_RELEASE_VERIFIER_REQUIRED',
+    evidenceScope: boundary.evidenceScope,
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    relationship: serializedBlockReferenceRelationshipEvidence(),
+    source: serializedBlockReferenceSourceResourceEvidence(),
+    target: serializedBlockReferenceTargetResourceEvidence(),
+    rawValuesIncluded: rawPlanEvidenceValuesIncluded,
+    releaseVerifier: {
+      checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+      check: 'serialized-block-reference-detection',
+      variant: 'v5',
+      serializedPlanEvidence: 'hash-only',
+      unsupportedTargetFailsClosed,
+      remoteDataPreserved,
+    },
+    plan: {
+      status: plan.status,
+      summary: {
+        mutations: plan.summary.mutations,
+        decisions: plan.summary.decisions,
+        conflicts: plan.summary.conflicts,
+        blockers: plan.summary.blockers,
+        atomicGroups: plan.summary.atomicGroups,
+      },
+      mutationCount: plan.mutations.length,
+      preconditionCount: plan.preconditions.length,
+      blockerCount: plan.blockers.length,
+      hash: sha256Evidence(planEvidence),
+    },
+    sourceBlocker: sourceBlocker ? serializedBlockReferenceBlockerEvidence(sourceBlocker) : null,
+    targetSupport: serializedReference ? {
+      supported: serializedReference.targetSupport?.supported === true,
+      className: serializedReference.targetSupport?.className || null,
+      reason: serializedReference.targetSupport?.reason || null,
+      targetPostType: boundary.unsupportedTargetPostType,
+      unsupportedTargetFailsClosed,
+      sourceMutationPresent: sourceMutation !== null,
+      sourcePreconditionPresent: sourcePrecondition !== null,
+      targetMutationPresent: targetMutation !== null,
+      targetPreconditionPresent: targetPrecondition !== null,
+    } : null,
+    applyRefusal: {
+      code: applyError?.code || null,
+      detailsHash: applyError ? sha256Evidence(applyError.details || null) : null,
+      beforeMutationCalls,
+      durableJournalEventTypes: durableJournal.events.map((entry) => entry.type),
+      remoteHashBefore,
+      remoteHashAfter,
+      sourceHashBefore: `sha256:${sourceHashBefore}`,
+      sourceHashAfter: `sha256:${sourceHashAfter}`,
+      targetHashBefore: `sha256:${targetHashBefore}`,
+      targetHashAfter: `sha256:${targetHashAfter}`,
+      remoteDataPreserved,
+    },
+    planEvidence,
+    redaction: {
+      format: 'hash-only',
+      surfaces: [
+        'release-verifier-serialized-block-reference-plan-evidence',
+        'apply-refusal-details',
+        'release-verifier-proof',
+      ],
+      serializedPlanEvidenceHash: sha256Evidence(planEvidence),
+      rawValuesIncluded: rawPlanEvidenceValuesIncluded,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    releaseVerifier: proof.releaseVerifier,
+    plan: proof.plan,
+    sourceBlocker: proof.sourceBlocker,
+    targetSupport: proof.targetSupport,
+    applyRefusal: proof.applyRefusal,
+    redaction: proof.redaction,
+  });
+
+  const serializedProof = JSON.stringify(proof);
+  const rawProofValuesIncluded = Object.values(rawFixtures).some((raw) => serializedProof.includes(raw));
+  if (rawProofValuesIncluded || rawPlanEvidenceValuesIncluded) {
+    return {
+      rpp: proof.rpp,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'SERIALIZED_BLOCK_REFERENCE_EVIDENCE_REDACTION_REQUIRED',
+      evidenceScope: proof.evidenceScope,
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      relationship: proof.relationship,
+      source: proof.source,
+      target: proof.target,
+      rawValuesIncluded: true,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: true,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'SERIALIZED_BLOCK_REFERENCE_EVIDENCE_REDACTION_REQUIRED',
+        relationship: proof.relationship,
+      }),
+    };
+  }
+
+  return proof;
+}
+
+function serializedBlockReferenceReleaseVerifierSnapshot({
+  targetTitle,
+  targetBody,
+}) {
+  const boundary = serializedBlockReferenceReleaseVerifierBoundary;
+  return {
+    files: {
+      'index.php': '<?php echo "rpp-0397 release verifier base";',
+    },
+    plugins: {},
+    db: {
+      [boundary.sourceTable]: {
+        'ID:1': {
+          ID: 1,
+          post_title: 'RPP-0397 stable release verifier base post',
+          post_name: 'rpp0397-stable-release-verifier-base-post',
+          post_content: 'stable-rpp0397-release-verifier-base-body',
+          post_status: 'publish',
+          post_type: 'post',
+          post_parent: 0,
+          post_author: 0,
+        },
+        [boundary.targetRowId]: {
+          ID: 8397,
+          post_title: targetTitle,
+          post_name: 'rpp0397-unsupported-page-target',
+          post_content: targetBody,
+          post_status: 'publish',
+          post_type: boundary.unsupportedTargetPostType,
+          post_parent: 0,
+          post_author: 0,
+        },
+      },
+    },
+  };
+}
+
+function serializedBlockReferenceSourceRow({ title, caption }) {
+  return {
+    ID: 397,
+    post_title: title,
+    post_name: 'rpp0397-local-serialized-block-reference',
+    post_content: `<!-- wp:image {"id":"8397","caption":"${caption}"} /-->`,
+    post_status: 'publish',
+    post_type: 'post',
+    post_parent: 0,
+    post_author: 0,
+  };
+}
+
+function serializedBlockReferenceSourceResource() {
+  const boundary = serializedBlockReferenceReleaseVerifierBoundary;
+  return {
+    type: 'row',
+    table: boundary.sourceTable,
+    id: boundary.sourceRowId,
+    key: boundary.sourceResourceKey,
+  };
+}
+
+function serializedBlockReferenceTargetResource() {
+  const boundary = serializedBlockReferenceReleaseVerifierBoundary;
+  return {
+    type: 'row',
+    table: boundary.targetTable,
+    id: boundary.targetRowId,
+    key: boundary.targetResourceKey,
+  };
+}
+
+function serializedBlockReferenceSourceResourceEvidence() {
+  const boundary = serializedBlockReferenceReleaseVerifierBoundary;
+  return {
+    resourceKey: boundary.sourceResourceKey,
+    table: boundary.sourceTable,
+    rowId: boundary.sourceRowId,
+  };
+}
+
+function serializedBlockReferenceTargetResourceEvidence() {
+  const boundary = serializedBlockReferenceReleaseVerifierBoundary;
+  return {
+    resourceKey: boundary.targetResourceKey,
+    table: boundary.targetTable,
+    rowId: boundary.targetRowId,
+    postType: boundary.unsupportedTargetPostType,
+  };
+}
+
+function serializedBlockReferenceRelationshipEvidence() {
+  const boundary = serializedBlockReferenceReleaseVerifierBoundary;
+  return {
+    relationshipKey: boundary.relationshipKey,
+    relationshipType: boundary.relationshipType,
+    serializedBlockName: boundary.serializedBlockName,
+    serializedBlockAttributePath: boundary.serializedBlockAttributePath,
+  };
+}
+
+function serializedBlockReferenceReleaseVerifierPlanEvidence({
+  plan,
+  sourceResourceKey,
+  targetResourceKey,
+}) {
+  return {
+    status: plan.status,
+    summary: {
+      mutations: plan.summary.mutations,
+      decisions: plan.summary.decisions,
+      conflicts: plan.summary.conflicts,
+      blockers: plan.summary.blockers,
+      atomicGroups: plan.summary.atomicGroups,
+    },
+    source: {
+      resourceKey: sourceResourceKey,
+      mutationPresent: plan.mutations.some((entry) => entry.resourceKey === sourceResourceKey),
+      preconditionPresent: plan.preconditions.some((entry) => entry.resourceKey === sourceResourceKey),
+    },
+    target: {
+      resourceKey: targetResourceKey,
+      mutationPresent: plan.mutations.some((entry) => entry.resourceKey === targetResourceKey),
+      preconditionPresent: plan.preconditions.some((entry) => entry.resourceKey === targetResourceKey),
+    },
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    blockers: plan.blockers.map(serializedBlockReferenceBlockerEvidence),
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      baseHash: decision.baseHash,
+      localHash: decision.localHash || null,
+      remoteHash: decision.remoteHash || null,
+    })),
+  };
+}
+
+function serializedBlockReferenceBlockerEvidence(blocker) {
+  return {
+    id: blocker.id,
+    resourceKey: blocker.resourceKey || null,
+    class: blocker.class,
+    reason: blocker.reason || null,
+    resolutionPolicy: blocker.resolutionPolicy || null,
+    baseHash: blocker.baseHash || null,
+    localHash: blocker.localHash || null,
+    remoteHash: blocker.remoteHash || null,
+    change: graphChangeHashEvidence(blocker.change),
+    references: Array.isArray(blocker.references)
+      ? blocker.references.map(serializedBlockReferenceTargetEvidence)
+      : [],
+  };
+}
+
+function serializedBlockReferenceTargetEvidence(reference) {
+  return {
+    relationshipKey: reference.relationshipKey || null,
+    relationshipType: reference.relationshipType || null,
+    sourceResourceKey: reference.sourceResourceKey || null,
+    serializedBlockName: reference.serializedBlockName || null,
+    serializedBlockAttributePath: reference.serializedBlockAttributePath || null,
+    targetResourceKey: reference.targetResourceKey || null,
+    targetTable: reference.targetTable || null,
+    targetId: reference.targetId || null,
+    targetBaseHash: reference.targetBaseHash || null,
+    targetLocalHash: reference.targetLocalHash || null,
+    targetRemoteHash: reference.targetRemoteHash || null,
+    targetSupport: reference.targetSupport ? {
+      supported: reference.targetSupport.supported === true,
+      className: reference.targetSupport.className || null,
+      reason: reference.targetSupport.reason || null,
+    } : null,
+    targetChange: graphChangeHashEvidence(reference.targetChange),
+  };
+}
+
+function graphChangeHashEvidence(change) {
+  if (!change || typeof change !== 'object') {
+    return null;
+  }
+
+  return {
+    localChange: change.localChange || null,
+    remoteChange: change.remoteChange || null,
+    base: graphStateHashEvidence(change.base),
+    local: graphStateHashEvidence(change.local),
+    remote: graphStateHashEvidence(change.remote),
+  };
+}
+
+function graphStateHashEvidence(state) {
+  if (!state || typeof state !== 'object') {
+    return null;
+  }
+
+  return {
+    state: state.state || null,
+    hash: state.hash || null,
+  };
+}
+
 function releaseVerifierMemoryDurableJournal() {
   return {
     claimFenced: true,
@@ -7199,6 +7671,12 @@ export function summarizeMergeInvariantReleaseVerifierProofs() {
     independentLocalFileRemoteRow: summarizeIndependentLocalFileRemoteRowReleaseVerifierProof(),
     independentLocalRowRemoteFile: summarizeIndependentLocalRowRemoteFileReleaseVerifierProof(),
     remoteOnlyPluginMetadata: summarizeRemoteOnlyPluginMetadataReleaseVerifierProof(),
+  };
+}
+
+export function summarizeGraphIdentityReleaseVerifierProofs() {
+  return {
+    serializedBlockReference: summarizeSerializedBlockReferenceReleaseVerifierProof(),
   };
 }
 
@@ -10644,6 +11122,7 @@ try {
           ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
         };
         const mergeInvariantProofs = summarizeMergeInvariantReleaseVerifierProofs();
+        const graphIdentityProofs = summarizeGraphIdentityReleaseVerifierProofs();
         process.stdout.write(
           JSON.stringify(
             {
@@ -10698,6 +11177,7 @@ try {
               latestReadRetryEvidence: proof.latestReadRetryEvidence || null,
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
+              graphIdentity: graphIdentityProofs,
             },
             null,
             2,
@@ -10987,6 +11467,7 @@ try {
         ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
       };
       const mergeInvariantProofs = summarizeMergeInvariantReleaseVerifierProofs();
+      const graphIdentityProofs = summarizeGraphIdentityReleaseVerifierProofs();
       const checkedProductionPluginDriverAccepted = packagedSourceFixture !== null
         ? productionPluginDriverProof.verdict === 'PACKAGED_PLUGIN_DRIVER_BOUNDARY_OK'
         : productionPluginDriverProof.verdict === 'LIVE_PLUGIN_DRIVER_BOUNDARY_OK';
@@ -11040,6 +11521,7 @@ try {
               authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
+              graphIdentity: graphIdentityProofs,
             },
             null,
             2,
@@ -11109,6 +11591,7 @@ try {
               authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
+              graphIdentity: graphIdentityProofs,
             },
             null,
             2,
@@ -11305,6 +11788,7 @@ try {
               },
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
+              graphIdentity: graphIdentityProofs,
             },
             null,
             2,
@@ -11397,6 +11881,7 @@ try {
               },
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
+              graphIdentity: graphIdentityProofs,
             },
             null,
             2,
@@ -11510,6 +11995,7 @@ try {
               replayAndRetry: proof.replayAndRetry || null,
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
+              graphIdentity: graphIdentityProofs,
             },
             null,
             2,
@@ -11590,6 +12076,7 @@ try {
             },
             pluginDriver: pluginDriverProof,
             mergeInvariants: mergeInvariantProofs,
+            graphIdentity: graphIdentityProofs,
           },
           null,
           2,
