@@ -1,18 +1,31 @@
-# AO Progress Report - 2026-05-30 04:04 CEST
+# AO Progress Report - 2026-05-30 04:07 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0153
-relationship graph generated coverage refresh ending at `c0ca21003`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0427
+wp_usermeta driver semantics refresh ending at `fdaebc58c`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 318 are
-  checked from integrated evidence and 682 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 319 are
+  checked from integrated evidence and 681 remain open.
+- `RPP-0427` is now checked with focused wp_usermeta driver semantics evidence
+  in `docs/evidence/rpp-0427-wp-usermeta-driver-semantics-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0427-wp-usermeta-driver-semantics-v2.test.js`. `node --check
+  test/rpp-0427-wp-usermeta-driver-semantics-v2.test.js` exited 0, `node
+  --test test/rpp-0427-wp-usermeta-driver-semantics-v2.test.js` passed 2/2,
+  `node --test test/plugin-driver-usermeta-semantics.test.js` passed 5/5, the
+  generated/user graph slice passed 10/10, and the adjacent meta-driver
+  semantics slice passed 16/16, proving supported and unsupported generated
+  wp_usermeta variants retain exact mutation and fail-closed semantics,
+  usermeta evidence stays redacted/hash-only, checklist lint, artifact
+  redaction scan, and `git diff --check` while final release remains
+  **NO-GO**.
 - `RPP-0153` is now checked with generated `wp_term_relationships` graph
   variant-3 evidence in
   `docs/evidence/rpp-0153-wp-term-relationships-graph-v3.md`,

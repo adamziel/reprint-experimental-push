@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:04 CEST.
+- Last update: 2026-05-30 04:07 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0153 relationship graph generated coverage merge ending at
-  `c0ca21003`.
+  the RPP-0427 wp_usermeta driver semantics merge ending at `fdaebc58c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 318
-  items checked and leaves 682 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 319
+  items checked and leaves 681 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  45 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  46 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 54 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused wp_usermeta driver semantics refresh: the current lane now contains
+  `RPP-0427` evidence in
+  `docs/evidence/rpp-0427-wp-usermeta-driver-semantics-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0427-wp-usermeta-driver-semantics-v2.test.js`. `node --check
+  test/rpp-0427-wp-usermeta-driver-semantics-v2.test.js` exited 0, `node
+  --test test/rpp-0427-wp-usermeta-driver-semantics-v2.test.js` passed 2/2,
+  `node --test test/plugin-driver-usermeta-semantics.test.js` passed 5/5, the
+  generated/user graph slice passed 10/10, and the adjacent meta-driver
+  semantics slice passed 16/16. The proof carries supported and unsupported
+  generated wp_usermeta variants through exact-mutation and fail-closed
+  assertions, keeps usermeta evidence redacted/hash-only, and does not claim
+  live production evidence. Checklist lint, artifact redaction scan, and `git
+  diff --check` also passed. Counts are now 319/681; final release remains
+  `NO-GO`.
 - Generated wp_term_relationships graph variant-3 refresh: the current lane now
   contains `RPP-0153` evidence in
   `docs/evidence/rpp-0153-wp-term-relationships-graph-v3.md`,
