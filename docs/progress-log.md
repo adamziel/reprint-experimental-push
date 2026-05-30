@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 20:15 CEST +02:00.
+- Last update: 2026-05-30 20:28 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0458 generated driver apply-validation merge ending at `1dce96`.
+  the RPP-0487 wp_usermeta release-verifier ancestry merge ending at `174bf1`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -19,6 +19,20 @@ linked implementation artifacts.
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- wp_usermeta release-verifier ancestry refinement: the current lane now
+  preserves the older `session/rpp-487` RPP-0487 ancestry while retaining the
+  stronger current release-verifier surface. The integrated verifier summary
+  now carries generated supported and unsupported `wp_usermeta` coverage under
+  the RPP-0487 summary itself, with local/generated support-only evidence kept
+  release-gate `NO-GO` unless checked production-backed proof is supplied.
+  Validation passed with Node syntax checks, focused RPP-0487 coverage 6/6,
+  adjacent `wp_usermeta` coverage 16/16, focused RPP-0487/RPP-0467/RPP-0427/
+  RPP-0407 pattern coverage 16/16, full generated push harness coverage 90/90,
+  production plugin package scenario summary coverage 9/9, packaged plugin
+  driver verifier guards, checklist lint, scoped artifact redaction scan, and
+  diff whitespace checks. Counts remain 514/486; final release remains `NO-GO`
+  because this is local/generated plugin-driver evidence, not external
+  production-backed release evidence.
 - Driver apply-validation generated coverage: the current lane now checks
   `RPP-0458` with local generated-model coverage for the fixture forms-lab
   custom-table driver apply-validation boundary. The generated cases prove the
