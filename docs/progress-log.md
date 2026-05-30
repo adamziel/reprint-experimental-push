@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 16:29 CEST +02:00.
+- Last update: 2026-05-30 16:35 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0635 same-key replay after rejection merge ending at `173cb1316`.
+  the RPP-0523 production dry-run route v2 merge ending at `4ff116b59`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 478
-  items checked and leaves 522 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 479
+  items checked and leaves 521 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  82 plugin-driver boundary items, 28 executor/auth items, 36 recovery items,
+  82 plugin-driver boundary items, 29 executor/auth items, 36 recovery items,
   19 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Production dry-run route v2: the current lane now contains `RPP-0523`
+  evidence in
+  `docs/evidence/rpp-0523-production-dry-run-route-v2.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-dry-run-route-live-smoke.mjs`, and
+  `test/production-dry-run-route.test.js`. The sandbox-local live smoke starts
+  WordPress Playground on loopback with no tunnel, proves the
+  `/wp-json/reprint/v1/push/dry-run` route is discoverable as `POST`, rejects an
+  authenticated unsigned request with `401` and `SIGNED_HEADER_REQUIRED` before
+  minting a receipt, then sends a signed production-shaped dry-run request. The
+  receipt binds scope, identity, production auth session, push session, and plan
+  hash with 64-character hash evidence, and the post-dry-run source surface
+  remains equal to the base snapshot. Validation passed with PHP and Node syntax
+  checks, focused RPP-0523 coverage 6/6, live sandbox-local dry-run smoke,
+  adjacent route/auth/session coverage 173/173, checklist lint, scoped artifact
+  redaction scan, raw fixture scan, and merge diff whitespace checks. Counts
+  are now 479/521; final release remains `NO-GO` because this is
+  production-shaped loopback evidence, not external production endpoint proof.
 - Same-key replay after rejection v2: the current lane now contains `RPP-0635`
   evidence in
   `docs/evidence/rpp-0635-same-key-replay-after-rejection-v2.md`,

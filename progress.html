@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T16:29:00+02:00">Last updated: May 30, 2026, 16:29 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T16:35:00+02:00">Last updated: May 30, 2026, 16:35 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>478</strong>
+        <strong>479</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>522</strong>
+        <strong>521</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, credential rotation, manage_options, capability downgrade rejection, production-shaped preflight, snapshot-hashes, and audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, credential rotation, manage_options, capability downgrade rejection, production-shaped preflight, snapshot-hashes, dry-run, apply, and audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,17 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0635</span>
+        <span>RPP-0523</span>
       </div>
-      <p>The latest refresh integrates RPP-0635 same-key replay after rejection evidence: the checked GATE-2 recovery path returns the same 412 PRECONDITION_FAILED replay result, records no fresh mutation work, preserves the rejected remote snapshot, orders rejection before replay, and exposes the release-proof summary alongside the canonical same-key replay-after-rejection boundary. Counts are now 478/522; final release remains NO-GO because this is local durable recovery evidence, not external WordPress crash/restart durability proof.</p>
+      <p>The latest refresh integrates RPP-0523 production dry-run route v2 evidence: the sandbox-local live smoke discovers the production-shaped dry-run endpoint, rejects unsigned requests before receipt minting, sends a signed dry-run request, verifies hash-only receipt binding for scope, identity, auth session, push session, and plan hash, and confirms the visible source surface is unchanged after dry-run. Counts are now 479/521; final release remains NO-GO because this is loopback production-shaped proof, not external production endpoint proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0523 focused: 6/6</span>
+        <span class="tag">live dry-run smoke: pass</span>
+        <span class="tag">unsigned rejection: 401</span>
+        <span class="tag">receipt hash: 64 chars</span>
+        <span class="tag">finalMatchesBase: true</span>
+        <span class="tag">route/auth/session: 173/173</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0635 focused: 1/1</span>
         <span class="tag">recovery adjacent: 7/7</span>
         <span class="tag">recovery journal full: 39/39</span>
@@ -1090,7 +1097,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 478/1000</span>
+        <span class="tag">checked goals: 479/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
