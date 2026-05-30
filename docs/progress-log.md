@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 06:48 CEST.
+- Last update: 2026-05-30 06:57 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0164 row create/update/delete mix variant-4 generated-harness merge
-  ending at `8175bc437`.
+  the RPP-0165 wp_options scalar option changes variant-4 generated-harness
+  merge ending at `7534ac25e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 357
-  items checked and leaves 643 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 358
+  items checked and leaves 642 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   70 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 64 generated
+  11 storage/performance items, 3 production-topology items, 65 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- wp_options scalar option changes variant-4 refresh: the current lane now
+  contains `RPP-0165` evidence in
+  `docs/evidence/rpp-0165-wp-options-scalar-option-changes-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0165 test passed 1/1, the adjacent
+  RPP-0105/RPP-0125/RPP-0145/RPP-0165 scalar-option slice passed 4/4, and
+  `npm run test:generated-push-harness` passed 72/72 across 620 deterministic
+  generated cases. Checklist lint, artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 358/642; final release remains
+  `NO-GO`.
 - Row create/update/delete mix variant-4 refresh: the current lane now contains
   `RPP-0164` evidence in
   `docs/evidence/rpp-0164-row-create-update-delete-mix-v4.md`,
