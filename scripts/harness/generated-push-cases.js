@@ -214,6 +214,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-options-scalar-variant3',
     tag: 'wp-options-scalar-v3',
   },
+  wpOptionsScalarChangesVariant4: {
+    family: 'wp-options-scalar-variant4',
+    tag: 'wp-options-scalar-v4',
+  },
   wpOptionsSerializedChanges: {
     family: 'wp-options-serialized-ready',
     tag: 'wp-options-serialized-change',
@@ -3060,6 +3064,8 @@ function addWpOptionsScalarChange(base, local, remote, allocator, tags, { confli
   tags.add(`scalar-option-${valueKind}`);
   tags.add('wp-options-scalar-v3');
   tags.add(conflict ? 'wp-options-scalar-v3-non-ready' : 'wp-options-scalar-v3-ready');
+  tags.add('wp-options-scalar-v4');
+  tags.add(conflict ? 'wp-options-scalar-v4-non-ready' : 'wp-options-scalar-v4-ready');
 
   if (conflict) {
     setRow(remote, 'wp_options', rowId, { ...row, option_value: remoteValue });

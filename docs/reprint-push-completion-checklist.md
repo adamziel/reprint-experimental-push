@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 317.
-- Remaining open: 683.
+- Verified complete: 318.
+- Remaining open: 682.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -181,7 +181,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [ ] RPP-0162 (Near / generated-harness) Add focused regression coverage for directory descendant conflict, variant 4. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0163 (Near / generated-harness) Add focused regression coverage for file type-swap conflict, variant 4. Success: ready cases apply with no unplanned remote overwrite.
 - [ ] RPP-0164 (Near / generated-harness) Add focused regression coverage for row create/update/delete mix, variant 4. Success: stale remote replay fails before mutation.
-- [ ] RPP-0165 (Near / generated-harness) Add focused regression coverage for wp_options scalar option changes, variant 4. Success: docs/generated-push-harness.md records the surface and invariant.
+- [x] RPP-0165 (Near / generated-harness) Add focused regression coverage for wp_options scalar option changes, variant 4. Success: docs/generated-push-harness.md records the surface and invariant.
 - [ ] RPP-0166 (Near / generated-harness) Add focused regression coverage for wp_options serialized option changes, variant 4. Success: generator emits at least one ready case and one non-ready case for this target.
 - [ ] RPP-0167 (Near / generated-harness) Add focused regression coverage for wp_posts create/update/delete changes, variant 4. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0168 (Near / generated-harness) Add focused regression coverage for wp_postmeta create/update/delete changes, variant 4. Success: ready cases apply with no unplanned remote overwrite.

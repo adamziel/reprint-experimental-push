@@ -54,8 +54,8 @@ The default generated run covers:
   plus per-tier target counts, row create/update/delete mixes with
   ready/conflict outcomes plus per-tier target counts and stale replay rejection
   before mutation, non-plugin-owned `wp_options` scalar changes with per-tier
-  target counts plus explicit variant-3 scalar option coverage, serialized
-  option changes with per-tier target counts and
+  target counts plus explicit variant-3 and variant-4 scalar option coverage,
+  serialized option changes with per-tier target counts and
   redacted hash-only evidence for private serialized payloads, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_postmeta` create/update/delete mixes with per-tier target
@@ -109,6 +109,15 @@ The focused proof records only resource keys, scalar value kinds, counts, and
 hashes, verifies the ready case applies the planned scalar option update and
 rejects stale replay before mutation, then verifies the conflicting scalar
 option refuses apply without mutating the remote digest.
+
+RPP-0165 adds `wpOptionsScalarChangesVariant4` coverage as a focused regression
+target for the same regular scalar option update surface with an explicit
+variant-4 target tag. The deterministic roster emits 20 variant-4 target cases:
+10 ready scalar option updates and 10 non-ready remote-drift conflicts, with
+two cases in every tier. The focused proof recounts the summary, selects one
+ready case and one non-ready case, and keeps the evidence hash-only while
+verifying ready apply, live-remote preconditions, stale replay refusal, and
+non-ready conflict apply refusal without mutating the remote digest.
 
 The `wpOptionsSerialized` surface seeds regular, non-plugin-owned `wp_options`
 rows with PHP-serialized option strings that include public labels plus private
