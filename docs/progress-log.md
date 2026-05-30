@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:49 CEST.
+- Last update: 2026-05-30 04:52 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0472 direct active_plugins refusal proof merge ending at `d58845537`.
+  the RPP-0473 owner context stale plugin file proof merge ending at
+  `35beadf2a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 331
-  items checked and leaves 669 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 332
+  items checked and leaves 668 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  56 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  57 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 56 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused owner context stale plugin file refusal variant-4 refresh: the
+  current lane now contains `RPP-0473` evidence in
+  `docs/evidence/rpp-0473-owner-context-stale-plugin-file-refusal-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0473-owner-context-stale-plugin-file-refusal-v4.test.js`. `node
+  --check test/rpp-0473-owner-context-stale-plugin-file-refusal-v4.test.js`
+  exited 0, the focused test passed 2/2, and the adjacent
+  owner-context/plugin-driver refusal slice passed 20/20. The proof carries one
+  local production-shaped plugin-owned row mutation when owner file context is
+  valid, refuses stale owner plugin file drift before planning/replay mutation,
+  preserves remote row and full remote hashes, and keeps evidence hash-only.
+  Checklist lint, artifact redaction scan, and `git diff --check` also passed.
+  Counts are now 332/668; final release remains `NO-GO`.
 - Focused direct active_plugins mutation refusal variant-4 refresh: the current
   lane now contains `RPP-0472` evidence in
   `docs/evidence/rpp-0472-direct-active-plugins-mutation-refusal-v4.md`,

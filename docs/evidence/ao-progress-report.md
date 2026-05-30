@@ -1,17 +1,31 @@
-# AO Progress Report - 2026-05-30 04:49 CEST
+# AO Progress Report - 2026-05-30 04:52 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0472 direct
-active_plugins refusal proof refresh ending at `d58845537`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0473 owner context
+stale plugin file proof refresh ending at `35beadf2a`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 331 are
-  checked from integrated evidence and 669 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 332 are
+  checked from integrated evidence and 668 remain open.
+- `RPP-0473` is now checked with focused owner context stale plugin file
+  refusal variant-4 evidence in
+  `docs/evidence/rpp-0473-owner-context-stale-plugin-file-refusal-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0473-owner-context-stale-plugin-file-refusal-v4.test.js`. `node
+  --check test/rpp-0473-owner-context-stale-plugin-file-refusal-v4.test.js`
+  exited 0, `node --test
+  test/rpp-0473-owner-context-stale-plugin-file-refusal-v4.test.js` passed 2/2,
+  and the adjacent owner-context/plugin-driver refusal slice passed 20/20,
+  proving one local production-shaped plugin-owned row mutation applies when
+  owner file context is valid, stale owner plugin file drift refuses before
+  planning/replay mutation, remote row and full remote hashes remain preserved,
+  evidence stays hash-only, checklist lint, artifact redaction scan, and `git
+  diff --check` while final release remains **NO-GO**.
 - `RPP-0472` is now checked with focused direct active_plugins mutation refusal
   variant-4 evidence in
   `docs/evidence/rpp-0472-direct-active-plugins-mutation-refusal-v4.md`,
