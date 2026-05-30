@@ -504,7 +504,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [x] RPP-0470 (Mid / plugin-driver) Add focused regression coverage for plugin update dependency validator, variant 4. Success: release gate notes whether evidence is local or production-backed.
 - [x] RPP-0471 (Mid / plugin-driver) Add focused regression coverage for plugin uninstall/delete refusal, variant 4. Success: focused test proves exact driver behavior.
 - [x] RPP-0472 (Mid / plugin-driver) Add focused regression coverage for direct active_plugins mutation refusal, variant 4. Success: generated harness covers supported and unsupported variants.
-- [ ] RPP-0473 (Mid / plugin-driver) Add focused regression coverage for owner context stale plugin file refusal, variant 4. Success: local production proof carries one real mutation through apply.
+- [x] RPP-0473 (Mid / plugin-driver) Add focused regression coverage for owner context stale plugin file refusal, variant 4. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0474 (Mid / plugin-driver) Add focused regression coverage for owner context stale metadata refusal, variant 4. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0475 (Mid / plugin-driver) Add focused regression coverage for remote plugin removal refusal, variant 4. Success: release gate notes whether evidence is local or production-backed.
 - [ ] RPP-0476 (Mid / plugin-driver) Add focused regression coverage for driver delete support flag, variant 4. Success: focused test proves exact driver behavior.
