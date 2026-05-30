@@ -252,7 +252,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [x] RPP-0228 (Near-Mid / merge-invariants) Prove unknown plugin-owned resource refusal, variant 2. Success: no raw private value appears in serialized plan evidence.
 - [x] RPP-0229 (Near-Mid / merge-invariants) Prove conflict evidence hash redaction, variant 2. Success: scenario matrix row names the behavior and command.
 - [x] RPP-0230 (Near-Mid / merge-invariants) Prove planner summary count consistency, variant 2. Success: progress log records the command and caveat.
-- [ ] RPP-0231 (Near-Mid / merge-invariants) Prove mutation/precondition one-to-one mapping, variant 2. Success: node test proves the invariant over generated and focused fixtures.
+- [x] RPP-0231 (Near-Mid / merge-invariants) Prove mutation/precondition one-to-one mapping, variant 2. Success: node test proves the invariant over generated and focused fixtures.
 - [ ] RPP-0232 (Near-Mid / merge-invariants) Prove remoteBeforeHash correctness, variant 2. Success: executor rejects forged or stale mutation attempts.
 - [x] RPP-0233 (Near-Mid / merge-invariants) Prove localHash correctness, variant 2. Success: no raw private value appears in serialized plan evidence.
 - [ ] RPP-0234 (Near-Mid / merge-invariants) Prove already-in-sync decision, variant 2. Success: scenario matrix row names the behavior and command.
