@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 13:12 CEST.
+- Last update: 2026-05-30 13:19 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0622 journal ownership record merge ending at `046f94b5`.
+  the RPP-0361 post_parent page hierarchy merge ending at `fe519d2af`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 438
-  items checked and leaves 562 open.
-- Checked slices: 100 release-gate foundation items, 45 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 439
+  items checked and leaves 561 open.
+- Checked slices: 100 release-gate foundation items, 46 graph identity items,
   73 plugin-driver boundary items, 23 executor/auth items, 27 recovery items,
   12 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Post parent hierarchy graph identity: the current lane now contains
+  `RPP-0361` evidence in
+  `docs/evidence/rpp-0361-post-parent-page-hierarchy-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0361-post-parent-page-hierarchy-v4.test.js`. The focused proof
+  rewrites a page hierarchy `post_parent` reference through explicit
+  identity-map evidence when the remote page target is proven equivalent, and
+  blocks stale hash-only evidence before mutation when the remote hierarchy
+  target diverges. Validation passed with the focused worker and lane test 2/2,
+  the relevant planner/apply suite 147/147, checklist lint, scoped artifact
+  redaction scan, and merge diff whitespace checks. Counts are now 439/561;
+  final release remains `NO-GO` because this is local graph-identity evidence,
+  not production topology or release provenance.
 - Journal ownership record v2: the current lane now contains `RPP-0622`
   evidence in `docs/evidence/rpp-0622-journal-ownership-record-v2.md`,
   `docs/reprint-push-completion-checklist.md`, and
