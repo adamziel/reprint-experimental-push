@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T12:45:00+02:00">Last updated: May 30, 2026, 12:45 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T12:49:00+02:00">Last updated: May 30, 2026, 12:49 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>431</strong>
+        <strong>432</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>569</strong>
+        <strong>568</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, old-remote, new-remote, and blocked partial-remote classification, retry hardening, ownership-record restart readback, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, old-remote, new-remote, and blocked partial-remote classification, same-key rejected replay, retry hardening, ownership-record restart readback, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0612</span>
+        <span>RPP-0615</span>
       </div>
-      <p>The latest refresh integrates RPP-0612 blocked recovery classification: recovery inspection keeps the existing remote classification while adding hash-only reason-code and classification summaries for partial blocked remotes, journal integrity failures, target-unknown states, old remotes, and fully updated remotes. Counts are now 431/569; final release remains NO-GO because this is local recovery evidence, not external production durability proof.</p>
+      <p>The latest refresh integrates RPP-0615 same-key replay after rejection: the durable recovery release proof now requires rejected apply replay evidence on the checked recovery path, with `PRECONDITION_FAILED` before mutation, no fresh mutation work, preserved remote state, ordered `apply-rejected` then `apply-replayed`, and no committed apply row. Counts are now 432/568; final release remains NO-GO because this is local release-verifier evidence, not production-backed durability proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0615/recovery verifier: 35/35</span>
+        <span class="tag">production proof subset: 3/3</span>
+        <span class="tag">production proof: 123/134 pass</span>
+        <span class="tag">apply revalidation smoke: pass</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0611/RPP-0612 focused: 3/3</span>
         <span class="tag">recovery/auth suite: 164/164</span>
         <span class="tag">file-journal smoke: pass</span>
