@@ -1555,7 +1555,9 @@ function validatePreconditions(remote, plan) {
         },
       );
     }
-    const actualHash = resourceHash(remote, precondition.resource);
+    // Authorize the resource the mutation will actually write; a forged
+    // precondition.resource must not redirect the live hash check.
+    const actualHash = resourceHash(remote, mutation.resource);
     if (actualHash !== precondition.expectedHash) {
       throw new PushPlanError(
         'PRECONDITION_FAILED',
@@ -1624,12 +1626,20 @@ function validateReadyPlanEnvelope(plan) {
         mutationsByResourceKey.set(mutation.resourceKey, mutation);
       }
     }
+    const mutationResourceObjectKey = comparableResourceKey(mutation.resource);
     if (mutation.resource?.key && mutation.resource.key !== mutation.resourceKey) {
       issues.push({
         code: 'MUTATION_RESOURCE_KEY_MISMATCH',
         mutationId: mutation.id,
         resourceKey: mutation.resourceKey || null,
         actualResourceKey: mutation.resource.key,
+      });
+    } else if (mutationResourceObjectKey && mutationResourceObjectKey !== mutation.resourceKey) {
+      issues.push({
+        code: 'MUTATION_RESOURCE_KEY_MISMATCH',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey || null,
+        actualResourceKey: mutationResourceObjectKey,
       });
     }
 
@@ -1722,12 +1732,20 @@ function validateReadyPlanEnvelope(plan) {
         actualResourceKey: precondition.resourceKey || null,
       });
     }
+    const preconditionResourceObjectKey = comparableResourceKey(precondition.resource);
     if (precondition.resource?.key && precondition.resource.key !== mutation.resourceKey) {
       issues.push({
         code: 'PRECONDITION_RESOURCE_OBJECT_MISMATCH',
         mutationId,
         expectedResourceKey: mutation.resourceKey || null,
         actualResourceKey: precondition.resource.key,
+      });
+    } else if (preconditionResourceObjectKey && preconditionResourceObjectKey !== mutation.resourceKey) {
+      issues.push({
+        code: 'PRECONDITION_RESOURCE_OBJECT_MISMATCH',
+        mutationId,
+        expectedResourceKey: mutation.resourceKey || null,
+        actualResourceKey: preconditionResourceObjectKey,
       });
     }
     if (precondition.expectedHash !== mutation.remoteBeforeHash) {
@@ -1788,6 +1806,22 @@ function validateReadyPlanEnvelope(plan) {
       },
     );
   }
+}
+
+function comparableResourceKey(resource) {
+  if (!resource || typeof resource !== 'object') {
+    return null;
+  }
+  if (resource.type === 'file' && typeof resource.path === 'string') {
+    return `file:${resource.path}`;
+  }
+  if (resource.type === 'plugin' && typeof resource.name === 'string') {
+    return `plugin:${resource.name}`;
+  }
+  if (resource.type === 'row' && typeof resource.table === 'string' && typeof resource.id === 'string') {
+    return `row:${JSON.stringify([resource.table, resource.id])}`;
+  }
+  return null;
 }
 
 function hashEvidenceState(value) {
