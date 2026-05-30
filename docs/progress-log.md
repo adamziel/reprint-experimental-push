@@ -6,20 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 14:30 CEST.
+- Last update: 2026-05-30 14:38 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0488 serialized option validator release-verifier merge ending at
-  `5e8d68442`.
+  the RPP-0517 same-key different-body idempotency conflict merge ending at
+  `fd8a5c04d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 454
-  items checked and leaves 546 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 455
+  items checked and leaves 545 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  74 plugin-driver boundary items, 25 executor/auth items, 29 recovery items,
+  74 plugin-driver boundary items, 26 executor/auth items, 29 recovery items,
   13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key different-body idempotency conflict proof: the current lane now
+  contains `RPP-0517` evidence in
+  `docs/evidence/rpp-0517-same-key-different-body-conflict.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `src/authenticated-http-push-client.js`,
+  `scripts/playground/production-shaped-route-smoke.mjs`, and
+  `test/authenticated-http-push-client.test.js`. The authenticated client now
+  carries hash-only idempotency conflict evidence, including
+  `idempotencyKeyHash`, `requestHash`, and a `hashOnly` guard, and the
+  production-shaped route smoke proves a same-key different-body conflict
+  returns `409` without adding mutation events after the committed replay path.
+  Validation passed with Node and PHP syntax checks, focused RPP-0517 coverage
+  1/1, adjacent idempotency/replay coverage 28/28, the production-shaped local
+  route smoke, checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks. Counts are now 455/545; final release remains `NO-GO`
+  because this is local production-shaped executor evidence, not externally
+  hosted production topology proof.
 - Serialized option validator release-verifier carry-through: the current lane
   now contains `RPP-0488` evidence in
   `docs/evidence/rpp-0488-serialized-option-validator-release-verifier-v5.md`,
