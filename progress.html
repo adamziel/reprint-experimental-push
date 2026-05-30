@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T13:00:00+02:00">Last updated: May 30, 2026, 13:00 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T12:42:00+02:00">Last updated: May 30, 2026, 12:42 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>429</strong>
+        <strong>430</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>571</strong>
+        <strong>570</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, manage_options, production-shaped preflight route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, manage_options, production-shaped preflight and snapshot-hashes route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0611</span>
+        <span>RPP-0522</span>
       </div>
-      <p>The latest refresh integrates RPP-0611 new-remote recovery classification: completed recovery journals can prove already-updated remote state without overwriting preserved remote-only changes, and the evidence remains hash-only across file and SQLite journal paths. Counts are now 429/571; final release remains NO-GO because this is local recovery evidence, not production durability proof.</p>
+      <p>The latest refresh integrates RPP-0522 production snapshot-hashes route proof: malformed-body negative auth and signature cases now fail in a pre-dispatch guard before JSON parsing or snapshot export, while valid signed requests still claim the nonce once in the route callback. Counts are now 430/570; final release remains NO-GO because this is sandbox-local, lab-backed evidence, not production endpoint proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0522 focused: 5/5</span>
+        <span class="tag">snapshot-hashes live smoke: pass</span>
+        <span class="tag">route/auth suite: 160/160</span>
+        <span class="tag">local-lab backed</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0611 focused: 2/2</span>
         <span class="tag">recovery journal/repair: 35/35</span>
         <span class="tag">checklist/redaction/diff: pass</span>
