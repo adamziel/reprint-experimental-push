@@ -8,12 +8,14 @@ import {
   generateDriverDeleteSupportFlagCases,
   generateDriverDryRunValidationHookCases,
   generateDriverOwnerIdentityBindingCases,
+  generateWpPostmetaDriverSemanticsVariant3Cases,
   generatePushHarnessCases,
   runGeneratedPushHarness,
   validateDriverDeleteSupportFlagCase,
   validateDriverDryRunValidationHookCase,
   validateDriverOwnerIdentityBindingCase,
   validateGeneratedCase,
+  validateWpPostmetaDriverSemanticsVariant3Case,
 } from '../scripts/harness/generated-push-cases.js';
 import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 import { createPushPlan } from '../src/planner.js';
@@ -2537,6 +2539,101 @@ test('RPP-0442 generated driver owner identity binding variant 3 covers supporte
       assert.equal(evidenceText.includes(token), false, `${testCase.variant} leaked generated private marker ${token}`);
     }
   }
+});
+
+function assertNoRawRpp0445WpPostmetaEvidence(cases, proof) {
+  const proofJson = JSON.stringify(proof);
+  const privateMarkers = cases.flatMap((testCase) => testCase.secretTokens || []);
+  assert.ok(privateMarkers.length > 0, 'RPP-0445 generated cases must carry private markers');
+  for (const marker of privateMarkers) {
+    assert.equal(proofJson.includes(marker), false, `RPP-0445 proof leaked raw marker ${marker}`);
+  }
+  assert.equal(proofJson.includes('meta_value'), false, 'RPP-0445 proof exposed raw meta_value fields');
+  assert.equal(proofJson.includes('metaValue'), false, 'RPP-0445 proof exposed raw metaValue fields');
+}
+
+test('RPP-0445 generated wp_postmeta driver semantics variant 3 labels release-gate evidence scope', () => {
+  const cases = generateWpPostmetaDriverSemanticsVariant3Cases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'local-post-id-meta-key-applies',
+    'production-scoped-meta-id-applies',
+    'mismatched-post-id-meta-key-blocked',
+  ]);
+  assert.equal(cases.every((testCase) => testCase.family === 'wp-postmeta-driver-semantics-v3'), true);
+  assert.equal(cases.every((testCase) => testCase.tags.has('wp-postmeta-driver-semantics-v3')), true);
+  assert.equal(cases.every((testCase) => testCase.tags.has('plugin-owned-generated')), true);
+  assert.equal(cases.every((testCase) => testCase.dataResourceKey.startsWith('row:["wp_postmeta"')), true);
+
+  const results = cases.map(validateWpPostmetaDriverSemanticsVariant3Case);
+  const outcomes = Object.fromEntries(results.map((result) => [result.variant, result.outcome]));
+  const byVariant = Object.fromEntries(results.map((result) => [result.variant, result]));
+  const proof = {
+    rpp: 'RPP-0445',
+    evidenceSource: 'generated-push-harness-wp-postmeta-driver-semantics-v3',
+    evidenceScope: 'local-generated-focused',
+    productionBacked: false,
+    finalReleaseGate: {
+      status: 'NO-GO',
+      note: 'Final release remains NO-GO; generated wp_postmeta evidence records local/support-only and production-backed scope labels separately.',
+    },
+    variants: results.map((result) => ({
+      variant: result.variant,
+      status: result.status,
+      outcome: result.outcome,
+      driver: result.driver,
+      policySource: result.policySource,
+      rowIdKind: result.rowIdKind,
+      releaseGateEvidenceScope: result.releaseGateEvidenceScope,
+      releaseGate: result.releaseGate,
+      applied: result.applied,
+      appliedMutations: result.appliedMutations || 0,
+      remotePreserved: result.remotePreserved === true,
+      driverEvidenceHash: result.driverEvidenceHash,
+      auditEvidenceHash: result.auditEvidenceHash || null,
+      blockerHash: result.blockerHash || null,
+      proofHash: result.proofHash,
+    })),
+    resultHash: `sha256:${digest(results)}`,
+  };
+
+  assert.deepEqual(outcomes, {
+    'local-post-id-meta-key-applies': 'applied-supported-driver',
+    'production-scoped-meta-id-applies': 'applied-supported-driver',
+    'mismatched-post-id-meta-key-blocked': 'blocked-mismatched-row',
+  });
+
+  assert.equal(byVariant['local-post-id-meta-key-applies'].status, 'ready');
+  assert.equal(byVariant['local-post-id-meta-key-applies'].rowIdKind, 'post_id_meta_key');
+  assert.equal(byVariant['local-post-id-meta-key-applies'].releaseGateEvidenceScope, 'local-candidate');
+  assert.match(byVariant['local-post-id-meta-key-applies'].releaseGate.note, /local\/support-only/);
+  assert.match(
+    byVariant['local-post-id-meta-key-applies'].releaseGate.note,
+    /production-backed release gate evidence is still required/,
+  );
+
+  assert.equal(byVariant['production-scoped-meta-id-applies'].status, 'ready');
+  assert.equal(byVariant['production-scoped-meta-id-applies'].rowIdKind, 'meta_id');
+  assert.equal(byVariant['production-scoped-meta-id-applies'].policySource, 'remote-snapshot');
+  assert.equal(byVariant['production-scoped-meta-id-applies'].releaseGateEvidenceScope, 'production-backed');
+  assert.match(byVariant['production-scoped-meta-id-applies'].releaseGate.note, /production-backed scope/);
+  assert.match(byVariant['production-scoped-meta-id-applies'].releaseGate.note, /final release remains NO-GO/);
+
+  assert.equal(byVariant['mismatched-post-id-meta-key-blocked'].status, 'blocked');
+  assert.equal(byVariant['mismatched-post-id-meta-key-blocked'].applied, false);
+  assert.equal(byVariant['mismatched-post-id-meta-key-blocked'].remotePreserved, true);
+  assert.equal(byVariant['mismatched-post-id-meta-key-blocked'].releaseGateEvidenceScope, 'local-candidate');
+
+  for (const result of results) {
+    assert.equal(result.productionBacked, false);
+    assert.equal(result.releaseGate.status, 'NO-GO');
+    assert.equal(result.releaseGate.acceptedForReleaseGate, false);
+    assert.equal(result.rawValuesIncluded, false);
+    assert.match(result.driverEvidenceHash, /^[a-f0-9]{64}$/);
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+  }
+  assert.match(proof.resultHash, /^sha256:[a-f0-9]{64}$/);
+  assertNoRawRpp0445WpPostmetaEvidence(cases, proof);
 });
 
 test('RPP-0456 generated driver delete support flag coverage is redacted', () => {

@@ -62,7 +62,10 @@ The default generated run covers:
   outcomes, and explicit variant-4 summary coverage, `wp_postmeta`
   create/update/delete mixes with per-tier target
   counts, ready/conflict outcomes, stale replay rejection before mutation, and
-  explicit variant-3 postmeta coverage,
+  explicit variant-3 postmeta coverage plus dedicated generated plugin-driver
+  `wp_postmeta` semantics cases that label local/support-only and
+  production-backed release-gate evidence scope while keeping final release
+  `NO-GO`,
   `wp_comments` + `wp_commentmeta` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, `wp_terms` + `wp_termmeta` graph cases
   with per-tier target counts, ready/stale non-ready outcomes, and explicit
@@ -378,6 +381,15 @@ parent post IDs, meta-key hashes, counts, and hashes, verifies the ready case
 applies the planned postmeta create, update, and delete mutations and rejects
 stale replay before mutation, then verifies the conflicting updated postmeta row
 refuses apply without mutating the remote digest.
+
+RPP-0445 adds generated plugin-driver `wp_postmeta` semantics coverage for
+variant 3. The focused generated cases cover exact `post_id:<id>:meta_key:<key>`
+rows, exact `meta_id:<id>` rows, and a mismatched postmeta row that fails closed
+before mutation. The proof labels each generated case with release-gate evidence
+scope: local/support-only cases say production-backed release-gate evidence is
+still required, while the production-scoped remote-policy case records that it
+is still only local generated evidence. The final release posture remains
+`NO-GO`, and the generated evidence keeps private postmeta payloads hash-only.
 
 RPP-0168 adds `wpPostmetaCreateUpdateDeleteVariant4` coverage for the same
 `wp_postmeta` create/update/delete surface with an explicit variant-4 target

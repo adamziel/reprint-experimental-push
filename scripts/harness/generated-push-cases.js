@@ -502,6 +502,14 @@ export function generateDriverDryRunValidationHookCases() {
   ].map((variant, index) => buildDriverDryRunValidationHookCase({ variant, index }));
 }
 
+export function generateWpPostmetaDriverSemanticsVariant3Cases() {
+  return [
+    'local-post-id-meta-key-applies',
+    'production-scoped-meta-id-applies',
+    'mismatched-post-id-meta-key-blocked',
+  ].map((variant, index) => buildWpPostmetaDriverSemanticsVariant3Case({ variant, index }));
+}
+
 export function generateDirectActivePluginsMutationRefusalCases() {
   return [
     'supported-plugin-managed-option-applies',
@@ -786,6 +794,157 @@ export function validateDriverDryRunValidationHookCase(testCase) {
   result.outcome = 'blocked-unsupported-hook';
   result.applied = false;
   result.remotePreserved = true;
+  return result;
+}
+
+export function validateWpPostmetaDriverSemanticsVariant3Case(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === testCase.dataResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === testCase.dataResourceKey);
+  const releaseGate = wpPostmetaDriverSemanticsVariant3ReleaseGate(
+    testCase.expected.releaseGateEvidenceScope,
+  );
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    blockers: plan.blockers.length,
+    preconditions: plan.preconditions.length,
+    evidenceScope: 'local-generated-focused',
+    productionBacked: false,
+    releaseGateEvidenceScope: testCase.expected.releaseGateEvidenceScope,
+    releaseGate,
+    rawValuesIncluded: false,
+  };
+
+  if (testCase.expected.outcome === 'applied-supported-driver') {
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(plan.mutations.length, 1, `${testCase.id} should emit one wp_postmeta mutation`);
+    assert.equal(plan.blockers.length, 0, `${testCase.id} should not emit blockers`);
+    assert.equal(plan.preconditions.length, 1, `${testCase.id} should emit one live-remote precondition`);
+    assert.ok(mutation, `${testCase.id} should expose the wp_postmeta mutation`);
+    assert.equal(mutation.action, 'put');
+    assert.equal(mutation.resourceKey, testCase.dataResourceKey);
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, testCase.plugin);
+    assert.equal(mutation.pluginOwnedResource.driver, testCase.expected.driver);
+    assert.equal(mutation.pluginOwnedResource.policySource, testCase.expected.policySource);
+    assert.equal(mutation.pluginOwnedResource.supportsDelete, false);
+    assert.equal(mutation.pluginOwnedResource.auditEvidence.format, 'hash-only');
+    assert.equal(mutation.pluginOwnedResource.auditEvidence.rawValuesIncluded, false);
+    assertWpPostmetaDriverSemanticsVariant3DriverEvidence({
+      testCase,
+      evidence: mutation.pluginOwnedResource.driverEvidence,
+    });
+    assert.equal(
+      mutation.pluginOwnedResource.auditEvidence.driverEvidenceHash,
+      digest(mutation.pluginOwnedResource.driverEvidence),
+    );
+    assertWpPostmetaDriverSemanticsVariant3Redacted(testCase, mutation.pluginOwnedResource);
+
+    const applied = applyPlan(deepClone(testCase.remote), plan);
+    assert.equal(applied.appliedMutations, 1);
+    assert.equal(
+      applied.site.db.wp_postmeta[testCase.dataRowId].meta_value.mode,
+      testCase.expected.appliedMode,
+    );
+    assert.equal(
+      resourceHash(applied.site, mutation.resource),
+      resourceHash(testCase.local, mutation.resource),
+      `${testCase.id} should apply the local wp_postmeta hash`,
+    );
+
+    result.outcome = 'applied-supported-driver';
+    result.applied = true;
+    result.appliedMutations = applied.appliedMutations;
+    result.driver = mutation.pluginOwnedResource.driver;
+    result.policySource = mutation.pluginOwnedResource.policySource;
+    result.rowIdKind = mutation.pluginOwnedResource.driverEvidence.rowIdKind;
+    result.driverEvidenceHash = digest(mutation.pluginOwnedResource.driverEvidence);
+    result.auditEvidenceHash = digest(mutation.pluginOwnedResource.auditEvidence);
+    result.appliedHash = resourceHash(applied.site, mutation.resource);
+    result.proofHash = digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      outcome: result.outcome,
+      status: result.status,
+      driver: result.driver,
+      policySource: result.policySource,
+      rowIdKind: result.rowIdKind,
+      releaseGate,
+      driverEvidenceHash: result.driverEvidenceHash,
+      auditEvidenceHash: result.auditEvidenceHash,
+      appliedHash: result.appliedHash,
+    });
+    assertWpPostmetaDriverSemanticsVariant3Redacted(testCase, result);
+    return result;
+  }
+
+  assert.equal(testCase.expected.outcome, 'blocked-mismatched-row');
+  assert.equal(plan.status, 'blocked', `${testCase.id} should fail closed`);
+  assert.equal(plan.mutations.length, 0, `${testCase.id} should not plan a mismatched wp_postmeta row`);
+  assert.equal(plan.preconditions.length, 0, `${testCase.id} should not precondition a blocked row`);
+  assert.ok(blocker, `${testCase.id} should expose a wp_postmeta blocker`);
+  assert.equal(mutation, undefined);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKey, testCase.dataResourceKey);
+  assert.equal(blocker.pluginOwner, testCase.plugin);
+  assert.equal(blocker.driver, testCase.expected.driver);
+  assert.match(blocker.reason, /post_id and meta_key to match the resource id/);
+  assertWpPostmetaDriverSemanticsVariant3DriverEvidence({
+    testCase,
+    evidence: blocker.driverEvidence,
+    supported: false,
+  });
+  assertWpPostmetaDriverSemanticsVariant3Redacted(testCase, blocker);
+
+  const remote = deepClone(testCase.remote);
+  const remoteBefore = digest(remote);
+  const error = captureError(() => applyPlan(remote, plan));
+  const remoteAfter = digest(remote);
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(remoteAfter, remoteBefore, `${testCase.id} mutated a blocked wp_postmeta remote`);
+
+  result.outcome = 'blocked-mismatched-row';
+  result.applied = false;
+  result.remotePreserved = true;
+  result.driver = blocker.driver;
+  result.policySource = blocker.policySource;
+  result.rowIdKind = blocker.driverEvidence.rowIdKind;
+  result.driverEvidenceHash = digest(blocker.driverEvidence);
+  result.blockerHash = digest({
+    class: blocker.class,
+    reason: blocker.reason,
+    resourceKeyHash: digest(blocker.resourceKey),
+    driver: blocker.driver,
+    pluginOwner: blocker.pluginOwner,
+    driverEvidenceHash: result.driverEvidenceHash,
+    change: blocker.change,
+  });
+  result.remoteBeforeHash = remoteBefore;
+  result.remoteAfterHash = remoteAfter;
+  result.proofHash = digest({
+    id: testCase.id,
+    variant: testCase.variant,
+    outcome: result.outcome,
+    status: result.status,
+    driver: result.driver,
+    policySource: result.policySource,
+    rowIdKind: result.rowIdKind,
+    releaseGate,
+    driverEvidenceHash: result.driverEvidenceHash,
+    blockerHash: result.blockerHash,
+    remoteBeforeHash: result.remoteBeforeHash,
+    remoteAfterHash: result.remoteAfterHash,
+  });
+  assertWpPostmetaDriverSemanticsVariant3Redacted(testCase, error.details);
+  assertWpPostmetaDriverSemanticsVariant3Redacted(testCase, result);
   return result;
 }
 
@@ -1275,6 +1434,219 @@ function buildDriverDryRunValidationHookCase({ variant, index }) {
   testCase.tags.add('driver-dry-run-validation-unsupported');
   testCase.expected.outcome = 'blocked-unsupported-hook';
   return testCase;
+}
+
+function buildWpPostmetaDriverSemanticsVariant3Case({ variant, index }) {
+  const base = buildBaseSite(4450 + index, 4);
+  const plugin = 'forms';
+  const postId = variant === 'production-scoped-meta-id-applies' ? 2 : 1;
+  const metaId = 44530 + index;
+  const metaKey = `_rpp0445_forms_payload_${variant.replaceAll('-', '_')}_${index + 1}`;
+  const dataRowId = variant === 'production-scoped-meta-id-applies'
+    ? `meta_id:${metaId}`
+    : `post_id:${postId}:meta_key:${metaKey}`;
+  const dataResourceKey = rowKey('wp_postmeta', dataRowId);
+  const secrets = {
+    base: `rpp0445-base-postmeta-secret-${index + 1}`,
+    local: `rpp0445-local-postmeta-secret-${index + 1}`,
+    remote: `rpp0445-remote-postmeta-secret-${index + 1}`,
+  };
+  const baseRow = {
+    ...(variant === 'production-scoped-meta-id-applies' ? { meta_id: metaId } : {}),
+    post_id: postId,
+    meta_key: metaKey,
+    meta_value: { mode: 'base', privateMarker: secrets.base },
+    __pluginOwner: plugin,
+  };
+
+  setRow(base, 'wp_postmeta', dataRowId, baseRow);
+
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  setRow(local, 'wp_postmeta', dataRowId, {
+    ...baseRow,
+    meta_value: { mode: `local-${variant}`, privateMarker: secrets.local },
+  });
+
+  const testCase = {
+    id: `rpp-0445-wp-postmeta-driver-semantics-v3-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'wp-postmeta-driver-semantics-v3',
+    tags: new Set([
+      'wp-postmeta-driver-semantics-v3',
+      'wp-postmeta-driver-semantics-generated',
+      'plugin-owned-generated',
+    ]),
+    plugin,
+    dataResourceKey,
+    dataRowId,
+    secretTokens: Object.values(secrets),
+    base,
+    local,
+    remote,
+    expected: {
+      metaKey,
+      postId,
+      remoteToken: secrets.base,
+    },
+  };
+
+  if (variant === 'local-post-id-meta-key-applies') {
+    local.pushIntents = [
+      {
+        id: 'rpp-0445-local-postmeta-driver-semantics-v3',
+        kind: 'plugin-data-update',
+        requireAtomic: true,
+        resources: [dataResourceKey],
+        resourcePolicy: {
+          pluginOwnedResources: {
+            allowedResources: [
+              allowedPluginOwnedResource(dataResourceKey, plugin, 'wp-post-meta', {
+                table: 'wp_postmeta',
+              }),
+            ],
+          },
+        },
+      },
+    ];
+    testCase.tags.add('wp-postmeta-driver-semantics-v3-local');
+    testCase.tags.add('wp-postmeta-driver-semantics-v3-ready');
+    testCase.expected = {
+      ...testCase.expected,
+      outcome: 'applied-supported-driver',
+      appliedMode: `local-${variant}`,
+      driver: 'wp-post-meta',
+      policySource: 'push-intent:rpp-0445-local-postmeta-driver-semantics-v3',
+      rowIdKind: 'post_id_meta_key',
+      evidenceScope: 'local-candidate',
+      releaseGateEvidenceScope: 'local-candidate',
+      supportsDelete: false,
+    };
+    return testCase;
+  }
+
+  if (variant === 'production-scoped-meta-id-applies') {
+    remote.meta = {
+      evidenceScope: 'production-backed',
+      pluginOwnedResources: {
+        allowedResources: [
+          allowedPluginOwnedResource(dataResourceKey, plugin, 'wp-postmeta', {
+            table: 'wp_postmeta',
+          }),
+        ],
+      },
+    };
+    testCase.tags.add('wp-postmeta-driver-semantics-v3-production-scope');
+    testCase.tags.add('wp-postmeta-driver-semantics-v3-ready');
+    testCase.expected = {
+      ...testCase.expected,
+      outcome: 'applied-supported-driver',
+      appliedMode: `local-${variant}`,
+      driver: 'wp-postmeta',
+      policySource: 'remote-snapshot',
+      rowIdKind: 'meta_id',
+      evidenceScope: 'production-backed',
+      releaseGateEvidenceScope: 'production-backed',
+      supportsDelete: false,
+    };
+    return testCase;
+  }
+
+  assert.equal(variant, 'mismatched-post-id-meta-key-blocked');
+  local.pushIntents = [
+    {
+      id: 'rpp-0445-mismatched-postmeta-driver-semantics-v3',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: [dataResourceKey],
+      resourcePolicy: {
+        pluginOwnedResources: {
+          allowedResources: [
+            allowedPluginOwnedResource(dataResourceKey, plugin, 'wp-postmeta', {
+              table: 'wp_postmeta',
+            }),
+          ],
+        },
+      },
+    },
+  ];
+  setRow(local, 'wp_postmeta', dataRowId, {
+    ...baseRow,
+    post_id: postId + 1,
+    meta_value: { mode: `local-${variant}`, privateMarker: secrets.local },
+  });
+  testCase.tags.add('wp-postmeta-driver-semantics-v3-local');
+  testCase.tags.add('wp-postmeta-driver-semantics-v3-blocked');
+  testCase.expected = {
+    ...testCase.expected,
+    outcome: 'blocked-mismatched-row',
+    driver: 'wp-postmeta',
+    policySource: 'push-intent:rpp-0445-mismatched-postmeta-driver-semantics-v3',
+    rowIdKind: 'post_id_meta_key',
+    evidenceScope: 'local-candidate',
+    releaseGateEvidenceScope: 'local-candidate',
+    supportsDelete: false,
+  };
+  return testCase;
+}
+
+function wpPostmetaDriverSemanticsVariant3ReleaseGate(releaseGateEvidenceScope) {
+  if (releaseGateEvidenceScope === 'production-backed') {
+    return {
+      status: 'NO-GO',
+      evidenceScope: releaseGateEvidenceScope,
+      productionScopeClaimed: true,
+      productionBacked: false,
+      acceptedForReleaseGate: false,
+      note: 'wp_postmeta driver semantics generated evidence carries production-backed scope, but this local generated proof is not checked production verifier evidence; final release remains NO-GO.',
+    };
+  }
+
+  return {
+    status: 'NO-GO',
+    evidenceScope: releaseGateEvidenceScope,
+    productionScopeClaimed: false,
+    productionBacked: false,
+    acceptedForReleaseGate: false,
+    note: 'wp_postmeta driver semantics generated evidence is local/support-only; production-backed release gate evidence is still required.',
+  };
+}
+
+function assertWpPostmetaDriverSemanticsVariant3DriverEvidence({
+  testCase,
+  evidence,
+  supported = true,
+}) {
+  assert.equal(evidence.supported, supported);
+  assert.equal(evidence.driver, testCase.expected.driver);
+  assert.equal(evidence.table, 'wp_postmeta');
+  assert.equal(evidence.resourceKey, testCase.dataResourceKey);
+  assert.equal(evidence.rowId, testCase.dataRowId);
+  assert.equal(evidence.rowIdKind, testCase.expected.rowIdKind);
+  assert.equal(evidence.postId, testCase.expected.postId);
+  assert.equal(evidence.metaKey, testCase.expected.metaKey);
+  assert.equal(evidence.pluginOwner, testCase.plugin);
+  assert.equal(evidence.policySource, testCase.expected.policySource);
+  assert.equal(evidence.evidenceScope, testCase.expected.evidenceScope);
+  assert.equal(evidence.releaseGateEvidenceScope, testCase.expected.releaseGateEvidenceScope);
+  if (!supported) {
+    assert.match(evidence.reason, /post_id and meta_key to match the resource id/);
+  }
+  assertWpPostmetaDriverSemanticsVariant3Redacted(testCase, evidence);
+}
+
+function assertWpPostmetaDriverSemanticsVariant3Redacted(testCase, evidence) {
+  const serialized = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(
+      serialized.includes(token),
+      false,
+      `${testCase.id} leaked generated wp_postmeta private marker ${token}`,
+    );
+  }
+  assert.equal(serialized.includes('meta_value'), false, `${testCase.id} exposed raw meta_value fields`);
+  assert.equal(serialized.includes('metaValue'), false, `${testCase.id} exposed raw metaValue fields`);
 }
 
 function buildDriverDeleteSupportFlagCase({ variant, index }) {

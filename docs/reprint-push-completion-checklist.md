@@ -476,7 +476,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [x] RPP-0442 (Mid / plugin-driver) Add generated coverage for driver owner identity binding, variant 3. Success: generated harness covers supported and unsupported variants.
 - [x] RPP-0443 (Mid / plugin-driver) Add generated coverage for custom table allowlist exact match, variant 3. Success: local production proof carries one real mutation through apply.
 - [x] RPP-0444 (Mid / plugin-driver) Add generated coverage for wp_options driver semantics, variant 3. Success: remote drift preserves plugin-owned remote data.
-- [ ] RPP-0445 (Mid / plugin-driver) Add generated coverage for wp_postmeta driver semantics, variant 3. Success: release gate notes whether evidence is local or production-backed.
+- [x] RPP-0445 (Mid / plugin-driver) Add generated coverage for wp_postmeta driver semantics, variant 3. Success: release gate notes whether evidence is local or production-backed.
 - [ ] RPP-0446 (Mid / plugin-driver) Add generated coverage for wp_termmeta driver semantics, variant 3. Success: focused test proves exact driver behavior.
 - [ ] RPP-0447 (Mid / plugin-driver) Add generated coverage for wp_usermeta driver semantics, variant 3. Success: generated harness covers supported and unsupported variants.
 - [ ] RPP-0448 (Mid / plugin-driver) Add generated coverage for serialized option validator, variant 3. Success: local production proof carries one real mutation through apply.
