@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 21:17 CEST +02:00.
+- Last update: 2026-05-30 21:19 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0180 large ready plan tier variant-4 merge ending at `fc9169`.
+  the RPP-0179 remote-only preservation variant-4 merge ending at `184a90`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 515
-  items checked and leaves 485 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 516
+  items checked and leaves 484 open.
 - Checked slices: 100 release-gate foundation items, 70 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 79 generated
+  23 storage/performance items, 3 production-topology items, 80 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Remote-only preservation variant-4 coverage: the current lane now checks
+  `RPP-0179` with focused generated-harness coverage proving that remote-only
+  `wp_posts` drift remains a keep-remote decision while stale replay fails
+  before mutation. The proof covers 9 ready remote-only preservation cases
+  across tiers 1 through 9, verifies the unplanned row has no mutation or
+  precondition, rejects a stale final planned mutation with
+  `PRECONDITION_FAILED`, records zero `beforeMutation` calls, and keeps evidence
+  hash-only. Validation passed with Node syntax checks, focused RPP-0179
+  coverage 1/1, adjacent RPP-0119/RPP-0139/RPP-0159 generated-harness coverage
+  3/3, scoped artifact redaction scan, and diff whitespace checks. Counts are
+  now 516/484; final release remains `NO-GO` because this is local generated
+  model evidence, not production-backed release proof.
 - Large ready plan tier variant-4 coverage: the current lane now checks
   `RPP-0180` with focused generated-harness coverage for the large ready plan
   tier surface. The generator exposes `largeReadyPlanTierVariant4` target

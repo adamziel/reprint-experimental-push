@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 515.
-- Remaining open: 485.
+- Verified complete: 516.
+- Remaining open: 484.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -195,7 +195,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0176 (Near / generated-harness) Add focused regression coverage for atomic plugin install stack, variant 4. Success: generator emits at least one ready case and one non-ready case for this target.
 - [x] RPP-0177 (Near / generated-harness) Add focused regression coverage for stale remote after dry-run, variant 4. Success: summary exposes per-tier counts for this target.
 - [x] RPP-0178 (Near / generated-harness) Add focused regression coverage for same independent content, variant 4. Success: ready cases apply with no unplanned remote overwrite.
-- [ ] RPP-0179 (Near / generated-harness) Add focused regression coverage for remote-only preservation, variant 4. Success: stale remote replay fails before mutation.
+- [x] RPP-0179 (Near / generated-harness) Add focused regression coverage for remote-only preservation, variant 4. Success: stale remote replay fails before mutation.
 - [x] RPP-0180 (Near / generated-harness) Add focused regression coverage for large ready plan tier, variant 4. Success: docs/generated-push-harness.md records the surface and invariant.
 - [ ] RPP-0181 (Near / generated-harness) Carry through the release verifier for file create/update/delete mix, variant 5. Success: generator emits at least one ready case and one non-ready case for this target.
 - [ ] RPP-0182 (Near / generated-harness) Carry through the release verifier for directory descendant conflict, variant 5. Success: summary exposes per-tier counts for this target.
