@@ -383,6 +383,10 @@ const requiredFamilies = [
   'plugin-owned-custom-table-variant3-ready',
   'plugin-owned-custom-table-variant3-stale',
   'plugin-owned-custom-table-variant3-non-ready',
+  'plugin-owned-custom-table-variant4',
+  'plugin-owned-custom-table-variant4-ready',
+  'plugin-owned-custom-table-variant4-stale',
+  'plugin-owned-custom-table-variant4-non-ready',
   'plugin-owned-custom-table-update',
   'plugin-owned-resource-refusal-v3',
   'plugin-owned-resource-refusal-v3-ready',
@@ -10939,6 +10943,99 @@ test('RPP-0155 plugin-owned custom-table changes variant 3 records surface and i
   assert.equal(evidenceText.includes('Remote preserved custom table note'), false, 'variant 3 evidence leaked remote-only file contents');
 });
 
+test('RPP-0175 plugin-owned custom-table changes variant 4 records surface and invariant', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.pluginOwnedCustomTableChangesVariant4;
+
+  assert.ok(coverage, 'missing plugin-owned custom-table changes variant 4 target coverage');
+  assert.equal(coverage.family, 'plugin-owned-custom-table-changes-variant4');
+  assert.equal(coverage.total, report.summary.featureFamilies['plugin-owned-custom-table-variant4']);
+  assert.equal(coverage.total, 10);
+  assert.equal(coverage.statuses.ready, 5);
+  assert.equal(nonReadyTargetCount(coverage), 5);
+  assert.equal(report.summary.featureFamilies['plugin-owned-custom-table-variant4-ready'], 5);
+  assert.equal(report.summary.featureFamilies['plugin-owned-custom-table-variant4-stale'], 5);
+  assert.equal(report.summary.featureFamilies['plugin-owned-custom-table-variant4-non-ready'], 5);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 1])),
+  );
+
+  const summaryEvidence = JSON.stringify(report);
+  assert.equal(summaryEvidence.includes('rpp0135-private'), false, 'summary leaked custom-table private value');
+  assert.equal(summaryEvidence.includes('privateToken'), false, 'summary leaked custom-table private key');
+
+  const firstEvidence = generatedPluginOwnedCustomTableChangesVariant4Evidence(coverage);
+  const replayEvidence = generatedPluginOwnedCustomTableChangesVariant4Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0175 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 4 custom-table evidence changed between runs');
+  assert.equal(firstEvidence.target, 'pluginOwnedCustomTableChangesVariant4');
+  assert.equal(firstEvidence.family, 'plugin-owned-custom-table-changes-variant4');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.variant),
+    ['ready', 'stale-non-ready'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.status, 'ready');
+  assert.ok(readyCase.tags.includes('plugin-owned-custom-table-variant4'));
+  assert.ok(readyCase.tags.includes('plugin-owned-custom-table-variant4-ready'));
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.equal(readyCase.tableMutation.action, 'put');
+  assert.equal(readyCase.tableMutation.changeKind, 'update');
+  assert.equal(readyCase.tableMutation.pluginOwner, 'forms');
+  assert.equal(readyCase.tableMutation.driver, 'fixture-forms-lab-table');
+  assert.equal(readyCase.tableMutation.supportsDelete, false);
+  assert.equal(readyCase.tableMutation.ownerContextRequired, true);
+  assert.equal(readyCase.tableMutation.appliedHash, readyCase.surface.row.localHash);
+  assert.equal(readyCase.tableMutation.plannedPrecondition, true);
+  assert.equal(readyCase.remoteOnlyPreservation.preserved, true);
+  assert.equal(readyCase.remoteOnlyPreservation.appliedHash, readyCase.surface.remoteOnly.remoteHash);
+  assert.equal(readyCase.staleReplay.code, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplay.resourceKey, readyCase.surface.row.resourceKey);
+  assert.equal(readyCase.staleReplay.expectedHash, readyCase.tableMutation.remoteBeforeHash);
+  assert.notEqual(readyCase.staleReplay.actualHash, readyCase.staleReplay.expectedHash);
+  assert.equal(readyCase.staleReplay.remoteBeforeHash, readyCase.staleReplay.remoteAfterHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(nonReadyCase.status, 'conflict');
+  assert.ok(nonReadyCase.tags.includes('plugin-owned-custom-table-variant4'));
+  assert.ok(nonReadyCase.tags.includes('plugin-owned-custom-table-variant4-stale'));
+  assert.ok(nonReadyCase.tags.includes('plugin-owned-custom-table-variant4-non-ready'));
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.conflict.class, 'plugin-data-conflict');
+  assert.equal(nonReadyCase.conflict.pluginOwner, 'forms');
+  assert.equal(nonReadyCase.conflict.plannedMutation, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('rpp0135-private'), false, 'variant 4 evidence leaked custom-table private value');
+  assert.equal(evidenceText.includes('privateToken'), false, 'variant 4 evidence leaked custom-table private key');
+  assert.equal(evidenceText.includes('generated-rpp-0135'), false, 'variant 4 evidence leaked custom-table slug');
+  assert.equal(evidenceText.includes('Remote preserved custom table note'), false, 'variant 4 evidence leaked remote-only file contents');
+});
+
 function generatedPluginOwnedCustomTableChangesVariant3Evidence(targetCoverage) {
   const perTier = {};
   const statuses = {};
@@ -10985,6 +11082,86 @@ function generatedPluginOwnedCustomTableChangesVariant3Evidence(targetCoverage) 
       selectedCases.get('stale-non-ready'),
     ],
   };
+}
+
+function generatedPluginOwnedCustomTableChangesVariant4Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('plugin-owned-custom-table-variant4')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    assertPluginOwnedCustomTableVariant4Tags(testCase, result);
+    const evidence = generatedPluginOwnedCustomTableChangesVariant3CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'stale-non-ready';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 4 custom-table target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 4 custom-table target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'variant 4 custom-table target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'variant 4 target should select one ready custom-table case');
+  assert.ok(selectedCases.has('stale-non-ready'), 'variant 4 target should select one stale non-ready custom-table case');
+
+  return {
+    target: 'pluginOwnedCustomTableChangesVariant4',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('stale-non-ready'),
+    ],
+  };
+}
+
+function assertPluginOwnedCustomTableVariant4Tags(testCase, result) {
+  const staleTarget = testCase.tags.has('plugin-owned-custom-table-variant4-stale');
+
+  assert.equal(testCase.family, 'plugin-owned-custom-table-changes');
+  assert.equal(
+    testCase.tags.has('plugin-owned-custom-table-variant4-ready'),
+    !staleTarget,
+    `${testCase.id} should carry exactly one custom-table variant 4 ready/stale tag`,
+  );
+  assert.equal(
+    testCase.tags.has('plugin-owned-custom-table-variant4-non-ready'),
+    staleTarget,
+    `${testCase.id} should tag stale custom-table variant 4 cases as non-ready`,
+  );
+  assert.equal(
+    staleTarget,
+    testCase.tags.has('forms-lab-custom-table-stale'),
+    `${testCase.id} variant 4 stale tag should match forms-lab stale tag`,
+  );
+  assert.equal(
+    testCase.tags.has('plugin-owned-custom-table-variant4-ready'),
+    testCase.tags.has('forms-lab-custom-table-ready'),
+    `${testCase.id} variant 4 ready tag should match forms-lab ready tag`,
+  );
+  assert.equal(
+    result.status === 'ready',
+    !staleTarget,
+    `${testCase.id} variant 4 status should match ready/stale target tag`,
+  );
 }
 
 function generatedPluginOwnedCustomTableChangesVariant3CaseEvidence(testCase, result) {
