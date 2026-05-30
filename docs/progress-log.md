@@ -6,19 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 22:33 CEST +02:00.
+- Last update: 2026-05-30 22:37 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0323 post author reference variant 2 merge ending at `b24a34`.
+  the RPP-0189 wp_users/wp_usermeta graph release-verifier v5 merge ending at
+  `d3ed6e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 525
-  items checked and leaves 475 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 526
+  items checked and leaves 474 open.
 - Checked slices: 100 release-gate foundation items, 71 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 88 generated
+  23 storage/performance items, 3 production-topology items, 89 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- WP users/usermeta graph release-verifier v5 carry-through: the current lane
+  now checks `RPP-0189` with deterministic generated-harness support-only proof
+  for `wp_users` and `wp_usermeta` graph changes. The generator exposes
+  `wpUsersUsermetaGraphReleaseVerifierVariant5` target coverage with 20 cases
+  across tiers 0 through 9: 10 ready user/usermeta graph creates and 10 stale
+  non-ready graph references, with two cases in every tier. The focused proof
+  verifies ready cases apply both graph rows with matching live-remote
+  preconditions, preserve unplanned remote data, and reject stale replay against
+  both rows with `PRECONDITION_FAILED` before the mutation callback. It also
+  verifies stale graph targets block usermeta references to drifted remote
+  users, emit no planned graph mutation/precondition, refuse apply with
+  `PLAN_NOT_READY` before mutation, and keep user passwords, activation tokens,
+  user emails, display names, and usermeta values hash-only. Validation passed
+  with Node syntax checks, focused RPP-0189 coverage 2/2, adjacent
+  RPP-0149/RPP-0169/RPP-0189 generated graph coverage 4/4, scoped artifact
+  redaction scan, checklist lint, and diff whitespace checks. Counts are now
+  526/474; final release remains `NO-GO` because this is local generated
+  release-verifier evidence, not production-backed release proof.
 - Post author reference variant-2 proof: the current lane now checks
   `RPP-0323` with local generated graph evidence for post-author references.
   The focused proof covers 20 generated `post-author-graph` cases across tiers
