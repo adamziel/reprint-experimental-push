@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 318.
-- Remaining open: 682.
+- Verified complete: 319.
+- Remaining open: 681.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -765,7 +765,7 @@ Focus: make large safe pushes practical and measurable.
 - [ ] RPP-0716 (Far / storage-performance) Implement large plugin file benchmark, variant 1. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [ ] RPP-0717 (Far / storage-performance) Implement memory ceiling proof, variant 1. Success: guarded writes reject stale storage state.
 - [ ] RPP-0718 (Far / storage-performance) Implement timeout budget proof, variant 1. Success: chunk transfer resumes without duplicate mutation work.
-- [ ] RPP-0719 (Far / storage-performance) Implement progress reporting for long pushes, variant 1. Success: large-site run finishes inside documented budgets.
+- [x] RPP-0719 (Far / storage-performance) Implement progress reporting for long pushes, variant 1. Success: large-site run finishes inside documented budgets.
 - [x] RPP-0720 (Far / storage-performance) Implement rollout threshold configuration, variant 1. Success: fast-path lane updates only after correctness gates hold.
 - [ ] RPP-0721 (Far / storage-performance) Prove MySQL compare-and-swap write guard, variant 2. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [ ] RPP-0722 (Far / storage-performance) Prove SQLite compare-and-swap write guard, variant 2. Success: guarded writes reject stale storage state.
