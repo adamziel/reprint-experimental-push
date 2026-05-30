@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 14:06 CEST.
+- Last update: 2026-05-30 14:09 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0367 comment user reference merge ending at `1fe740030`.
+  the RPP-0368 commentmeta comment reference merge ending at `555da2b1f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 448
-  items checked and leaves 552 open.
-- Checked slices: 100 release-gate foundation items, 50 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 449
+  items checked and leaves 551 open.
+- Checked slices: 100 release-gate foundation items, 51 graph identity items,
   73 plugin-driver boundary items, 25 executor/auth items, 29 recovery items,
   13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Commentmeta comment reference focused regression: the current lane now
+  contains `RPP-0368` evidence in
+  `docs/evidence/rpp-0368-commentmeta-comment-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0368-commentmeta-comment-reference-v4.test.js`. The focused
+  generated-model proof confirms variant-4 ready/stale coverage for
+  `wp_commentmeta.comment_id`, carries ready comment and commentmeta identities
+  through local plan/apply with live-remote preconditions, and blocks stale
+  comment targets before mutation with hash-only reference evidence. Validation
+  passed with Node syntax checks, focused RPP-0368 coverage 3/3, adjacent
+  RPP-0308 commentmeta-comment coverage 2/2, checklist lint, scoped artifact
+  redaction scan, and merge diff whitespace checks. Counts are now 449/551;
+  final release remains `NO-GO` because this is local/generated graph identity
+  evidence, not externally hosted production topology proof.
 - Comment user reference focused regression: the current lane now contains
   `RPP-0367` evidence in
   `docs/evidence/rpp-0367-comment-user-reference-v4.md`,
