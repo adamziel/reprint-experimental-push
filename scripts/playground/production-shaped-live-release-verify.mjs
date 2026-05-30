@@ -606,34 +606,55 @@ function buildReleaseAuthSessionUserIdentityEvidence({
   const boundary = verify?.authSessionBoundary || {};
   const userIdentity = boundary.userIdentity || {};
   const identityContinuity = boundary.identityContinuity || {};
-  const ok = userIdentity.ok === true
-    || (
-      boundary.verdict === 'AUTH_SESSION_BOUNDARY_OK'
-      && identityContinuity.sameSession === true
-      && identityContinuity.sameUserLogin === true
-      && identityContinuity.sameUserId === true
-    );
+  const issuedSessionHash = userIdentity.issued?.sessionHash || '';
+  const issuedUserIdentityHash = userIdentity.issued?.userIdentityHash || '';
+  const readbackSessionHash = userIdentity.readback?.sessionHash || '';
+  const readbackUserIdentityHash = userIdentity.readback?.userIdentityHash || '';
+  const routeEvidenceComplete = Boolean(
+    issuedSessionHash
+    && issuedUserIdentityHash
+    && readbackSessionHash
+    && readbackUserIdentityHash,
+  );
+  const ok = userIdentity.ok === true && routeEvidenceComplete;
+  const observed = ok
+    ? userIdentity.observed || 'same-session-user-identity'
+    : userIdentity.ok === true
+      ? 'missing-session-user-identity-route-evidence'
+      : userIdentity.observed || 'missing-session-user-identity';
+  const verdict = ok
+    ? userIdentity.verdict || 'AUTH_SESSION_USER_IDENTITY_BOUND'
+    : 'AUTH_SESSION_USER_IDENTITY_REQUIRED';
 
   return {
     ok,
     required: userIdentity.required || 'same authenticated WordPress user identity bound to the short-lived push session',
-    observed: userIdentity.observed || (ok ? 'same-session-user-identity' : 'missing-session-user-identity'),
-    verdict: userIdentity.verdict || (ok ? 'AUTH_SESSION_USER_IDENTITY_BOUND' : 'AUTH_SESSION_USER_IDENTITY_REQUIRED'),
+    observed,
+    verdict,
     sourceUrl,
     routeProfile: verify?.preflight?.routeProfile?.profile || verify?.preflight?.routeProfile || 'production-shaped',
+    routeEvidence: {
+      complete: routeEvidenceComplete,
+      required: [
+        'issued.sessionHash',
+        'issued.userIdentityHash',
+        'readback.sessionHash',
+        'readback.userIdentityHash',
+      ],
+    },
     sameSession: userIdentity.sameSession === true || identityContinuity.sameSession === true,
     sameUserLogin: userIdentity.sameUserLogin === true || identityContinuity.sameUserLogin === true,
     sameUserId: userIdentity.sameUserId === true || identityContinuity.sameUserId === true,
     manageOptions: userIdentity.manageOptions === true || identityContinuity.manageOptions === true,
     issued: {
       step: userIdentity.issued?.step || boundary.issuance?.step || null,
-      sessionHash: userIdentity.issued?.sessionHash || '',
-      userIdentityHash: userIdentity.issued?.userIdentityHash || '',
+      sessionHash: issuedSessionHash,
+      userIdentityHash: issuedUserIdentityHash,
     },
     readback: {
       step: userIdentity.readback?.step || boundary.readback?.step || null,
-      sessionHash: userIdentity.readback?.sessionHash || '',
-      userIdentityHash: userIdentity.readback?.userIdentityHash || '',
+      sessionHash: readbackSessionHash,
+      userIdentityHash: readbackUserIdentityHash,
     },
     scope: 'final-release',
   };
