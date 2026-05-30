@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 12:54 CEST.
+- Last update: 2026-05-30 12:58 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0616 different-body idempotency conflict merge ending at `eb6106de`.
+  the RPP-0617 before-mutation process kill merge ending at `e8d5bd6e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 433
-  items checked and leaves 567 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 434
+  items checked and leaves 566 open.
 - Checked slices: 100 release-gate foundation items, 45 graph identity items,
-  73 plugin-driver boundary items, 23 executor/auth items, 23 recovery items,
+  73 plugin-driver boundary items, 23 executor/auth items, 24 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Process kill before first mutation: the current lane now contains `RPP-0617`
+  evidence in
+  `docs/evidence/rpp-0617-process-kill-before-first-mutation.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/push-remote-rest-plugin.php`, and
+  `test/rpp-0617-process-kill-before-first-mutation.test.js`. The lab-only
+  apply delay hook runs after the DB journal writes `apply-started` and before
+  live revalidation or mutation callbacks. The focused proof starts a local
+  Playground server, observes durable `idempotency-opened` and `apply-started`
+  rows, sends `SIGKILL` before any mutation event, restarts the same mount, and
+  proves the DB journal rows and all-old target hashes remain restart-readable.
+  Validation passed with PHP lint, Node syntax, the RPP-0617 hard-kill test
+  1/1, recovery journal coverage 28/28, the file-journal restart smoke exit 0,
+  checklist lint, scoped artifact redaction scan, and merge diff whitespace
+  checks. Counts are now 434/566; final release remains `NO-GO` because this is
+  local Playground crash/restart evidence, not external production durability
+  proof.
 - Different-body idempotency conflict: the current lane now contains `RPP-0616`
   evidence in
   `docs/evidence/rpp-0616-different-body-idempotency-conflict.md`,
