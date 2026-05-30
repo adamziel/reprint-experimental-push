@@ -1030,6 +1030,104 @@ test('authenticated push executor can run recovery and journal inspect as idempo
   }
 });
 
+test('authenticated push executor rejects a capability downgrade after preflight before mutation for RPP-0518', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  const activeSession = {
+    type: 'production-auth-session',
+    status: 'active',
+    id: 'psh_01j00000000000000000000000',
+    expiresAt: '2030-01-01T00:00:00Z',
+  };
+  const authWithManageOptions = {
+    identity: {
+      userId: 7,
+      userLogin: 'reprint_push_admin',
+      capabilities: { manage_options: true },
+    },
+    session: activeSession,
+  };
+  const authWithoutManageOptions = {
+    identity: {
+      userId: 7,
+      userLogin: 'reprint_push_admin',
+      capabilities: { manage_options: false },
+    },
+    session: activeSession,
+  };
+
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    const pathname = new URL(String(url)).pathname;
+    if (pathname.endsWith('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: authWithManageOptions,
+        session: { id: activeSession.id },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.endsWith('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.endsWith('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: authWithoutManageOptions,
+        receipt: { receiptHash: 'receipt-capability-downgrade-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected mutation path after capability downgrade: ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-capability-downgrade-rpp-0518',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'AUTH_SESSION_CAPABILITY_DOWNGRADED');
+    assert.deepEqual(summary.authSession, {
+      field: 'auth.identity.capabilities.manage_options',
+      required: 'true',
+      observed: 'false',
+      verdict: 'AUTH_SESSION_CAPABILITY_DOWNGRADED',
+    });
+    assert.equal(summary.apply, null);
+    assert.deepEqual(
+      seen.map(({ url }) => new URL(url).pathname),
+      [
+        '/wp-json/reprint/v1/push/preflight',
+        '/wp-json/reprint/v1/push/snapshot',
+        '/wp-json/reprint/v1/push/dry-run',
+      ],
+    );
+    assert.equal(summary.authSessionLifecycleSummary.issued.authCapabilities.manage_options, true);
+    assert.equal(summary.authSessionLifecycleSummary.read.authCapabilities.manage_options, false);
+    assert.equal(summary.dryRun.authCapabilities.manage_options, false);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed when production auth session is required but not minted', async () => {
   const originalFetch = global.fetch;
   const seen = [];

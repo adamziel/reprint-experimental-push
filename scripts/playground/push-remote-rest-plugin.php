@@ -27,6 +27,7 @@ const REPRINT_PUSH_LAB_REST_NAMESPACE = 'reprint-push-lab/v1';
 const REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE = 'reprint/v1';
 const REPRINT_PUSH_CHECKED_JOURNAL_SUPPORTED_SURFACE = 'claim-fenced-restart-readable';
 const REPRINT_PUSH_LAB_AUTH_SCOPE = 'reprint-push-lab:authenticated-http-push';
+const REPRINT_PUSH_LAB_REQUIRED_CAPABILITY = 'manage_options';
 const REPRINT_PUSH_LAB_AUTH_REQUEST_ATTRIBUTE = 'reprint_push_lab_auth';
 const REPRINT_PUSH_LAB_SIGNATURE_REQUEST_ATTRIBUTE = 'reprint_push_lab_signature';
 const REPRINT_PUSH_LAB_SIGNED_SESSION_TTL = 300;
@@ -432,7 +433,7 @@ function reprint_push_lab_rest_authenticated_permission(WP_REST_Request $request
         );
     }
 
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can(REPRINT_PUSH_LAB_REQUIRED_CAPABILITY)) {
         return new WP_Error(
             'reprint_push_lab_forbidden',
             'Authenticated push routes require manage_options.',
@@ -472,7 +473,7 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
         ],
         'requirements' => [
             'authentication' => 'application-password-basic',
-            'capability' => 'manage_options',
+            'capability' => REPRINT_PUSH_LAB_REQUIRED_CAPABILITY,
             'idempotencyHeader' => 'X-Reprint-Push-Idempotency-Key',
             'signedHeaders' => [
                 'X-Auth-Content-Hash',
@@ -487,8 +488,8 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
         'authorized' => [
             'identity' => $auth['identity'],
             'capabilities' => [
-                'manage_options' => current_user_can('manage_options'),
-                'reprint_push' => current_user_can('manage_options'),
+                REPRINT_PUSH_LAB_REQUIRED_CAPABILITY => current_user_can(REPRINT_PUSH_LAB_REQUIRED_CAPABILITY),
+                'reprint_push' => current_user_can(REPRINT_PUSH_LAB_REQUIRED_CAPABILITY),
             ],
             'scopes' => [
                 (string) $profile['authScope'],
@@ -501,6 +502,8 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
             'id' => $signature['session']['id'] ?? null,
             'sessionHash' => $signature['session']['sessionHash'] ?? null,
             'userIdentityHash' => $signature['session']['userIdentityHash'] ?? null,
+            'requiredCapability' => $signature['session']['requiredCapability'] ?? null,
+            'capabilityHash' => $signature['session']['capabilityHash'] ?? null,
             'sourceHash' => $signature['session']['sourceHash'] ?? null,
             'sourceUrlHash' => $signature['session']['sourceUrlHash'] ?? null,
             'applicationPasswordUuid' => $auth['session']['applicationPasswordUuid'] ?? null,
@@ -3186,6 +3189,13 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
                 401
             );
         }
+        if (!reprint_push_lab_rest_signed_session_capability_matches($session)) {
+            return reprint_push_lab_rest_signature_failure(
+                'SIGNED_SESSION_CAPABILITY_DOWNGRADED',
+                'X-Reprint-Push-Session no longer carries the required manage_options capability.',
+                403
+            );
+        }
         if (!hash_equals((string) ($session['credentialHash'] ?? ''), (string) ($auth['credentialHash'] ?? ''))
             || !hash_equals((string) ($session['signingKeyHash'] ?? ''), $signing_key_hash)
             || !hash_equals((string) ($session['userIdentityHash'] ?? ''), reprint_push_lab_rest_signed_user_identity_hash($auth))
@@ -3261,6 +3271,8 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
                 'id' => $session_id,
                 'sessionHash' => (string) ($session['sessionHash'] ?? ''),
                 'userIdentityHash' => (string) ($session['userIdentityHash'] ?? ''),
+                'requiredCapability' => (string) ($session['requiredCapability'] ?? ''),
+                'capabilityHash' => (string) ($session['capabilityHash'] ?? ''),
                 'sourceHash' => (string) ($session['sourceHash'] ?? ''),
                 'sourceUrlHash' => (string) ($session['sourceUrlHash'] ?? ''),
                 'issuedAt' => (string) ($session['issuedAt'] ?? ''),
@@ -3386,6 +3398,9 @@ function reprint_push_lab_rest_mint_signed_session(array $auth, string $signing_
         'sessionHash' => $session_hash,
         'identityHash' => reprint_push_lab_rest_signed_identity_hash($auth),
         'userIdentityHash' => reprint_push_lab_rest_signed_user_identity_hash($auth),
+        'requiredCapability' => REPRINT_PUSH_LAB_REQUIRED_CAPABILITY,
+        'capabilityGranted' => current_user_can(REPRINT_PUSH_LAB_REQUIRED_CAPABILITY),
+        'capabilityHash' => reprint_push_lab_rest_signed_capability_hash(),
         'credentialHash' => (string) ($auth['credentialHash'] ?? ''),
         'applicationPasswordUuid' => (string) ($auth['applicationPasswordUuid'] ?? ''),
         'userId' => (int) ($auth['userId'] ?? 0),
@@ -3519,6 +3534,23 @@ function reprint_push_lab_rest_signed_user_identity_hash(array $auth): string
     ]));
 }
 
+function reprint_push_lab_rest_signed_capability_hash(): string
+{
+    return hash('sha256', implode("\n", [
+        REPRINT_PUSH_LAB_AUTH_SCOPE,
+        REPRINT_PUSH_LAB_REQUIRED_CAPABILITY,
+        current_user_can(REPRINT_PUSH_LAB_REQUIRED_CAPABILITY) ? 'granted' : 'denied',
+    ]));
+}
+
+function reprint_push_lab_rest_signed_session_capability_matches(array $session): bool
+{
+    return current_user_can(REPRINT_PUSH_LAB_REQUIRED_CAPABILITY)
+        && (string) ($session['requiredCapability'] ?? '') === REPRINT_PUSH_LAB_REQUIRED_CAPABILITY
+        && (bool) ($session['capabilityGranted'] ?? false) === true
+        && hash_equals((string) ($session['capabilityHash'] ?? ''), reprint_push_lab_rest_signed_capability_hash());
+}
+
 function reprint_push_lab_rest_signed_session_option(string $session_hash): string
 {
     return 'reprint_push_lab_signed_session_' . $session_hash;
@@ -3561,6 +3593,8 @@ function reprint_push_lab_rest_signed_request_evidence(WP_REST_Request $request)
             'type' => 'short-lived-push-session',
             'sessionHash' => (string) ($session['sessionHash'] ?? ''),
             'userIdentityHash' => (string) ($session['userIdentityHash'] ?? ''),
+            'requiredCapability' => (string) ($session['requiredCapability'] ?? ''),
+            'capabilityHash' => (string) ($session['capabilityHash'] ?? ''),
             'sourceHash' => (string) ($session['sourceHash'] ?? ''),
             'sourceUrlHash' => (string) ($session['sourceUrlHash'] ?? ''),
             'issuedAt' => (string) ($session['issuedAt'] ?? ''),
@@ -4091,7 +4125,7 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
             'userLogin' => $identity_user_login,
             'roles' => array_values(array_map('strval', (array) $user->roles)),
             'capabilities' => [
-                'manage_options' => current_user_can('manage_options'),
+                REPRINT_PUSH_LAB_REQUIRED_CAPABILITY => current_user_can(REPRINT_PUSH_LAB_REQUIRED_CAPABILITY),
             ],
         ],
         'session' => [
@@ -4264,6 +4298,8 @@ function reprint_push_lab_rest_authenticated_push_session_issue_binding(
         'scopeHash' => hash('sha256', (string) ($profile['authScope'] ?? '')),
         'identityHash' => hash('sha256', reprint_push_stable_json($identity)),
         'userIdentityHash' => (string) ($session['userIdentityHash'] ?? ''),
+        'requiredCapability' => (string) ($session['requiredCapability'] ?? ''),
+        'capabilityHash' => (string) ($session['capabilityHash'] ?? ''),
         'sourceHash' => (string) ($session['sourceHash'] ?? ''),
         'sourceUrlHash' => (string) ($session['sourceUrlHash'] ?? ''),
         'issuedAt' => (string) ($session['issuedAt'] ?? ''),
