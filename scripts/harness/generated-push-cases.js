@@ -470,6 +470,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'plugin-owned-custom-table-changes-variant4',
     tag: 'plugin-owned-custom-table-variant4',
   },
+  pluginOwnedCustomTableChangesReleaseVerifierVariant5: {
+    family: 'plugin-owned-custom-table-changes-release-verifier-v5',
+    tag: 'plugin-owned-custom-table-changes-release-verifier-v5',
+  },
   pluginOwnedResourceRefusalVariant3: {
     family: 'plugin-owned-resource-refusal-variant3',
     tag: 'plugin-owned-resource-refusal-v3',
@@ -4332,16 +4336,20 @@ function addPluginOwnedCustomTableChanges(base, local, remote, allocator, tags, 
     tags.add('plugin-owned-custom-table-variant3-non-ready');
     tags.add('plugin-owned-custom-table-variant4-stale');
     tags.add('plugin-owned-custom-table-variant4-non-ready');
+    tags.add('plugin-owned-custom-table-changes-release-verifier-v5-stale');
+    tags.add('plugin-owned-custom-table-changes-release-verifier-v5-non-ready');
   } else {
     tags.add('forms-lab-custom-table-ready');
     tags.add('plugin-owned-custom-table-variant3-ready');
     tags.add('plugin-owned-custom-table-variant4-ready');
+    tags.add('plugin-owned-custom-table-changes-release-verifier-v5-ready');
   }
 
   tags.add('plugin-owned-custom-table-target');
   tags.add('plugin-owned-custom-table-variant1');
   tags.add('plugin-owned-custom-table-variant3');
   tags.add('plugin-owned-custom-table-variant4');
+  tags.add('plugin-owned-custom-table-changes-release-verifier-v5');
   tags.add('plugin-owned-custom-table-update');
   tags.add('plugin-owned-custom-table-change');
   tags.add('forms-lab-custom-table-change');
