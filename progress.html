@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T14:30:00+02:00">Last updated: May 30, 2026, 14:30 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T14:38:00+02:00">Last updated: May 30, 2026, 14:38 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>454</strong>
+        <strong>455</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>546</strong>
+        <strong>545</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -406,10 +406,14 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0488</span>
+        <span>RPP-0517</span>
       </div>
-      <p>The latest refresh integrates RPP-0488 serialized option validator release-verifier evidence: the support-only proof carries a one-row serialized wp_options mutation through local production-shaped apply, proves invalid planner and forged apply payloads are refused before mutation, and keeps raw serialized option values out of evidence. Counts are now 454/546; final release remains NO-GO because this is local plugin-driver support evidence, not externally hosted production topology proof. The broader npm test suite was not rerun for this slice; earlier lane evidence recorded a pre-existing RPP-0615 release-verifier assertion failure.</p>
+      <p>The latest refresh integrates RPP-0517 same-key different-body idempotency conflict evidence: the authenticated client carries hash-only conflict fields for idempotency key and request hashes, the route smoke proves the conflict returns 409 without extra mutation events after the committed replay path, and raw key/body/probe values stay out of summarized evidence. Counts are now 455/545; final release remains NO-GO because this is local production-shaped executor evidence, not externally hosted production topology proof. The broader npm test suite was not rerun for this slice; earlier lane evidence recorded a pre-existing RPP-0615 release-verifier assertion failure.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0517 focused: 1/1</span>
+        <span class="tag">idempotency/replay: 28/28</span>
+        <span class="tag">production-shaped smoke: pass</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0488 focused: 1/1</span>
         <span class="tag">serialized option adjacent: 3/3</span>
         <span class="tag">release-verifier adjacent: 17/17</span>
