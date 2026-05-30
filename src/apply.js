@@ -1729,7 +1729,7 @@ function validateReadyPlanEnvelope(plan) {
       code: 'MISSING_LIVE_REMOTE_PRECONDITION',
       mutationId: mutation.id,
       resourceKey: mutation.resourceKey || null,
-      expectedHash: mutation.remoteBeforeHash || null,
+      expectedHash: hashEvidenceForDetails(mutation.remoteBeforeHash),
     });
   }
 
