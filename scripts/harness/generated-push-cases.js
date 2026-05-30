@@ -154,6 +154,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'directory-descendant-conflict-variant3',
     tag: 'directory-descendant-v3',
   },
+  directoryDescendantConflictVariant4: {
+    family: 'directory-descendant-conflict-variant4',
+    tag: 'directory-descendant-v4',
+  },
   fileCreateUpdateDeleteMix: {
     family: 'file-create-update-delete-mix-ready',
     tag: 'file-create-update-delete-mix',
@@ -1543,6 +1547,8 @@ const scenarioFamilyBuilders = {
     tags.add('directory-descendant-ready');
     tags.add('directory-descendant-v3');
     tags.add('directory-descendant-v3-ready');
+    tags.add('directory-descendant-v4');
+    tags.add('directory-descendant-v4-ready');
     tags.add('directory-delete-no-remote-descendant');
   },
   'same-independent-content': ({ local, remote, allocator, tags }) => {
@@ -1652,6 +1658,8 @@ const scenarioFamilyBuilders = {
     tags.add('directory-descendant');
     tags.add('directory-descendant-v3');
     tags.add('directory-descendant-v3-non-ready');
+    tags.add('directory-descendant-v4');
+    tags.add('directory-descendant-v4-non-ready');
     tags.add('directory-delete-with-remote-descendant');
   },
   'same-plan-post-parent-graph': ({ local, allocator, tags }) => {
