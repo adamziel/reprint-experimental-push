@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 15:55 CEST +02:00.
+- Last update: 2026-05-30 15:59 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0631 new-remote recovery classification merge ending at `bb240d3ed`.
+  the RPP-0495 remote plugin removal refusal release-verifier merge ending at
+  `cee6524a9`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 471
-  items checked and leaves 529 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 472
+  items checked and leaves 528 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  80 plugin-driver boundary items, 28 executor/auth items, 33 recovery items,
+  81 plugin-driver boundary items, 28 executor/auth items, 33 recovery items,
   17 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Remote plugin removal refusal release-verifier carry-through: the current lane
+  now contains `RPP-0495` evidence in
+  `docs/evidence/rpp-0495-remote-plugin-removal-refusal-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0495-remote-plugin-removal-refusal-release-verifier-v5.test.js`.
+  The verifier emits hash-only `pluginDriver.remotePluginRemovalRefusal` proof
+  for local and production-backed remote owner-plugin removal cases, blocks the
+  `wp_postmeta` plugin-owned resource with zero mutations and zero preconditions
+  before apply can mutate the remote row, preserves row and whole-remote hashes,
+  and keeps final release `NO-GO` unless checked production verifier evidence is
+  explicitly supplied. Validation passed with Node syntax checks, focused
+  RPP-0495 coverage 3/3, remote-removal and uninstall/delete adjacency 17/17,
+  broader plugin-driver release-verifier coverage 20/20, checklist lint, scoped
+  artifact redaction scan, and merge diff whitespace checks. Counts are now
+  472/528; final release remains `NO-GO` because this is support-only
+  release-verifier evidence, not production-backed plugin lifecycle proof.
 - SQLite-backed new-remote recovery classification v2: the current lane now
   contains `RPP-0631` evidence in
   `docs/evidence/rpp-0631-new-remote-recovery-classification-v2.md`,
