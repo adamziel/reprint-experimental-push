@@ -35,10 +35,28 @@ classification across a process restart:
 4. The test scans the journal text, parsed journal, and inspection result for
    the fixture payload strings and asserts none are present.
 
+## Supplemental recovery-journal regression
+
+`test/recovery-journal.test.js` also covers
+`file-backed journal blocked recovery classification survives process restart`.
+The regression runs a separate Node writer process against a claim-fenced
+file-backed recovery journal, injects a failure after two committed mutations,
+and then re-reads the JSONL journal in the parent process.
+
+The restarted readback verifies integrity is `ok`, sequence numbers are
+monotonic, all planned targets are durable, two `mutation-observed` rows remain
+present, no `journal-completed` row was written, each row carries fsync
+evidence, and the persisted recovery-state row is `blocked-recovery`.
+Inspection of the partial remote reports 2 new targets, 6 old targets, and 0
+blocked-unknown targets, proving the classification is derived from durable
+journal rows rather than in-memory apply state.
+
 ## Validation run
 
 ```bash
 node --test test/rpp-0612-blocked-recovery-classification.test.js
+node --test --test-name-pattern 'blocked recovery classification survives process restart' test/recovery-journal.test.js
+node --test --test-name-pattern '(restart inspection|blocked recovery classification survives process restart|state survives restart)' test/recovery-journal.test.js
 node --test test/recovery-journal.test.js test/recovery-repair.test.js
 npm run test:recovery:file-journal
 node --test test/checklist-completion-lint.test.js
@@ -49,7 +67,10 @@ git diff --check
 Observed result: focused RPP-0612 coverage exited 0 with 1 subtest. The
 recovery journal and repair regressions exited 0 with 33 subtests, the file
 journal restart smoke exited 0, and the checklist lint, evidence redaction scan,
-and whitespace check all exited 0.
+and whitespace check all exited 0. Salvage validation for the supplemental
+recovery-journal regression exited 0 with 1 focused subtest, 9 adjacent
+restart/classification subtests, and the full recovery journal suite at 29
+subtests.
 
 ## Residual scope
 
