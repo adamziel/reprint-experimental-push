@@ -6,20 +6,41 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 18:42 CEST +02:00.
+- Last update: 2026-05-30 18:47 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0394 term relationship taxonomy reference release-verifier proof
-  merge ending at `9849730`.
+  the RPP-0395 nav menu item fail-closed reference release-verifier proof merge
+  ending at `669adb4`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 504
-  items checked and leaves 496 open.
-- Checked slices: 100 release-gate foundation items, 64 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 505
+  items checked and leaves 495 open.
+- Checked slices: 100 release-gate foundation items, 65 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Nav menu item fail-closed reference release-verifier proof v5: the current
+  lane now contains `RPP-0395` evidence in
+  `docs/evidence/rpp-0395-nav-menu-item-fail-closed-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0395-nav-menu-item-fail-closed-reference-release-verifier-v5.test.js`.
+  The local release-verifier proof keeps nav menu item graph movement
+  support-only and fail-closed: the plan remains `blocked` with five
+  `stale-wordpress-graph-identity` blockers, unsafe nav menu item, metadata,
+  taxonomy, and dependent relationship mutations are absent, and the dependent
+  relationship blocker carries target-support failures for both
+  `wp_term_relationships.object_id` and `wp_term_relationships.term_taxonomy_id`.
+  The independent file update and standalone menu term create retain
+  live-remote preconditions for audit posture, but `applyPlan()` rejects the
+  non-ready plan with `PLAN_NOT_READY` before mutation and preserves the remote
+  snapshot hashes. The evidence also documents remaining unmapped WordPress
+  surfaces. Validation passed with Node syntax checks, focused RPP-0395 coverage
+  2/2, adjacent nav menu item graph coverage 4/4, adjacent unmapped graph
+  coverage 7/7, checklist lint, scoped artifact redaction scan, raw fixture
+  scan, and merge diff whitespace checks. Counts are now 505/495; final release
+  remains `NO-GO` because this is local support-only release-verifier evidence,
+  not production-backed release evidence.
 - Term relationship taxonomy reference release-verifier proof v5: the current
   lane now contains `RPP-0394` evidence in
   `docs/evidence/rpp-0394-term-relationship-taxonomy-reference-release-verifier-v5.md`,
