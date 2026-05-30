@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T15:37:00+02:00">Last updated: May 30, 2026, 15:37 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T15:43:00+02:00">Last updated: May 30, 2026, 15:43 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>468</strong>
+        <strong>469</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>532</strong>
+        <strong>531</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -352,7 +352,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
-            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through, exact custom-table allowlist proof with release-verifier carry-through, wp_postmeta and wp_termmeta release-verifier carry-through, plugin activation dependency release-verifier carry-through, plugin update dependency release-verifier carry-through, plugin uninstall/delete release-verifier carry-through, direct active_plugins mutation refusal release-verifier carry-through, owner-context stale plugin-file release-verifier carry-through, driver apply-validation and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, supported/unsupported wp_usermeta, dry-run validation hook, and owner identity binding variants, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
+            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through, exact custom-table allowlist proof with release-verifier carry-through, wp_postmeta and wp_termmeta release-verifier carry-through, plugin activation dependency release-verifier carry-through, plugin update dependency release-verifier carry-through, plugin uninstall/delete release-verifier carry-through, direct active_plugins mutation refusal release-verifier carry-through, owner-context stale plugin-file and stale metadata release-verifier carry-through, driver apply-validation and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, supported/unsupported wp_usermeta, dry-run validation hook, and owner identity binding variants, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Local production candidate checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0630</span>
+        <span>RPP-0494</span>
       </div>
-      <p>The latest refresh integrates RPP-0630 old-remote recovery classification evidence: a claim-fenced production recovery journal is written from a separate Node process, reopened from the parent before any mutation observation or journal completion, classified as old-remote with every target matching the journaled before hash and no target matching the after hash, then carried through the durable recovery journal release proof with GATE-2, gateStatus proven, oldState true, and partialStates.old proved. Counts are now 468/532; final release remains NO-GO because this is local production-wrapper recovery evidence, not external WordPress crash/restart durability proof.</p>
+      <p>The latest refresh integrates RPP-0494 owner-context stale metadata release-verifier evidence: the verifier emits hash-only pluginDriver.ownerContext.staleMetadata proof beside stalePluginFile, blocks planning when live owner plugin metadata drift is present, preserves the plugin-owned wp_postmeta row and remote hashes, rejects stale ready-plan replay with STALE_PLUGIN_OWNER_CONTEXT before mutation hooks run, and records only resource ids, owner/driver labels, counts, reason codes, and SHA-256 hashes. Counts are now 469/531; final release remains NO-GO because this is support-only release-verifier evidence, not production-backed owner-context lifecycle proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0494 focused: 3/3</span>
+        <span class="tag">owner-context adjacent: 22/22</span>
+        <span class="tag">release-verifier adjacent: 37/37</span>
+        <span class="tag">production-shaped verifier: 5/5</span>
+        <span class="tag">stale metadata hash-only</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0630 focused: 1/1</span>
         <span class="tag">recovery classification adjacent: 6/6</span>
         <span class="tag">recovery journal full: 36/36</span>
@@ -1032,7 +1038,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 468/1000</span>
+        <span class="tag">checked goals: 469/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
