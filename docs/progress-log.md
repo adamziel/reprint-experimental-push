@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 14:43 CEST.
+- Last update: 2026-05-30 14:46 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0612 supplemental blocked recovery restart regression merge ending at
-  `0246cd703`.
+  the RPP-0701 MySQL compare-and-swap write guard merge ending at `cd96986a2`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 455
-  items checked and leaves 545 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 456
+  items checked and leaves 544 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
   74 plugin-driver boundary items, 26 executor/auth items, 29 recovery items,
-  13 storage/performance items, 3 production-topology items, 78 generated
+  14 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- MySQL compare-and-swap write guard: the current lane now contains `RPP-0701`
+  evidence in `docs/evidence/rpp-0701-mysql-cas-write-guard.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/bench/mysql-cas-write-guard.js`, and
+  `test/mysql-cas-write-guard-benchmark.test.js`. The benchmark now records
+  deterministic single-statement MySQL-style CAS shapes, applied/stale/absent
+  outcomes, runtime resource gates, MySQL client capability evidence, missing
+  connection-settings evidence, redacted connection-probe failures, and a
+  successful redacted probe path that explicitly does not claim live CAS DML.
+  Validation passed with Node syntax checks, focused MySQL CAS coverage 6/6,
+  `npm run bench:mysql-cas-write-guard -- --iterations 5`, checklist lint,
+  scoped artifact redaction scan, and merge diff whitespace checks. Counts are
+  now 456/544; final release remains `NO-GO` because this is deterministic
+  storage guard evidence, not production-backed storage receipt proof.
 - Supplemental blocked recovery restart regression: the current lane now adds
   a second `RPP-0612` process-restart proof in
   `test/recovery-journal.test.js` and updates
