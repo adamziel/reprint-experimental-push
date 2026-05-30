@@ -1,18 +1,28 @@
-# AO Progress Report - 2026-05-30 11:37 CEST
+# AO Progress Report - 2026-05-30 11:40 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0376
-`wp_navigation` fail-closed graph proof ending at `efe35247`.
+`lane/evidence-integration-20260527` through the current RPP-0377 serialized
+block reference detection proof ending at `06221922`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 416 are
-  checked from integrated evidence and 584 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 417 are
+  checked from integrated evidence and 583 remain open.
+- `RPP-0377` is now checked with focused fail-closed graph proof for serialized
+  Gutenberg block references in
+  `docs/evidence/rpp-0377-serialized-block-reference-detection-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0377-serialized-block-reference-detection-v4.test.js`. `node
+  --check` passed for the focused test, focused RPP-0377 coverage passed 1/1,
+  and adjacent RPP-0317 serialized-block graph coverage passed 3/3. Checklist
+  lint, scoped artifact redaction scan, checklist redaction guard coverage, and
+  merge diff whitespace checks also passed. This remains local graph support
+  evidence, not production endpoint proof.
 - `RPP-0376` is now checked with focused fail-closed graph proof for
   `wp_navigation` post-reference rewrites in
   `docs/evidence/rpp-0376-wp-navigation-fail-closed-reference-v4.md`,
