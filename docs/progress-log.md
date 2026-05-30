@@ -6,20 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 11:43 CEST.
+- Last update: 2026-05-30 11:45 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0379 cross-table create batch graph proof merge ending at
-  `f5c309e7`.
+  the RPP-0380 production importer/exporter identity-map proof merge ending at
+  `3a576db6`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 419
-  items checked and leaves 581 open.
-- Checked slices: 100 release-gate foundation items, 36 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 420
+  items checked and leaves 580 open.
+- Checked slices: 100 release-gate foundation items, 37 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Production importer/exporter identity-map proof: the current lane now
+  contains `RPP-0380` evidence in
+  `docs/evidence/rpp-0380-production-importer-exporter-identity-map-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0380-production-importer-exporter-identity-map-v4.test.js`. `node
+  --check` passed for the focused test, focused RPP-0380 coverage passed 2/2,
+  the combined importer/exporter/local-production graph command passed 3/3, and
+  graph mapping inventory passed 2/2. Checklist lint, scoped artifact redaction
+  scan, checklist/redaction guard tests, and merge diff whitespace checks also
+  passed. Counts are now 420/580; final release remains `NO-GO`.
 - Cross-table create batch graph proof: the current lane now contains
   `RPP-0379` evidence in
   `docs/evidence/rpp-0379-cross-table-create-batch-mapping-v4.md`,
