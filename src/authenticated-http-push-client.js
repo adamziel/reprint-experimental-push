@@ -587,6 +587,16 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'dry-run');
     return summary;
   }
+  const dryRunReceiptExpiry = resolveExpiredReceipt(dryRun.body.receipt, observationNow);
+  if (dryRunReceiptExpiry) {
+    summary.code = 'AUTH_RECEIPT_EXPIRED';
+    summary.receiptExpiry = {
+      phase: 'dry-run',
+      ...dryRunReceiptExpiry,
+    };
+    setReceiptExpiryBoundary(summary);
+    return summary;
+  }
 
   if (dryRunOnly) {
     let afterDryRun;
@@ -663,6 +673,14 @@ export async function runAuthenticatedHttpPush({
   );
   if (apply.status !== 200 || apply.body?.ok !== true) {
     summary.code = apply.body?.code || 'APPLY_FAILED';
+    if (summary.code === 'AUTH_RECEIPT_EXPIRED') {
+      summary.receiptExpiry = {
+        phase: 'apply',
+        ...describeApplyReceiptExpiryFailure(applyPayload.receipt, apply, observationNow),
+      };
+      setReceiptExpiryBoundary(summary);
+      return summary;
+    }
     setDurableJournalBoundary(summary, 'apply');
     return summary;
   }
@@ -4063,6 +4081,59 @@ function normalizeObservationNow(now) {
   return new Date();
 }
 
+function describeApplyReceiptExpiryFailure(receipt, response, now = new Date()) {
+  return resolveExpiredReceipt(receipt, now) || {
+    required: 'unexpired',
+    observed: response?.body?.code === 'AUTH_RECEIPT_EXPIRED'
+      ? 'remote-apply-rejected-expired-receipt'
+      : (response?.body?.code || 'expired-receipt'),
+    verdict: 'AUTH_RECEIPT_EXPIRED',
+  };
+}
+
+function resolveExpiredReceipt(receipt, now = new Date()) {
+  const expiry = resolveReceiptExpiryField(receipt);
+  if (!expiry) {
+    return null;
+  }
+
+  const expiresAt = typeof expiry.value === 'string' ? expiry.value.trim() : '';
+  const expiresAtMs = Date.parse(expiresAt);
+  if (expiresAt && Number.isFinite(expiresAtMs) && expiresAtMs > normalizeObservationNow(now).getTime()) {
+    return null;
+  }
+
+  return {
+    field: expiry.field,
+    required: 'unexpired',
+    observed: expiresAt || 'invalid-receipt-expiry',
+    verdict: 'AUTH_RECEIPT_EXPIRED',
+  };
+}
+
+function resolveReceiptExpiryField(receipt) {
+  if (!receipt || typeof receipt !== 'object') {
+    return null;
+  }
+
+  const authBinding = receipt.authBinding && typeof receipt.authBinding === 'object'
+    ? receipt.authBinding
+    : null;
+  const candidates = [
+    ['receipt.authBinding.expiresAt', authBinding?.expiresAt],
+    ['receipt.expiresAt', receipt.expiresAt],
+    ['receipt.receiptExpiresAt', receipt.receiptExpiresAt],
+  ];
+
+  for (const [field, value] of candidates) {
+    if (value !== undefined && value !== null) {
+      return { field, value };
+    }
+  }
+
+  return null;
+}
+
 function isExpiredSession(session, now = new Date()) {
   if (!session || typeof session !== 'object') {
     return false;
@@ -4076,6 +4147,23 @@ function isExpiredSession(session, now = new Date()) {
   }
   const expiresAtMs = Date.parse(expiresAt);
   return !Number.isFinite(expiresAtMs) || expiresAtMs <= normalizeObservationNow(now).getTime();
+}
+
+function setReceiptExpiryBoundary(summary) {
+  if (summary.boundary) {
+    return;
+  }
+
+  summary.boundary = {
+    firstRemainingProductionBoundary: 'authenticated receipt expiry validation before apply mutation',
+    status: 'refused',
+    verdict: 'AUTH_RECEIPT_EXPIRED',
+    receiptExpiry: summary.receiptExpiry || {
+      required: 'unexpired',
+      observed: 'expired-receipt',
+      verdict: 'AUTH_RECEIPT_EXPIRED',
+    },
+  };
 }
 
 function setDurableJournalBoundary(summary, phase) {

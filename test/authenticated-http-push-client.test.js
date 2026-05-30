@@ -3482,6 +3482,424 @@ test('production-shaped authenticated push fails closed when production auth ses
   }
 });
 
+test('RPP-0514 authenticated push refuses an expired dry-run receipt before apply', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  const auth = {
+    identity: { userLogin: 'reprint_push_admin' },
+    session: {
+      type: 'production-auth-session',
+      status: 'active',
+      id: 'psh_01j00000000000000000000000',
+      expiresAt: '2030-01-01T00:00:00Z',
+    },
+  };
+
+  global.fetch = async (url, options) => {
+    const pathname = new URL(String(url)).pathname;
+    seen.push({ url: String(url), pathname, options });
+    if (pathname.endsWith('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth,
+        session: { id: auth.session.id },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.endsWith('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.endsWith('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'dry-run',
+        auth,
+        receipt: {
+          receiptHash: 'receipt-expired-dry-run-01',
+          authBinding: {
+            expiresAt: '2025-01-01T00:00:00Z',
+          },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-rpp-0514-expired-dry-run-receipt',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+      now: new Date('2025-01-01T00:00:01Z'),
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'AUTH_RECEIPT_EXPIRED');
+    assert.deepEqual(summary.receiptExpiry, {
+      phase: 'dry-run',
+      field: 'receipt.authBinding.expiresAt',
+      required: 'unexpired',
+      observed: '2025-01-01T00:00:00Z',
+      verdict: 'AUTH_RECEIPT_EXPIRED',
+    });
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'authenticated receipt expiry validation before apply mutation',
+      status: 'refused',
+      verdict: 'AUTH_RECEIPT_EXPIRED',
+      receiptExpiry: {
+        phase: 'dry-run',
+        field: 'receipt.authBinding.expiresAt',
+        required: 'unexpired',
+        observed: '2025-01-01T00:00:00Z',
+        verdict: 'AUTH_RECEIPT_EXPIRED',
+      },
+    });
+    assert.equal(summary.apply, null);
+    assert.deepEqual(seen.map(({ pathname }) => pathname), [
+      '/wp-json/reprint/v1/push/preflight',
+      '/wp-json/reprint/v1/push/snapshot',
+      '/wp-json/reprint/v1/push/dry-run',
+    ]);
+    assert.ok(!seen.some(({ pathname }) => pathname.endsWith('/apply')));
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('RPP-0514 authenticated push surfaces apply-side expired receipt refusal before replay or recovery', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  const auth = {
+    identity: { userLogin: 'reprint_push_admin' },
+    session: {
+      type: 'production-auth-session',
+      status: 'active',
+      id: 'psh_01j00000000000000000000000',
+      expiresAt: '2030-01-01T00:00:00Z',
+    },
+  };
+
+  global.fetch = async (url, options) => {
+    const pathname = new URL(String(url)).pathname;
+    seen.push({ url: String(url), pathname, options });
+    if (pathname.endsWith('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth,
+        session: { id: auth.session.id },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.endsWith('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.endsWith('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'dry-run',
+        auth,
+        receipt: { receiptHash: 'receipt-remote-expired-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.endsWith('/apply')) {
+      return new Response(JSON.stringify({
+        ok: false,
+        mode: 'apply',
+        code: 'AUTH_RECEIPT_EXPIRED',
+        applied: 0,
+        auth,
+        idempotency: {
+          replayed: false,
+          freshMutationWork: false,
+          conflict: false,
+        },
+      }), {
+        status: 409,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-rpp-0514-expired-apply-receipt',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+      now: new Date('2025-01-01T00:00:00Z'),
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'AUTH_RECEIPT_EXPIRED');
+    assert.equal(summary.apply.status, 409);
+    assert.equal(summary.apply.applied, 0);
+    assert.equal(summary.apply.idempotency.freshMutationWork, false);
+    assert.deepEqual(summary.receiptExpiry, {
+      phase: 'apply',
+      required: 'unexpired',
+      observed: 'remote-apply-rejected-expired-receipt',
+      verdict: 'AUTH_RECEIPT_EXPIRED',
+    });
+    assert.equal(summary.recoveryInspect, null);
+    assert.equal(summary.replay, null);
+    assert.equal(summary.dbJournal, null);
+    assert.deepEqual(seen.map(({ pathname }) => pathname), [
+      '/wp-json/reprint/v1/push/preflight',
+      '/wp-json/reprint/v1/push/snapshot',
+      '/wp-json/reprint/v1/push/dry-run',
+      '/wp-json/reprint/v1/push/apply',
+    ]);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('RPP-0514 authenticated push keeps live-source apply revalidation on the unexpired receipt path', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  const auth = {
+    identity: { userLogin: 'reprint_push_admin' },
+    session: {
+      type: 'production-auth-session',
+      status: 'active',
+      id: 'psh_01j00000000000000000000000',
+      expiresAt: '2030-01-01T00:00:00Z',
+    },
+  };
+  const receipt = {
+    receiptHash: 'receipt-unexpired-revalidation-01',
+    authBinding: {
+      expiresAt: '2030-01-01T00:00:00Z',
+    },
+  };
+  const storageGuard = {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'update',
+    outcome: 'applied',
+  };
+  const checkedJournal = {
+    scope: trustedDbJournalScope,
+    latestRows: [
+      { event: 'idempotency-opened' },
+      { event: 'mutation-applied' },
+      { event: 'apply-committed' },
+    ],
+    claim: {
+      status: 'stale-claim-rejected',
+      activeClaimId: auth.session.id,
+      activeClaimKeyHash: auth.session.id,
+      activeClaimSequence: 2,
+      activeClaimEvent: 'stale-claim-rejected',
+      previousClaimId: 'psh_01i99999999999999999999999',
+      previousClaimKeyHash: 'psh_01i99999999999999999999999',
+      previousClaimSequence: 1,
+      previousClaimEvent: 'recovery-claim-opened',
+      idempotencyKeyHash: 'idempotency-rpp-0514',
+      requestHash: 'request-rpp-0514',
+      staleClaimRejected: true,
+    },
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimId: auth.session.id,
+      claimKeyHash: auth.session.id,
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      storageGuard: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimId: auth.session.id,
+        claimKeyHash: auth.session.id,
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+  };
+  let applyCount = 0;
+
+  global.fetch = async (url, options) => {
+    const pathname = new URL(String(url)).pathname;
+    const payload = options?.body ? JSON.parse(String(options.body)) : null;
+    seen.push({ url: String(url), pathname, payload });
+    if (pathname.endsWith('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth,
+        session: { id: auth.session.id },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.endsWith('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.endsWith('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'dry-run',
+        auth,
+        receipt,
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.endsWith('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth,
+        recovery: {
+          state: 'fully-updated-remote',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: { integrity: { status: 'ok' } },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.endsWith('/db-journal')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth,
+        dbJournal: checkedJournal,
+        storageGuard,
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.endsWith('/apply')) {
+      applyCount += 1;
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'apply',
+        applied: 1,
+        code: applyCount === 1 ? 'APPLIED' : 'BATCH_ALREADY_COMMITTED',
+        responseSchemaVersion: 1,
+        auth,
+        ...(applyCount === 1 ? { receipt } : {}),
+        storageGuard,
+        signedRequest: {
+          signed: true,
+          schemaVersion: 1,
+          contentHash: 'content-rpp-0514',
+          sessionHash: 'session-rpp-0514',
+          signingKeyHash: 'signing-key-rpp-0514',
+          request: { method: 'POST', path: '/wp-json/reprint/v1/push/apply' },
+        },
+        idempotency: {
+          replayed: applyCount > 1,
+          freshMutationWork: applyCount === 1,
+          conflict: false,
+        },
+        applyRevalidation: buildApplyRevalidationEvidence(
+          payload.plan,
+          payload.receipt,
+          auth.session.id,
+          auth.session.id,
+        ),
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-rpp-0514-unexpired-revalidation',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+      now: new Date('2025-01-01T00:00:00Z'),
+    });
+
+    assert.equal(summary.ok, true);
+    assert.equal(summary.code, undefined);
+    assert.equal(summary.receiptExpiry, undefined);
+    assert.equal(summary.applyRevalidation.phase, 'before-first-mutation');
+    assert.equal(summary.applyRevalidation.checkedAgainst, 'live-remote');
+    assert.equal(summary.applyRevalidation.required, 'fresh-live-hashes-before-first-mutation');
+    assert.equal(summary.applyRevalidation.receiptHash, receipt.receiptHash);
+    assert.equal(summary.replay.idempotency.replayed, true);
+    assert.equal(summary.dbJournal.leaseFence.staleClaimRejected, true);
+    assert.deepEqual(
+      seen
+        .filter(({ pathname }) => pathname.endsWith('/apply'))
+        .map(({ payload }) => payload.receipt.receiptHash),
+      [receipt.receiptHash, receipt.receiptHash],
+    );
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push can prove packaged stale-claim retry through the DB journal surface', async () => {
   const originalFetch = global.fetch;
   const seen = [];
