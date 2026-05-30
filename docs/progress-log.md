@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 13:37 CEST.
+- Last update: 2026-05-30 13:40 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0516 same-key same-body replay merge ending at `832cbf2ec`.
+  the RPP-0627 restart-readable open-state v2 merge ending at `a9627e015`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 442
-  items checked and leaves 558 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 443
+  items checked and leaves 557 open.
 - Checked slices: 100 release-gate foundation items, 46 graph identity items,
-  73 plugin-driver boundary items, 24 executor/auth items, 28 recovery items,
+  73 plugin-driver boundary items, 24 executor/auth items, 29 recovery items,
   13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Restart-readable open state v2: the current lane now contains `RPP-0627`
+  evidence in `docs/evidence/rpp-0627-restart-readable-open-state-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/recovery-journal.test.js`. The production recovery journal wrapper is
+  opened in one process, read back by the parent as durable `journal-opened`,
+  ownership, target-planned, and claim rows, then reopened in a second process
+  with the same claim to append `journal-retry-opened`. The proof verifies
+  monotonic sequences, row-level fsync evidence, a single ownership and claim
+  envelope, matching production inspection `openState`, redacted rows, and
+  restart inspection that still classifies the unchanged remote as `old-remote`.
+  Validation passed with Node syntax checks, focused RPP-0627 coverage 1/1, the
+  adjacent restart-readable group 4/4, the merged recovery-journal suite 32/32,
+  checklist lint, scoped artifact redaction scan, and merge diff whitespace
+  checks. Counts are now 443/557; final release remains `NO-GO` because this is
+  local file-backed recovery-journal evidence, not external production crash or
+  restart proof.
 - Same-key same-body replay: the current lane now contains `RPP-0516` evidence
   in `docs/evidence/rpp-0516-same-key-same-body-replay.md`,
   `docs/reprint-push-completion-checklist.md`,
