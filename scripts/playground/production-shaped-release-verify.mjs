@@ -448,6 +448,11 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && applyRevalidation?.checkedAgainst === 'live-remote'
     && Array.isArray(applyRevalidation?.verifiedResourceKeys)
     && applyRevalidation.verifiedResourceKeys.includes(boundary.resourceKey);
+  const applyCarryThrough = summarizePluginDriverApplyCarryThrough({
+    proof,
+    boundary,
+    verifiedBeforeFirstMutation,
+  });
 
   const plannedMutations = Array.isArray(proof.planObject.mutations)
     ? proof.planObject.mutations
@@ -506,6 +511,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && mutation?.localHash === localState.hash
     && exactAllowlistOwnerDriver
     && exactMutationOwnerDriver
+    && applyCarryThrough.accepted
     && verifiedBeforeFirstMutation
     && noActivePluginsDirectMutation
     && noUnownedSerializedOptionMutation
@@ -573,6 +579,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
     } : {
       verifiedBeforeFirstMutation: false,
     },
+    applyCarryThrough,
     ownershipBoundary: {
       exactAllowlistOwnerDriver,
       exactMutationOwnerDriver,
@@ -606,6 +613,39 @@ export function summarizeProductionPluginDriverBoundaryProof({
       readRetryEvidence: proof.latestReadRetryEvidence || proof.readRetryEvidence || null,
     },
     missingEvidence,
+  };
+}
+
+function summarizePluginDriverApplyCarryThrough({
+  proof,
+  boundary,
+  verifiedBeforeFirstMutation,
+} = {}) {
+  const dbJournalMutationApplied = Number.isInteger(proof?.dbJournal?.mutationApplied)
+    ? proof.dbJournal.mutationApplied
+    : null;
+  const finalMatchesLocal = typeof proof?.after?.finalMatchesLocal === 'boolean'
+    ? proof.after.finalMatchesLocal
+    : null;
+  const finalSnapshotNotContradicted = finalMatchesLocal !== false;
+  const accepted = proof?.apply?.status === 200
+    && proof?.dbJournal?.applyCommitted === true
+    && Number.isInteger(dbJournalMutationApplied)
+    && dbJournalMutationApplied > 0
+    && verifiedBeforeFirstMutation === true
+    && finalSnapshotNotContradicted;
+
+  return {
+    resourceKey: boundary?.resourceKey || null,
+    applyStatus: proof?.apply?.status ?? null,
+    finalMatchesLocal,
+    finalSnapshotNotContradicted,
+    dbJournalApplyCommitted: proof?.dbJournal?.applyCommitted === true,
+    dbJournalMutationApplied,
+    mutationAppliedPositive: Number.isInteger(dbJournalMutationApplied)
+      && dbJournalMutationApplied > 0,
+    verifiedBeforeFirstMutation: verifiedBeforeFirstMutation === true,
+    accepted,
   };
 }
 
