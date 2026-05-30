@@ -1,18 +1,29 @@
-# AO Progress Report - 2026-05-30 03:21 CEST
+# AO Progress Report - 2026-05-30 03:23 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0232
-remoteBeforeHash correctness refresh ending at `70aee9485`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0426 wp_termmeta
+driver semantics refresh ending at `c235e69fa`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 305 are
-  checked from integrated evidence and 695 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 306 are
+  checked from integrated evidence and 694 remain open.
+- `RPP-0426` is now checked with focused wp_termmeta plugin-driver semantics
+  evidence in `docs/evidence/rpp-0426-wp-termmeta-driver-semantics.md` and
+  `test/rpp-0426-wp-termmeta-driver-semantics.test.js`. `node --test
+  test/rpp-0426-wp-termmeta-driver-semantics.test.js` passed 5/5,
+  `node --test test/plugin-driver-termmeta-semantics.test.js` passed 5/5, and
+  the focused `RPP-0426|wp_termmeta driver` pattern passed 10/10, proving exact
+  `meta_id` row semantics, local-candidate and explicit production-backed
+  release-gate evidence scopes, fail-closed mismatched `meta_id`,
+  non-`meta_id` row identifiers, wrong-table policy cases, redacted driver
+  evidence, checklist lint, artifact redaction scan, and `git diff --check`
+  while final release remains **NO-GO**.
 - `RPP-0232` is now checked with focused remoteBeforeHash correctness evidence
   in `docs/evidence/rpp-0232-remote-before-hash-correctness-v2.md` and
   `test/rpp-0232-remote-before-hash-correctness-v2.test.js`. `node --check

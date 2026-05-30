@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:21 CEST.
+- Last update: 2026-05-30 03:23 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0232 remoteBeforeHash correctness merge ending at `70aee9485`.
+  the RPP-0426 wp_termmeta driver semantics merge ending at `c235e69fa`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 305
-  items checked and leaves 695 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 306
+  items checked and leaves 694 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  40 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  41 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 51 generated
   harness items, and 35 merge-invariant items. No release-ops items are checked
   yet.
+- Focused wp_termmeta plugin-driver semantics refresh: the current lane now
+  contains `RPP-0426` evidence in
+  `docs/evidence/rpp-0426-wp-termmeta-driver-semantics.md` and
+  `test/rpp-0426-wp-termmeta-driver-semantics.test.js`. `node --test
+  test/rpp-0426-wp-termmeta-driver-semantics.test.js` passed 5/5,
+  `node --test test/plugin-driver-termmeta-semantics.test.js` passed 5/5, and
+  the focused `RPP-0426|wp_termmeta driver` pattern passed 10/10. The proof
+  covers exact `meta_id` row semantics, local-candidate and explicit
+  production-backed release-gate evidence scopes, fail-closed mismatched
+  `meta_id`, non-`meta_id` row identifiers, wrong-table policy cases, and
+  redacted driver evidence without raw termmeta payloads. Checklist lint,
+  artifact redaction scan, and `git diff --check` also passed. Counts are now
+  306/694; final release remains `NO-GO`.
 - Focused remoteBeforeHash correctness refresh: the current lane now contains
   `RPP-0232` evidence in
   `docs/evidence/rpp-0232-remote-before-hash-correctness-v2.md` and
