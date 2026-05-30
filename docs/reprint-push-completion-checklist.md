@@ -387,7 +387,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [ ] RPP-0358 (Mid / graph-identity) Add generated coverage for GUID and slug collision handling, variant 3. Success: generated harness includes ready and stale cases.
 - [ ] RPP-0359 (Mid / graph-identity) Add generated coverage for cross-table create batch mapping, variant 3. Success: local production verifier carries the target through apply.
 - [ ] RPP-0360 (Mid / graph-identity) Add generated coverage for production importer/exporter identity map, variant 3. Success: docs state remaining unmapped WordPress surfaces.
-- [ ] RPP-0361 (Mid / graph-identity) Add focused regression coverage for post_parent page hierarchy, variant 4. Success: mapper rewrites or proves stable identity for the target.
+- [x] RPP-0361 (Mid / graph-identity) Add focused regression coverage for post_parent page hierarchy, variant 4. Success: mapper rewrites or proves stable identity for the target.
 - [ ] RPP-0362 (Mid / graph-identity) Add focused regression coverage for featured image attachment reference, variant 4. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0363 (Mid / graph-identity) Add focused regression coverage for post author reference, variant 4. Success: generated harness includes ready and stale cases.
 - [ ] RPP-0364 (Mid / graph-identity) Add focused regression coverage for postmeta post_id reference, variant 4. Success: local production verifier carries the target through apply.
