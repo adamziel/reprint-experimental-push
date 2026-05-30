@@ -467,6 +467,20 @@ export const wpOptionsDriverReleaseVerifierBoundary = Object.freeze({
   }),
 });
 
+export const localPluginDataStaleOwnerContextReleaseVerifierBoundary = Object.freeze({
+  driver: 'wp-option',
+  owner: 'forms',
+  table: 'wp_options',
+  rowId: 'option_name:rpp_0287_forms_local_plugin_data',
+  resourceKey: 'row:["wp_options","option_name:rpp_0287_forms_local_plugin_data"]',
+  ownerFilePath: 'wp-content/plugins/forms/forms.php',
+  ownerFileResourceKey: 'file:wp-content/plugins/forms/forms.php',
+  allowlist: Object.freeze({
+    resourceKeys: Object.freeze(['row:["wp_options","option_name:rpp_0287_forms_local_plugin_data"]']),
+    supportsDelete: false,
+  }),
+});
+
 export const driverApplyValidationHookReleaseVerifierBoundary = Object.freeze({
   driver: 'wp-option',
   owner: 'forms',
@@ -544,6 +558,32 @@ export function summarizeDriverAuditEvidenceRedactionReleaseVerifierProof({
       driver: wpOptionsDriverReleaseVerifierBoundary.driver,
       owner: wpOptionsDriverReleaseVerifierBoundary.owner,
       resource: wpOptionsDriverReleaseVerifierResourceEvidence(),
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+export function summarizeLocalPluginDataStaleOwnerContextReleaseVerifierProof({
+  now = new Date('2026-05-30T10:28:07.000Z'),
+} = {}) {
+  try {
+    return buildLocalPluginDataStaleOwnerContextReleaseVerifierProof(now);
+  } catch (error) {
+    return {
+      rpp: 'RPP-0287',
+      evidenceSource: 'release-verifier-local-plugin-data-stale-owner-context-v5',
+      status: 'blocked',
+      verdict: 'LOCAL_PLUGIN_DATA_STALE_OWNER_CONTEXT_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      driver: localPluginDataStaleOwnerContextReleaseVerifierBoundary.driver,
+      owner: localPluginDataStaleOwnerContextReleaseVerifierBoundary.owner,
+      resource: localPluginDataStaleOwnerContextReleaseVerifierResourceEvidence(),
       rawValuesIncluded: false,
       error: {
         name: error instanceof Error ? error.name : 'Error',
@@ -1096,6 +1136,412 @@ function wpOptionsDriverReleaseVerifierSnapshot(mode) {
           option_value: {
             mode,
             nested: { enabled: true },
+          },
+          autoload: 'no',
+          __pluginOwner: boundary.owner,
+        },
+      },
+    },
+  };
+}
+
+function buildLocalPluginDataStaleOwnerContextReleaseVerifierProof(now) {
+  const boundary = localPluginDataStaleOwnerContextReleaseVerifierBoundary;
+  const rawFixtures = {
+    base: 'private-rpp0287-base-local-plugin-option',
+    local: 'private-rpp0287-local-plugin-option',
+    ownerFileBase: '<?php /* private rpp0287 owner file base */',
+    ownerFileStale: '<?php /* private rpp0287 owner file stale remote */',
+  };
+  const base = localPluginDataStaleOwnerContextReleaseVerifierSnapshot({
+    mode: rawFixtures.base,
+    ownerFile: rawFixtures.ownerFileBase,
+  });
+  const local = localPluginDataStaleOwnerContextReleaseVerifierSnapshot({
+    mode: rawFixtures.base,
+    ownerFile: rawFixtures.ownerFileBase,
+  });
+  local.db[boundary.table][boundary.rowId].option_value.mode = rawFixtures.local;
+  local.meta = localPluginDataStaleOwnerContextReleaseVerifierPolicy();
+  const remote = localPluginDataStaleOwnerContextReleaseVerifierSnapshot({
+    mode: rawFixtures.base,
+    ownerFile: rawFixtures.ownerFileBase,
+  });
+  const plan = createPushPlan({ base, local, remote, now });
+  const mutation =
+    plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const precondition =
+    plan.preconditions.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const ownerContext = Array.isArray(mutation?.pluginOwnedResource?.ownerContext)
+    ? mutation.pluginOwnedResource.ownerContext
+    : [];
+  const ownerFileContext =
+    ownerContext.find((entry) => entry.resourceKey === boundary.ownerFileResourceKey) || null;
+
+  const validRemote = cloneReleaseVerifierJson(remote);
+  let validApplyResult = null;
+  let validApplyError = null;
+  try {
+    validApplyResult = applyPlan(validRemote, plan, { mutateRemote: true });
+  } catch (error) {
+    validApplyError = error;
+  }
+  const validApplyOk = validApplyResult?.appliedMutations === 1
+    && mutation !== null
+    && resourceHash(validRemote, mutation.resource) === mutation.localHash
+    && !(validApplyError instanceof Error);
+
+  const staleRemote = cloneReleaseVerifierJson(remote);
+  staleRemote.files[boundary.ownerFilePath] = rawFixtures.ownerFileStale;
+  const staleOwnerAttempt = localPluginDataStaleOwnerContextApplyAttempt({
+    remote: staleRemote,
+    plan,
+    mutation,
+  });
+
+  const forgedMutationAttempts = [
+    {
+      attack: 'missing-owner-context-envelope',
+      mutate(entry) {
+        delete entry.pluginOwnedResource.ownerContext;
+        delete entry.pluginOwnedResource.ownerContextRequired;
+      },
+    },
+    {
+      attack: 'forged-owner-context-hash',
+      mutate(entry) {
+        const forgedContext = entry.pluginOwnedResource.ownerContext.find((candidate) =>
+          candidate.resourceKey === boundary.ownerFileResourceKey);
+        forgedContext.remoteHash = '0'.repeat(64);
+      },
+    },
+  ].map((attack) => {
+    const forgedPlan = cloneReleaseVerifierJson(plan);
+    const forgedMutation =
+      forgedPlan.mutations.find((entry) => entry.id === mutation?.id) || null;
+    if (!forgedMutation) {
+      throw new Error(`Missing forged RPP-0287 mutation for ${attack.attack}`);
+    }
+    attack.mutate(forgedMutation);
+    const forgedRemote = cloneReleaseVerifierJson(remote);
+    const attempt = localPluginDataStaleOwnerContextApplyAttempt({
+      remote: forgedRemote,
+      plan: forgedPlan,
+      mutation,
+    });
+    return {
+      attack: attack.attack,
+      forgedPlanHash: sha256Evidence(forgedPlan),
+      rejectedBeforeMutation: attempt.rejectedBeforeMutation,
+      code: attempt.code,
+      beforeMutationCalls: attempt.beforeMutationCalls,
+      remoteDataPreserved: attempt.remoteDataPreserved,
+      details: attempt.details,
+      detailsHash: attempt.detailsHash,
+      rowHashBefore: attempt.rowHashBefore,
+      rowHashAfter: attempt.rowHashAfter,
+      remoteHashBefore: attempt.remoteHashBefore,
+      remoteHashAfter: attempt.remoteHashAfter,
+      unexpectedApplyMutationCount: attempt.unexpectedApplyMutationCount,
+    };
+  });
+
+  const exactMutation = mutation?.resource?.type === 'row'
+    && mutation.resource.table === boundary.table
+    && mutation.resource.id === boundary.rowId
+    && mutation.pluginOwnedResource?.pluginOwner === boundary.owner
+    && mutation.pluginOwnedResource?.driver === boundary.driver
+    && mutation.pluginOwnedResource?.supportsDelete === false
+    && mutation.pluginOwnedResource?.ownerContextRequired === true;
+  const exactPrecondition = precondition?.resourceKey === boundary.resourceKey
+    && precondition?.expectedHash === mutation?.remoteBeforeHash
+    && precondition?.checkedAgainst === 'live-remote';
+  const staleOwnerRejected = staleOwnerAttempt.rejectedBeforeMutation
+    && staleOwnerAttempt.code === 'STALE_PLUGIN_OWNER_CONTEXT'
+    && staleOwnerAttempt.beforeMutationCalls === 0
+    && staleOwnerAttempt.remoteDataPreserved
+    && staleOwnerAttempt.details?.contextResourceKey === boundary.ownerFileResourceKey
+    && staleOwnerAttempt.details?.expectedHash === ownerFileContext?.remoteHash
+    && staleOwnerAttempt.details?.actualHash !== staleOwnerAttempt.details?.expectedHash;
+  const forgedAttemptsRejected = forgedMutationAttempts.length === 2
+    && forgedMutationAttempts.every((entry) =>
+      entry.rejectedBeforeMutation
+      && entry.code === 'STALE_PLUGIN_OWNER_CONTEXT'
+      && entry.beforeMutationCalls === 0
+      && entry.remoteDataPreserved);
+
+  const proof = {
+    rpp: 'RPP-0287',
+    evidenceSource: 'release-verifier-local-plugin-data-stale-owner-context-v5',
+    status: 'blocked',
+    verdict: 'LOCAL_PLUGIN_DATA_STALE_OWNER_CONTEXT_REQUIRED',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    driver: boundary.driver,
+    owner: boundary.owner,
+    resource: localPluginDataStaleOwnerContextReleaseVerifierResourceEvidence(),
+    rawValuesIncluded: false,
+    releaseVerifier: {
+      checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+      check: 'local-plugin-data-stale-owner-context',
+      variant: 'v5',
+      executorRejectsStaleMutationAttempts: staleOwnerRejected,
+      executorRejectsForgedMutationAttempts: forgedAttemptsRejected,
+    },
+    allowlist: {
+      resourceKey: boundary.resourceKey,
+      pluginOwner: boundary.owner,
+      driver: boundary.driver,
+      supportsDelete: false,
+      policySource: 'local-snapshot',
+    },
+    plan: {
+      status: plan.status,
+      summary: {
+        mutations: plan.summary.mutations,
+        conflicts: plan.summary.conflicts,
+        blockers: plan.summary.blockers,
+      },
+      mutationCount: plan.mutations.length,
+      preconditionCount: plan.preconditions.length,
+      hash: sha256Evidence(plan),
+    },
+    mutationBoundary: mutation ? {
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      pluginOwner: mutation.pluginOwnedResource?.pluginOwner || null,
+      driver: mutation.pluginOwnedResource?.driver || null,
+      policySource: mutation.pluginOwnedResource?.policySource || null,
+      supportsDelete: mutation.pluginOwnedResource?.supportsDelete === true,
+      ownerContextRequired: mutation.pluginOwnedResource?.ownerContextRequired === true,
+      exactMutation,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      auditEvidenceHash: sha256Evidence(mutation.pluginOwnedResource?.auditEvidence || null),
+      driverDecisionEvidenceHash: sha256Evidence(mutation.pluginOwnedResource?.driverAuditEvidence || null),
+      mutationHash: sha256Evidence({
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        baseHash: mutation.baseHash,
+        localHash: mutation.localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+      }),
+    } : null,
+    ownerContext: {
+      required: mutation?.pluginOwnedResource?.ownerContextRequired === true,
+      resourceKeys: ownerContext.map((entry) => entry.resourceKey).sort(),
+      fileContextPresent: Boolean(ownerFileContext),
+      fileContextHash: ownerFileContext ? sha256Evidence({
+        type: ownerFileContext.type,
+        resourceKey: ownerFileContext.resourceKey,
+        baseHash: ownerFileContext.baseHash,
+        localHash: ownerFileContext.localHash,
+        remoteHash: ownerFileContext.remoteHash,
+      }) : null,
+      ownerContextHash: sha256Evidence(ownerContext.map((entry) => ({
+        type: entry.type,
+        resourceKey: entry.resourceKey,
+        baseHash: entry.baseHash,
+        localHash: entry.localHash,
+        remoteHash: entry.remoteHash,
+      }))),
+    },
+    precondition: precondition ? {
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+      exactPrecondition,
+      preconditionHash: sha256Evidence(precondition),
+    } : null,
+    validApply: {
+      appliedMutations: validApplyResult?.appliedMutations ?? 0,
+      rowHashAfter: mutation ? `sha256:${resourceHash(validRemote, mutation.resource)}` : null,
+      journalHash: validApplyResult ? sha256Evidence(validApplyResult.journal) : null,
+      ok: validApplyOk,
+    },
+    staleOwnerContextRefusal: staleOwnerAttempt,
+    forgedMutationRefusals: forgedMutationAttempts,
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      rawFieldNamesIncluded: false,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+      surfaces: [
+        'ready-plan-boundary',
+        'valid-apply-hash',
+        'stale-owner-context-refusal',
+        'forged-mutation-refusals',
+        'release-verifier-proof',
+      ],
+    },
+  };
+
+  const serialized = JSON.stringify(proof);
+  const rawEvidenceValuesIncluded = Object.values(rawFixtures).some((raw) => serialized.includes(raw));
+  const rawFieldNamesIncluded = serialized.includes('option_value') || serialized.includes('__pluginOwner');
+  const readyPlanOk = plan.status === 'ready'
+    && plan.summary.mutations === 1
+    && plan.summary.conflicts === 0
+    && plan.summary.blockers === 0
+    && exactMutation
+    && exactPrecondition
+    && ownerFileContext?.type === 'file'
+    && /^[a-f0-9]{64}$/.test(ownerFileContext?.remoteHash || '');
+  const accepted = readyPlanOk
+    && validApplyOk
+    && staleOwnerRejected
+    && forgedAttemptsRejected
+    && !rawEvidenceValuesIncluded
+    && !rawFieldNamesIncluded;
+
+  proof.status = accepted ? 'support_only' : 'blocked';
+  proof.verdict = accepted
+    ? 'LOCAL_PLUGIN_DATA_STALE_OWNER_CONTEXT_REJECTED'
+    : 'LOCAL_PLUGIN_DATA_STALE_OWNER_CONTEXT_REQUIRED';
+  proof.releaseVerifier.executorRejectsStaleMutationAttempts = staleOwnerRejected;
+  proof.releaseVerifier.executorRejectsForgedMutationAttempts = forgedAttemptsRejected;
+  proof.rawValuesIncluded = rawEvidenceValuesIncluded;
+  proof.redaction.rawValuesIncluded = rawEvidenceValuesIncluded;
+  proof.redaction.rawFieldNamesIncluded = rawFieldNamesIncluded;
+  proof.proofHash = sha256Evidence({
+    releaseVerifier: proof.releaseVerifier,
+    plan: proof.plan,
+    mutationBoundary: proof.mutationBoundary,
+    ownerContext: proof.ownerContext,
+    precondition: proof.precondition,
+    validApply: proof.validApply,
+    staleOwnerContextRefusal: proof.staleOwnerContextRefusal,
+    forgedMutationRefusals: proof.forgedMutationRefusals,
+    redaction: proof.redaction,
+  });
+
+  if (rawEvidenceValuesIncluded || rawFieldNamesIncluded) {
+    return {
+      rpp: proof.rpp,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'LOCAL_PLUGIN_DATA_STALE_OWNER_CONTEXT_REDACTION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      driver: boundary.driver,
+      owner: boundary.owner,
+      resource: proof.resource,
+      rawValuesIncluded: rawEvidenceValuesIncluded,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: rawEvidenceValuesIncluded,
+        rawFieldNamesIncluded,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'LOCAL_PLUGIN_DATA_STALE_OWNER_CONTEXT_REDACTION_REQUIRED',
+        resource: proof.resource,
+      }),
+    };
+  }
+  return proof;
+}
+
+function localPluginDataStaleOwnerContextApplyAttempt({ remote, plan, mutation }) {
+  const rowHashBefore = mutation ? resourceHash(remote, mutation.resource) : null;
+  const remoteHashBefore = sha256Evidence(remote);
+  let beforeMutationCalls = 0;
+  let error = null;
+  let result = null;
+  try {
+    result = applyPlan(remote, plan, {
+      mutateRemote: true,
+      beforeMutation() {
+        beforeMutationCalls += 1;
+      },
+    });
+  } catch (caught) {
+    error = caught;
+  }
+  const rowHashAfter = mutation ? resourceHash(remote, mutation.resource) : null;
+  const remoteHashAfter = sha256Evidence(remote);
+  const rejectedBeforeMutation = error instanceof PushPlanError
+    && error.code === 'STALE_PLUGIN_OWNER_CONTEXT'
+    && beforeMutationCalls === 0;
+  return {
+    rejectedBeforeMutation,
+    code: error?.code || null,
+    beforeMutationCalls,
+    details: error ? localPluginDataStaleOwnerContextErrorDetails(error) : null,
+    detailsHash: error ? sha256Evidence(error.details || null) : null,
+    rowHashBefore: rowHashBefore ? `sha256:${rowHashBefore}` : null,
+    rowHashAfter: rowHashAfter ? `sha256:${rowHashAfter}` : null,
+    remoteHashBefore,
+    remoteHashAfter,
+    remoteDataPreserved: rowHashBefore !== null
+      && rowHashAfter === rowHashBefore
+      && remoteHashAfter === remoteHashBefore,
+    unexpectedApplyMutationCount: result?.appliedMutations ?? 0,
+  };
+}
+
+function localPluginDataStaleOwnerContextErrorDetails(error) {
+  return {
+    mutationId: error.details?.mutationId || null,
+    resourceKey: error.details?.resourceKey || null,
+    pluginOwner: error.details?.pluginOwner || null,
+    contextResourceKey: error.details?.contextResourceKey || null,
+    expectedHash: error.details?.expectedHash || null,
+    actualHash: error.details?.actualHash || null,
+  };
+}
+
+function localPluginDataStaleOwnerContextReleaseVerifierResourceEvidence() {
+  const boundary = localPluginDataStaleOwnerContextReleaseVerifierBoundary;
+  return {
+    resourceKey: boundary.resourceKey,
+    table: boundary.table,
+    rowId: boundary.rowId,
+    ownerFileResourceKey: boundary.ownerFileResourceKey,
+  };
+}
+
+function localPluginDataStaleOwnerContextReleaseVerifierPolicy() {
+  const boundary = localPluginDataStaleOwnerContextReleaseVerifierBoundary;
+  return {
+    pushPolicy: {
+      pluginOwnedResources: {
+        allowedResources: [
+          {
+            resourceKey: boundary.resourceKey,
+            pluginOwner: boundary.owner,
+            driver: boundary.driver,
+            supportsDelete: false,
+          },
+        ],
+      },
+    },
+  };
+}
+
+function localPluginDataStaleOwnerContextReleaseVerifierSnapshot({ mode, ownerFile }) {
+  const boundary = localPluginDataStaleOwnerContextReleaseVerifierBoundary;
+  return {
+    files: {
+      [boundary.ownerFilePath]: ownerFile,
+    },
+    plugins: {
+      [boundary.owner]: {
+        version: '1.0.0',
+        active: true,
+      },
+    },
+    db: {
+      [boundary.table]: {
+        [boundary.rowId]: {
+          option_name: 'rpp_0287_forms_local_plugin_data',
+          option_value: {
+            mode,
+            nested: { staleOwnerContextVerifier: true },
           },
           autoload: 'no',
           __pluginOwner: boundary.owner,
@@ -3414,6 +3860,8 @@ try {
             packagedPluginDriverProof,
             checkedProductionEvidence: false,
           });
+        const localPluginDataStaleOwnerContextReleaseVerifierProof =
+          summarizeLocalPluginDataStaleOwnerContextReleaseVerifierProof();
         const pluginDriverProof = {
           productionOwned: productionPluginDriverProof,
           driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
@@ -3423,6 +3871,9 @@ try {
           coreSemantics: {
             wpPostmeta: wpPostmetaReleaseVerifierEvidence,
             wpTermmeta: wpTermmetaReleaseVerifierEvidence,
+          },
+          mergeInvariants: {
+            localPluginDataStaleOwnerContext: localPluginDataStaleOwnerContextReleaseVerifierProof,
           },
           ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
         };
@@ -3725,6 +4176,8 @@ try {
             && Boolean(explicitReleaseVerifySourceUrl)
             && checkedDurableJournalAccepted,
         });
+      const localPluginDataStaleOwnerContextReleaseVerifierProof =
+        summarizeLocalPluginDataStaleOwnerContextReleaseVerifierProof();
       const pluginDriverProof = {
         productionOwned: productionPluginDriverProof,
         driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
@@ -3734,6 +4187,9 @@ try {
         coreSemantics: {
           wpPostmeta: wpPostmetaReleaseVerifierEvidence,
           wpTermmeta: wpTermmetaReleaseVerifierEvidence,
+        },
+        mergeInvariants: {
+          localPluginDataStaleOwnerContext: localPluginDataStaleOwnerContextReleaseVerifierProof,
         },
         ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
       };
