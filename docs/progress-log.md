@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:06 CEST.
+- Last update: 2026-05-30 05:09 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0476 driver delete support flag proof merge ending at `0f68fad55`.
+  the RPP-0477 driver dry-run validation hook proof merge ending at
+  `564e4a6a8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 336
-  items checked and leaves 664 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 337
+  items checked and leaves 663 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  60 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  61 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 57 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused driver dry-run validation hook variant-4 refresh: the current lane
+  now contains `RPP-0477` evidence in
+  `docs/evidence/rpp-0477-driver-dry-run-validation-hook-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0477-driver-dry-run-validation-hook-v4.test.js`. `node --check
+  test/rpp-0477-driver-dry-run-validation-hook-v4.test.js` exited 0, the
+  focused RPP-0477 test passed 1/1, and the adjacent dry-run/plugin-driver
+  slice passed 13/13. The proof covers supported and unsupported generated
+  dry-run validation hook variants, fail-closed validation refusal before
+  mutation, stable hash-only evidence, checklist lint, artifact redaction scan,
+  and `git diff --check`. Counts are now 337/663; final release remains
+  `NO-GO`.
 - Focused driver delete support flag variant-4 refresh: the current lane now
   contains `RPP-0476` evidence in
   `docs/evidence/rpp-0476-driver-delete-support-flag-v4.md`,
