@@ -6,9 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 20:28 CEST +02:00.
+- Last update: 2026-05-30 20:45 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0487 wp_usermeta release-verifier ancestry merge ending at `174bf1`.
+  the RPP-0517 same-key different-body conflict ancestry merge ending at
+  `62dc43`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -19,6 +20,19 @@ linked implementation artifacts.
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key different-body conflict route refinement: the current lane now
+  preserves the older `session/rpp-517` RPP-0517 ancestry while retaining the
+  stronger current production-shaped route proof. The route conflict payload now
+  exposes hash-only `status: conflict`, the conflicting request hash, and zero
+  mutation event counts for the rejected body; the broader production-shaped
+  route smoke now asserts those fields instead of accepting only the older
+  five-key idempotency shape. Validation passed with PHP and Node syntax
+  checks, focused RPP-0517 live endpoint coverage 2/2, adjacent authenticated
+  idempotency/replay coverage 28/28, the production-shaped route smoke,
+  checklist lint, scoped artifact redaction scan, and diff whitespace checks.
+  Counts remain 514/486; final release remains `NO-GO` because this is local
+  production-shaped executor evidence, not externally hosted production
+  topology proof.
 - wp_usermeta release-verifier ancestry refinement: the current lane now
   preserves the older `session/rpp-487` RPP-0487 ancestry while retaining the
   stronger current release-verifier surface. The integrated verifier summary
