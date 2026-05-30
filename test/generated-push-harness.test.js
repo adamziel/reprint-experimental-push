@@ -202,6 +202,9 @@ const requiredFamilies = [
   'file-create-update-delete-mix-v3',
   'file-create-update-delete-mix-v3-ready',
   'file-create-update-delete-mix-v3-non-ready',
+  'file-create-update-delete-mix-v4',
+  'file-create-update-delete-mix-v4-ready',
+  'file-create-update-delete-mix-v4-non-ready',
   'file-type-swap-ready',
   'file-type-swap-conflict',
   'file-type-swap',
@@ -2786,6 +2789,79 @@ test('RPP-0141 file create/update/delete mix variant 3 emits ready and non-ready
   assert.equal(evidenceText.includes('generated file mix update '), false, 'variant 3 evidence leaked updated file payload');
   assert.equal(evidenceText.includes('remote-only file mix preserve '), false, 'variant 3 evidence leaked remote-only file payload');
   assert.equal(evidenceText.includes('remote concurrent file mix update '), false, 'variant 3 evidence leaked conflict payload');
+});
+
+test('RPP-0161 file create/update/delete mix variant 4 retains focused ready and non-ready regression coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.fileCreateUpdateDeleteMixVariant4;
+
+  assert.ok(coverage, 'missing file create/update/delete mix variant 4 target coverage');
+  assert.equal(coverage.family, 'file-create-update-delete-mix-variant4');
+  assert.equal(coverage.total, report.summary.featureFamilies['file-create-update-delete-mix-v4']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.ok(coverage.statuses.ready > 0, 'variant 4 target should include ready file mix cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 4 target should include non-ready file mix cases');
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const firstEvidence = generatedFileCreateUpdateDeleteMixVariant4Evidence(coverage);
+  const replayEvidence = generatedFileCreateUpdateDeleteMixVariant4Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0161 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 4 file mix evidence changed between runs');
+  assert.equal(firstEvidence.target, 'fileCreateUpdateDeleteMixVariant4');
+  assert.equal(firstEvidence.family, 'file-create-update-delete-mix-variant4');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.status),
+    ['ready', 'conflict'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.ok(readyCase.tags.includes('file-create-update-delete-mix-v4-ready'));
+  assert.ok(nonReadyCase.tags.includes('file-create-update-delete-mix-v4-non-ready'));
+  assert.equal(readyCase.variant, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.deepEqual(readyCase.plannedChangeKinds, { create: 1, delete: 1, update: 1 });
+  assert.equal(readyCase.remoteOnly.decision, 'keep-remote');
+  assert.equal(readyCase.remoteOnly.plannedMutation, false);
+  assert.equal(readyCase.remoteOnly.appliedHash, readyCase.remoteOnly.remoteHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(nonReadyCase.variant, 'non-ready');
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.equal(nonReadyCase.conflict.resourceKey, nonReadyCase.surface.update.resourceKey);
+  assert.equal(nonReadyCase.conflict.plannedMutation, false);
+  assert.match(nonReadyCase.conflict.conflictHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('generated file mix create '), false, 'variant 4 evidence leaked created file payload');
+  assert.equal(evidenceText.includes('generated file mix update '), false, 'variant 4 evidence leaked updated file payload');
+  assert.equal(evidenceText.includes('remote-only file mix preserve '), false, 'variant 4 evidence leaked remote-only file payload');
+  assert.equal(evidenceText.includes('remote concurrent file mix update '), false, 'variant 4 evidence leaked conflict payload');
 });
 
 test('RPP-0102/RPP-0122 directory descendant target exposes per-tier ready and conflict counts', () => {
@@ -11620,13 +11696,29 @@ function hasGeneratedFile(site, path) {
 }
 
 function generatedFileCreateUpdateDeleteMixVariant3Evidence(targetCoverage) {
+  return generatedFileCreateUpdateDeleteMixVariantEvidence(targetCoverage, {
+    target: 'fileCreateUpdateDeleteMixVariant3',
+    tag: 'file-create-update-delete-mix-v3',
+    label: 'variant 3',
+  });
+}
+
+function generatedFileCreateUpdateDeleteMixVariant4Evidence(targetCoverage) {
+  return generatedFileCreateUpdateDeleteMixVariantEvidence(targetCoverage, {
+    target: 'fileCreateUpdateDeleteMixVariant4',
+    tag: 'file-create-update-delete-mix-v4',
+    label: 'variant 4',
+  });
+}
+
+function generatedFileCreateUpdateDeleteMixVariantEvidence(targetCoverage, { target, tag, label }) {
   const perTier = {};
   const statuses = {};
   const selectedCases = new Map();
   let totalCases = 0;
 
   for (const testCase of generatePushHarnessCases()) {
-    if (!testCase.tags.has('file-create-update-delete-mix-v3')) {
+    if (!testCase.tags.has(tag)) {
       continue;
     }
 
@@ -11644,14 +11736,14 @@ function generatedFileCreateUpdateDeleteMixVariant3Evidence(targetCoverage) {
   const sortedPerTier = sortNumericObject(perTier);
   const sortedStatuses = sortStringObject(statuses);
 
-  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 target recount should match summary tiers');
-  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 target recount should match summary statuses');
-  assert.equal(totalCases, targetCoverage.total, 'variant 3 target recount should match summary total');
-  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready file mix case');
-  assert.ok(selectedCases.has('non-ready'), 'variant 3 target should select one non-ready file mix case');
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, `${label} target recount should match summary tiers`);
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, `${label} target recount should match summary statuses`);
+  assert.equal(totalCases, targetCoverage.total, `${label} target recount should match summary total`);
+  assert.ok(selectedCases.has('ready'), `${label} target should select one ready file mix case`);
+  assert.ok(selectedCases.has('non-ready'), `${label} target should select one non-ready file mix case`);
 
   return {
-    target: 'fileCreateUpdateDeleteMixVariant3',
+    target,
     family: targetCoverage.family,
     evidenceScope: 'local-generated-model',
     productionBacked: false,

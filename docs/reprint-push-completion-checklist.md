@@ -177,7 +177,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0158 (Near / generated-harness) Add generated coverage for same independent content, variant 3. Success: ready cases apply with no unplanned remote overwrite.
 - [x] RPP-0159 (Near / generated-harness) Add generated coverage for remote-only preservation, variant 3. Success: stale remote replay fails before mutation.
 - [x] RPP-0160 (Near / generated-harness) Add generated coverage for large ready plan tier, variant 3. Success: docs/generated-push-harness.md records the surface and invariant.
-- [ ] RPP-0161 (Near / generated-harness) Add focused regression coverage for file create/update/delete mix, variant 4. Success: generator emits at least one ready case and one non-ready case for this target.
+- [x] RPP-0161 (Near / generated-harness) Add focused regression coverage for file create/update/delete mix, variant 4. Success: generator emits at least one ready case and one non-ready case for this target.
 - [ ] RPP-0162 (Near / generated-harness) Add focused regression coverage for directory descendant conflict, variant 4. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0163 (Near / generated-harness) Add focused regression coverage for file type-swap conflict, variant 4. Success: ready cases apply with no unplanned remote overwrite.
 - [ ] RPP-0164 (Near / generated-harness) Add focused regression coverage for row create/update/delete mix, variant 4. Success: stale remote replay fails before mutation.
