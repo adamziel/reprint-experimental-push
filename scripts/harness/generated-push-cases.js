@@ -182,6 +182,14 @@ const targetCoverageDefinitions = Object.freeze({
       && result.applied === true
       && result.unplannedRemotePreserved === true,
   },
+  sameIndependentContentVariant4: {
+    family: 'same-independent-content-variant4',
+    matches: (testCase, result) => testCase.family === 'same-independent-content'
+      && testCase.tags.has('same-independent-content-target')
+      && result.status === 'ready'
+      && result.applied === true
+      && result.unplannedRemotePreserved === true,
+  },
   remoteOnlyPreservation: {
     family: 'remote-only-post-update',
     matches: (testCase, result) => testCase.family === 'remote-only-post-update'

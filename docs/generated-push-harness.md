@@ -284,6 +284,17 @@ all unplanned remote resources. The evidence is hash-only: resource keys,
 counts, decision hashes, row hashes, and unplanned-preservation proof hashes
 are retained while generated row titles and payload values are omitted.
 
+RPP-0178 adds `sameIndependentContentVariant4` coverage for the same
+already-synchronized `wp_posts` surface as an explicit variant-4 target. The
+deterministic summary exposes the same 10 ready cases, one in every tier, and
+the focused proof replays every target case to verify every planned mutation
+applies while the shared row stays on the remote hash with no mutation or
+precondition. It also enumerates all resources after apply to prove every
+unplanned remote resource still matches the pre-apply remote hash. Evidence
+remains hash-only: resource keys, counts, row hashes, decision hashes,
+apply-proof hashes, and unplanned-preservation proof hashes are retained while
+generated row titles and payload values are omitted.
+
 The `remoteOnlyPreservation` target coverage records mutation-bearing
 `remote-only-post-update` cases where the remote changed a `wp_posts` row while
 local changes target other resources. Tier 0 remains a zero-mutation preservation
