@@ -6,20 +6,41 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 18:51 CEST +02:00.
+- Last update: 2026-05-30 18:59 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0396 wp_navigation fail-closed reference release-verifier proof merge
-  ending at `d75cecf`.
+  the RPP-0397 serialized block reference release-verifier proof merge ending
+  at `25fcf82`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 506
-  items checked and leaves 494 open.
-- Checked slices: 100 release-gate foundation items, 66 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 507
+  items checked and leaves 493 open.
+- Checked slices: 100 release-gate foundation items, 67 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Serialized block reference release-verifier proof v5: the current lane now
+  contains `RPP-0397` evidence in
+  `docs/evidence/rpp-0397-serialized-block-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0397-serialized-block-reference-release-verifier-v5.test.js`.
+  The production-shaped verifier now carries
+  `graphIdentity.serializedBlockReference` support evidence for a local
+  `core/image` block `id` reference whose target is a `wp_posts` page rather
+  than an attachment. The plan remains `blocked`, emits no mutations or
+  preconditions for the source or target, records hash-only
+  `stale-wordpress-graph-identity` support evidence, and `applyPlan()` refuses
+  with `PLAN_NOT_READY` before durable-journal events or remote mutation while
+  preserving remote, source, and target hashes. Validation passed with Node
+  syntax checks, focused RPP-0397 coverage 2/2, serialized-block adjacent
+  coverage 5/5, graph-inventory adjacent coverage 7/7, release-verifier
+  adjacent coverage 6/6, full production-shaped proof coverage 134 tests
+  (123 passing, 11 skipped), checklist lint, scoped artifact redaction scan,
+  raw fixture scan, and merge diff whitespace checks. Counts are now 507/493;
+  final release remains `NO-GO` because this is local support-only
+  release-verifier evidence, not production-backed release evidence.
 - wp_navigation fail-closed reference release-verifier proof v5: the current
   lane now contains `RPP-0396` evidence in
   `docs/evidence/rpp-0396-wp-navigation-fail-closed-reference-release-verifier-v5.md`,
