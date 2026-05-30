@@ -17,6 +17,7 @@ import { inspectRecoveryJournal } from '../../src/recovery-inspect.js';
 import { resourceHash } from '../../src/resources.js';
 import { digest as stableDigest } from '../../src/stable-json.js';
 import { buildChunkTransferTransactionBoundaryPolicy } from '../../src/transaction-boundary-policy.js';
+import { buildChunkTransferTimeoutBudgetProof } from '../../src/timeout-budget-proof.js';
 import { DEFAULT_LIMITS, MIB } from './performance-model.js';
 
 const FIXED_NOW = new Date('2026-05-24T00:00:00.000Z');
@@ -849,6 +850,14 @@ function buildGuardedTransferEvidence({ stagedFile, successPersisted }) {
     journalRecords: successPersisted.records,
     resumeRecords: [],
   });
+  const timeoutBudgetProof = buildChunkTransferTimeoutBudgetProof({
+    planId: stagedFile.planId,
+    resourceKey: stagedFile.resourceKey,
+    manifestEntries: stagedFile.manifestEntries,
+    chunkReceiptRecords,
+    journalRecords: successPersisted.records,
+    resumeRecords: [],
+  });
 
   return {
     manifest: {
@@ -882,6 +891,7 @@ function buildGuardedTransferEvidence({ stagedFile, successPersisted }) {
     hashVerification,
     resume,
     transactionBoundaryPolicy,
+    timeoutBudgetProof,
     visibility: {
       finalizedRecordPresent: Boolean(finalizedRecord),
       canonicalVisibleBeforePublish: chunkReceiptRecords.some((record) => record.canonicalVisible === true),
@@ -1240,6 +1250,7 @@ function buildReport({
   const evidence = {
     guardedTransfer,
     transactionBoundaryPolicy: guardedTransfer.transactionBoundaryPolicy,
+    timeoutBudgetProof: guardedTransfer.timeoutBudgetProof,
     chunkReceipts: {
       expected: stagedFile.chunkCount,
       recorded: chunkReceiptRecords.length,

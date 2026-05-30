@@ -70,6 +70,10 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
     report.evidence.transactionBoundaryPolicy.apply.applyOpenedAfterTransferFinalize,
     true,
   );
+  assert.equal(report.evidence.timeoutBudgetProof.status, 'passed');
+  assert.equal(report.evidence.timeoutBudgetProof.resume.receiptOnlyResumeSafe, true);
+  assert.equal(report.evidence.timeoutBudgetProof.resume.duplicateMutationWork, 0);
+  assert.equal(report.evidence.timeoutBudgetProof.apply.noDuplicateMutationWork, true);
   assert.equal(report.evidence.guardedTransfer.visibility.livePathChangesOnlyAfterFinalize, true);
   assert.equal(report.evidence.preconditions.liveRemoteMutationPreconditions, report.shape.mutations);
   assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
@@ -366,6 +370,7 @@ function deterministicTransferProjection(report) {
       hashVerification: report.evidence.guardedTransfer.hashVerification,
       resume: report.evidence.guardedTransfer.resume,
       transactionBoundaryPolicy: report.evidence.guardedTransfer.transactionBoundaryPolicy,
+      timeoutBudgetProof: report.evidence.guardedTransfer.timeoutBudgetProof,
       visibility: report.evidence.guardedTransfer.visibility,
     },
     productionThroughputBlockers: report.claims.productionThroughput.blockers,
