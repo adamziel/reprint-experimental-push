@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 23:03 CEST +02:00.
+- Last update: 2026-05-30 23:05 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0330 post_tag taxonomy reference variant 2 merge ending at
-  `6e4931c`.
+  the RPP-0331 custom taxonomy fail-closed reference variant 2 merge ending at
+  `0a32945`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 531
-  items checked and leaves 469 open.
-- Checked slices: 100 release-gate foundation items, 75 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 532
+  items checked and leaves 468 open.
+- Checked slices: 100 release-gate foundation items, 76 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 90 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Custom taxonomy fail-closed reference variant-2 proof: the current lane now
+  checks `RPP-0331` with focused graph-identity evidence for unsupported custom
+  taxonomy references. The proof verifies `product_cat` term-taxonomy targets
+  fail closed with hash-only `stale-wordpress-graph-identity` evidence when no
+  stable identity map exists, refuses apply before mutation, and also proves the
+  explicit identity-map path rewrites the dependent relationship to the stable
+  remote target with live-remote preconditions. Validation passed with Node
+  syntax checks, focused RPP-0331 coverage 2/2, adjacent
+  RPP-0311/RPP-0371/RPP-0391/custom-taxonomy coverage 11/11, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 532/468; final
+  release remains `NO-GO` because this is local graph-identity evidence, not
+  production-backed release proof.
 - Post_tag taxonomy reference variant-2 carry-through: the current lane now
   checks `RPP-0330` with focused local-production-shaped verifier evidence for
   core `post_tag` taxonomy references. The proof builds a ready post_tag
