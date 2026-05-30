@@ -51,7 +51,8 @@ The default generated run covers:
   delete mixes with ready and conflicting outcomes plus per-tier target counts,
   directory descendant deletes with ready and conflicting outcomes plus
   per-tier target counts, file type-swap cases with ready/conflict outcomes
-  plus per-tier target counts, row create/update/delete mixes with
+  plus per-tier target counts and explicit release-verifier variant-5
+  carry-through, row create/update/delete mixes with
   ready/conflict outcomes plus per-tier target counts and stale replay rejection
   before mutation, non-plugin-owned `wp_options` scalar changes with per-tier
   target counts plus explicit variant-3 and variant-4 scalar option coverage,
@@ -306,6 +307,16 @@ file hashes, conflict hashes, and refusal hashes. It verifies a ready type-swap
 applies the planned file value while preserving an unplanned remote resource,
 then verifies the remote descendant conflict refuses apply without mutating the
 remote digest.
+
+RPP-0183 adds `fileTypeSwapConflictReleaseVerifierVariant5` coverage for the
+same file topology type-swap surface with an explicit release-verifier
+variant-5 target tag. The deterministic roster emits 20 target cases: 10 ready
+directory-to-file swaps and 10 non-ready remote-descendant conflicts, with two
+cases in every tier. The focused proof recounts `summary.targetCoverage`,
+verifies every ready variant-5 case applies and preserves unplanned remote
+resources without overwrite, confirms stale replay refusal before mutation, and
+verifies the descendant conflict path suppresses the target
+mutation/precondition and refuses apply without mutating the remote digest.
 
 The `sameIndependentContent` target coverage records per-tier counts for local
 and remote edits that independently converge on the same content. Its ready
