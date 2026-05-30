@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T16:43:00+02:00">Last updated: May 30, 2026, 16:43 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T16:49:00+02:00">Last updated: May 30, 2026, 16:49 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>481</strong>
+        <strong>482</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>519</strong>
+        <strong>518</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay v2 release-proof carry-through, different-body idempotency conflict, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay v2 release-proof carry-through, different-body idempotency conflict v2, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,17 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0716</span>
+        <span>RPP-0636</span>
       </div>
-      <p>The latest refresh integrates RPP-0716 large plugin file benchmark evidence: the large-site profile stages 5 plugin files totaling 19,922,944 bytes under an atomic plugin group boundary, records 6 chunk receipts, keeps 0 bytes visible before commit, publishes all 19,922,944 bytes after commit, and allows 10 fast-path lane updates only after correctness gates pass. Counts are now 481/519; final release remains NO-GO because this is local benchmark evidence, not production storage receipt, network throughput, dependency solver, plugin activation, or release-verifier proof.</p>
+      <p>The latest refresh integrates RPP-0636 different-body idempotency conflict v2 evidence: the SQLite-backed journal records the original same-key request, committed apply, same-body replay, and then a different request body returning 409 IDEMPOTENCY_KEY_CONFLICT with no fresh mutation work, unchanged target snapshot hashes, and no mutation events after the conflict row. Counts are now 482/518; final release remains NO-GO because this is local durable recovery evidence, not external WordPress crash/restart durability proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0636 focused: 1/1</span>
+        <span class="tag">recovery adjacent: 10/10</span>
+        <span class="tag">recovery journal full: 40/40</span>
+        <span class="tag">file-journal smoke: pass</span>
+        <span class="tag">409 conflict / no fresh mutation</span>
+        <span class="tag">post-conflict mutation guard: pass</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0716 focused: 5/5</span>
         <span class="tag">large plugin benchmark: pass</span>
         <span class="tag">runtime: 2878.78 ms</span>
@@ -1111,7 +1118,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 481/1000</span>
+        <span class="tag">checked goals: 482/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
