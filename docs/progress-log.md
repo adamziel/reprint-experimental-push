@@ -6,20 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 18:17 CEST +02:00.
+- Last update: 2026-05-30 18:21 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0373 term relationship object reference variant-4 proof merge ending
-  at `a06c8cda`.
+  the RPP-0389 category term taxonomy reference release-verifier proof merge
+  ending at `1350f754`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 498
-  items checked and leaves 502 open.
-- Checked slices: 100 release-gate foundation items, 58 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 499
+  items checked and leaves 501 open.
+- Checked slices: 100 release-gate foundation items, 59 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Category term taxonomy reference release-verifier proof v5: the current lane
+  now contains `RPP-0389` evidence in
+  `docs/evidence/rpp-0389-category-term-taxonomy-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0389-category-term-taxonomy-reference-release-verifier-v5.test.js`.
+  The local release-verifier regression proves the category
+  `wp_term_taxonomy` mutation is present in the release plan, carries its
+  `term_id` reference and `category` taxonomy, has a live-remote precondition,
+  appears in apply-time revalidation before mutation, and fails closed when only
+  that revalidation evidence is omitted. Validation passed with Node syntax
+  checks, focused RPP-0389 coverage 2/2, adjacent category release-evidence
+  coverage 5/5, local-production taxonomy proof coverage 4/4, planner/generated
+  taxonomy graph coverage 4/4, checklist lint, scoped artifact redaction scan,
+  raw fixture scan, and merge diff whitespace checks. Counts are now 499/501;
+  final release remains `NO-GO` because this is local release-verifier
+  carry-through evidence, not a live external production release run.
 - Term relationship object reference variant-4 proof: the current lane now
   contains `RPP-0373` evidence in
   `docs/evidence/rpp-0373-term-relationship-object-reference-v4.md`,
