@@ -1,17 +1,30 @@
-# AO Progress Report - 2026-05-30 04:54 CEST
+# AO Progress Report - 2026-05-30 04:56 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0474 owner context
-stale metadata proof refresh ending at `64619c959`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0475 remote plugin
+removal refusal proof refresh ending at `229f1c704`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 333 are
-  checked from integrated evidence and 667 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 334 are
+  checked from integrated evidence and 666 remain open.
+- `RPP-0475` is now checked with focused remote plugin removal refusal
+  variant-4 evidence in
+  `docs/evidence/rpp-0475-remote-plugin-removal-refusal-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, `src/planner.js`, and
+  `test/rpp-0475-remote-plugin-removal-refusal-v4.test.js`. `node --check
+  src/planner.js`, `node --check
+  test/rpp-0475-remote-plugin-removal-refusal-v4.test.js`, the focused RPP-0475
+  test, the adjacent remote-removal/plugin-uninstall refusal slice, and the
+  adjacent owner-context/plugin-driver refusal slice all exited 0, proving local
+  vs production-backed release-gate scope, remote owner-plugin removal refusal
+  before mutation, stale ready-plan replay rejection before mutation hooks,
+  preserved remote row/full hashes, hash-only evidence, checklist lint, artifact
+  redaction scan, and `git diff --check` while final release remains **NO-GO**.
 - `RPP-0474` is now checked with focused owner context stale metadata refusal
   variant-4 evidence in
   `docs/evidence/rpp-0474-owner-context-stale-metadata-refusal-v4.md`,
