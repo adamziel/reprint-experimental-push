@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:42 CEST.
+- Last update: 2026-05-30 04:45 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0466 wp_termmeta driver semantics proof merge ending at `945ba21cb`.
+  the RPP-0467 wp_usermeta driver semantics proof merge ending at `693be1112`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 329
-  items checked and leaves 671 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 330
+  items checked and leaves 670 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  54 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  55 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 56 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused wp_usermeta driver semantics variant-4 refresh: the current lane now
+  contains `RPP-0467` evidence in
+  `docs/evidence/rpp-0467-wp-usermeta-driver-semantics-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0467-wp-usermeta-driver-semantics-v4.test.js`. `node --check
+  test/rpp-0467-wp-usermeta-driver-semantics-v4.test.js` exited 0, `node
+  --test test/rpp-0467-wp-usermeta-driver-semantics-v4.test.js` passed 3/3,
+  `node --test test/plugin-driver-usermeta-semantics.test.js` passed 5/5, and
+  the adjacent generated/usermeta pattern passed 7/7. The proof covers
+  supported and unsupported generated `wp_usermeta` variants, exact supported
+  row apply behavior, unsupported fail-closed refusal before mutation,
+  hash-only evidence, checklist lint, artifact redaction scan, and `git
+  diff --check`. Counts are now 330/670; final release remains `NO-GO`.
 - Focused wp_termmeta driver semantics variant-4 refresh: the current lane now
   contains `RPP-0466` evidence in
   `docs/evidence/rpp-0466-wp-termmeta-driver-semantics-v4.md`,

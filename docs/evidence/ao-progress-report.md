@@ -1,17 +1,30 @@
-# AO Progress Report - 2026-05-30 04:42 CEST
+# AO Progress Report - 2026-05-30 04:45 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0466 wp_termmeta
-driver semantics proof refresh ending at `945ba21cb`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0467 wp_usermeta
+driver semantics proof refresh ending at `693be1112`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 329 are
-  checked from integrated evidence and 671 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 330 are
+  checked from integrated evidence and 670 remain open.
+- `RPP-0467` is now checked with focused wp_usermeta driver semantics variant-4
+  evidence in
+  `docs/evidence/rpp-0467-wp-usermeta-driver-semantics-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0467-wp-usermeta-driver-semantics-v4.test.js`. `node --check
+  test/rpp-0467-wp-usermeta-driver-semantics-v4.test.js` exited 0, `node
+  --test test/rpp-0467-wp-usermeta-driver-semantics-v4.test.js` passed 3/3,
+  `node --test test/plugin-driver-usermeta-semantics.test.js` passed 5/5, and
+  the adjacent generated/usermeta pattern passed 7/7, proving supported and
+  unsupported generated `wp_usermeta` variants, exact supported row apply
+  behavior, unsupported fail-closed refusal before mutation, hash-only evidence,
+  checklist lint, artifact redaction scan, and `git diff --check` while final
+  release remains **NO-GO**.
 - `RPP-0466` is now checked with focused wp_termmeta driver semantics variant-4
   evidence in
   `docs/evidence/rpp-0466-wp-termmeta-driver-semantics-v4.md`,
