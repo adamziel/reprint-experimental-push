@@ -63,8 +63,9 @@ The default generated run covers:
   explicit variant-3 postmeta coverage,
   `wp_comments` + `wp_commentmeta` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, `wp_terms` + `wp_termmeta` graph cases
-  with per-tier target counts and ready/stale non-ready outcomes, `wp_users`
-  + `wp_usermeta` graph cases with per-tier target counts and
+  with per-tier target counts, ready/stale non-ready outcomes, and explicit
+  variant-3 terms/termmeta graph coverage, `wp_users` + `wp_usermeta` graph
+  cases with per-tier target counts and
   ready/stale non-ready outcomes plus explicit variant-3 user/usermeta graph
   coverage, `wp_term_taxonomy` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, `wp_term_relationships`
@@ -248,6 +249,16 @@ drift that term remotely, and require the new termmeta reference to fail closed
 instead of overwriting the drifted remote. RPP-0131 now runs in the 620-case
 roster and proves one ready and one stale terms/termmeta graph case in every
 tier.
+
+RPP-0151 adds `wpTermsTermmetaGraphVariant3` coverage for the same `wp_terms`
+and `wp_termmeta` graph surface with an explicit variant-3 target tag. The
+deterministic roster emits 20 variant-3 target cases: 10 ready term/termmeta
+graph creates and 10 stale non-ready term drift cases, with two cases in every
+tier. The focused proof records only resource keys, term-id hashes, term-slug
+hashes, meta-key hashes, counts, blocker hashes, and refusal hashes; verifies
+the ready case applies both graph rows and rejects stale replay before
+mutation; then verifies the stale term reference refuses apply without mutating
+the remote digest.
 
 The `wpUsersUsermetaGraph` target coverage records per-tier counts for
 generated `wp_users` rows and their `wp_usermeta` graph relationships. Ready

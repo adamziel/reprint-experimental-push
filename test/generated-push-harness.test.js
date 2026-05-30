@@ -262,6 +262,10 @@ const requiredFamilies = [
   'wp-terms-termmeta-graph-ready',
   'wp-terms-termmeta-graph-stale',
   'wp-terms-termmeta-graph',
+  'wp-terms-termmeta-graph-v3',
+  'wp-terms-termmeta-graph-v3-ready',
+  'wp-terms-termmeta-graph-v3-stale',
+  'wp-terms-termmeta-graph-v3-non-ready',
   'wp-termmeta-create',
   'termmeta-term-graph',
   'wp-users-usermeta-graph-ready',
@@ -6326,7 +6330,98 @@ test('RPP-0111/RPP-0131 wp_terms/wp_termmeta graph target exposes per-tier ready
   }
 });
 
+test('RPP-0151 wp_terms/wp_termmeta graph variant 3 records per-tier ready and stale non-ready coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpTermsTermmetaGraphVariant3;
+
+  assert.ok(coverage, 'missing wp_terms/wp_termmeta graph variant 3 target coverage');
+  assert.equal(coverage.family, 'wp-terms-termmeta-graph-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-terms-termmeta-graph-v3']);
+  assert.equal(coverage.total, 20);
+  assert.equal(coverage.statuses.ready, 10);
+  assert.equal(nonReadyTargetCount(coverage), 10);
+  assert.ok(coverage.statuses.ready > 0, 'variant 3 target should include ready terms/termmeta graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 3 target should include non-ready stale graph cases');
+  assert.equal(report.summary.featureFamilies['wp-terms-termmeta-graph-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['wp-terms-termmeta-graph-v3-stale'], 10);
+  assert.equal(report.summary.featureFamilies['wp-terms-termmeta-graph-v3-non-ready'], 10);
+  assert.equal(JSON.stringify(report).includes('Generated term graph target'), false, 'summary leaked term name');
+  assert.equal(JSON.stringify(report).includes('generated-term-graph-'), false, 'summary leaked term slug');
+  assert.equal(JSON.stringify(report).includes('generated termmeta graph '), false, 'summary leaked termmeta value');
+  assert.equal(JSON.stringify(report).includes('Remote stale term graph target'), false, 'summary leaked remote term drift');
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const firstEvidence = generatedWpTermsTermmetaGraphVariant3Evidence(coverage);
+  const replayEvidence = generatedWpTermsTermmetaGraphVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0151 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 3 terms/termmeta evidence changed between runs');
+  assert.equal(firstEvidence.target, 'wpTermsTermmetaGraphVariant3');
+  assert.equal(firstEvidence.family, 'wp-terms-termmeta-graph-variant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.variant),
+    ['ready', 'stale-non-ready'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.status, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.deepEqual(readyCase.plannedChangeKinds, { create: 2 });
+  assert.equal(readyCase.graphMutations.term.changeKind, 'create');
+  assert.equal(readyCase.graphMutations.termmeta.changeKind, 'create');
+  assert.equal(readyCase.graphMutations.term.plannedPrecondition, true);
+  assert.equal(readyCase.graphMutations.termmeta.plannedPrecondition, true);
+  assert.equal(readyCase.graphMutations.term.appliedHash, readyCase.surface.term.localHash);
+  assert.equal(readyCase.graphMutations.termmeta.appliedHash, readyCase.surface.termmeta.localHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.notEqual(nonReadyCase.status, 'ready');
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.equal(nonReadyCase.staleBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(nonReadyCase.staleBlocker.resourceKey, nonReadyCase.surface.termmeta.resourceKey);
+  assert.equal(nonReadyCase.staleBlocker.targetResourceKey, nonReadyCase.surface.term.resourceKey);
+  assert.equal(nonReadyCase.staleBlocker.plannedMutation, false);
+  assert.deepEqual(nonReadyCase.staleBlocker.relationshipKeys, ['wp_termmeta.term_id']);
+  assert.match(nonReadyCase.staleBlocker.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Generated term graph target'), false, 'variant 3 evidence leaked term name');
+  assert.equal(evidenceText.includes('generated-term-graph-'), false, 'variant 3 evidence leaked term slug');
+  assert.equal(evidenceText.includes('generated termmeta graph '), false, 'variant 3 evidence leaked termmeta value');
+  assert.equal(evidenceText.includes('Remote stale term graph target'), false, 'variant 3 evidence leaked remote term drift');
+  assert.equal(evidenceText.includes('remote-stale-term-graph-'), false, 'variant 3 evidence leaked remote term slug');
+});
+
 function assertTermTermmetaGraphShape(testCase, { staleTarget }) {
+  assert.ok(testCase.tags.has('same-plan-graph'));
+  assert.ok(testCase.tags.has('taxonomy-graph'));
+  assert.ok(testCase.tags.has('wp-terms-termmeta-graph'));
+  assert.ok(testCase.tags.has('wp-termmeta-create'));
+
   const termRows = Object.entries(testCase.local.db.wp_terms)
     .filter(([id, row]) => !testCase.base.db.wp_terms[id]
       && row.name.startsWith('Generated term graph target '));
@@ -6337,20 +6432,351 @@ function assertTermTermmetaGraphShape(testCase, { staleTarget }) {
   assert.equal(termRows.length, staleTarget ? 0 : 1, `${testCase.id} ready graph should create one term`);
   assert.equal(termmetaRows.length, 1, `${testCase.id} should create one termmeta row`);
 
+  const [termmetaRowId, termmetaRow] = termmetaRows[0];
   const termId = staleTarget
-    ? termmetaRows[0][1].term_id
+    ? termmetaRow.term_id
     : termRows[0][1].term_id;
-  assert.equal(termmetaRows[0][1].term_id, termId);
+  const termRowId = `term_id:${termId}`;
+  assert.equal(termmetaRow.term_id, termId);
+  assert.equal(testCase.base.db.wp_termmeta[termmetaRowId], undefined);
+  assert.equal(testCase.remote.db.wp_termmeta[termmetaRowId], undefined);
+  assert.ok(testCase.local.db.wp_terms[termRowId], `${testCase.id} should have the term target locally`);
 
   if (staleTarget) {
-    const termRowId = `term_id:${termId}`;
     assert.ok(testCase.base.db.wp_terms[termRowId], `${testCase.id} stale target should exist in base`);
+    assert.deepEqual(
+      testCase.local.db.wp_terms[termRowId],
+      testCase.base.db.wp_terms[termRowId],
+      `${testCase.id} stale target should be unchanged locally`,
+    );
     assert.notDeepEqual(
       testCase.remote.db.wp_terms[termRowId],
       testCase.base.db.wp_terms[termRowId],
       `${testCase.id} stale target should drift remotely`,
     );
+    assert.ok(testCase.tags.has('stale-graph'));
+    assert.ok(testCase.tags.has('wp-terms-remote-drift'));
+  } else {
+    assert.equal(testCase.base.db.wp_terms[termRowId], undefined);
+    assert.equal(testCase.remote.db.wp_terms[termRowId], undefined);
+    assert.ok(testCase.tags.has('wp-terms-create'));
   }
+
+  return {
+    termRowId,
+    termmetaRowId,
+    termRow: testCase.local.db.wp_terms[termRowId],
+    remoteTermRow: testCase.remote.db.wp_terms[termRowId],
+    baseTermRow: testCase.base.db.wp_terms[termRowId],
+    termmetaRow,
+  };
+}
+
+function generatedWpTermsTermmetaGraphVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('wp-terms-termmeta-graph-v3')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedWpTermsTermmetaGraphVariant3CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'stale-non-ready';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 terms/termmeta target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 terms/termmeta target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'variant 3 terms/termmeta target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready terms/termmeta case');
+  assert.ok(selectedCases.has('stale-non-ready'), 'variant 3 target should select one stale non-ready terms/termmeta case');
+
+  return {
+    target: 'wpTermsTermmetaGraphVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('stale-non-ready'),
+    ],
+  };
+}
+
+function generatedWpTermsTermmetaGraphVariant3CaseEvidence(testCase, result) {
+  const staleTarget = testCase.tags.has('wp-terms-termmeta-graph-v3-stale');
+  assert.equal(
+    staleTarget,
+    testCase.family === 'wp-terms-termmeta-graph-stale',
+    `${testCase.id} variant 3 stale tag should match stale graph family`,
+  );
+  const shape = assertTermTermmetaGraphShape(testCase, { staleTarget });
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const surface = wpTermsTermmetaGraphVariant3SurfaceEvidence(testCase, shape);
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant: result.status === 'ready' ? 'ready' : 'stale-non-ready',
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    surface,
+  };
+
+  assertTermmetaGraphVariant3EvidenceRedacted(testCase, plan, shape);
+
+  if (result.status === 'ready') {
+    assert.equal(staleTarget, false, `${testCase.id} ready evidence should not use stale graph target`);
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const { plannedChangeKinds, graphMutations } = wpTermsTermmetaGraphVariant3ReadyMutationEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(result.applied, true, `${testCase.id} should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+    return {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      staleReplayRejected: result.staleReplayRejected,
+      staleReplayRejectionCode: result.staleReplayRejectionCode,
+      staleReplayRemoteUnchanged: result.staleReplayRemoteUnchanged,
+      plannedChangeKinds,
+      graphMutations,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        plannedChangeKinds,
+        graphMutations,
+      })}`,
+    };
+  }
+
+  assert.equal(staleTarget, true, `${testCase.id} non-ready evidence should use stale graph target`);
+  assert.notEqual(plan.status, 'ready', `${testCase.id} should plan as non-ready`);
+  assert.notEqual(result.status, 'ready', `${testCase.id} should validate as non-ready`);
+  assert.equal(result.applied, false, `${testCase.id} must not apply`);
+
+  const staleBlocker = wpTermsTermmetaGraphVariant3StaleBlockerEvidence({ testCase, plan, shape });
+  const refusal = wpTermsTermmetaGraphVariant3RefusalEvidence(testCase, plan);
+
+  return {
+    ...commonEvidence,
+    applied: result.applied,
+    staleBlocker,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      staleBlocker,
+      refusal,
+    })}`,
+  };
+}
+
+function wpTermsTermmetaGraphVariant3SurfaceEvidence(testCase, shape) {
+  const termResource = rowResource('wp_terms', shape.termRowId);
+  const termmetaResource = rowResource('wp_termmeta', shape.termmetaRowId);
+
+  return {
+    term: {
+      resourceKey: termResource.key,
+      baseHash: resourceHash(testCase.base, termResource),
+      localHash: resourceHash(testCase.local, termResource),
+      remoteHash: resourceHash(testCase.remote, termResource),
+      termIdHash: `sha256:${digest(shape.termRowId)}`,
+      slugHash: `sha256:${digest(shape.termRow.slug)}`,
+    },
+    termmeta: {
+      resourceKey: termmetaResource.key,
+      baseHash: resourceHash(testCase.base, termmetaResource),
+      localHash: resourceHash(testCase.local, termmetaResource),
+      remoteHash: resourceHash(testCase.remote, termmetaResource),
+      termIdHash: `sha256:${digest(String(shape.termmetaRow.term_id))}`,
+      metaKeyHash: `sha256:${digest(shape.termmetaRow.meta_key)}`,
+    },
+  };
+}
+
+function wpTermsTermmetaGraphVariant3ReadyMutationEvidence({ testCase, plan, applied, shape }) {
+  const expected = [
+    { label: 'term', resource: rowResource('wp_terms', shape.termRowId), changeKind: 'create' },
+    { label: 'termmeta', resource: rowResource('wp_termmeta', shape.termmetaRowId), changeKind: 'create' },
+  ];
+  const mutations = new Map(plan.mutations.map((mutation) => [mutation.resourceKey, mutation]));
+  const preconditions = new Map(plan.preconditions.map((precondition) => [precondition.resourceKey, precondition]));
+  const plannedChangeKinds = {};
+  const graphMutations = {};
+
+  for (const { label, resource, changeKind } of expected) {
+    const mutation = mutations.get(resource.key);
+    const precondition = preconditions.get(resource.key);
+    const localHash = resourceHash(testCase.local, resource);
+    const appliedHash = resourceHash(applied.site, resource);
+
+    assert.ok(mutation, `${testCase.id} should plan ${label} graph mutation for ${resource.key}`);
+    assert.ok(precondition, `${testCase.id} should precondition ${label} graph mutation for ${resource.key}`);
+    assert.equal(mutation.action, 'put');
+    assert.equal(mutation.changeKind, changeKind);
+    assert.equal(precondition.mutationId, mutation.id);
+    assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+    assert.equal(appliedHash, localHash, `${testCase.id} did not apply local ${label} graph row`);
+    incrementCount(plannedChangeKinds, changeKind);
+
+    graphMutations[label] = {
+      resourceKey: resource.key,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      preconditionExpectedHash: precondition.expectedHash,
+      appliedHash,
+      plannedMutation: true,
+      plannedPrecondition: true,
+      mutationHash: `sha256:${digest({
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        changeKind: mutation.changeKind,
+        localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+      })}`,
+    };
+  }
+
+  return {
+    plannedChangeKinds: sortStringObject(plannedChangeKinds),
+    graphMutations,
+  };
+}
+
+function wpTermsTermmetaGraphVariant3StaleBlockerEvidence({ testCase, plan, shape }) {
+  const termResourceKey = rowResourceKey('wp_terms', shape.termRowId);
+  const termmetaResourceKey = rowResourceKey('wp_termmeta', shape.termmetaRowId);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === termmetaResourceKey
+    && entry.references?.some((reference) => reference.targetResourceKey === termResourceKey));
+  const termDecision = plan.decisions.find((entry) => entry.resourceKey === termResourceKey);
+  const plannedMutation = plan.mutations.some((mutation) =>
+    mutation.resourceKey === termResourceKey || mutation.resourceKey === termmetaResourceKey);
+
+  assert.ok(blocker, `${testCase.id} should report a stale terms/termmeta graph blocker`);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.ok(termDecision, `${testCase.id} should keep the stale remote term`);
+  assert.equal(termDecision.decision, 'keep-remote');
+  assert.equal(plannedMutation, false, `${testCase.id} should not plan stale terms/termmeta graph mutations`);
+
+  return {
+    resourceKey: blocker.resourceKey,
+    class: blocker.class,
+    plannedMutation,
+    relationshipKeys: blocker.references.map((reference) => reference.relationshipKey).sort(),
+    targetResourceKey: termResourceKey,
+    targetChange: blocker.references.find((reference) => reference.targetResourceKey === termResourceKey).targetChange,
+    blockerHash: `sha256:${digest(blocker)}`,
+    decision: {
+      resourceKey: termDecision.resourceKey,
+      decision: termDecision.decision,
+      decisionHash: `sha256:${digest(termDecision)}`,
+    },
+  };
+}
+
+function wpTermsTermmetaGraphVariant3RefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} non-ready plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} non-ready refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
+}
+
+function assertTermmetaGraphVariant3EvidenceRedacted(testCase, plan, shape) {
+  const termResourceKey = rowResourceKey('wp_terms', shape.termRowId);
+  const termmetaResourceKey = rowResourceKey('wp_termmeta', shape.termmetaRowId);
+  const relatedMutations = plan.mutations.filter((mutation) =>
+    mutation.resourceKey === termResourceKey || mutation.resourceKey === termmetaResourceKey);
+  const relatedBlockers = plan.blockers.filter((blocker) =>
+    blocker.resourceKey === termmetaResourceKey
+    || blocker.references?.some((reference) => reference.targetResourceKey === termResourceKey));
+  const relatedDecisions = plan.decisions.filter((decision) => decision.resourceKey === termResourceKey);
+
+  if (plan.status === 'ready') {
+    assert.equal(relatedMutations.length, 2, `${testCase.id} should mutate term and termmeta rows`);
+  } else {
+    assert.ok(relatedBlockers.length >= 1, `${testCase.id} should have termmeta graph blockers`);
+  }
+
+  const redacted = redactEvidence({
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    tags: [...testCase.tags].sort(),
+    status: plan.status,
+    summary: plan.summary,
+    mutations: relatedMutations,
+    blockers: relatedBlockers,
+    decisions: relatedDecisions,
+    rawTermGraphProbe: {
+      value: {
+        localTerm: shape.termRow,
+        remoteTerm: shape.remoteTermRow,
+        baseTerm: shape.baseTermRow,
+        termmeta: shape.termmetaRow,
+      },
+    },
+  });
+  const serialized = JSON.stringify(redacted);
+
+  assert.ok(serialized.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} should redact raw terms/termmeta evidence`);
+  assert.match(serialized, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash-only terms/termmeta values`);
+  assert.equal(serialized.includes('Generated term graph target'), false, `${testCase.id} leaked raw term name`);
+  assert.equal(serialized.includes('generated-term-graph-'), false, `${testCase.id} leaked raw term slug`);
+  assert.equal(serialized.includes('generated termmeta graph '), false, `${testCase.id} leaked raw termmeta value`);
+  assert.equal(serialized.includes('Remote stale term graph target'), false, `${testCase.id} leaked remote term drift`);
+  assert.equal(serialized.includes('remote-stale-term-graph-'), false, `${testCase.id} leaked remote term slug`);
 }
 
 test('RPP-0112/RPP-0132 wp_term_taxonomy graph target exposes redacted per-tier ready and stale coverage', () => {
