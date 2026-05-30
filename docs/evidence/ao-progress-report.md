@@ -1,18 +1,32 @@
-# AO Progress Report - 2026-05-30 03:25 CEST
+# AO Progress Report - 2026-05-30 03:30 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0433 stale owner
-plugin file refusal refresh ending at `8f8b44a60`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0234
+already-in-sync decision safety refresh ending at `9919e831e`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 307 are
-  checked from integrated evidence and 693 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 308 are
+  checked from integrated evidence and 692 remain open.
+- `RPP-0234` is now checked with focused already-in-sync decision safety
+  evidence in `docs/evidence/rpp-0234-already-in-sync-decision-v2.md`,
+  `docs/scenario-matrix.md`, and
+  `test/rpp-0234-already-in-sync-decision-v2.test.js`. `node --check
+  test/rpp-0234-already-in-sync-decision-v2.test.js` exited 0, `node --test
+  --test-name-pattern=RPP-0234
+  test/rpp-0234-already-in-sync-decision-v2.test.js` passed 1/1, the focused
+  `already-in-sync|RPP-0214|RPP-0234` planner pattern passed 2/2, and
+  `node --test test/push-planner.test.js
+  test/rpp-0234-already-in-sync-decision-v2.test.js` passed 148/148, proving
+  already-in-sync resources emit no mutations or preconditions, forged
+  overwrite attempts fail before durable journal or mutation, the remote
+  snapshot is preserved, and evidence stays hash-only while final release
+  remains **NO-GO**.
 - `RPP-0433` is now checked with focused stale owner plugin file refusal
   evidence in
   `docs/evidence/rpp-0433-owner-context-stale-plugin-file-refusal.md` and

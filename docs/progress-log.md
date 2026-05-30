@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:25 CEST.
+- Last update: 2026-05-30 03:30 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0433 stale owner plugin file refusal merge ending at `8f8b44a60`.
+  the RPP-0234 already-in-sync decision safety merge ending at `9919e831e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 307
-  items checked and leaves 693 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 308
+  items checked and leaves 692 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   42 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 51 generated
-  harness items, and 35 merge-invariant items. No release-ops items are checked
+  harness items, and 36 merge-invariant items. No release-ops items are checked
   yet.
+- Focused already-in-sync decision safety refresh: the current lane now
+  contains `RPP-0234` evidence in
+  `docs/evidence/rpp-0234-already-in-sync-decision-v2.md`,
+  `docs/scenario-matrix.md`, and
+  `test/rpp-0234-already-in-sync-decision-v2.test.js`. `node --check
+  test/rpp-0234-already-in-sync-decision-v2.test.js` exited 0, `node --test
+  --test-name-pattern=RPP-0234
+  test/rpp-0234-already-in-sync-decision-v2.test.js` passed 1/1, the focused
+  `already-in-sync|RPP-0214|RPP-0234` planner pattern passed 2/2, and
+  `node --test test/push-planner.test.js
+  test/rpp-0234-already-in-sync-decision-v2.test.js` passed 148/148. The proof
+  keeps already-in-sync resources mutation-free and precondition-free, rejects
+  forged overwrite attempts before durable journal or mutation, preserves the
+  remote snapshot, and keeps serialized evidence hash-only. Checklist lint,
+  artifact redaction scan, and `git diff --check` also passed. Counts are now
+  308/692; final release remains `NO-GO`.
 - Focused stale owner plugin file refusal refresh: the current lane now
   contains `RPP-0433` evidence in
   `docs/evidence/rpp-0433-owner-context-stale-plugin-file-refusal.md` and
