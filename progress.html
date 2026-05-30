@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T17:27:00+02:00">Last updated: May 30, 2026, 17:27 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T17:32:00+02:00">Last updated: May 30, 2026, 17:32 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>488</strong>
+        <strong>489</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>512</strong>
+        <strong>511</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, credential rotation, manage_options, capability downgrade rejection, production-shaped preflight, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, and audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, credential rotation, manage_options, capability downgrade rejection, short-lived push-session receipt binding, production-shaped preflight, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,18 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0718</span>
+        <span>RPP-0528</span>
       </div>
-      <p>The latest refresh integrates RPP-0718 timeout-budget proof: the guarded-executor benchmark now records a chunk transfer attempt that stops before the next unacknowledged chunk would exceed the bounded budget, resumes only from exact durable chunk receipts, uploads the remaining chunks, and opens mutation apply only after file staging finalizes. Counts are now 488/512; final release remains NO-GO because this is lab guarded-executor timeout evidence, not production transport deadline, storage receipt, row batching, atomic commit, or rollback proof.</p>
+      <p>The latest refresh integrates RPP-0528 short-lived push-session proof: production-shaped preflight rejects caller-supplied sessions, mints a 300-second server-issued token stored by hashed option key, dry-run receipts bind scope, identity, production auth session, push-session issue facts, and canonical plan hash, and apply recomputes the bindings before mutation. Counts are now 489/511; final release remains NO-GO because this is local-loopback Playground evidence with labBacked true, not external production endpoint proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0528 focused: 4/4</span>
+        <span class="tag">auth/session adjacent: 15/15</span>
+        <span class="tag">route smoke: pass</span>
+        <span class="tag">plan hash matched</span>
+        <span class="tag">same session hash</span>
+        <span class="tag">same identity/scope hash</span>
+        <span class="tag">pre-valid DB mutations: 0</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0718 focused: 1/1</span>
         <span class="tag">guarded executor adjacent: 10/10</span>
         <span class="tag">timeout before apply</span>
@@ -1164,7 +1172,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 488/1000</span>
+        <span class="tag">checked goals: 489/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>

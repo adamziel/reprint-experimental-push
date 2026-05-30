@@ -51,15 +51,24 @@ The production-shaped route smoke returned:
 node --check scripts/playground/production-shaped-route-smoke.mjs
 node --check test/rpp-0528-short-lived-push-session-v2.test.js
 node --test test/rpp-0528-short-lived-push-session-v2.test.js
+node --test test/rpp-0528-short-lived-push-session-v2.test.js test/short-lived-push-session.test.js test/session-source-url-binding.test.js test/rpp-0510-session-user-identity-binding.test.js test/rpp-0518-capability-downgrade-rejection.test.js
 timeout 300s node scripts/playground/production-shaped-route-smoke.mjs
+node scripts/release/checklist-completion-lint.mjs --root .
+node scripts/release/artifact-redaction-scan.mjs docs/evidence/rpp-0528-short-lived-push-session-v2.md docs/reprint-push-completion-checklist.md
+git diff --check
+git diff --cached --check
 ```
 
 Observed result: each command exited 0. The focused Node test reported 4
-subtests ok. The local route smoke exercised the production-shaped preflight,
-dry-run, apply, replay, conflict, journal, and recovery paths; the RPP-0528
-dry-run receipt binding summary reported `planHashMatches: true`,
-`sameSession: true`, `sameSessionHash: true`, `sameIdentityHash: true`, and
-`sameScopeHash: true`.
+subtests ok and the adjacent auth/session slice reported 15 subtests ok. The
+local route smoke exercised the production-shaped preflight, dry-run, apply,
+replay, conflict, journal, and recovery paths; the RPP-0528 dry-run receipt
+binding summary reported `planHashMatches: true`, `sameSession: true`,
+`sameSessionHash: true`, `sameIdentityHash: true`, and `sameScopeHash: true`,
+with zero DB mutation rows before valid apply. Checklist lint and scoped
+artifact redaction scan returned ok, and the exact credential raw scan found no
+raw session, signature, Authorization, or Application Password material in the
+touched docs.
 
 ## Residual risks
 

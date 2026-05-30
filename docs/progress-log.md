@@ -6,19 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 17:27 CEST +02:00.
+- Last update: 2026-05-30 17:32 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0718 timeout budget proof merge ending at `f78eb2a`.
+  the RPP-0528 short-lived push session proof merge ending at `b91ec51d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 488
-  items checked and leaves 512 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 489
+  items checked and leaves 511 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  84 plugin-driver boundary items, 30 executor/auth items, 39 recovery items,
+  84 plugin-driver boundary items, 31 executor/auth items, 39 recovery items,
   22 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Short-lived push session proof v2: the current lane now contains `RPP-0528`
+  evidence in
+  `docs/evidence/rpp-0528-short-lived-push-session-v2.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-route-smoke.mjs`, and
+  `test/rpp-0528-short-lived-push-session-v2.test.js`. The production-shaped
+  preflight path rejects caller-supplied sessions and mints an opaque
+  300-second server-issued push session stored by hashed option key with
+  `autoload = no`; dry-run receipts bind authenticated scope, WordPress
+  identity, production auth session, short-lived push-session issue facts, and
+  canonical plan hash; apply recomputes the subject and issue bindings before
+  mutation and rejects mismatches as `AUTH_RECEIPT_MISMATCH`. Validation passed
+  with Node syntax checks, focused RPP-0528 coverage 4/4, adjacent auth/session
+  coverage 15/15, sandbox-local production-shaped route smoke, checklist lint,
+  scoped artifact redaction scan, exact credential raw scan, and merge diff
+  whitespace checks. The route smoke reported plan hash matched, same session,
+  same session hash, same identity hash, same scope hash, and zero DB mutation
+  rows before valid apply. Counts are now 489/511; final release remains
+  `NO-GO` because this is local-loopback Playground evidence with
+  `labBacked: true`, not an external production endpoint proof.
 - Timeout budget proof: the current lane now contains `RPP-0718` evidence in
   `docs/evidence/rpp-0718-timeout-budget-proof.md`,
   `docs/reprint-push-completion-checklist.md`,
