@@ -130,6 +130,17 @@ ready case and one non-ready case, and keeps the evidence hash-only while
 verifying ready apply, live-remote preconditions, stale replay refusal, and
 non-ready conflict apply refusal without mutating the remote digest.
 
+RPP-0185 adds `wpOptionsScalarChangesReleaseVerifierVariant5` coverage for the
+same regular scalar option update surface with an explicit release-verifier-v5
+target tag. The deterministic roster emits 20 variant-5 target cases: 10 ready
+scalar option updates and 10 non-ready remote-drift conflicts, with two cases
+in every tier. The focused proof records only resource keys, scalar value
+kinds, planner summaries, mutation/conflict/refusal hashes, and model proof
+hashes, verifies the ready scalar update applies with a live-remote
+precondition and rejects stale replay with `PRECONDITION_FAILED` before
+mutation, then verifies the conflicting scalar option refuses apply with
+`PLAN_NOT_READY` before mutation.
+
 The `wpOptionsSerialized` surface seeds regular, non-plugin-owned `wp_options`
 rows with PHP-serialized option strings that include public labels plus private
 fields such as `private_notes` and `auth_token`. Ready cases update the
