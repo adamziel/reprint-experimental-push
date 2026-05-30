@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 494.
-- Remaining open: 506.
+- Verified complete: 495.
+- Remaining open: 505.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -308,7 +308,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [x] RPP-0284 (Near-Mid / merge-invariants) Carry through the release verifier for local directory delete versus remote descendant create, variant 5. Success: scenario matrix row names the behavior and command.
 - [ ] RPP-0285 (Near-Mid / merge-invariants) Carry through the release verifier for local file type swap versus remote descendant, variant 5. Success: progress log records the command and caveat.
 - [x] RPP-0286 (Near-Mid / merge-invariants) Carry through the release verifier for remote-only plugin metadata preservation, variant 5. Success: node test proves the invariant over generated and focused fixtures.
-- [ ] RPP-0287 (Near-Mid / merge-invariants) Carry through the release verifier for local plugin data with stale owner context, variant 5. Success: executor rejects forged or stale mutation attempts.
+- [x] RPP-0287 (Near-Mid / merge-invariants) Carry through the release verifier for local plugin data with stale owner context, variant 5. Success: executor rejects forged or stale mutation attempts.
 - [ ] RPP-0288 (Near-Mid / merge-invariants) Carry through the release verifier for unknown plugin-owned resource refusal, variant 5. Success: no raw private value appears in serialized plan evidence.
 - [ ] RPP-0289 (Near-Mid / merge-invariants) Carry through the release verifier for conflict evidence hash redaction, variant 5. Success: scenario matrix row names the behavior and command.
 - [ ] RPP-0290 (Near-Mid / merge-invariants) Carry through the release verifier for planner summary count consistency, variant 5. Success: progress log records the command and caveat.
