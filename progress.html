@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T23:21:00+02:00">Last updated: May 30, 2026, 23:21 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T23:23:00+02:00">Last updated: May 30, 2026, 23:23 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>536</strong>
+        <strong>537</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>464</strong>
+        <strong>463</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -406,10 +406,17 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0337</span>
+        <span>RPP-0336</span>
       </div>
-      <p>The latest refresh checks RPP-0337 with focused graph-identity proof for serialized block reference detection variant 2: a core/media-text block in post_excerpt points mediaId at a non-attachment page target, the planner blocks the source row with hash-only target evidence, emits no mutation or precondition, and apply refuses with PLAN_NOT_READY before mutation. Counts are now 536/464; final release remains NO-GO because this is local graph evidence, not production-backed release proof.</p>
+      <p>The latest refresh checks RPP-0336 with focused graph-identity proof for wp_navigation fail-closed references variant 2: unmapped wp_navigation postmeta targets stop with hash-only stale graph identity evidence, apply refuses before mutation, and the explicit identity-map path rewrites wp_postmeta.post_id only when the remote target is proven. Counts are now 537/463; final release remains NO-GO because this is local graph evidence, not production-backed release proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0336 focused: 2/2</span>
+        <span class="tag">RPP-0316/0376/0396: 9/9</span>
+        <span class="tag">wp_navigation postmeta target</span>
+        <span class="tag">identity-map rewrite</span>
+        <span class="tag">PLAN_NOT_READY before mutation</span>
+        <span class="tag">hash-only evidence: pass</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0337 focused: 1/1</span>
         <span class="tag">RPP-0317/0377/0397: 7/7</span>
         <span class="tag">core/media-text mediaId</span>
