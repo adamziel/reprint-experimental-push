@@ -6,20 +6,40 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 18:36 CEST +02:00.
+- Last update: 2026-05-30 18:42 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0393 term relationship object reference release-verifier proof merge
-  ending at `b7e7326`.
+  the RPP-0394 term relationship taxonomy reference release-verifier proof
+  merge ending at `9849730`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 503
-  items checked and leaves 497 open.
-- Checked slices: 100 release-gate foundation items, 63 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 504
+  items checked and leaves 496 open.
+- Checked slices: 100 release-gate foundation items, 64 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Term relationship taxonomy reference release-verifier proof v5: the current
+  lane now contains `RPP-0394` evidence in
+  `docs/evidence/rpp-0394-term-relationship-taxonomy-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0394-term-relationship-taxonomy-reference-release-verifier-v5.test.js`.
+  The local release-verifier proof builds a ready category taxonomy graph with
+  `wp_terms`, `wp_term_taxonomy`, `wp_term_relationships`, and `wp_termmeta`
+  mutations, then proves the relationship row carries
+  `term_taxonomy_id:72911` through live-remote precondition binding, apply-time
+  revalidation, and post-apply evidence. Negative coverage tampers the
+  relationship target and omits relationship apply revalidation so the focused
+  carry-through proof fails closed; the omitted-revalidation case also makes
+  local production release evidence return `ok: false`. Validation passed with
+  Node syntax checks, focused RPP-0394 coverage 2/2, adjacent category taxonomy
+  coverage 5/5, adjacent generated term-relationship coverage 3/3, adjacent
+  planner/custom taxonomy coverage 6/6, hygiene coverage 23/23, checklist lint,
+  scoped artifact redaction scan, raw fixture scan, and merge diff whitespace
+  checks. Counts are now 504/496; final release remains `NO-GO` because this
+  is local support-only release-verifier evidence, not production-backed
+  release evidence.
 - Term relationship object reference release-verifier proof v5: the current
   lane now contains `RPP-0393` evidence in
   `docs/evidence/rpp-0393-term-relationship-object-reference-release-verifier-v5.md`,
