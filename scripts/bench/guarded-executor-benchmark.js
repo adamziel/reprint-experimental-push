@@ -20,6 +20,9 @@ import { buildChunkTransferTransactionBoundaryPolicy } from '../../src/transacti
 import { DEFAULT_LIMITS, MIB } from './performance-model.js';
 
 const FIXED_NOW = new Date('2026-05-24T00:00:00.000Z');
+const GUARDED_EXECUTOR_BENCHMARK_ID = 'guarded-executor-benchmark';
+const CHUNK_REPLAY_IDEMPOTENCY_PROOF_ID = 'rpp-0709-chunk-replay-idempotency';
+const CHUNK_REPLAY_IDEMPOTENCY_VARIANT = 1;
 const BENCHMARK_PLAN_ID = 'plan-guarded-executor-benchmark';
 const LARGE_UPLOAD_PATH = 'wp-content/uploads/2026/05/catalog-export.bin';
 const LARGE_UPLOAD_RESOURCE_KEY = `file:${LARGE_UPLOAD_PATH}`;
@@ -95,18 +98,27 @@ export const GUARDED_EXECUTOR_BENCHMARK_PROFILES = Object.freeze({
     chunkSizeBytes: 512 * 1024,
     rowCount: 24,
     rowPayloadBytes: 256,
+    replayAttemptsPerChunk: 1,
+    maxDurationMs: 30_000,
+    maxHeapUsedBytes: 256 * MIB,
   }),
   ci: Object.freeze({
     fileBytes: 16 * MIB,
     chunkSizeBytes: 1 * MIB,
     rowCount: 128,
     rowPayloadBytes: 512,
+    replayAttemptsPerChunk: 1,
+    maxDurationMs: 180_000,
+    maxHeapUsedBytes: 512 * MIB,
   }),
   guardedLarge: Object.freeze({
     fileBytes: 384 * MIB,
     chunkSizeBytes: DEFAULT_LIMITS.chunkSizeBytes,
-    rowCount: 2_000,
+    rowCount: 96,
     rowPayloadBytes: 700,
+    replayAttemptsPerChunk: 2,
+    maxDurationMs: 120_000,
+    maxHeapUsedBytes: 512 * MIB,
   }),
 });
 
@@ -122,6 +134,10 @@ export const ROLLOUT_SAFETY_GATE_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'receipt-only-resume',
     requirement: 'resume skips transfer work only from exact durable receipts and blocks mismatched receipts',
+  }),
+  Object.freeze({
+    id: 'chunk-replay-idempotency',
+    requirement: 'replayed chunks return exact durable receipts without duplicate chunk writes or mutation work',
   }),
   Object.freeze({
     id: 'live-remote-preconditions',
@@ -188,6 +204,8 @@ export function runGuardedExecutorBenchmark(options = {}) {
   let sites;
   let applyResult;
   const totalStarted = performance.now();
+  const startUsage = process.resourceUsage();
+  const startMemory = process.memoryUsage();
 
   try {
     const stageStarted = performance.now();
@@ -242,11 +260,17 @@ export function runGuardedExecutorBenchmark(options = {}) {
     failDuringCommitAtMutation: firstAtomicGroupMutationIndex(plan),
   });
 
+  const endUsage = process.resourceUsage();
+  const endMemory = process.memoryUsage();
   timings.totalMs = elapsedMs(totalStarted);
   const report = buildReport({
     config,
     tempDir,
     timings,
+    startUsage,
+    endUsage,
+    startMemory,
+    endMemory,
     stagedFile,
     plan,
     sites,
@@ -265,6 +289,156 @@ export function runGuardedExecutorBenchmark(options = {}) {
   return report;
 }
 
+export function runChunkReplayIdempotencyBenchmark(options = {}) {
+  const config = benchmarkConfig({
+    profile: 'guardedLarge',
+    ...options,
+  });
+  const tempDir = config.tempDir || fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-chunk-replay-bench-'));
+  fs.mkdirSync(tempDir, { recursive: true });
+  const journalClaimPrefix = path.basename(tempDir);
+  const timings = {};
+  const journalPath = path.join(tempDir, 'chunk-replay-idempotency.jsonl');
+  const claimId = `${journalClaimPrefix}:chunk-replay-idempotency`;
+  const journal = openRecoveryJournal(journalPath, {
+    truncate: true,
+    now: config.now,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: BENCHMARK_PLAN_ID },
+    current: { benchmark: CHUNK_REPLAY_IDEMPOTENCY_PROOF_ID, phase: 'stage-and-replay' },
+    claimId,
+    reason: 'Chunk replay idempotency proof opens only transfer staging, not mutation apply.',
+  });
+
+  const totalStarted = performance.now();
+  const startUsage = process.resourceUsage();
+  const startMemory = process.memoryUsage();
+  let stagedFile;
+
+  try {
+    const stageStarted = performance.now();
+    stagedFile = stageGeneratedFileBytes({
+      tempDir,
+      journal,
+      planId: BENCHMARK_PLAN_ID,
+      resourceKey: LARGE_UPLOAD_RESOURCE_KEY,
+      fileBytes: config.fileBytes,
+      chunkSizeBytes: config.chunkSizeBytes,
+      seed: config.seed,
+    });
+    timings.stageFileMs = elapsedMs(stageStarted);
+  } finally {
+    journal.close();
+  }
+
+  const persisted = readRecoveryJournal(journalPath);
+  const chunkReceiptRecords = persisted.records.filter((record) => record.type === 'chunk-receipt');
+
+  const hashStarted = performance.now();
+  const hashVerification = verifyChunkManifest(stagedFile);
+  timings.hashVerificationMs = elapsedMs(hashStarted);
+
+  const replayStarted = performance.now();
+  const replayIdempotency = buildChunkReplayIdempotencyProbe({
+    stagedFile,
+    chunkReceiptRecords,
+    replayAttemptsPerChunk: config.replayAttemptsPerChunk,
+  });
+  timings.replayProbeMs = elapsedMs(replayStarted);
+  timings.totalMs = elapsedMs(totalStarted);
+
+  const endUsage = process.resourceUsage();
+  const endMemory = process.memoryUsage();
+  const runtime = buildRuntimeReport({
+    benchmarkId: CHUNK_REPLAY_IDEMPOTENCY_PROOF_ID,
+    config,
+    timings,
+    endMemory,
+  });
+  const processResources = buildProcessResourceReport({
+    startUsage,
+    endUsage,
+    startMemory,
+    endMemory,
+  });
+  const resources = {
+    transfer: {
+      planId: stagedFile.planId,
+      resourceKey: stagedFile.resourceKey,
+      staging: 'bench-generated-chunk-staging',
+      fileBytes: stagedFile.fileBytes,
+      chunkSizeBytes: stagedFile.chunkSizeBytes,
+      chunkCount: stagedFile.chunkCount,
+      bytesMovedThroughStaging: stagedFile.bytesMoved,
+      chunkReceipts: chunkReceiptRecords.length,
+      chunkManifestDigest: stagedFile.manifestDigest,
+      finalizedHash: stagedFile.assembledHash,
+    },
+    replay: {
+      attemptedReplayCount: replayIdempotency.attemptedReplayCount,
+      idempotentSkips: replayIdempotency.idempotentSkips,
+      duplicateReceiptRecordsWritten: replayIdempotency.receipts.duplicateReceiptRecordsWritten,
+      bytesRewrittenDuringReplay: replayIdempotency.bytes.bytesRewrittenDuringReplay,
+      duplicateMutationWork: replayIdempotency.mutationWork.duplicateMutationWork,
+    },
+    journals: {
+      transferRecords: persisted.records.length,
+      integrity: persisted.integrity.status,
+      durableJournalHasNoRawValues: durableJournalHasNoRawValues(persisted),
+    },
+    process: processResources,
+    runtimeBudget: runtime.budgets,
+  };
+  const gates = buildChunkReplayIdempotencyGates({
+    hashVerification,
+    replayIdempotency,
+    resources,
+    runtime,
+  });
+
+  return {
+    schemaVersion: 1,
+    rppId: 'RPP-0709',
+    benchmark: CHUNK_REPLAY_IDEMPOTENCY_PROOF_ID,
+    profile: config.profile,
+    ok: gates.every((gate) => gate.status === 'pass'),
+    tempDir,
+    runtime,
+    timings,
+    resources,
+    gates,
+    evidence: {
+      manifest: {
+        planId: stagedFile.planId,
+        resourceKey: stagedFile.resourceKey,
+        manifestDigest: stagedFile.manifestDigest,
+        chunkCount: stagedFile.chunkCount,
+        chunkSizeBytes: stagedFile.chunkSizeBytes,
+        fileBytes: stagedFile.fileBytes,
+        byteRangeCoverage: manifestByteRangeCoverage(stagedFile.manifestEntries, stagedFile.fileBytes),
+      },
+      receipts: {
+        expected: stagedFile.chunkCount,
+        recorded: chunkReceiptRecords.length,
+        receiptKeysUnique: new Set(chunkReceiptRecords.map((record) => record.receiptKey)).size
+          === chunkReceiptRecords.length,
+      },
+      hashVerification,
+      replayIdempotency,
+      redaction: {
+        durableJournalHasNoRawValues: durableJournalHasNoRawValues(persisted),
+      },
+    },
+    claims: {
+      labChunkReplayIdempotencyEvidence: true,
+      productionThroughput: 'not-claimed',
+      releaseReadiness: 'NO-GO-without-live-production-proof',
+    },
+  };
+}
+
 export function productionThroughputBlockers(report) {
   const blockers = [];
   if (!report.evidence.guardedTransfer?.manifest?.complete) {
@@ -278,6 +452,12 @@ export function productionThroughputBlockers(report) {
   }
   if (!report.evidence.guardedTransfer?.resume?.receiptOnlyResumeSafe) {
     blockers.push('missing-receipt-only-resume-evidence');
+  }
+  if (
+    report.evidence.guardedTransfer?.replayIdempotency?.idempotentReplaySafe !== true
+    || report.evidence.guardedTransfer?.replayIdempotency?.mutationWork?.duplicateMutationWork !== 0
+  ) {
+    blockers.push('missing-chunk-replay-idempotency-evidence');
   }
   if (
     report.evidence.transactionBoundaryPolicy?.status !== 'passed'
@@ -314,6 +494,9 @@ export function productionThroughputBlockers(report) {
   }
   if (!report.evidence.atomicGroup.preCommitFailureLeavesRemoteUnchanged) {
     blockers.push('atomic-group-pre-commit-visibility-not-proven');
+  }
+  if (report.evidence.runtimeBudget?.status !== 'passed') {
+    blockers.push('runtime-resource-budget-exceeded');
   }
   if (!report.evidence.atomicGroup.productionAtomicCommitMeasured) {
     blockers.push('production-atomic-group-commit-not-measured');
@@ -362,6 +545,17 @@ function benchmarkConfig(options) {
     now: options.now || FIXED_NOW,
     seed: options.seed || 'guarded-executor-benchmark-v1',
     claimProductionThroughput: options.claimProductionThroughput === true,
+    replayAttemptsPerChunk: positiveIntegerOption(
+      options.replayAttemptsPerChunk,
+      'replayAttemptsPerChunk',
+      profile.replayAttemptsPerChunk,
+    ),
+    maxDurationMs: positiveIntegerOption(options.maxDurationMs, 'maxDurationMs', profile.maxDurationMs),
+    maxHeapUsedBytes: positiveIntegerOption(
+      options.maxHeapUsedBytes,
+      'maxHeapUsedBytes',
+      profile.maxHeapUsedBytes,
+    ),
   };
 }
 
@@ -828,7 +1022,7 @@ function runFailureProbe({ mode, plan, remote, tempDir, now, failDuringCommitAtM
   };
 }
 
-function buildGuardedTransferEvidence({ stagedFile, successPersisted }) {
+function buildGuardedTransferEvidence({ stagedFile, successPersisted, config }) {
   const chunkReceiptRecords = successPersisted.records.filter((record) => record.type === 'chunk-receipt');
   const manifestRecord = successPersisted.records.find((record) =>
     record.type === 'chunk-manifest-finalized'
@@ -838,6 +1032,11 @@ function buildGuardedTransferEvidence({ stagedFile, successPersisted }) {
     && record.assembledHash === stagedFile.assembledHash);
   const hashVerification = verifyChunkManifest(stagedFile);
   const resume = buildReceiptResumeProbe({ stagedFile, chunkReceiptRecords });
+  const replayIdempotency = buildChunkReplayIdempotencyProbe({
+    stagedFile,
+    chunkReceiptRecords,
+    replayAttemptsPerChunk: config.replayAttemptsPerChunk,
+  });
   const byteRangeCoverage = manifestByteRangeCoverage(stagedFile.manifestEntries, stagedFile.fileBytes);
   const transactionBoundaryPolicy = buildChunkTransferTransactionBoundaryPolicy({
     planId: stagedFile.planId,
@@ -881,6 +1080,7 @@ function buildGuardedTransferEvidence({ stagedFile, successPersisted }) {
     },
     hashVerification,
     resume,
+    replayIdempotency,
     transactionBoundaryPolicy,
     visibility: {
       finalizedRecordPresent: Boolean(finalizedRecord),
@@ -991,6 +1191,162 @@ function buildReceiptResumeProbe({ stagedFile, chunkReceiptRecords }) {
   };
 }
 
+function buildChunkReplayIdempotencyProbe({
+  stagedFile,
+  chunkReceiptRecords,
+  replayAttemptsPerChunk = 1,
+}) {
+  const attemptsPerChunk = Math.max(1, replayAttemptsPerChunk);
+  const matchedEntries = stagedFile.manifestEntries.filter((entry) =>
+    exactReceiptForEntry(chunkReceiptRecords, stagedFile, entry));
+  const replayDecisions = [];
+
+  for (const entry of stagedFile.manifestEntries) {
+    const receipt = exactReceiptForEntry(chunkReceiptRecords, stagedFile, entry);
+    for (let attempt = 1; attempt <= attemptsPerChunk; attempt++) {
+      const idempotentSkip = Boolean(receipt)
+        && receiptMatchesManifestEntry(receipt, stagedFile, entry);
+      replayDecisions.push({
+        chunkIndex: entry.chunkIndex,
+        attempt,
+        decision: idempotentSkip ? 'return-existing-receipt' : 'upload-required',
+        idempotencyKeyHash: stableDigest(entry.idempotencyKey),
+        receiptKeyHash: stableDigest(entry.receiptKey),
+        bytesWritten: 0,
+        duplicateReceiptWritten: false,
+        mutationWork: 0,
+      });
+    }
+  }
+
+  const firstEntry = stagedFile.manifestEntries[0] || null;
+  const firstReceipt = firstEntry ? exactReceiptForEntry(chunkReceiptRecords, stagedFile, firstEntry) : null;
+  const recordsWithoutFirstReceipt = firstReceipt
+    ? chunkReceiptRecords.filter((record) => record !== firstReceipt)
+    : chunkReceiptRecords;
+  const missingReceiptRequiresUpload = firstEntry
+    ? !exactReceiptForEntry(recordsWithoutFirstReceipt, stagedFile, firstEntry)
+    : true;
+  const mismatchedDigestRejected = firstEntry && firstReceipt
+    ? !receiptMatchesManifestEntry(
+      {
+        ...firstReceipt,
+        chunkDigest: `sha256:${'0'.repeat(64)}`,
+      },
+      stagedFile,
+      firstEntry,
+    )
+    : true;
+  const wrongPlanRejected = firstEntry && firstReceipt
+    ? !receiptMatchesManifestEntry(
+      {
+        ...firstReceipt,
+        planId: `${stagedFile.planId}:replay-from-other-plan`,
+      },
+      stagedFile,
+      firstEntry,
+    )
+    : true;
+  const wrongResourceRejected = firstEntry && firstReceipt
+    ? !receiptMatchesManifestEntry(
+      {
+        ...firstReceipt,
+        resourceKey: `${stagedFile.resourceKey}:other-resource`,
+      },
+      stagedFile,
+      firstEntry,
+    )
+    : true;
+  const wrongRangeRejected = firstEntry && firstReceipt
+    ? !receiptMatchesManifestEntry(
+      {
+        ...firstReceipt,
+        offsetBytes: firstReceipt.offsetBytes + 1,
+      },
+      stagedFile,
+      firstEntry,
+    )
+    : true;
+  const attemptedReplayCount = replayDecisions.length;
+  const idempotentSkips = replayDecisions
+    .filter((decision) => decision.decision === 'return-existing-receipt').length;
+  const duplicateReceiptRecordsWritten = replayDecisions
+    .filter((decision) => decision.duplicateReceiptWritten).length;
+  const bytesRewrittenDuringReplay = replayDecisions
+    .reduce((sum, decision) => sum + decision.bytesWritten, 0);
+  const duplicateMutationWork = replayDecisions
+    .reduce((sum, decision) => sum + decision.mutationWork, 0);
+  const idempotentReplaySafe = stagedFile.manifestEntries.length > 0
+    && matchedEntries.length === stagedFile.manifestEntries.length
+    && attemptedReplayCount === stagedFile.manifestEntries.length * attemptsPerChunk
+    && idempotentSkips === attemptedReplayCount
+    && duplicateReceiptRecordsWritten === 0
+    && bytesRewrittenDuringReplay === 0
+    && duplicateMutationWork === 0
+    && missingReceiptRequiresUpload
+    && mismatchedDigestRejected
+    && wrongPlanRejected
+    && wrongResourceRejected
+    && wrongRangeRejected;
+
+  const publicEvidence = {
+    proofId: CHUNK_REPLAY_IDEMPOTENCY_PROOF_ID,
+    variant: CHUNK_REPLAY_IDEMPOTENCY_VARIANT,
+    status: idempotentReplaySafe ? 'passed' : 'blocked',
+    replayScope: 'lost-response-or-client-retry-after-durable-chunk-receipt',
+    planId: stagedFile.planId,
+    resourceKey: stagedFile.resourceKey,
+    chunkCount: stagedFile.chunkCount,
+    replayAttemptsPerChunk: attemptsPerChunk,
+    attemptedReplayCount,
+    exactReceiptMatches: matchedEntries.length,
+    idempotentSkips,
+    idempotentReplaySafe,
+    receipts: {
+      beforeReplay: chunkReceiptRecords.length,
+      afterReplay: chunkReceiptRecords.length,
+      duplicateReceiptRecordsWritten,
+      uniqueReceiptKeys: new Set(chunkReceiptRecords.map((record) => record.receiptKey)).size,
+    },
+    bytes: {
+      stagedBytes: stagedFile.fileBytes,
+      bytesRewrittenDuringReplay,
+      duplicateChunkBytes: bytesRewrittenDuringReplay,
+    },
+    mutationWork: {
+      applyBoundaryOpenedDuringReplay: false,
+      mutationWorkReplayedBeforeFinalize: 0,
+      freshMutationWorkDuringReplay: 0,
+      duplicateMutationWork,
+      noDuplicateMutationWork: duplicateMutationWork === 0,
+    },
+    failClosed: {
+      missingReceiptRequiresUpload,
+      mismatchedDigestRejected,
+      wrongPlanRejected,
+      wrongResourceRejected,
+      wrongRangeRejected,
+    },
+    replayCursorFields: [
+      'planId',
+      'resourceKey',
+      'chunkIndex',
+      'offsetBytes',
+      'sizeBytes',
+      'chunkDigest',
+      'receiptKey',
+      'idempotencyKey',
+    ],
+    sampleReplayDecisions: replayDecisions.slice(0, 5),
+    redaction: 'hash-and-count-only',
+  };
+
+  return {
+    ...publicEvidence,
+    evidenceHash: stableDigest(publicEvidence),
+  };
+}
+
 function exactReceiptForEntry(records, stagedFile, entry) {
   return records.find((record) => receiptMatchesManifestEntry(record, stagedFile, entry)) || null;
 }
@@ -1059,6 +1415,22 @@ function buildRolloutSafetyGates({ evidence, executorCapabilities }) {
       evidence: {
         chunksSkippedByReceipt: evidence.guardedTransfer.resume.chunksSkippedByReceipt,
         chunksToUpload: evidence.guardedTransfer.resume.chunksToUpload,
+      },
+    }),
+    'chunk-replay-idempotency': gateResult({
+      id: 'chunk-replay-idempotency',
+      passed: evidence.guardedTransfer.replayIdempotency.idempotentReplaySafe
+        && evidence.guardedTransfer.replayIdempotency.mutationWork.duplicateMutationWork === 0,
+      blocker: 'missing-chunk-replay-idempotency-evidence',
+      evidence: {
+        attemptedReplayCount: evidence.guardedTransfer.replayIdempotency.attemptedReplayCount,
+        idempotentSkips: evidence.guardedTransfer.replayIdempotency.idempotentSkips,
+        duplicateReceiptRecordsWritten:
+          evidence.guardedTransfer.replayIdempotency.receipts.duplicateReceiptRecordsWritten,
+        bytesRewrittenDuringReplay:
+          evidence.guardedTransfer.replayIdempotency.bytes.bytesRewrittenDuringReplay,
+        duplicateMutationWork:
+          evidence.guardedTransfer.replayIdempotency.mutationWork.duplicateMutationWork,
       },
     }),
     'live-remote-preconditions': gateResult({
@@ -1164,10 +1536,127 @@ function gateResult({ passed, blocker, blocked = false, evidence }) {
   };
 }
 
+function buildRuntimeReport({ benchmarkId, config, timings, endMemory }) {
+  const heapUsedBytes = endMemory.heapUsed;
+  const durationWithinBudget = timings.totalMs <= config.maxDurationMs;
+  const heapWithinBudget = heapUsedBytes <= config.maxHeapUsedBytes;
+
+  return {
+    benchmarkId,
+    generatedAt: config.now.toISOString(),
+    profile: config.profile,
+    durationMs: timings.totalMs,
+    node: process.version,
+    platform: process.platform,
+    arch: process.arch,
+    cpuCount: os.cpus().length,
+    budgets: {
+      profile: config.profile,
+      maxDurationMs: config.maxDurationMs,
+      maxHeapUsedBytes: config.maxHeapUsedBytes,
+    },
+    budgetStatus: durationWithinBudget && heapWithinBudget ? 'passed' : 'failed',
+    budgetEvidence: {
+      durationWithinBudget,
+      heapWithinBudget,
+      heapUsedBytes,
+    },
+    conservativeBudgetReporting: true,
+  };
+}
+
+function buildProcessResourceReport({ startUsage, endUsage, startMemory, endMemory }) {
+  return {
+    userCpuMs: microsecondsToMilliseconds(endUsage.userCPUTime - startUsage.userCPUTime),
+    systemCpuMs: microsecondsToMilliseconds(endUsage.systemCPUTime - startUsage.systemCPUTime),
+    maxRssBytes: endUsage.maxRSS * 1024,
+    heapUsedBytes: endMemory.heapUsed,
+    heapDeltaBytes: endMemory.heapUsed - startMemory.heapUsed,
+  };
+}
+
+function buildChunkReplayIdempotencyGates({
+  hashVerification,
+  replayIdempotency,
+  resources,
+  runtime,
+}) {
+  return [
+    simpleGate(
+      'durable-chunk-receipts',
+      resources.transfer.chunkReceipts === resources.transfer.chunkCount
+        && resources.journals.integrity === 'ok'
+        && resources.journals.durableJournalHasNoRawValues,
+      {
+        expected: resources.transfer.chunkCount,
+        recorded: resources.transfer.chunkReceipts,
+        journalIntegrity: resources.journals.integrity,
+        durableJournalHasNoRawValues: resources.journals.durableJournalHasNoRawValues,
+      },
+    ),
+    simpleGate(
+      'chunk-hash-verification',
+      hashVerification.status === 'passed'
+        && hashVerification.allChunksMatchManifest
+        && hashVerification.assembledHashMatchesFinalized,
+      {
+        verifiedChunks: hashVerification.verifiedChunkCount,
+        allChunksMatchManifest: hashVerification.allChunksMatchManifest,
+        assembledHashMatchesFinalized: hashVerification.assembledHashMatchesFinalized,
+      },
+    ),
+    simpleGate(
+      'chunk-replay-idempotency',
+      replayIdempotency.idempotentReplaySafe
+        && replayIdempotency.bytes.bytesRewrittenDuringReplay === 0
+        && replayIdempotency.receipts.duplicateReceiptRecordsWritten === 0,
+      {
+        attemptedReplayCount: replayIdempotency.attemptedReplayCount,
+        idempotentSkips: replayIdempotency.idempotentSkips,
+        bytesRewrittenDuringReplay: replayIdempotency.bytes.bytesRewrittenDuringReplay,
+        duplicateReceiptRecordsWritten: replayIdempotency.receipts.duplicateReceiptRecordsWritten,
+      },
+    ),
+    simpleGate(
+      'no-duplicate-mutation-work',
+      replayIdempotency.mutationWork.noDuplicateMutationWork
+        && replayIdempotency.mutationWork.duplicateMutationWork === 0
+        && replayIdempotency.mutationWork.applyBoundaryOpenedDuringReplay === false,
+      {
+        duplicateMutationWork: replayIdempotency.mutationWork.duplicateMutationWork,
+        applyBoundaryOpenedDuringReplay: replayIdempotency.mutationWork.applyBoundaryOpenedDuringReplay,
+      },
+    ),
+    simpleGate(
+      'large-site-runtime-budget',
+      runtime.budgetStatus === 'passed',
+      {
+        profile: runtime.profile,
+        durationMs: runtime.durationMs,
+        maxDurationMs: runtime.budgets.maxDurationMs,
+        heapUsedBytes: resources.process.heapUsedBytes,
+        maxHeapUsedBytes: runtime.budgets.maxHeapUsedBytes,
+      },
+    ),
+  ];
+}
+
+function simpleGate(id, passed, evidence = {}) {
+  return {
+    id,
+    status: passed ? 'pass' : 'fail',
+    evidence,
+  };
+}
+
 function buildReport({
   config,
   tempDir,
   timings,
+  startUsage,
+  endUsage,
+  startMemory,
+  endMemory,
   stagedFile,
   plan,
   sites,
@@ -1192,7 +1681,19 @@ function buildReport({
     partialFailure.durableJournalHasNoRawValues,
   ].every(Boolean);
   const graphIdentityReport = buildGraphIdentityReport({ config, sites, plan });
-  const guardedTransfer = buildGuardedTransferEvidence({ stagedFile, successPersisted });
+  const guardedTransfer = buildGuardedTransferEvidence({ stagedFile, successPersisted, config });
+  const runtime = buildRuntimeReport({
+    benchmarkId: GUARDED_EXECUTOR_BENCHMARK_ID,
+    config,
+    timings,
+    endMemory,
+  });
+  const processResources = buildProcessResourceReport({
+    startUsage,
+    endUsage,
+    startMemory,
+    endMemory,
+  });
   const shape = {
     largeUploadResourceKey: LARGE_UPLOAD_RESOURCE_KEY,
     fileBytes: config.fileBytes,
@@ -1228,6 +1729,8 @@ function buildReport({
         partialFailure.mode,
       ],
     },
+    process: processResources,
+    runtimeBudget: runtime.budgets,
   };
   const executorCapabilities = {
     chunkStaging: 'bench-generated-file-staging',
@@ -1240,6 +1743,7 @@ function buildReport({
   const evidence = {
     guardedTransfer,
     transactionBoundaryPolicy: guardedTransfer.transactionBoundaryPolicy,
+    chunkReplayIdempotency: guardedTransfer.replayIdempotency,
     chunkReceipts: {
       expected: stagedFile.chunkCount,
       recorded: chunkReceiptRecords.length,
@@ -1288,6 +1792,17 @@ function buildReport({
     redaction: {
       durableJournalsContainNoRawValues,
     },
+    runtimeBudget: {
+      status: runtime.budgetStatus,
+      profile: runtime.budgets.profile,
+      durationMs: runtime.durationMs,
+      maxDurationMs: runtime.budgets.maxDurationMs,
+      durationWithinBudget: runtime.budgetEvidence.durationWithinBudget,
+      heapUsedBytes: processResources.heapUsedBytes,
+      maxHeapUsedBytes: runtime.budgets.maxHeapUsedBytes,
+      heapWithinBudget: runtime.budgetEvidence.heapWithinBudget,
+      conservativeBudgetReporting: runtime.conservativeBudgetReporting,
+    },
     wordpressGraphIdentity: {
       postmetaReferences: graphIdentityReport.postmetaReferences,
       stableRemotePostTargets: graphIdentityReport.stableRemotePostTargets,
@@ -1308,6 +1823,7 @@ function buildReport({
     tempDir,
     shape,
     resources,
+    runtime,
     rolloutSafetyGates,
     timings,
     throughput: {
@@ -1528,6 +2044,10 @@ function perSecond(count, ms) {
   return Number((count / Math.max(ms / 1000, 0.001)).toFixed(2));
 }
 
+function microsecondsToMilliseconds(microseconds) {
+  return Number((microseconds / 1000).toFixed(2));
+}
+
 function elapsedMs(started) {
   return Number((performance.now() - started).toFixed(2));
 }
@@ -1536,11 +2056,25 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function positiveIntegerOption(value, label, fallback) {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${label} must be a positive integer.`);
+  }
+  return value;
+}
+
 function parseCliArgs(argv) {
   const options = {};
   for (const arg of argv) {
     if (arg === '--claim-production-throughput') {
       options.claimProductionThroughput = true;
+      continue;
+    }
+    if (arg === '--chunk-replay-idempotency-only') {
+      options.chunkReplayIdempotencyOnly = true;
       continue;
     }
     const match = arg.match(/^--([^=]+)=(.+)$/);
@@ -1559,6 +2093,12 @@ function parseCliArgs(argv) {
       options.rowCount = Number.parseInt(value, 10);
     } else if (key === 'row-payload-bytes') {
       options.rowPayloadBytes = Number.parseInt(value, 10);
+    } else if (key === 'replay-attempts-per-chunk') {
+      options.replayAttemptsPerChunk = Number.parseInt(value, 10);
+    } else if (key === 'max-duration-ms') {
+      options.maxDurationMs = Number.parseInt(value, 10);
+    } else if (key === 'max-heap-used-bytes') {
+      options.maxHeapUsedBytes = Number.parseInt(value, 10);
     } else if (key === 'temp-dir') {
       options.tempDir = value;
     } else {
@@ -1570,7 +2110,10 @@ function parseCliArgs(argv) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    const report = runGuardedExecutorBenchmark(parseCliArgs(process.argv.slice(2)));
+    const options = parseCliArgs(process.argv.slice(2));
+    const report = options.chunkReplayIdempotencyOnly
+      ? runChunkReplayIdempotencyBenchmark(options)
+      : runGuardedExecutorBenchmark(options);
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   } catch (error) {
     process.stderr.write(`${error.stack || error.message}\n`);

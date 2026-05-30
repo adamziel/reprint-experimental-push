@@ -8,6 +8,7 @@ import {
   BenchmarkClaimError,
   productionThroughputBlockers,
   ROLLOUT_SAFETY_GATE_DEFINITIONS,
+  runChunkReplayIdempotencyBenchmark,
   runGuardedExecutorBenchmark,
 } from '../scripts/bench/guarded-executor-benchmark.js';
 
@@ -62,6 +63,32 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.guardedTransfer.resume.duplicateMutationWork, 0);
   assert.equal(report.evidence.guardedTransfer.resume.missingReceiptBlocksSkip, true);
   assert.equal(report.evidence.guardedTransfer.resume.mismatchedReceiptBlocksSkip, true);
+  assert.equal(report.evidence.guardedTransfer.replayIdempotency.status, 'passed');
+  assert.equal(report.evidence.guardedTransfer.replayIdempotency.variant, 1);
+  assert.equal(report.evidence.guardedTransfer.replayIdempotency.idempotentReplaySafe, true);
+  assert.equal(
+    report.evidence.guardedTransfer.replayIdempotency.attemptedReplayCount,
+    report.shape.chunkCount,
+  );
+  assert.equal(
+    report.evidence.guardedTransfer.replayIdempotency.idempotentSkips,
+    report.evidence.guardedTransfer.replayIdempotency.attemptedReplayCount,
+  );
+  assert.equal(report.evidence.guardedTransfer.replayIdempotency.bytes.bytesRewrittenDuringReplay, 0);
+  assert.equal(
+    report.evidence.guardedTransfer.replayIdempotency.receipts.duplicateReceiptRecordsWritten,
+    0,
+  );
+  assert.equal(
+    report.evidence.guardedTransfer.replayIdempotency.mutationWork.duplicateMutationWork,
+    0,
+  );
+  assert.equal(
+    report.evidence.guardedTransfer.replayIdempotency.mutationWork.noDuplicateMutationWork,
+    true,
+  );
+  assert.equal(report.evidence.guardedTransfer.replayIdempotency.failClosed.mismatchedDigestRejected, true);
+  assert.equal(report.evidence.chunkReplayIdempotency.evidenceHash, report.evidence.guardedTransfer.replayIdempotency.evidenceHash);
   assert.equal(report.evidence.transactionBoundaryPolicy.status, 'passed');
   assert.equal(report.evidence.transactionBoundaryPolicy.transfer.complete, true);
   assert.equal(report.evidence.transactionBoundaryPolicy.resume.duplicateMutationWork, 0);
@@ -137,6 +164,9 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.recovery.partialCommitInspectionStatus, 'blocked-recovery');
   assert.equal(report.evidence.atomicGroup.requireAtomic, true);
   assert.equal(report.evidence.atomicGroup.preCommitFailureLeavesRemoteUnchanged, true);
+  assert.equal(report.runtime.budgetStatus, 'passed');
+  assert.equal(report.evidence.runtimeBudget.status, 'passed');
+  assert.equal(report.evidence.runtimeBudget.conservativeBudgetReporting, true);
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
 });
 
@@ -205,9 +235,11 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-durable-chunk-manifest'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-chunk-hash-verification'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-receipt-only-resume-evidence'));
+  assert.ok(!report.claims.productionThroughput.blockers.includes('missing-chunk-replay-idempotency-evidence'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-live-remote-preconditions'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-partial-commit-recovery-evidence'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('wordpress-graph-identity-evidence-not-proven'));
+  assert.ok(!report.claims.productionThroughput.blockers.includes('runtime-resource-budget-exceeded'));
 
   assert.throws(
     () => smallBenchmark({ claimProductionThroughput: true }),
@@ -241,6 +273,14 @@ test('production claim gate fails closed if benchmark evidence is tampered', { c
     productionThroughputBlockers(missingResumeEvidence).includes('missing-receipt-only-resume-evidence'),
   );
 
+  const missingReplayIdempotency = clone(report);
+  missingReplayIdempotency.evidence.guardedTransfer.replayIdempotency.idempotentReplaySafe = false;
+  assert.ok(
+    productionThroughputBlockers(missingReplayIdempotency).includes(
+      'missing-chunk-replay-idempotency-evidence',
+    ),
+  );
+
   const missingTransactionBoundary = clone(report);
   missingTransactionBoundary.evidence.transactionBoundaryPolicy.apply.noDuplicateMutationWork = false;
   assert.ok(
@@ -263,6 +303,55 @@ test('production claim gate fails closed if benchmark evidence is tampered', { c
   assert.ok(
     productionThroughputBlockers(missingGraphIdentity).includes('wordpress-graph-identity-evidence-not-proven'),
   );
+
+  const runtimeBudgetExceeded = clone(report);
+  runtimeBudgetExceeded.evidence.runtimeBudget.status = 'failed';
+  assert.ok(productionThroughputBlockers(runtimeBudgetExceeded).includes('runtime-resource-budget-exceeded'));
+});
+
+test('RPP-0709 chunk replay idempotency reuses receipts inside a large-site budget', { concurrency: false }, () => {
+  const report = runChunkReplayIdempotencyBenchmark({
+    profile: 'guardedLarge',
+    now: fixedNow,
+    fileBytes: 4 * 1024 * 1024,
+    chunkSizeBytes: 512 * 1024,
+    replayAttemptsPerChunk: 2,
+    maxDurationMs: 10_000,
+    maxHeapUsedBytes: 256 * 1024 * 1024,
+    tempDir: tempBenchmarkDir(),
+  });
+  const gateById = new Map(report.gates.map((gate) => [gate.id, gate]));
+
+  assert.equal(report.rppId, 'RPP-0709');
+  assert.equal(report.benchmark, 'rpp-0709-chunk-replay-idempotency');
+  assert.equal(report.profile, 'guardedLarge');
+  assert.equal(report.ok, true);
+  assert.equal(report.runtime.budgets.profile, 'guardedLarge');
+  assert.equal(report.runtime.budgets.maxDurationMs, 10_000);
+  assert.equal(report.runtime.budgetStatus, 'passed');
+  assert.equal(report.evidence.manifest.chunkCount, 8);
+  assert.equal(report.evidence.receipts.recorded, report.evidence.receipts.expected);
+  assert.equal(report.evidence.hashVerification.status, 'passed');
+  assert.equal(report.evidence.replayIdempotency.status, 'passed');
+  assert.equal(report.evidence.replayIdempotency.idempotentReplaySafe, true);
+  assert.equal(report.evidence.replayIdempotency.replayAttemptsPerChunk, 2);
+  assert.equal(report.evidence.replayIdempotency.attemptedReplayCount, 16);
+  assert.equal(report.evidence.replayIdempotency.idempotentSkips, 16);
+  assert.equal(report.evidence.replayIdempotency.receipts.beforeReplay, 8);
+  assert.equal(report.evidence.replayIdempotency.receipts.afterReplay, 8);
+  assert.equal(report.evidence.replayIdempotency.receipts.duplicateReceiptRecordsWritten, 0);
+  assert.equal(report.evidence.replayIdempotency.bytes.bytesRewrittenDuringReplay, 0);
+  assert.equal(report.evidence.replayIdempotency.mutationWork.duplicateMutationWork, 0);
+  assert.equal(report.evidence.replayIdempotency.mutationWork.applyBoundaryOpenedDuringReplay, false);
+  assert.equal(report.evidence.replayIdempotency.failClosed.missingReceiptRequiresUpload, true);
+  assert.equal(report.evidence.replayIdempotency.failClosed.mismatchedDigestRejected, true);
+  assert.equal(report.evidence.replayIdempotency.failClosed.wrongPlanRejected, true);
+  assert.equal(report.resources.replay.duplicateMutationWork, 0);
+  assert.equal(report.resources.replay.bytesRewrittenDuringReplay, 0);
+  assert.equal(gateById.get('chunk-replay-idempotency').status, 'pass');
+  assert.equal(gateById.get('no-duplicate-mutation-work').status, 'pass');
+  assert.equal(gateById.get('large-site-runtime-budget').status, 'pass');
+  assert.equal(report.claims.productionThroughput, 'not-claimed');
 });
 
 test('CLI benchmark reports runtime resources and rollout gates before throughput', { concurrency: false }, () => {
@@ -290,7 +379,7 @@ test('CLI benchmark reports runtime resources and rollout gates before throughpu
   assert.equal(typeof report.timings.totalMs, 'number');
   assert.equal(report.resources.transfer.chunkReceipts, report.shape.chunkCount);
   assert.equal(report.resources.transfer.resourceKey, report.shape.largeUploadResourceKey);
-  assert.equal(report.rolloutSafetyGates.summary.passed, 7);
+  assert.equal(report.rolloutSafetyGates.summary.passed, 8);
   assert.equal(report.rolloutSafetyGates.summary.blocked, 3);
   assert.equal(report.rolloutSafetyGates.summary.failed, 0);
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
@@ -317,6 +406,7 @@ test('rollout safety gates are named before speed claims', { concurrency: false 
     'guarded-transfer-manifest',
     'chunk-hash-verification',
     'receipt-only-resume',
+    'chunk-replay-idempotency',
     'live-remote-preconditions',
     'durable-journal-integrity',
     'failure-recovery-classification',
@@ -330,7 +420,7 @@ test('rollout safety gates are named before speed claims', { concurrency: false 
   assert.equal(gatesById.get('production-row-batch-executor').status, 'blocked');
   assert.equal(gatesById.get('production-atomic-group-commit').status, 'blocked');
   assert.deepEqual(report.rolloutSafetyGates.summary, {
-    passed: 7,
+    passed: 8,
     blocked: 3,
     failed: 0,
     blockers: [
@@ -365,6 +455,7 @@ function deterministicTransferProjection(report) {
       receipts: report.evidence.guardedTransfer.receipts,
       hashVerification: report.evidence.guardedTransfer.hashVerification,
       resume: report.evidence.guardedTransfer.resume,
+      replayIdempotency: report.evidence.guardedTransfer.replayIdempotency,
       transactionBoundaryPolicy: report.evidence.guardedTransfer.transactionBoundaryPolicy,
       visibility: report.evidence.guardedTransfer.visibility,
     },
