@@ -469,9 +469,6 @@ function redactedPluginDriverApplyValidationEvidence(evidence) {
 function validatePluginOwnedOwnerContext(remote, mutation, owner) {
   const ownerContext = mutation.pluginOwnedResource?.ownerContext;
   if (!Array.isArray(ownerContext) || ownerContext.length === 0) {
-    if (mutation.pluginOwnedResource?.ownerContextRequired !== true) {
-      return;
-    }
     throw new PushPlanError(
       'STALE_PLUGIN_OWNER_CONTEXT',
       `Refusing to apply plugin-owned resource ${mutation.resourceKey} without live owner context evidence.`,
