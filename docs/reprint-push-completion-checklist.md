@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 463.
-- Remaining open: 537.
+- Verified complete: 464.
+- Remaining open: 536.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -670,7 +670,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [x] RPP-0626 (Far / recovery) Prove journal pagination, variant 2. Success: MySQL or SQLite-backed test proves the recovery state.
 - [x] RPP-0627 (Far / recovery) Prove restart-readable open state, variant 2. Success: journal rows are durable after process restart.
 - [x] RPP-0628 (Far / recovery) Prove restart-readable staged state, variant 2. Success: retry does not overwrite preserved remote changes.
-- [ ] RPP-0629 (Far / recovery) Prove restart-readable committed state, variant 2. Success: lease owner identity is visible in audit evidence.
+- [x] RPP-0629 (Far / recovery) Prove restart-readable committed state, variant 2. Success: lease owner identity is visible in audit evidence.
 - [ ] RPP-0630 (Far / recovery) Prove old remote recovery classification, variant 2. Success: release verifier reports the recovery gate as proven on the same path.
 - [ ] RPP-0631 (Far / recovery) Prove new remote recovery classification, variant 2. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0632 (Far / recovery) Prove blocked recovery classification, variant 2. Success: journal rows are durable after process restart.
