@@ -366,6 +366,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-terms-termmeta-graph-variant4',
     tag: 'wp-terms-termmeta-graph-v4',
   },
+  wpTermsTermmetaGraphReleaseVerifierVariant5: {
+    family: 'wp-terms-termmeta-graph-release-verifier-v5',
+    tag: 'wp-terms-termmeta-graph-release-verifier-v5',
+  },
   wpUsersUsermetaGraph: {
     family: 'wp-users-usermeta-graph-ready',
     tag: 'wp-users-usermeta-graph',
@@ -4462,6 +4466,7 @@ function addWpTermsTermmetaGraph(local, remote, allocator, tags, { staleTarget, 
   tags.add('wp-terms-termmeta-graph');
   tags.add('wp-terms-termmeta-graph-v3');
   tags.add('wp-terms-termmeta-graph-v4');
+  tags.add('wp-terms-termmeta-graph-release-verifier-v5');
   tags.add('wp-terms-create');
   tags.add('wp-termmeta-create');
   tags.add('termmeta-term-graph');
@@ -4475,9 +4480,12 @@ function addWpTermsTermmetaGraph(local, remote, allocator, tags, { staleTarget, 
     tags.add('wp-terms-termmeta-graph-v3-non-ready');
     tags.add('wp-terms-termmeta-graph-v4-stale');
     tags.add('wp-terms-termmeta-graph-v4-non-ready');
+    tags.add('wp-terms-termmeta-graph-release-verifier-v5-stale');
+    tags.add('wp-terms-termmeta-graph-release-verifier-v5-non-ready');
   } else {
     tags.add('wp-terms-termmeta-graph-v3-ready');
     tags.add('wp-terms-termmeta-graph-v4-ready');
+    tags.add('wp-terms-termmeta-graph-release-verifier-v5-ready');
   }
 }
 
