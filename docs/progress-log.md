@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 12:58 CEST.
+- Last update: 2026-05-30 13:02 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0617 before-mutation process kill merge ending at `e8d5bd6e`.
+  the RPP-0620 manual recovery audit export merge ending at `fffb62a2`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 434
-  items checked and leaves 566 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 435
+  items checked and leaves 565 open.
 - Checked slices: 100 release-gate foundation items, 45 graph identity items,
-  73 plugin-driver boundary items, 23 executor/auth items, 24 recovery items,
+  73 plugin-driver boundary items, 23 executor/auth items, 25 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Manual recovery audit export: the current lane now contains `RPP-0620`
+  evidence in
+  `docs/evidence/rpp-0620-manual-recovery-audit-export.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-live-release-verify-lib.js`,
+  `src/recovery-audit-export.js`, and
+  `test/rpp-0620-manual-recovery-audit-export.test.js`. The new export builder
+  writes hash-only recovery inspection evidence with target before/after/observed
+  hashes, counts, rollback boundary, journal summary, and a non-mutating manual
+  operator decision template, and the release verifier now reports
+  `checks.manualRecoveryAuditExport` on the same recovery gate path. Validation
+  passed with Node syntax checks, focused RPP-0620 coverage 2/2 after updating
+  the fixture for the current RPP-0615/RPP-0616 proof requirements, release
+  proof/recovery journal slice 2/2, recovery repair 5/5, full
+  production-shaped proof coverage 123/134 with 11 live-only skips, checklist
+  lint, scoped artifact redaction scan, and merge diff whitespace checks. Counts
+  are now 435/565; final release remains `NO-GO` because this is local
+  release-verifier evidence, not external production operator workflow proof.
 - Process kill before first mutation: the current lane now contains `RPP-0617`
   evidence in
   `docs/evidence/rpp-0617-process-kill-before-first-mutation.md`,
