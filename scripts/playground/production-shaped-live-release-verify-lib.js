@@ -72,6 +72,17 @@ export function buildDurableRecoveryJournalReleaseProof({
   const applyRevalidationRecovery = applyRevalidation?.recoveryInspect?.recovery || {};
   const applyRevalidationCounts = applyRevalidationRecovery?.counts || {};
   const replay = releaseProof?.replay?.idempotency || {};
+  const rejectedApply = applyRevalidation?.apply || {};
+  const rejectedReplay = applyRevalidation?.replay || {};
+  const rejectedReplayOrdering = applyRevalidation?.dbJournal?.ordering || {};
+  const rejectedReplayOnCheckedRecoveryPath = Boolean(
+    releaseSummary?.boundary?.verdict === 'LIVE_RELEASE_BOUNDARY_OK'
+    && (
+      applyRevalidation?.boundary?.verdict === 'LIVE_RELEASE_BOUNDARY_OK'
+      || applyRevalidation?.boundary?.durableJournal?.verdict === 'LIVE_RELEASE_BOUNDARY_OK'
+      || applyRevalidation?.durableJournal?.checkedAccepted === true
+    ),
+  );
   const conflict = releaseProof?.idempotencyConflict || {};
   const mutationApplied = releaseProof?.dbJournal?.mutationApplied ?? null;
   const expectedMutationEvents = Number.isInteger(planMutationCount) ? planMutationCount : mutationApplied;
@@ -175,6 +186,45 @@ export function buildDurableRecoveryJournalReleaseProof({
     conflictEventSequence: conflictEvent?.sequence ?? null,
     mutationEventsAfterConflict: mutationEventsAfterConflict.length,
   };
+  const sameKeyReplayAfterRejection = {
+    proved: Boolean(
+      applyRevalidation?.ok === true
+      && rejectedReplayOnCheckedRecoveryPath
+      && rejectedApply?.status === 412
+      && rejectedApply?.code === 'PRECONDITION_FAILED'
+      && rejectedApply?.applied === 0
+      && rejectedApply?.applyRevalidation?.phase === 'before-first-mutation'
+      && rejectedReplay?.status === rejectedApply.status
+      && rejectedReplay?.code === rejectedApply.code
+      && rejectedReplay?.replayed === true
+      && rejectedReplay?.freshMutationWork === false
+      && rejectedReplay?.preservedRemoteUnchanged === true
+      && rejectedReplayOrdering?.ordered === true
+      && positiveInteger(rejectedReplayOrdering?.applyRejected)
+      && positiveInteger(rejectedReplayOrdering?.applyReplayed)
+      && rejectedReplayOrdering.applyRejected < rejectedReplayOrdering.applyReplayed
+      && rejectedReplayOrdering?.mutationAppliedBeforeFailure === 0
+      && rejectedReplayOrdering?.applyCommitted === false
+    ),
+    status: rejectedReplay?.status ?? null,
+    code: rejectedReplay?.code || null,
+    replayed: rejectedReplay?.replayed === true,
+    freshMutationWork: rejectedReplay?.freshMutationWork === true,
+    preservedRemoteUnchanged: rejectedReplay?.preservedRemoteUnchanged === true,
+    applyStatus: rejectedApply?.status ?? null,
+    applyCode: rejectedApply?.code || null,
+    applyApplied: Number.isInteger(rejectedApply?.applied) ? rejectedApply.applied : null,
+    applyRevalidationPhase: rejectedApply?.applyRevalidation?.phase || null,
+    sameCheckedRecoveryPath: rejectedReplayOnCheckedRecoveryPath,
+    releaseBoundaryVerdict: releaseSummary?.boundary?.verdict || null,
+    applyRevalidationBoundaryVerdict: applyRevalidation?.boundary?.verdict || null,
+    applyRevalidationDurableJournalVerdict: applyRevalidation?.boundary?.durableJournal?.verdict || null,
+    applyRevalidationDurableJournalAccepted: applyRevalidation?.durableJournal?.checkedAccepted === true,
+    applyRejectedSequence: rejectedReplayOrdering?.applyRejected ?? null,
+    applyReplayedSequence: rejectedReplayOrdering?.applyReplayed ?? null,
+    mutationAppliedBeforeFailure: rejectedReplayOrdering?.mutationAppliedBeforeFailure ?? null,
+    applyCommitted: rejectedReplayOrdering?.applyCommitted === true,
+  };
   const partialStates = {
     old: {
       proved: oldRemoteRecoveryClassification.proved === true,
@@ -247,6 +297,7 @@ export function buildDurableRecoveryJournalReleaseProof({
     recoveryInspectAfterRestart: recoveryInspectAfterRestart.proved === true,
     sameKeyBodyReplay: sameKeyBodyReplay.proved === true,
     sameKeyDifferentBodyConflict: sameKeyDifferentBodyConflict.proved === true,
+    sameKeyReplayAfterRejection: sameKeyReplayAfterRejection.proved === true,
     oldState: partialStates.old.proved === true,
     newState: partialStates.new.proved === true,
     blockedState: partialStates.blocked.proved === true,
@@ -270,6 +321,7 @@ export function buildDurableRecoveryJournalReleaseProof({
     recoveryInspectAfterRestart,
     sameKeyBodyReplay,
     sameKeyDifferentBodyConflict,
+    sameKeyReplayAfterRejection,
     partialStates,
     preservedRejectedRemoteEvidence,
   };
