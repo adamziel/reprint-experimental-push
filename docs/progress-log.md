@@ -6,19 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 12:13 CEST.
+- Last update: 2026-05-30 12:16 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0386 comment parent release-verifier proof merge ending at `7ce032a9`.
+  the RPP-0387 comment user release-verifier proof merge ending at `e4653a32`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 426
-  items checked and leaves 574 open.
-- Checked slices: 100 release-gate foundation items, 43 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 427
+  items checked and leaves 573 open.
+- Checked slices: 100 release-gate foundation items, 44 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Comment user reference release-verifier proof: the current lane now contains
+  `RPP-0387` evidence in
+  `docs/evidence/rpp-0387-comment-user-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0387-comment-user-reference-release-verifier-v5.test.js`. `node
+  --check` passed for the focused test, focused RPP-0387 coverage passed 2/2,
+  adjacent RPP-0307 comment-user coverage passed 2/2, the planner/generated
+  comment-user subset passed 2/2, and adjacent hash-only support coverage
+  passed 4/4. Checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 427/573; final release remains
+  `NO-GO`.
 - Comment parent thread reference release-verifier proof: the current lane now
   contains `RPP-0386` evidence in
   `docs/evidence/rpp-0386-comment-parent-thread-reference-release-verifier-v5.md`,
