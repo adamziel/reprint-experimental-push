@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 22:49 CEST +02:00.
+- Last update: 2026-05-30 22:52 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0190 wp_comments/wp_commentmeta graph release-verifier v5 merge
-  ending at `23381f`.
+  the RPP-0326 comment parent thread reference variant 2 merge ending at
+  `1cdc06`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 528
-  items checked and leaves 472 open.
-- Checked slices: 100 release-gate foundation items, 72 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 529
+  items checked and leaves 471 open.
+- Checked slices: 100 release-gate foundation items, 73 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 90 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Comment parent thread reference variant-2 proof: the current lane now checks
+  `RPP-0326` with focused local graph-identity evidence for
+  `wp_comments.comment_parent` targets. The proof builds deterministic
+  hash-only evidence across stable parent identity, explicit identity-map
+  rewrite, and stale parent fail-closed paths. It verifies live-remote
+  preconditions on ready comment rows, confirms mapped parent IDs are rewritten
+  through the identity map, and proves stale parent targets block with
+  `stale-wordpress-graph-identity` plus `PLAN_NOT_READY` refusal before
+  mutation. Validation passed with Node syntax checks, focused RPP-0326
+  coverage 1/1, adjacent RPP-0386 comment-parent release-verifier coverage 4/4,
+  scoped artifact redaction scan, checklist lint, and diff whitespace checks.
+  Counts are now 529/471; final release remains `NO-GO` because this is local
+  graph-identity evidence, not production-backed release proof.
 - WP comments/commentmeta graph release-verifier v5 carry-through: the current
   lane now checks `RPP-0190` with deterministic generated-harness support-only
   proof for `wp_comments` and `wp_commentmeta` graph changes. The generator
