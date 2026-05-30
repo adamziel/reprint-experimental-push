@@ -15,7 +15,7 @@ import {
 } from '../../src/authenticated-http-push-client.js';
 import { applyPlan, PushPlanError } from '../../src/apply.js';
 import { createPushPlan } from '../../src/planner.js';
-import { resourceHash, getResource } from '../../src/resources.js';
+import { resourceHash, getResource, serializeResourceValue } from '../../src/resources.js';
 import { ABSENT, digest } from '../../src/stable-json.js';
 import {
   describeAuthSessionSourceMetadataDrift,
@@ -1890,6 +1890,479 @@ function assertIndependentLocalFileRemoteRowNoRawValues(evidence, rawValues) {
   for (const raw of rawValues) {
     assert.equal(serialized.includes(raw), false, `RPP-0281 release verifier proof leaked raw fixture ${raw}`);
   }
+}
+
+export function summarizeMergeInvariantReleaseVerifierProofs() {
+  return {
+    independentLocalFileRemoteRow: summarizeIndependentLocalFileRemoteRowReleaseVerifierProof(),
+    independentLocalRowRemoteFile: summarizeIndependentLocalRowRemoteFileReleaseVerifierProof(),
+  };
+}
+
+export function summarizeIndependentLocalRowRemoteFileReleaseVerifierProof({
+  now = new Date('2026-05-30T14:28:20.000Z'),
+  generatedCases = null,
+} = {}) {
+  try {
+    return buildIndependentLocalRowRemoteFileReleaseVerifierProof({
+      now,
+      generatedCases,
+    });
+  } catch (error) {
+    return {
+      rpp: 'RPP-0282',
+      evidenceSource: 'release-verifier-independent-local-row-remote-file-v5',
+      status: 'blocked',
+      verdict: 'INDEPENDENT_LOCAL_ROW_REMOTE_FILE_RELEASE_VERIFIER_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      evidenceScope: 'local-production-shaped',
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildIndependentLocalRowRemoteFileReleaseVerifierProof({
+  now,
+  generatedCases,
+}) {
+  const targetCases = (Array.isArray(generatedCases) ? generatedCases : generatePushHarnessCases())
+    .filter((testCase) => testCase.family === 'independent-local-row-remote-file');
+  const coverage = {
+    family: 'independent-local-row-remote-file',
+    target: 'independentLocalRowRemoteFileReleaseVerifierVariant5',
+    total: targetCases.length,
+    perTier: {},
+    statuses: {},
+  };
+  const totals = {
+    readyPlans: 0,
+    applied: 0,
+    remoteFilePreserved: 0,
+    rowMutationPreconditions: 0,
+    remoteFileMutations: 0,
+    remoteFilePreconditions: 0,
+    forgedRejectedBeforeMutation: 0,
+    staleRejectedBeforeMutation: 0,
+  };
+  const caseProofs = [];
+  const rawSentinels = [];
+
+  for (const testCase of targetCases) {
+    const { rowId, rowTitle, filePath, fileValue } =
+      independentLocalRowRemoteFileGeneratedTargets(testCase);
+    const rowKey = `row:["wp_posts","${rowId}"]`;
+    const fileKey = `file:${filePath}`;
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now,
+    });
+    const validation = validateGeneratedCase(testCase);
+    const rowMutation = plan.mutations.find((mutation) => mutation.resourceKey === rowKey) || null;
+    const fileDecision = plan.decisions.find((decision) => decision.resourceKey === fileKey) || null;
+    const rowPrecondition = rowMutation
+      ? plan.preconditions.find((precondition) => precondition.mutationId === rowMutation.id) || null
+      : null;
+    const filePreconditionCount = plan.preconditions
+      .filter((precondition) => precondition.resourceKey === fileKey)
+      .length;
+    const remoteFileMutationCount = plan.mutations
+      .filter((mutation) => mutation.resourceKey === fileKey)
+      .length;
+    const preconditionsOneToOne = releaseVerifierPreconditionsAreLiveOneToOne(plan, testCase.remote);
+
+    incrementReleaseVerifierCount(coverage.perTier, testCase.tier);
+    incrementReleaseVerifierCount(coverage.statuses, plan.status);
+    if (plan.status === 'ready') {
+      totals.readyPlans += 1;
+    }
+    if (rowPrecondition) {
+      totals.rowMutationPreconditions += 1;
+    }
+    totals.remoteFileMutations += remoteFileMutationCount;
+    totals.remoteFilePreconditions += filePreconditionCount;
+
+    const applyEvents = [];
+    const applyRemote = cloneReleaseVerifierJson(testCase.remote);
+    const applyAttempt = captureReleaseVerifierApply(() =>
+      applyPlan(applyRemote, plan, {
+        durableJournal: releaseVerifierClaimFencedDurableJournal(applyEvents),
+      }));
+    const applyTargetEvents = applyEvents
+      .filter((event) => event.type === 'target-planned' || event.type === 'mutation-observed');
+    const applyMutationResourceKeys = [...new Set(applyTargetEvents.map((event) => event.resourceKey))].sort();
+    const appliedSite = applyAttempt.result?.site || applyRemote;
+    const applyPreservedRemoteFile = applyAttempt.error === null
+      && applyAttempt.result?.appliedMutations === plan.mutations.length
+      && appliedSite.files?.[filePath] === fileValue
+      && appliedSite.db?.wp_posts?.[rowId]?.post_title === rowTitle
+      && applyMutationResourceKeys.includes(rowKey)
+      && !applyMutationResourceKeys.includes(fileKey);
+    if (applyAttempt.error === null) {
+      totals.applied += 1;
+    }
+    if (applyPreservedRemoteFile) {
+      totals.remoteFilePreserved += 1;
+    }
+
+    const forgedValue = `rpp-0282-forged-remote-file-overwrite-${testCase.id}`;
+    const forgedPlan = forgeIndependentRemoteFileMutation({
+      testCase,
+      plan,
+      filePath,
+      fileKey,
+      forgedValue,
+    });
+    const forgedRemote = cloneReleaseVerifierJson(testCase.remote);
+    const forgedRemoteHashBefore = sha256Evidence(forgedRemote);
+    const forgedEvents = [];
+    const forgedAttempt = captureReleaseVerifierApply(() =>
+      applyPlan(forgedRemote, forgedPlan, {
+        durableJournal: releaseVerifierClaimFencedDurableJournal(forgedEvents),
+      }));
+    const forgedIssueCodes = Array.isArray(forgedAttempt.error?.details?.issues)
+      ? forgedAttempt.error.details.issues.map((issue) => issue.code).sort()
+      : [];
+    const forgedRejectedBeforeMutation = forgedAttempt.error instanceof PushPlanError
+      && forgedAttempt.error.code === 'PLAN_INVARIANT_VIOLATION'
+      && forgedIssueCodes.includes('MUTATION_DECISION_RESOURCE_OVERLAP')
+      && sha256Evidence(forgedRemote) === forgedRemoteHashBefore
+      && forgedRemote.files?.[filePath] === fileValue
+      && forgedEvents.length === 0;
+    if (forgedRejectedBeforeMutation) {
+      totals.forgedRejectedBeforeMutation += 1;
+    }
+
+    const staleTitle = `rpp-0282-stale-local-row-${testCase.id}`;
+    const staleRemote = cloneReleaseVerifierJson(testCase.remote);
+    staleRemote.db.wp_posts[rowId].post_title = staleTitle;
+    const staleActualHash = rowMutation ? resourceHash(staleRemote, rowMutation.resource) : null;
+    const staleRemoteHashBefore = sha256Evidence(staleRemote);
+    const staleEvents = [];
+    const staleAttempt = captureReleaseVerifierApply(() =>
+      applyPlan(staleRemote, plan, {
+        durableJournal: releaseVerifierClaimFencedDurableJournal(staleEvents),
+      }));
+    const staleRejectedBeforeMutation = staleAttempt.error instanceof PushPlanError
+      && staleAttempt.error.code === 'PRECONDITION_FAILED'
+      && staleAttempt.error.details?.resourceKey === rowKey
+      && staleAttempt.error.details?.expectedHash === rowMutation?.remoteBeforeHash
+      && staleAttempt.error.details?.actualHash === staleActualHash
+      && sha256Evidence(staleRemote) === staleRemoteHashBefore
+      && staleRemote.files?.[filePath] === fileValue
+      && staleEvents.length === 0;
+    if (staleRejectedBeforeMutation) {
+      totals.staleRejectedBeforeMutation += 1;
+    }
+
+    const exactIndependentPlan = plan.status === 'ready'
+      && validation.status === 'ready'
+      && validation.applied === true
+      && validation.unplannedRemotePreserved === true
+      && validation.staleReplayRejected === true
+      && validation.staleReplayRejectionCode === 'PRECONDITION_FAILED'
+      && validation.staleReplayRemoteUnchanged === true
+      && rowMutation?.action === 'put'
+      && rowMutation?.change?.localChange === 'update'
+      && rowMutation?.change?.remoteChange === 'unchanged'
+      && fileDecision?.decision === 'keep-remote'
+      && fileDecision?.change?.localChange === 'unchanged'
+      && fileDecision?.change?.remoteChange === 'update'
+      && fileDecision?.change?.remote?.hash === fileDecision.remoteHash
+      && remoteFileMutationCount === 0
+      && filePreconditionCount === 0
+      && rowPrecondition?.resourceKey === rowKey
+      && rowPrecondition?.expectedHash === rowMutation?.remoteBeforeHash
+      && rowPrecondition?.checkedAgainst === 'live-remote'
+      && preconditionsOneToOne;
+
+    rawSentinels.push(rowTitle, fileValue, forgedValue, staleTitle);
+    caseProofs.push({
+      id: testCase.id,
+      tier: testCase.tier,
+      planHash: sha256Evidence(releaseVerifierHashOnlyPlanEvidence(plan)),
+      status: plan.status,
+      exactIndependentPlan,
+      rowMutation: rowMutation ? {
+        resourceKey: rowMutation.resourceKey,
+        action: rowMutation.action,
+        changeKind: rowMutation.changeKind,
+        baseHash: rowMutation.baseHash,
+        localHash: rowMutation.localHash,
+        remoteBeforeHash: rowMutation.remoteBeforeHash,
+      } : null,
+      rowPrecondition: rowPrecondition ? {
+        resourceKey: rowPrecondition.resourceKey,
+        expectedHash: rowPrecondition.expectedHash,
+        checkedAgainst: rowPrecondition.checkedAgainst,
+        matchesMutation: rowPrecondition.expectedHash === rowMutation?.remoteBeforeHash,
+      } : null,
+      remoteFileDecision: fileDecision ? {
+        resourceKey: fileDecision.resourceKey,
+        decision: fileDecision.decision,
+        baseHash: fileDecision.baseHash,
+        remoteHash: fileDecision.remoteHash,
+        remoteChange: fileDecision.change?.remoteChange || null,
+        noMutation: remoteFileMutationCount === 0,
+        noPrecondition: filePreconditionCount === 0,
+      } : null,
+      validation: {
+        ready: validation.status === 'ready',
+        applied: validation.applied === true,
+        unplannedRemotePreserved: validation.unplannedRemotePreserved === true,
+        staleReplayRejected: validation.staleReplayRejected === true,
+        staleReplayRejectionCode: validation.staleReplayRejectionCode || null,
+        staleReplayRemoteUnchanged: validation.staleReplayRemoteUnchanged === true,
+      },
+      applyCarryThrough: {
+        applied: applyAttempt.error === null,
+        appliedMutations: applyAttempt.result?.appliedMutations ?? null,
+        remoteFilePreserved: applyPreservedRemoteFile,
+        mutationResourceKeys: applyMutationResourceKeys,
+        remoteHashAfter: sha256Evidence(appliedSite),
+      },
+      forgedRemoteFileMutation: {
+        code: forgedAttempt.error?.code || null,
+        issueCodes: forgedIssueCodes,
+        rejectedBeforeMutation: forgedRejectedBeforeMutation,
+        eventCount: forgedEvents.length,
+        remoteHashBefore: forgedRemoteHashBefore,
+        remoteHashAfter: sha256Evidence(forgedRemote),
+        detailsHash: forgedAttempt.error ? sha256Evidence(forgedAttempt.error.details || null) : null,
+      },
+      staleRowReplay: {
+        code: staleAttempt.error?.code || null,
+        resourceKey: staleAttempt.error?.details?.resourceKey || null,
+        expectedHash: staleAttempt.error?.details?.expectedHash || null,
+        actualHash: staleAttempt.error?.details?.actualHash || null,
+        rejectedBeforeMutation: staleRejectedBeforeMutation,
+        eventCount: staleEvents.length,
+        remoteHashBefore: staleRemoteHashBefore,
+        remoteHashAfter: sha256Evidence(staleRemote),
+        detailsHash: staleAttempt.error ? sha256Evidence(staleAttempt.error.details || null) : null,
+      },
+    });
+  }
+
+  const expectedPerTier = Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 1]));
+  const coverageOk = targetCases.length === 10
+    && JSON.stringify(coverage.perTier) === JSON.stringify(expectedPerTier)
+    && coverage.statuses.ready === targetCases.length;
+  const executorOk = totals.readyPlans === targetCases.length
+    && totals.applied === targetCases.length
+    && totals.remoteFilePreserved === targetCases.length
+    && totals.rowMutationPreconditions === targetCases.length
+    && totals.remoteFileMutations === 0
+    && totals.remoteFilePreconditions === 0
+    && totals.forgedRejectedBeforeMutation === targetCases.length
+    && totals.staleRejectedBeforeMutation === targetCases.length
+    && caseProofs.every((proof) =>
+      proof.exactIndependentPlan
+        && proof.applyCarryThrough.remoteFilePreserved
+        && proof.forgedRemoteFileMutation.rejectedBeforeMutation
+        && proof.staleRowReplay.rejectedBeforeMutation);
+
+  const proofBase = {
+    rpp: 'RPP-0282',
+    evidenceSource: 'release-verifier-independent-local-row-remote-file-v5',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    evidenceScope: 'local-production-shaped',
+    releaseVerifier: {
+      checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+      check: 'independent-local-row-remote-file',
+      variant: 'v5',
+      executorRejectsForgedOrStale: executorOk,
+    },
+    invariant: {
+      localRowMutation: true,
+      independentRemoteFileDecision: 'keep-remote',
+      unplannedRemoteFileMutationCount: totals.remoteFileMutations,
+      unplannedRemoteFilePreconditionCount: totals.remoteFilePreconditions,
+      staleReplayRefusalCode: 'PRECONDITION_FAILED',
+      forgedPlanRefusalCode: 'PLAN_INVARIANT_VIOLATION',
+      forgedPlanIssueCode: 'MUTATION_DECISION_RESOURCE_OVERLAP',
+    },
+    coverage,
+    totals,
+    caseProofs,
+  };
+  const rawValuesIncluded = rawSentinels.some((raw) =>
+    JSON.stringify(proofBase).includes(raw));
+  const ok = coverageOk && executorOk && !rawValuesIncluded;
+  const proof = {
+    ...proofBase,
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'INDEPENDENT_LOCAL_ROW_REMOTE_FILE_FORGED_AND_STALE_REJECTED'
+      : 'INDEPENDENT_LOCAL_ROW_REMOTE_FILE_RELEASE_VERIFIER_REQUIRED',
+    rawValuesIncluded,
+  };
+
+  return {
+    ...proof,
+    proofHash: sha256Evidence(proof),
+  };
+}
+
+function independentLocalRowRemoteFileGeneratedTargets(testCase) {
+  const rowEntry = Object.entries(testCase.local?.db?.wp_posts || {})
+    .find(([, row]) => row?.post_title?.startsWith('Independent local row '));
+  const fileEntry = Object.entries(testCase.remote?.files || {})
+    .find(([, contents]) => typeof contents === 'string' && contents.startsWith('independent remote file '));
+
+  if (!rowEntry || !fileEntry) {
+    const error = new Error(`Generated case ${testCase?.id || '<unknown>'} is missing the independent row/file target`);
+    error.code = 'RPP_0282_TARGET_NOT_FOUND';
+    throw error;
+  }
+
+  return {
+    rowId: rowEntry[0],
+    rowTitle: rowEntry[1].post_title,
+    filePath: fileEntry[0],
+    fileValue: fileEntry[1],
+  };
+}
+
+function releaseVerifierPreconditionsAreLiveOneToOne(plan, remote) {
+  if (!Array.isArray(plan?.mutations) || !Array.isArray(plan?.preconditions)) {
+    return false;
+  }
+  if (plan.preconditions.length !== plan.mutations.length) {
+    return false;
+  }
+
+  const seen = new Set();
+  for (const mutation of plan.mutations) {
+    const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation.id);
+    if (!precondition || seen.has(precondition.mutationId)) {
+      return false;
+    }
+    seen.add(precondition.mutationId);
+    if (
+      precondition.resourceKey !== mutation.resourceKey
+      || digest(precondition.resource) !== digest(mutation.resource)
+      || precondition.expectedHash !== mutation.remoteBeforeHash
+      || precondition.checkedAgainst !== 'live-remote'
+      || precondition.expectedHash !== resourceHash(remote, mutation.resource)
+    ) {
+      return false;
+    }
+  }
+
+  return seen.size === plan.mutations.length;
+}
+
+function releaseVerifierHashOnlyPlanEvidence(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      baseHash: decision.baseHash,
+      localHash: decision.localHash || null,
+      remoteHash: decision.remoteHash || null,
+    })),
+  };
+}
+
+function forgeIndependentRemoteFileMutation({
+  testCase,
+  plan,
+  filePath,
+  fileKey,
+  forgedValue,
+}) {
+  const copy = cloneReleaseVerifierJson(plan);
+  const fileResource = { type: 'file', path: filePath, key: fileKey };
+  const remoteHash = resourceHash(testCase.remote, fileResource);
+  const forgedMutationId = `mutation-rpp-0282-forged-file-overwrite-${testCase.id}`;
+
+  copy.mutations.push({
+    id: forgedMutationId,
+    resource: fileResource,
+    resourceKey: fileKey,
+    action: 'put',
+    value: serializeResourceValue(forgedValue),
+    remoteBeforeHash: remoteHash,
+    baseHash: resourceHash(testCase.base, fileResource),
+    localHash: digest(forgedValue),
+    changeKind: 'update',
+    change: {
+      localChange: 'update',
+      remoteChange: 'update',
+    },
+    atomicGroupId: null,
+  });
+  copy.preconditions.push({
+    mutationId: forgedMutationId,
+    resource: fileResource,
+    resourceKey: fileKey,
+    expectedHash: remoteHash,
+    checkedAgainst: 'live-remote',
+  });
+  copy.status = 'ready';
+  copy.blockers = [];
+  copy.conflicts = [];
+  copy.summary = {
+    ...copy.summary,
+    mutations: copy.mutations.length,
+    decisions: copy.decisions.length,
+    blockers: 0,
+    conflicts: 0,
+  };
+  return copy;
+}
+
+function releaseVerifierClaimFencedDurableJournal(events) {
+  return {
+    claimFenced: true,
+    claimOpened: true,
+    claimHash: '3'.repeat(64),
+    appendEvent(type, payload) {
+      const record = { sequence: events.length + 1, type, ...payload };
+      events.push(record);
+      return record;
+    },
+  };
+}
+
+function captureReleaseVerifierApply(fn) {
+  try {
+    return { result: fn(), error: null };
+  } catch (error) {
+    return { result: null, error };
+  }
+}
+
+function incrementReleaseVerifierCount(object, key) {
+  object[key] = (object[key] || 0) + 1;
 }
 
 export function summarizeProductionPluginDriverBoundaryProof({
@@ -3859,9 +4332,7 @@ try {
           },
           ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
         };
-        const mergeInvariantProof = {
-          independentLocalFileRemoteRow: summarizeIndependentLocalFileRemoteRowReleaseVerifierProof(),
-        };
+        const mergeInvariantProofs = summarizeMergeInvariantReleaseVerifierProofs();
         process.stdout.write(
           JSON.stringify(
             {
@@ -3914,7 +4385,7 @@ try {
               readRetryEvidence: proof.readRetryEvidence || null,
               latestReadRetryEvidence: proof.latestReadRetryEvidence || null,
               pluginDriver: pluginDriverProof,
-              mergeInvariants: mergeInvariantProof,
+              mergeInvariants: mergeInvariantProofs,
             },
             null,
             2,
@@ -4174,9 +4645,7 @@ try {
         },
         ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
       };
-      const mergeInvariantProof = {
-        independentLocalFileRemoteRow: summarizeIndependentLocalFileRemoteRowReleaseVerifierProof(),
-      };
+      const mergeInvariantProofs = summarizeMergeInvariantReleaseVerifierProofs();
       const checkedProductionPluginDriverAccepted = packagedSourceFixture !== null
         ? productionPluginDriverProof.verdict === 'PACKAGED_PLUGIN_DRIVER_BOUNDARY_OK'
         : productionPluginDriverProof.verdict === 'LIVE_PLUGIN_DRIVER_BOUNDARY_OK';
@@ -4229,7 +4698,7 @@ try {
               authSessionLifecycle: proof.authSessionLifecycle,
               authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
               pluginDriver: pluginDriverProof,
-              mergeInvariants: mergeInvariantProof,
+              mergeInvariants: mergeInvariantProofs,
             },
             null,
             2,
@@ -4298,7 +4767,7 @@ try {
               },
               authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
               pluginDriver: pluginDriverProof,
-              mergeInvariants: mergeInvariantProof,
+              mergeInvariants: mergeInvariantProofs,
             },
             null,
             2,
@@ -4494,7 +4963,7 @@ try {
                 checkedAccepted: checkedDurableJournalAccepted,
               },
               pluginDriver: pluginDriverProof,
-              mergeInvariants: mergeInvariantProof,
+              mergeInvariants: mergeInvariantProofs,
             },
             null,
             2,
@@ -4586,7 +5055,7 @@ try {
                 checkedAccepted: checkedDurableJournalAccepted,
               },
               pluginDriver: pluginDriverProof,
-              mergeInvariants: mergeInvariantProof,
+              mergeInvariants: mergeInvariantProofs,
             },
             null,
             2,
@@ -4699,7 +5168,7 @@ try {
               },
               replayAndRetry: proof.replayAndRetry || null,
               pluginDriver: pluginDriverProof,
-              mergeInvariants: mergeInvariantProof,
+              mergeInvariants: mergeInvariantProofs,
             },
             null,
             2,
@@ -4778,7 +5247,7 @@ try {
               checkedAccepted: checkedDurableJournalAccepted,
             },
             pluginDriver: pluginDriverProof,
-            mergeInvariants: mergeInvariantProof,
+            mergeInvariants: mergeInvariantProofs,
           },
           null,
           2,
