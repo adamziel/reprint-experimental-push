@@ -111,16 +111,19 @@ function writeLegacySqliteJournalTable(database, records, tableName = 'recovery_
 }
 
 function buildRecoveryReleaseSummary({ inspection, plan, mutationEvents, oldRemoteRecovery = null }) {
+  const originalRequestHash = '8'.repeat(64);
+  const conflictingRequestHash = '9'.repeat(64);
   const latestEvents = [
-    { sequence: 1, event: 'idempotency-opened' },
-    { sequence: 2, event: 'apply-started' },
+    { sequence: 1, event: 'idempotency-opened', requestHash: originalRequestHash },
+    { sequence: 2, event: 'apply-started', requestHash: originalRequestHash },
     ...Array.from({ length: mutationEvents }, (_, index) => ({
       sequence: 3 + index,
       event: 'mutation-applied',
+      requestHash: originalRequestHash,
     })),
-    { sequence: 3 + mutationEvents, event: 'apply-committed' },
-    { sequence: 4 + mutationEvents, event: 'apply-replayed' },
-    { sequence: 5 + mutationEvents, event: 'idempotency-key-conflict' },
+    { sequence: 3 + mutationEvents, event: 'apply-committed', requestHash: originalRequestHash },
+    { sequence: 4 + mutationEvents, event: 'apply-replayed', requestHash: originalRequestHash },
+    { sequence: 5 + mutationEvents, event: 'idempotency-key-conflict', requestHash: conflictingRequestHash },
   ];
   return {
     topology: {
@@ -161,8 +164,22 @@ function buildRecoveryReleaseSummary({ inspection, plan, mutationEvents, oldRemo
         idempotency: {
           conflict: true,
           freshMutationWork: false,
+          requestHash: conflictingRequestHash,
+          originalRequestHash,
         },
         targetSnapshotUnchanged: true,
+        recoveryState: {
+          source: 'SQLite-backed recovery inspect after different-body conflict',
+          storage: 'sqlite',
+          state: 'fully-updated-remote',
+          restartReadable: true,
+          counts: {
+            old: 0,
+            new: mutationEvents,
+            blockedUnknown: 0,
+            total: mutationEvents,
+          },
+        },
       },
       dbJournal: {
         mutationApplied: mutationEvents,

@@ -158,6 +158,8 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
     staleClaimRejected: true,
     restartReadable: true,
   };
+  const originalRequestHash = 'c'.repeat(64);
+  const conflictingRequestHash = 'd'.repeat(64);
   const claimExpiry = {
     policy: 'bounded-stale-claim-advance',
     scope: 'claim-fenced-restart-readable',
@@ -235,8 +237,22 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
         idempotency: {
           conflict: true,
           freshMutationWork: false,
+          requestHash: conflictingRequestHash,
+          originalRequestHash,
         },
         targetSnapshotUnchanged: true,
+        recoveryState: {
+          source: 'SQLite-backed recovery inspect after different-body conflict',
+          storage: 'sqlite',
+          state: 'fully-updated-remote',
+          restartReadable: true,
+          counts: {
+            old: 0,
+            new: 2,
+            blockedUnknown: 0,
+            total: 2,
+          },
+        },
       },
       dbJournal: {
         mutationApplied: 2,
@@ -244,13 +260,13 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
           'idempotency-key-conflict': 1,
         },
         latestEvents: [
-          { sequence: 1, event: 'idempotency-opened' },
-          { sequence: 2, event: 'apply-started' },
-          { sequence: 3, event: 'mutation-applied' },
-          { sequence: 4, event: 'mutation-applied' },
-          { sequence: 5, event: 'apply-committed' },
-          { sequence: 6, event: 'apply-replayed' },
-          { sequence: 7, event: 'idempotency-key-conflict' },
+          { sequence: 1, event: 'idempotency-opened', requestHash: originalRequestHash },
+          { sequence: 2, event: 'apply-started', requestHash: originalRequestHash },
+          { sequence: 3, event: 'mutation-applied', requestHash: originalRequestHash },
+          { sequence: 4, event: 'mutation-applied', requestHash: originalRequestHash },
+          { sequence: 5, event: 'apply-committed', requestHash: originalRequestHash },
+          { sequence: 6, event: 'apply-replayed', requestHash: originalRequestHash },
+          { sequence: 7, event: 'idempotency-key-conflict', requestHash: conflictingRequestHash },
         ],
       },
       staleClaimRetry: {
@@ -356,6 +372,23 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
   assert.equal(proof.sameKeyReplayAfterRejection.applyStatus, 412);
   assert.equal(proof.sameKeyReplayAfterRejection.replayed, true);
   assert.equal(proof.sameKeyReplayAfterRejection.mutationAppliedBeforeFailure, 0);
+  assert.equal(proof.sameKeyDifferentBodyConflict.requestHashEvidence.proved, true);
+  assert.equal(
+    proof.sameKeyDifferentBodyConflict.requestHashEvidence.originalRequestHash,
+    originalRequestHash,
+  );
+  assert.equal(
+    proof.sameKeyDifferentBodyConflict.requestHashEvidence.conflictingRequestHash,
+    conflictingRequestHash,
+  );
+  assert.equal(proof.sameKeyDifferentBodyConflict.recoveryState.proved, true);
+  assert.equal(proof.sameKeyDifferentBodyConflict.recoveryState.storage, 'sqlite');
+  assert.deepEqual(proof.sameKeyDifferentBodyConflict.recoveryState.counts, {
+    old: 0,
+    new: 2,
+    blockedUnknown: 0,
+    total: 2,
+  });
   assert.equal(proof.partialStates.old.proved, true);
   assert.equal(proof.partialStates.old.state, 'old-remote');
   assert.equal(proof.partialStates.old.counts.old, 2);
