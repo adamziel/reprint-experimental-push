@@ -262,6 +262,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'file-type-swap-conflict-variant4',
     tag: 'file-type-swap-conflict-v4',
   },
+  fileTypeSwapConflictReleaseVerifierVariant5: {
+    family: 'file-type-swap-conflict-release-verifier-v5',
+    tag: 'file-type-swap-conflict-release-verifier-v5',
+  },
   fileCreateUpdateDeleteMix: {
     family: 'file-create-update-delete-mix-ready',
     tag: 'file-create-update-delete-mix',
@@ -3888,6 +3892,7 @@ function addFileTypeSwap(base, local, remote, allocator, tags, { conflict, prefi
 
   tags.add('file-type-swap');
   tags.add('file-type-swap-conflict-v4');
+  tags.add('file-type-swap-conflict-release-verifier-v5');
   tags.add('file-topology');
   tags.add('type-change');
 
@@ -3895,9 +3900,11 @@ function addFileTypeSwap(base, local, remote, allocator, tags, { conflict, prefi
     remote.files[`${path}/remote-descendant.txt`] = `remote descendant for type swap ${allocator.next()}`;
     tags.add('type-swap-conflict');
     tags.add('file-type-swap-conflict-v4-non-ready');
+    tags.add('file-type-swap-conflict-release-verifier-v5-non-ready');
   } else {
     tags.add('type-swap-ready');
     tags.add('file-type-swap-conflict-v4-ready');
+    tags.add('file-type-swap-conflict-release-verifier-v5-ready');
   }
 }
 
