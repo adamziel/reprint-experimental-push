@@ -282,9 +282,9 @@ test('RPP-0247 generated local plugin data rejects forged owner context evidence
         delete entry.pluginOwnedResource.ownerContextRequired;
       },
       assertDetails(error) {
-        assert.equal(error.details.contextResourceKey, undefined);
+        assert.equal(error.details.contextResourceKey, ownerFileKey);
         assert.equal(error.details.expectedHash, undefined);
-        assert.equal(error.details.actualHash, undefined);
+        assert.equal(error.details.actualHash, context.remoteHash);
       },
     },
     {

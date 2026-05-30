@@ -2,8 +2,10 @@ import { ABSENT, deepClone, digest } from './stable-json.js';
 import { redactEvidence } from './evidence-redaction.js';
 import {
   deserializeResourceValue,
+  enumerateResources,
   getResource,
   hasPlugin,
+  pluginOwnerFor,
   resourceHash,
   serializeResourceValue,
   setResource,
@@ -468,10 +470,13 @@ function redactedPluginDriverApplyValidationEvidence(evidence) {
 
 function validatePluginOwnedOwnerContext(remote, mutation, owner) {
   const ownerContext = mutation.pluginOwnedResource?.ownerContext;
+  const liveOwnerContextResources = livePluginOwnerContextResources(remote, owner);
   if (!Array.isArray(ownerContext) || ownerContext.length === 0) {
     const ownerContextHash = mutation.pluginOwnedResource?.auditEvidence?.ownerContextHash;
+    const missingLiveContext = liveOwnerContextResources[0] || null;
     if (
-      mutation.pluginOwnedResource?.ownerContextRequired !== true
+      !missingLiveContext
+      && mutation.pluginOwnedResource?.ownerContextRequired !== true
       && (typeof ownerContextHash !== 'string' || ownerContextHash === digest([]))
     ) {
       return;
@@ -483,12 +488,24 @@ function validatePluginOwnedOwnerContext(remote, mutation, owner) {
         mutationId: mutation.id,
         resourceKey: mutation.resourceKey,
         pluginOwner: owner,
+        ...(missingLiveContext
+          ? {
+            contextResourceKey: missingLiveContext.key,
+            actualHash: resourceHash(remote, missingLiveContext),
+          }
+          : {}),
       },
     );
   }
 
+  const ownerContextKeys = new Set();
   for (const context of ownerContext) {
-    if (!context?.resource || typeof context.resourceKey !== 'string' || !/^[a-f0-9]{64}$/.test(context.remoteHash || '')) {
+    if (
+      !context?.resource
+      || typeof context.resourceKey !== 'string'
+      || context.resource.key !== context.resourceKey
+      || !/^[a-f0-9]{64}$/.test(context.remoteHash || '')
+    ) {
       throw new PushPlanError(
         'STALE_PLUGIN_OWNER_CONTEXT',
         `Refusing to apply plugin-owned resource ${mutation.resourceKey} with invalid owner context evidence.`,
@@ -501,6 +518,7 @@ function validatePluginOwnedOwnerContext(remote, mutation, owner) {
       );
     }
 
+    ownerContextKeys.add(context.resourceKey);
     const actualHash = resourceHash(remote, context.resource);
     if (actualHash !== context.remoteHash) {
       throw new PushPlanError(
@@ -517,6 +535,33 @@ function validatePluginOwnedOwnerContext(remote, mutation, owner) {
       );
     }
   }
+
+  for (const contextResource of liveOwnerContextResources) {
+    if (ownerContextKeys.has(contextResource.key)) {
+      continue;
+    }
+    throw new PushPlanError(
+      'STALE_PLUGIN_OWNER_CONTEXT',
+      `Refusing to apply plugin-owned resource ${mutation.resourceKey} without complete live owner context evidence.`,
+      {
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey,
+        pluginOwner: owner,
+        contextResourceKey: contextResource.key,
+        actualHash: resourceHash(remote, contextResource),
+      },
+    );
+  }
+}
+
+function livePluginOwnerContextResources(remote, owner) {
+  return enumerateResources(remote)
+    .filter((resource) => {
+      if (resource.type === 'plugin') {
+        return resource.name === owner;
+      }
+      return resource.type === 'file' && pluginOwnerFor(resource) === owner;
+    });
 }
 
 function validFixtureFormsLabTableEvidence(evidence, remote) {
