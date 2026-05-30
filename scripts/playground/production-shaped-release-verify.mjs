@@ -480,6 +480,15 @@ export const driverApplyValidationHookReleaseVerifierBoundary = Object.freeze({
   }),
 });
 
+export const localDirectoryDeleteRemoteDescendantReleaseVerifierBoundary = Object.freeze({
+  directoryPath: 'wp-content/uploads/rpp-0284-release-gallery',
+  descendantPath: 'wp-content/uploads/rpp-0284-release-gallery/remote-created-private.txt',
+  independentPath: 'index.php',
+  resourceKey: 'file:wp-content/uploads/rpp-0284-release-gallery',
+  descendantResourceKey: 'file:wp-content/uploads/rpp-0284-release-gallery/remote-created-private.txt',
+  independentResourceKey: 'file:index.php',
+});
+
 const coreWordPressDriverBoundaryTables = new Set([
   'wp_options',
   'wp_postmeta',
@@ -551,6 +560,317 @@ export function summarizeDriverAuditEvidenceRedactionReleaseVerifierProof({
       },
     };
   }
+}
+
+export function summarizeLocalDirectoryDeleteRemoteDescendantReleaseVerifierProof({
+  now = new Date('2026-05-30T10:28:40.000Z'),
+} = {}) {
+  try {
+    return buildLocalDirectoryDeleteRemoteDescendantReleaseVerifierProof(now);
+  } catch (error) {
+    return {
+      rpp: 'RPP-0284',
+      evidenceSource: 'release-verifier-local-directory-delete-remote-descendant-v5',
+      status: 'blocked',
+      verdict: 'LOCAL_DIRECTORY_DELETE_REMOTE_DESCENDANT_RELEASE_CARRY_THROUGH_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      evidenceScope: 'local-production-shaped',
+      scenario: localDirectoryDeleteRemoteDescendantReleaseVerifierScenarioEvidence(),
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildLocalDirectoryDeleteRemoteDescendantReleaseVerifierProof(now) {
+  const boundary = localDirectoryDeleteRemoteDescendantReleaseVerifierBoundary;
+  const resources = localDirectoryDeleteRemoteDescendantReleaseVerifierResources();
+  const rawFixtures = {
+    baseIndependentFile: '<?php echo "rpp-0284-release-verifier-base-index";',
+    localIndependentFile: '<?php echo "rpp-0284-release-verifier-local-index";',
+    remoteDescendant: 'remote-private-rpp-0284-release-verifier-descendant-bytes',
+  };
+  const base = localDirectoryDeleteRemoteDescendantReleaseVerifierSnapshot(rawFixtures.baseIndependentFile);
+  const local = cloneReleaseVerifierJson(base);
+  delete local.files[boundary.directoryPath];
+  local.files[boundary.independentPath] = rawFixtures.localIndependentFile;
+  const remote = cloneReleaseVerifierJson(base);
+  remote.files[boundary.descendantPath] = rawFixtures.remoteDescendant;
+
+  const plan = createPushPlan({ base, local, remote, now });
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const descendantDecision = plan.decisions.find(
+    (entry) => entry.resourceKey === boundary.descendantResourceKey,
+  ) || null;
+  const directoryMutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const directoryPrecondition = plan.preconditions.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const descendantMutation = plan.mutations.find(
+    (entry) => entry.resourceKey === boundary.descendantResourceKey,
+  ) || null;
+  const descendantPrecondition = plan.preconditions.find(
+    (entry) => entry.resourceKey === boundary.descendantResourceKey,
+  ) || null;
+  const independentMutation = plan.mutations.find(
+    (entry) => entry.resourceKey === boundary.independentResourceKey,
+  ) || null;
+  const independentPrecondition = independentMutation
+    ? plan.preconditions.find((entry) => entry.mutationId === independentMutation.id) || null
+    : null;
+  const remoteBefore = cloneReleaseVerifierJson(remote);
+  const descendantHashBefore = resourceHash(remote, resources.descendant);
+  const remoteHashBefore = sha256Evidence(remote);
+  const durableJournalEvents = [];
+  let beforeMutationCalls = 0;
+  let applyError = null;
+  try {
+    applyPlan(remote, plan, {
+      mutateRemote: true,
+      durableJournal: {
+        claimFenced: true,
+        claimHash: '0'.repeat(64),
+        appendEvent(type, payload = {}) {
+          durableJournalEvents.push({
+            type,
+            payloadHash: sha256Evidence(payload),
+          });
+        },
+      },
+      beforeMutation() {
+        beforeMutationCalls += 1;
+      },
+    });
+  } catch (error) {
+    applyError = error;
+  }
+  const descendantHashAfter = resourceHash(remote, resources.descendant);
+  const remoteHashAfter = sha256Evidence(remote);
+  const remoteSnapshotPreserved = JSON.stringify(remote) === JSON.stringify(remoteBefore);
+  const descendantPreserved = remote.files[boundary.descendantPath] === rawFixtures.remoteDescendant
+    && descendantHashAfter === descendantHashBefore;
+  const directorySuppressed = directoryMutation === null && directoryPrecondition === null;
+  const descendantDecisionOnly = descendantDecision?.decision === 'keep-remote'
+    && descendantMutation === null
+    && descendantPrecondition === null;
+  const independentReady = independentMutation?.action === 'put'
+    && independentMutation?.changeKind === 'update'
+    && independentPrecondition?.resourceKey === boundary.independentResourceKey
+    && independentPrecondition?.expectedHash === independentMutation.remoteBeforeHash
+    && independentPrecondition?.checkedAgainst === 'live-remote';
+  const applyRefusedBeforeMutation = applyError instanceof PushPlanError
+    && applyError.code === 'PLAN_NOT_READY'
+    && durableJournalEvents.length === 0
+    && beforeMutationCalls === 0
+    && remoteSnapshotPreserved
+    && descendantPreserved;
+  const ok = plan.status === 'conflict'
+    && plan.summary.mutations === 1
+    && plan.summary.decisions === 1
+    && plan.summary.conflicts === 1
+    && plan.summary.blockers === 0
+    && conflict?.class === 'file-topology-conflict'
+    && conflict?.relatedResourceKey === boundary.descendantResourceKey
+    && conflict?.resolutionPolicy === 'preserve-remote-file-topology-and-stop'
+    && conflict?.change?.localChange === 'delete'
+    && conflict?.relatedChange?.remoteChange === 'create'
+    && directorySuppressed
+    && descendantDecisionOnly
+    && independentReady
+    && applyRefusedBeforeMutation;
+
+  const proof = {
+    rpp: 'RPP-0284',
+    evidenceSource: 'release-verifier-local-directory-delete-remote-descendant-v5',
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'LOCAL_DIRECTORY_DELETE_REMOTE_DESCENDANT_PRESERVED'
+      : 'LOCAL_DIRECTORY_DELETE_REMOTE_DESCENDANT_RELEASE_CARRY_THROUGH_REQUIRED',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    evidenceScope: 'local-production-shaped',
+    releaseVerifier: {
+      checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+      check: 'local-directory-delete-remote-descendant-create',
+      variant: 'v5',
+      remoteDescendantPreserved: descendantPreserved,
+    },
+    scenario: localDirectoryDeleteRemoteDescendantReleaseVerifierScenarioEvidence(),
+    rawValuesIncluded: false,
+    plan: {
+      status: plan.status,
+      summary: {
+        mutations: plan.summary.mutations,
+        decisions: plan.summary.decisions,
+        conflicts: plan.summary.conflicts,
+        blockers: plan.summary.blockers,
+        atomicGroups: plan.summary.atomicGroups,
+      },
+      mutationCount: plan.mutations.length,
+      decisionCount: plan.decisions.length,
+      conflictCount: plan.conflicts.length,
+      preconditionCount: plan.preconditions.length,
+      hash: sha256Evidence(plan),
+    },
+    surface: {
+      directory: {
+        resourceKey: boundary.resourceKey,
+        baseHash: resourceHash(base, resources.directory),
+        localHash: resourceHash(local, resources.directory),
+        remoteHash: resourceHash(remoteBefore, resources.directory),
+      },
+      remoteDescendant: {
+        resourceKey: boundary.descendantResourceKey,
+        baseHash: resourceHash(base, resources.descendant),
+        localHash: resourceHash(local, resources.descendant),
+        remoteHash: descendantHashBefore,
+      },
+      independentResource: {
+        resourceKey: boundary.independentResourceKey,
+        baseHash: resourceHash(base, resources.independent),
+        localHash: resourceHash(local, resources.independent),
+        remoteHash: resourceHash(remoteBefore, resources.independent),
+      },
+    },
+    conflict: conflict ? {
+      resourceKey: conflict.resourceKey,
+      relatedResourceKey: conflict.relatedResourceKey,
+      class: conflict.class,
+      reason: conflict.reason,
+      resolutionPolicy: conflict.resolutionPolicy,
+      localChange: conflict.change?.localChange || null,
+      remoteChange: conflict.change?.remoteChange || null,
+      relatedRemoteChange: conflict.relatedChange?.remoteChange || null,
+      remoteHash: conflict.remoteHash,
+      relatedRemoteHash: conflict.relatedChange?.remote?.hash || null,
+      plannedMutation: directoryMutation !== null,
+      plannedPrecondition: directoryPrecondition !== null,
+      conflictHash: sha256Evidence(conflict),
+    } : null,
+    remoteDescendant: descendantDecision ? {
+      resourceKey: descendantDecision.resourceKey,
+      decision: descendantDecision.decision,
+      localChange: descendantDecision.change?.localChange || null,
+      remoteChange: descendantDecision.change?.remoteChange || null,
+      remoteHash: descendantDecision.remoteHash,
+      plannedMutation: descendantMutation !== null,
+      plannedPrecondition: descendantPrecondition !== null,
+      decisionHash: sha256Evidence(descendantDecision),
+    } : null,
+    independentMutation: independentMutation ? {
+      resourceKey: independentMutation.resourceKey,
+      action: independentMutation.action,
+      changeKind: independentMutation.changeKind,
+      preconditionCheckedAgainst: independentPrecondition?.checkedAgainst || null,
+      preconditionExpectedHash: independentPrecondition?.expectedHash || null,
+      expectedHashMatchesMutation: independentPrecondition?.expectedHash === independentMutation.remoteBeforeHash,
+      mutationHash: sha256Evidence({
+        resourceKey: independentMutation.resourceKey,
+        action: independentMutation.action,
+        changeKind: independentMutation.changeKind,
+        baseHash: independentMutation.baseHash,
+        localHash: independentMutation.localHash,
+        remoteBeforeHash: independentMutation.remoteBeforeHash,
+      }),
+      preconditionHash: independentPrecondition ? sha256Evidence(independentPrecondition) : null,
+    } : null,
+    applyRefusal: {
+      code: applyError?.code || null,
+      detailsHash: applyError ? sha256Evidence(applyError.details || null) : null,
+      beforeDurableJournal: durableJournalEvents.length === 0,
+      beforeMutation: beforeMutationCalls === 0,
+      remoteSnapshotPreserved,
+      remoteDescendantPreserved: descendantPreserved,
+      descendantHashBefore: `sha256:${descendantHashBefore}`,
+      descendantHashAfter: `sha256:${descendantHashAfter}`,
+      remoteHashBefore,
+      remoteHashAfter,
+      durableJournalEventCount: durableJournalEvents.length,
+      beforeMutationCallCount: beforeMutationCalls,
+    },
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    plan: proof.plan,
+    surface: proof.surface,
+    conflict: proof.conflict,
+    remoteDescendant: proof.remoteDescendant,
+    independentMutation: proof.independentMutation,
+    applyRefusal: proof.applyRefusal,
+  });
+
+  if (Object.values(rawFixtures).some((raw) => JSON.stringify(proof).includes(raw))) {
+    return {
+      rpp: proof.rpp,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'LOCAL_DIRECTORY_DELETE_REMOTE_DESCENDANT_EVIDENCE_REDACTION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      evidenceScope: proof.evidenceScope,
+      scenario: proof.scenario,
+      rawValuesIncluded: true,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: true,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'LOCAL_DIRECTORY_DELETE_REMOTE_DESCENDANT_EVIDENCE_REDACTION_REQUIRED',
+        scenario: proof.scenario,
+      }),
+    };
+  }
+  return proof;
+}
+
+function localDirectoryDeleteRemoteDescendantReleaseVerifierScenarioEvidence() {
+  const boundary = localDirectoryDeleteRemoteDescendantReleaseVerifierBoundary;
+  return {
+    directoryResourceKey: boundary.resourceKey,
+    remoteDescendantResourceKey: boundary.descendantResourceKey,
+    independentResourceKey: boundary.independentResourceKey,
+  };
+}
+
+function localDirectoryDeleteRemoteDescendantReleaseVerifierResources() {
+  const boundary = localDirectoryDeleteRemoteDescendantReleaseVerifierBoundary;
+  return {
+    directory: {
+      type: 'file',
+      path: boundary.directoryPath,
+    },
+    descendant: {
+      type: 'file',
+      path: boundary.descendantPath,
+    },
+    independent: {
+      type: 'file',
+      path: boundary.independentPath,
+    },
+  };
+}
+
+function localDirectoryDeleteRemoteDescendantReleaseVerifierSnapshot(indexFile) {
+  const boundary = localDirectoryDeleteRemoteDescendantReleaseVerifierBoundary;
+  return {
+    files: {
+      [boundary.independentPath]: indexFile,
+      [boundary.directoryPath]: { type: 'directory' },
+      'wp-content/themes/twentytwentysix/style.css': '/* rpp-0284 stable release verifier theme marker */',
+    },
+    plugins: {},
+    db: {},
+  };
 }
 
 function buildDriverAuditEvidenceRedactionReleaseVerifierProof(now) {
@@ -3426,6 +3746,9 @@ try {
           },
           ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
         };
+        const mergeInvariantProof = {
+          localDirectoryDeleteRemoteDescendant: summarizeLocalDirectoryDeleteRemoteDescendantReleaseVerifierProof(),
+        };
         process.stdout.write(
           JSON.stringify(
             {
@@ -3477,6 +3800,7 @@ try {
               preservedRemoteRetry: proof.preservedRemoteRetry || null,
               readRetryEvidence: proof.readRetryEvidence || null,
               latestReadRetryEvidence: proof.latestReadRetryEvidence || null,
+              mergeInvariants: mergeInvariantProof,
               pluginDriver: pluginDriverProof,
             },
             null,
@@ -3737,6 +4061,9 @@ try {
         },
         ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
       };
+      const mergeInvariantProof = {
+        localDirectoryDeleteRemoteDescendant: summarizeLocalDirectoryDeleteRemoteDescendantReleaseVerifierProof(),
+      };
       const checkedProductionPluginDriverAccepted = packagedSourceFixture !== null
         ? productionPluginDriverProof.verdict === 'PACKAGED_PLUGIN_DRIVER_BOUNDARY_OK'
         : productionPluginDriverProof.verdict === 'LIVE_PLUGIN_DRIVER_BOUNDARY_OK';
@@ -3788,6 +4115,7 @@ try {
               },
               authSessionLifecycle: proof.authSessionLifecycle,
               authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
+              mergeInvariants: mergeInvariantProof,
               pluginDriver: pluginDriverProof,
             },
             null,
@@ -3856,6 +4184,7 @@ try {
                 retryAttempts: proof.retryAttempts,
               },
               authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+              mergeInvariants: mergeInvariantProof,
               pluginDriver: pluginDriverProof,
             },
             null,
@@ -3956,6 +4285,7 @@ try {
                 liveLeaseFence: proof.dbJournal.leaseFence || null,
                 checkedAccepted: checkedDurableJournalAccepted,
               },
+              mergeInvariants: mergeInvariantProof,
               ...(packagedPluginDriverProof ? { pluginDriver: packagedPluginDriverProof } : {}),
             },
             null,
@@ -4051,6 +4381,7 @@ try {
                 liveLeaseFence: proof.dbJournal.leaseFence || null,
                 checkedAccepted: checkedDurableJournalAccepted,
               },
+              mergeInvariants: mergeInvariantProof,
               pluginDriver: pluginDriverProof,
             },
             null,
@@ -4142,6 +4473,7 @@ try {
                 liveLeaseFence: proof.dbJournal.leaseFence || null,
                 checkedAccepted: checkedDurableJournalAccepted,
               },
+              mergeInvariants: mergeInvariantProof,
               pluginDriver: pluginDriverProof,
             },
             null,
@@ -4254,6 +4586,7 @@ try {
                 checkedAccepted: checkedDurableJournalAccepted,
               },
               replayAndRetry: proof.replayAndRetry || null,
+              mergeInvariants: mergeInvariantProof,
               pluginDriver: pluginDriverProof,
             },
             null,
@@ -4332,6 +4665,7 @@ try {
               liveLeaseFence: proof.dbJournal.leaseFence || null,
               checkedAccepted: checkedDurableJournalAccepted,
             },
+            mergeInvariants: mergeInvariantProof,
             pluginDriver: pluginDriverProof,
           },
           null,
