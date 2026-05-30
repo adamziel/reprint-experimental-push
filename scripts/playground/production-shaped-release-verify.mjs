@@ -739,6 +739,14 @@ export const independentLocalFileRemoteRowReleaseVerifierBoundary = Object.freez
   evidenceScope: 'local-production-shaped',
 });
 
+export const fileCreateUpdateDeleteMixReleaseVerifierBoundary = Object.freeze({
+  family: 'file-create-update-delete-mix-release-verifier-v5',
+  tag: 'file-create-update-delete-mix-release-verifier-v5',
+  readyTag: 'file-create-update-delete-mix-release-verifier-v5-ready',
+  nonReadyTag: 'file-create-update-delete-mix-release-verifier-v5-non-ready',
+  evidenceScope: 'local-generated-release-verifier',
+});
+
 export const crossTableCreateBatchReleaseVerifierBoundary = Object.freeze({
   family: 'cross-table-create-batch-mapping',
   tag: 'cross-table-create-batch-release-verifier-v5',
@@ -8151,6 +8159,573 @@ function postGuidSlugCollisionValidationEvidence(validation) {
   };
 }
 
+export function summarizeFileCreateUpdateDeleteMixReleaseVerifierProof({
+  now = new Date('2026-05-30T19:20:00.000Z'),
+  generatedCases = null,
+} = {}) {
+  try {
+    return buildFileCreateUpdateDeleteMixReleaseVerifierProof({ now, generatedCases });
+  } catch (error) {
+    return {
+      rpp: 'RPP-0181',
+      evidenceSource: 'release-verifier-file-create-update-delete-mix-v5',
+      status: 'blocked',
+      verdict: 'FILE_CREATE_UPDATE_DELETE_MIX_RELEASE_VERIFIER_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      evidenceScope: fileCreateUpdateDeleteMixReleaseVerifierBoundary.evidenceScope,
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildFileCreateUpdateDeleteMixReleaseVerifierProof({ now, generatedCases }) {
+  const boundary = fileCreateUpdateDeleteMixReleaseVerifierBoundary;
+  const targetCases = (Array.isArray(generatedCases) ? generatedCases : generatePushHarnessCases())
+    .filter((testCase) => testCase.tags?.has(boundary.tag));
+  const coverage = {
+    family: boundary.family,
+    target: 'fileCreateUpdateDeleteMixReleaseVerifierVariant5',
+    total: targetCases.length,
+    perTier: {},
+    statuses: {},
+  };
+  const totals = {
+    readyCases: 0,
+    nonReadyCases: 0,
+    readyApplied: 0,
+    readyCreateUpdateDeleteApplied: 0,
+    readyRemoteOnlyPreserved: 0,
+    readyStaleReplayRejected: 0,
+    readyPreconditionsOneToOne: 0,
+    nonReadyConflicts: 0,
+    nonReadyApplyRefusedBeforeMutation: 0,
+    nonReadyTargetMutationSuppressed: 0,
+    nonReadyRemoteUnchanged: 0,
+  };
+  const caseProofs = [];
+  const rawSentinels = [];
+
+  for (const testCase of targetCases) {
+    const target = fileCreateUpdateDeleteMixReleaseVerifierTarget(testCase);
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now,
+    });
+    const validation = validateGeneratedCase(testCase);
+
+    incrementReleaseVerifierCount(coverage.perTier, testCase.tier);
+    incrementReleaseVerifierCount(coverage.statuses, plan.status);
+    rawSentinels.push(...target.rawValues);
+
+    if (plan.status === 'ready') {
+      totals.readyCases += 1;
+      const readyProof = fileCreateUpdateDeleteMixReadyReleaseVerifierCase({
+        testCase,
+        plan,
+        validation,
+        target,
+      });
+      rawSentinels.push(...readyProof.rawValues);
+      if (readyProof.applyCarryThrough.applied) {
+        totals.readyApplied += 1;
+      }
+      if (readyProof.applyCarryThrough.createUpdateDeleteApplied) {
+        totals.readyCreateUpdateDeleteApplied += 1;
+      }
+      if (readyProof.remoteOnly.preserved) {
+        totals.readyRemoteOnlyPreserved += 1;
+      }
+      if (readyProof.staleReplay.rejectedBeforeMutation) {
+        totals.readyStaleReplayRejected += 1;
+      }
+      if (readyProof.preconditions.oneToOneLiveRemote) {
+        totals.readyPreconditionsOneToOne += 1;
+      }
+      caseProofs.push(readyProof.caseProof);
+      continue;
+    }
+
+    totals.nonReadyCases += 1;
+    const nonReadyProof = fileCreateUpdateDeleteMixNonReadyReleaseVerifierCase({
+      testCase,
+      plan,
+      validation,
+      target,
+    });
+    if (nonReadyProof.conflict.exactConflict) {
+      totals.nonReadyConflicts += 1;
+    }
+    if (nonReadyProof.applyRefusal.rejectedBeforeMutation) {
+      totals.nonReadyApplyRefusedBeforeMutation += 1;
+    }
+    if (nonReadyProof.conflict.targetMutationSuppressed) {
+      totals.nonReadyTargetMutationSuppressed += 1;
+    }
+    if (nonReadyProof.validation.nonReadyRemoteUnchanged) {
+      totals.nonReadyRemoteUnchanged += 1;
+    }
+    caseProofs.push(nonReadyProof.caseProof);
+  }
+
+  const sortedCaseProofs = caseProofs.sort((left, right) =>
+    left.tier - right.tier || left.variant.localeCompare(right.variant) || left.id.localeCompare(right.id));
+  const sortedCoverage = {
+    ...coverage,
+    perTier: sortReleaseVerifierCountObject(coverage.perTier, { numeric: true }),
+    statuses: sortReleaseVerifierCountObject(coverage.statuses),
+  };
+  const expectedPerTier = Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2]));
+  const coverageOk = targetCases.length === 20
+    && JSON.stringify(sortedCoverage.perTier) === JSON.stringify(expectedPerTier)
+    && sortedCoverage.statuses.ready === 10
+    && sortedCoverage.statuses.conflict === 10;
+  const executorOk = totals.readyCases === 10
+    && totals.nonReadyCases === 10
+    && totals.readyApplied === 10
+    && totals.readyCreateUpdateDeleteApplied === 10
+    && totals.readyRemoteOnlyPreserved === 10
+    && totals.readyStaleReplayRejected === 10
+    && totals.readyPreconditionsOneToOne === 10
+    && totals.nonReadyConflicts === 10
+    && totals.nonReadyApplyRefusedBeforeMutation === 10
+    && totals.nonReadyTargetMutationSuppressed === 10
+    && totals.nonReadyRemoteUnchanged === 10
+    && sortedCaseProofs.every((entry) => entry.exactReady === true || entry.exactNonReady === true);
+  const proofBase = {
+    rpp: 'RPP-0181',
+    evidenceSource: 'release-verifier-file-create-update-delete-mix-v5',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    evidenceScope: boundary.evidenceScope,
+    releaseVerifier: {
+      checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+      check: 'file-create-update-delete-mix',
+      variant: 'v5',
+      generatedHarnessReadyAndNonReady: coverageOk,
+      executorCarriesReadyAndRejectsConflict: executorOk,
+    },
+    invariant: {
+      readyMutationKinds: ['create', 'delete', 'update'],
+      readyRemoteOnlyDecision: 'keep-remote',
+      readyStaleReplayRefusalCode: 'PRECONDITION_FAILED',
+      nonReadyConflictStatus: 'conflict',
+      nonReadyApplyRefusalCode: 'PLAN_NOT_READY',
+      conflictTarget: 'updated-file',
+    },
+    coverage: sortedCoverage,
+    totals,
+    caseProofs: sortedCaseProofs,
+  };
+  const rawValuesIncluded = rawSentinels.some((raw) =>
+    typeof raw === 'string' && raw.length > 0 && JSON.stringify(proofBase).includes(raw));
+  const ok = coverageOk && executorOk && !rawValuesIncluded;
+
+  return {
+    ...proofBase,
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'FILE_CREATE_UPDATE_DELETE_MIX_READY_AND_NON_READY_VERIFIED'
+      : 'FILE_CREATE_UPDATE_DELETE_MIX_RELEASE_VERIFIER_REQUIRED',
+    rawValuesIncluded,
+    proofHash: sha256Evidence(proofBase),
+  };
+}
+
+function fileCreateUpdateDeleteMixReadyReleaseVerifierCase({
+  testCase,
+  plan,
+  validation,
+  target,
+}) {
+  const expected = [
+    { kind: 'create', resource: target.createResource, resourceKey: target.createResourceKey },
+    { kind: 'update', resource: target.updateResource, resourceKey: target.updateResourceKey },
+    { kind: 'delete', resource: target.deleteResource, resourceKey: target.deleteResourceKey },
+  ];
+  const mutations = new Map(plan.mutations.map((mutation) => [mutation.resourceKey, mutation]));
+  const preconditions = new Map(plan.preconditions.map((precondition) => [precondition.resourceKey, precondition]));
+  const applyRemote = cloneReleaseVerifierJson(testCase.remote);
+  const applyEvents = [];
+  const applyAttempt = captureReleaseVerifierApply(() =>
+    applyPlan(applyRemote, plan, {
+      durableJournal: releaseVerifierClaimFencedDurableJournal(applyEvents),
+    }));
+  const appliedSite = applyAttempt.result?.site || applyRemote;
+  const mutationEvidence = expected.map(({ kind, resource, resourceKey }) => {
+    const mutation = mutations.get(resourceKey) || null;
+    const precondition = preconditions.get(resourceKey) || null;
+    return fileCreateUpdateDeleteMixMutationEvidence({
+      kind,
+      resource,
+      mutation,
+      precondition,
+      testCase,
+      appliedSite,
+    });
+  });
+  const plannedChangeKinds = fileCreateUpdateDeleteMixChangeKindCounts(mutationEvidence);
+  const remoteOnlyDecision = plan.decisions.find((decision) =>
+    decision.resourceKey === target.remoteOnlyResourceKey) || null;
+  const remoteOnlyMutationCount = plan.mutations
+    .filter((mutation) => mutation.resourceKey === target.remoteOnlyResourceKey)
+    .length;
+  const remoteOnlyPreconditionCount = plan.preconditions
+    .filter((precondition) => precondition.resourceKey === target.remoteOnlyResourceKey)
+    .length;
+  const remoteOnlyHashBefore = resourceHash(testCase.remote, target.remoteOnlyResource);
+  const remoteOnlyHashAfter = resourceHash(appliedSite, target.remoteOnlyResource);
+  const preconditionsOneToOne = releaseVerifierPreconditionsAreLiveOneToOne(plan, testCase.remote);
+  const staleReplay = fileCreateUpdateDeleteMixReadyStaleReplay({ testCase, plan, target });
+  const createUpdateDeleteApplied = mutationEvidence.every((entry) => entry.appliedLocalHashMatches);
+  const remoteOnlyPreserved = remoteOnlyDecision?.decision === 'keep-remote'
+    && remoteOnlyMutationCount === 0
+    && remoteOnlyPreconditionCount === 0
+    && remoteOnlyHashAfter === remoteOnlyHashBefore;
+  const exactReady = validation.status === 'ready'
+    && validation.applied === true
+    && validation.unplannedRemotePreserved === true
+    && validation.staleReplayRejected === true
+    && validation.staleReplayRejectionCode === 'PRECONDITION_FAILED'
+    && validation.staleReplayRemoteUnchanged === true
+    && JSON.stringify(plannedChangeKinds) === JSON.stringify({ create: 1, delete: 1, update: 1 })
+    && preconditionsOneToOne
+    && applyAttempt.error === null
+    && applyAttempt.result?.appliedMutations === plan.mutations.length
+    && createUpdateDeleteApplied
+    && remoteOnlyPreserved
+    && staleReplay.rejectedBeforeMutation;
+
+  return {
+    rawValues: staleReplay.rawValues,
+    preconditions: {
+      oneToOneLiveRemote: preconditionsOneToOne,
+    },
+    remoteOnly: {
+      preserved: remoteOnlyPreserved,
+    },
+    applyCarryThrough: {
+      applied: applyAttempt.error === null,
+      createUpdateDeleteApplied,
+    },
+    staleReplay,
+    caseProof: {
+      id: testCase.id,
+      tier: testCase.tier,
+      variant: 'ready',
+      status: plan.status,
+      exactReady,
+      planHash: sha256Evidence(releaseVerifierHashOnlyPlanEvidence(plan)),
+      planSummary: plan.summary,
+      surface: fileCreateUpdateDeleteMixSurfaceEvidence(testCase, target),
+      plannedChangeKinds,
+      mutations: mutationEvidence,
+      preconditions: {
+        count: plan.preconditions.length,
+        oneToOneLiveRemote: preconditionsOneToOne,
+      },
+      remoteOnly: {
+        resourceKey: target.remoteOnlyResourceKey,
+        decision: remoteOnlyDecision?.decision || null,
+        baseHash: remoteOnlyDecision?.baseHash || null,
+        remoteHash: remoteOnlyDecision?.remoteHash || null,
+        plannedMutation: remoteOnlyMutationCount > 0,
+        plannedPrecondition: remoteOnlyPreconditionCount > 0,
+        remoteHashBefore: remoteOnlyHashBefore,
+        remoteHashAfter: remoteOnlyHashAfter,
+        preserved: remoteOnlyPreserved,
+        decisionHash: remoteOnlyDecision ? sha256Evidence(remoteOnlyDecision) : null,
+      },
+      applyCarryThrough: {
+        applied: applyAttempt.error === null,
+        appliedMutations: applyAttempt.result?.appliedMutations ?? null,
+        createUpdateDeleteApplied,
+        eventCount: applyEvents.length,
+        remoteHashAfter: sha256Evidence(appliedSite),
+      },
+      staleReplay: {
+        code: staleReplay.code,
+        resourceKey: staleReplay.resourceKey,
+        expectedHash: staleReplay.expectedHash,
+        actualHash: staleReplay.actualHash,
+        rejectedBeforeMutation: staleReplay.rejectedBeforeMutation,
+        eventCount: staleReplay.eventCount,
+        remoteHashBefore: staleReplay.remoteHashBefore,
+        remoteHashAfter: staleReplay.remoteHashAfter,
+        detailsHash: staleReplay.detailsHash,
+      },
+      validation: fileCreateUpdateDeleteMixValidationEvidence(validation),
+    },
+  };
+}
+
+function fileCreateUpdateDeleteMixNonReadyReleaseVerifierCase({
+  testCase,
+  plan,
+  validation,
+  target,
+}) {
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === target.updateResourceKey) || null;
+  const targetMutation = plan.mutations.find((entry) => entry.resourceKey === target.updateResourceKey) || null;
+  const targetPrecondition = plan.preconditions.find((entry) =>
+    entry.resourceKey === target.updateResourceKey) || null;
+  const refusalRemote = cloneReleaseVerifierJson(testCase.remote);
+  const remoteHashBefore = sha256Evidence(refusalRemote);
+  const events = [];
+  const attempt = captureReleaseVerifierApply(() =>
+    applyPlan(refusalRemote, plan, {
+      durableJournal: releaseVerifierClaimFencedDurableJournal(events),
+    }));
+  const remoteHashAfter = sha256Evidence(refusalRemote);
+  const rejectedBeforeMutation = attempt.error instanceof PushPlanError
+    && attempt.error.code === 'PLAN_NOT_READY'
+    && remoteHashAfter === remoteHashBefore
+    && events.length === 0;
+  const conflictEvidence = {
+    resourceKey: conflict?.resourceKey || null,
+    class: conflict?.class || null,
+    localChange: conflict?.change?.localChange || null,
+    remoteChange: conflict?.change?.remoteChange || null,
+    baseHash: conflict?.baseHash || null,
+    localHash: conflict?.localHash || null,
+    remoteHash: conflict?.remoteHash || null,
+    targetMutationSuppressed: targetMutation === null,
+    targetPreconditionSuppressed: targetPrecondition === null,
+    exactConflict: conflict?.resourceKey === target.updateResourceKey
+      && conflict?.change?.localChange === 'update'
+      && conflict?.change?.remoteChange === 'update'
+      && targetMutation === null
+      && targetPrecondition === null,
+    conflictHash: conflict ? sha256Evidence(conflict) : null,
+  };
+  const exactNonReady = plan.status === 'conflict'
+    && validation.status === 'conflict'
+    && validation.applied === false
+    && validation.nonReadyRemoteUnchanged === true
+    && conflictEvidence.exactConflict
+    && rejectedBeforeMutation;
+
+  return {
+    conflict: conflictEvidence,
+    applyRefusal: {
+      rejectedBeforeMutation,
+    },
+    validation: fileCreateUpdateDeleteMixValidationEvidence(validation),
+    caseProof: {
+      id: testCase.id,
+      tier: testCase.tier,
+      variant: 'non-ready',
+      status: plan.status,
+      exactNonReady,
+      planHash: sha256Evidence(releaseVerifierHashOnlyPlanEvidence(plan)),
+      planSummary: plan.summary,
+      surface: fileCreateUpdateDeleteMixSurfaceEvidence(testCase, target),
+      conflict: conflictEvidence,
+      applyRefusal: {
+        code: attempt.error?.code || null,
+        rejectedBeforeMutation,
+        eventCount: events.length,
+        remoteHashBefore,
+        remoteHashAfter,
+        detailsHash: attempt.error ? sha256Evidence(attempt.error.details || null) : null,
+      },
+      validation: fileCreateUpdateDeleteMixValidationEvidence(validation),
+    },
+  };
+}
+
+function fileCreateUpdateDeleteMixReleaseVerifierTarget(testCase) {
+  const baseFiles = testCase.base?.files || {};
+  const localFiles = testCase.local?.files || {};
+  const remoteFiles = testCase.remote?.files || {};
+  const createEntry = Object.entries(localFiles)
+    .find(([filePath, value]) =>
+      typeof value === 'string'
+        && value.startsWith('generated file mix create ')
+        && !hasReleaseVerifierOwnFile(baseFiles, filePath)
+        && !hasReleaseVerifierOwnFile(remoteFiles, filePath));
+  const updateEntry = Object.entries(localFiles)
+    .find(([filePath, value]) =>
+      typeof value === 'string'
+        && value.startsWith('generated file mix update ')
+        && hasReleaseVerifierOwnFile(baseFiles, filePath)
+        && hasReleaseVerifierOwnFile(remoteFiles, filePath));
+  const deletePath = Object.keys(baseFiles)
+    .find((filePath) =>
+      filePath !== updateEntry?.[0]
+        && hasReleaseVerifierOwnFile(remoteFiles, filePath)
+        && !hasReleaseVerifierOwnFile(localFiles, filePath));
+  const remoteOnlyEntry = Object.entries(remoteFiles)
+    .find(([filePath, value]) =>
+      typeof value === 'string'
+        && value.startsWith('remote-only file mix preserve ')
+        && !hasReleaseVerifierOwnFile(baseFiles, filePath)
+        && !hasReleaseVerifierOwnFile(localFiles, filePath));
+
+  assert.ok(createEntry, `${testCase.id} missing generated file create target`);
+  assert.ok(updateEntry, `${testCase.id} missing generated file update target`);
+  assert.ok(deletePath, `${testCase.id} missing generated file delete target`);
+  assert.ok(remoteOnlyEntry, `${testCase.id} missing generated remote-only file target`);
+
+  const [createPath, createValue] = createEntry;
+  const [updatePath, updateValue] = updateEntry;
+  const [remoteOnlyPath, remoteOnlyValue] = remoteOnlyEntry;
+  const remoteUpdateValue = remoteFiles[updatePath];
+  const rawValues = [createValue, updateValue, remoteOnlyValue];
+  if (typeof remoteUpdateValue === 'string' && remoteUpdateValue.startsWith('remote concurrent file mix update ')) {
+    rawValues.push(remoteUpdateValue);
+  }
+
+  return {
+    createPath,
+    updatePath,
+    deletePath,
+    remoteOnlyPath,
+    createResource: { type: 'file', path: createPath },
+    updateResource: { type: 'file', path: updatePath },
+    deleteResource: { type: 'file', path: deletePath },
+    remoteOnlyResource: { type: 'file', path: remoteOnlyPath },
+    createResourceKey: `file:${createPath}`,
+    updateResourceKey: `file:${updatePath}`,
+    deleteResourceKey: `file:${deletePath}`,
+    remoteOnlyResourceKey: `file:${remoteOnlyPath}`,
+    rawValues,
+  };
+}
+
+function hasReleaseVerifierOwnFile(files, filePath) {
+  return Object.prototype.hasOwnProperty.call(files || {}, filePath);
+}
+
+function fileCreateUpdateDeleteMixMutationEvidence({
+  kind,
+  resource,
+  mutation,
+  precondition,
+  testCase,
+  appliedSite,
+}) {
+  assert.ok(mutation, `${testCase.id} missing ${kind} mutation`);
+  assert.ok(precondition, `${testCase.id} missing ${kind} precondition`);
+  const localResourceHash = resourceHash(testCase.local, resource);
+  const appliedHash = resourceHash(appliedSite, resource);
+
+  return {
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    changeKind: mutation.changeKind,
+    localChange: mutation.change?.localChange || null,
+    remoteChange: mutation.change?.remoteChange || null,
+    baseHash: mutation.baseHash,
+    localHash: mutation.localHash,
+    remoteBeforeHash: mutation.remoteBeforeHash,
+    localResourceHash,
+    appliedHash,
+    appliedLocalHashMatches: appliedHash === localResourceHash,
+    exactKind: mutation.changeKind === kind,
+    precondition: {
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+      matchesMutation: precondition.mutationId === mutation.id
+        && precondition.expectedHash === mutation.remoteBeforeHash
+        && precondition.checkedAgainst === 'live-remote',
+      preconditionHash: sha256Evidence({
+        resourceKey: precondition.resourceKey,
+        expectedHash: precondition.expectedHash,
+        checkedAgainst: precondition.checkedAgainst,
+      }),
+    },
+    mutationHash: sha256Evidence({
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+    }),
+  };
+}
+
+function fileCreateUpdateDeleteMixReadyStaleReplay({ testCase, plan, target }) {
+  const staleValue = `rpp-0181-stale-file-mix-update-${testCase.id}`;
+  const staleRemote = cloneReleaseVerifierJson(testCase.remote);
+  staleRemote.files[target.updatePath] = staleValue;
+  const actualHash = resourceHash(staleRemote, target.updateResource);
+  const remoteHashBefore = sha256Evidence(staleRemote);
+  const events = [];
+  const attempt = captureReleaseVerifierApply(() =>
+    applyPlan(staleRemote, plan, {
+      durableJournal: releaseVerifierClaimFencedDurableJournal(events),
+    }));
+  const remoteHashAfter = sha256Evidence(staleRemote);
+  const updateMutation = plan.mutations.find((entry) => entry.resourceKey === target.updateResourceKey) || null;
+
+  return {
+    rawValues: [staleValue],
+    code: attempt.error?.code || null,
+    resourceKey: attempt.error?.details?.resourceKey || null,
+    expectedHash: attempt.error?.details?.expectedHash || null,
+    actualHash: attempt.error?.details?.actualHash || actualHash,
+    rejectedBeforeMutation: attempt.error instanceof PushPlanError
+      && attempt.error.code === 'PRECONDITION_FAILED'
+      && attempt.error.details?.resourceKey === target.updateResourceKey
+      && attempt.error.details?.expectedHash === updateMutation?.remoteBeforeHash
+      && attempt.error.details?.actualHash === actualHash
+      && remoteHashAfter === remoteHashBefore
+      && events.length === 0,
+    eventCount: events.length,
+    remoteHashBefore,
+    remoteHashAfter,
+    detailsHash: attempt.error ? sha256Evidence(attempt.error.details || null) : null,
+  };
+}
+
+function fileCreateUpdateDeleteMixChangeKindCounts(mutations) {
+  const counts = {};
+  for (const mutation of mutations) {
+    incrementReleaseVerifierCount(counts, mutation.changeKind);
+  }
+  return sortReleaseVerifierCountObject(counts);
+}
+
+function fileCreateUpdateDeleteMixSurfaceEvidence(testCase, target) {
+  return Object.fromEntries([
+    ['create', target.createResource],
+    ['update', target.updateResource],
+    ['delete', target.deleteResource],
+    ['remoteOnly', target.remoteOnlyResource],
+  ].map(([name, resource]) => [
+    name,
+    {
+      resourceKey: `file:${resource.path}`,
+      baseHash: resourceHash(testCase.base, resource),
+      localHash: resourceHash(testCase.local, resource),
+      remoteHash: resourceHash(testCase.remote, resource),
+    },
+  ]));
+}
+
+function fileCreateUpdateDeleteMixValidationEvidence(validation) {
+  return {
+    status: validation.status,
+    applied: validation.applied === true,
+    unplannedRemotePreserved: validation.unplannedRemotePreserved === true,
+    nonReadyRemoteUnchanged: validation.nonReadyRemoteUnchanged === true,
+    staleReplayRejected: validation.staleReplayRejected === true,
+    staleReplayRejectionCode: validation.staleReplayRejectionCode || null,
+    staleReplayRemoteUnchanged: validation.staleReplayRemoteUnchanged === true,
+  };
+}
+
 export function summarizeMergeInvariantReleaseVerifierProofs() {
   return {
     independentLocalFileRemoteRow: summarizeIndependentLocalFileRemoteRowReleaseVerifierProof(),
@@ -8165,6 +8740,12 @@ export function summarizeGraphIdentityReleaseVerifierProofs() {
     postGuidSlugCollision: summarizePostGuidSlugCollisionReleaseVerifierProof(),
     crossTableCreateBatch: summarizeCrossTableCreateBatchReleaseVerifierProof(),
     productionImporterExporterIdentityMap: summarizeProductionImporterExporterIdentityMapReleaseVerifierProof(),
+  };
+}
+
+export function summarizeGeneratedHarnessReleaseVerifierProofs() {
+  return {
+    fileCreateUpdateDeleteMix: summarizeFileCreateUpdateDeleteMixReleaseVerifierProof(),
   };
 }
 
@@ -12928,6 +13509,7 @@ try {
         };
         const mergeInvariantProofs = summarizeMergeInvariantReleaseVerifierProofs();
         const graphIdentityProofs = summarizeGraphIdentityReleaseVerifierProofs();
+        const generatedHarnessProofs = summarizeGeneratedHarnessReleaseVerifierProofs();
         process.stdout.write(
           JSON.stringify(
             {
@@ -12983,6 +13565,7 @@ try {
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
               graphIdentity: graphIdentityProofs,
+              generatedHarness: generatedHarnessProofs,
             },
             null,
             2,
@@ -13273,6 +13856,7 @@ try {
       };
       const mergeInvariantProofs = summarizeMergeInvariantReleaseVerifierProofs();
       const graphIdentityProofs = summarizeGraphIdentityReleaseVerifierProofs();
+      const generatedHarnessProofs = summarizeGeneratedHarnessReleaseVerifierProofs();
       const checkedProductionPluginDriverAccepted = packagedSourceFixture !== null
         ? productionPluginDriverProof.verdict === 'PACKAGED_PLUGIN_DRIVER_BOUNDARY_OK'
         : productionPluginDriverProof.verdict === 'LIVE_PLUGIN_DRIVER_BOUNDARY_OK';
@@ -13327,6 +13911,7 @@ try {
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
               graphIdentity: graphIdentityProofs,
+              generatedHarness: generatedHarnessProofs,
             },
             null,
             2,
@@ -13397,6 +13982,7 @@ try {
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
               graphIdentity: graphIdentityProofs,
+              generatedHarness: generatedHarnessProofs,
             },
             null,
             2,
@@ -13591,12 +14177,13 @@ try {
                 liveLeaseFence: proof.dbJournal.leaseFence || null,
                 checkedAccepted: checkedDurableJournalAccepted,
               },
-              pluginDriver: pluginDriverProof,
-              mergeInvariants: mergeInvariantProofs,
-              graphIdentity: graphIdentityProofs,
-            },
-            null,
-            2,
+                pluginDriver: pluginDriverProof,
+                mergeInvariants: mergeInvariantProofs,
+                graphIdentity: graphIdentityProofs,
+                generatedHarness: generatedHarnessProofs,
+              },
+              null,
+              2,
           ),
         );
         process.stdout.write('\n');
@@ -13687,6 +14274,7 @@ try {
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
               graphIdentity: graphIdentityProofs,
+              generatedHarness: generatedHarnessProofs,
             },
             null,
             2,
@@ -13801,6 +14389,7 @@ try {
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
               graphIdentity: graphIdentityProofs,
+              generatedHarness: generatedHarnessProofs,
             },
             null,
             2,
@@ -13882,6 +14471,7 @@ try {
             pluginDriver: pluginDriverProof,
             mergeInvariants: mergeInvariantProofs,
             graphIdentity: graphIdentityProofs,
+            generatedHarness: generatedHarnessProofs,
           },
           null,
           2,

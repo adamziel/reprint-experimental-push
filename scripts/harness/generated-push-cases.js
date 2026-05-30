@@ -266,6 +266,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'file-create-update-delete-mix-variant4',
     tag: 'file-create-update-delete-mix-v4',
   },
+  fileCreateUpdateDeleteMixReleaseVerifierVariant5: {
+    family: 'file-create-update-delete-mix-release-verifier-v5',
+    tag: 'file-create-update-delete-mix-release-verifier-v5',
+  },
   rowCreateUpdateDeleteMix: {
     family: 'row-create-update-delete-mix-ready',
     tag: 'row-create-update-delete-mix',
@@ -3847,6 +3851,7 @@ function addFileCreateUpdateDeleteMix(local, remote, allocator, tags, { conflict
   tags.add('file-create-update-delete-mix');
   tags.add('file-create-update-delete-mix-v3');
   tags.add('file-create-update-delete-mix-v4');
+  tags.add('file-create-update-delete-mix-release-verifier-v5');
   tags.add('file-create');
   tags.add('file-update');
   tags.add('file-delete');
@@ -3855,9 +3860,11 @@ function addFileCreateUpdateDeleteMix(local, remote, allocator, tags, { conflict
     remote.files[updatePath] = `remote concurrent file mix update ${allocator.next()}`;
     tags.add('file-create-update-delete-mix-v3-non-ready');
     tags.add('file-create-update-delete-mix-v4-non-ready');
+    tags.add('file-create-update-delete-mix-release-verifier-v5-non-ready');
   } else {
     tags.add('file-create-update-delete-mix-v3-ready');
     tags.add('file-create-update-delete-mix-v4-ready');
+    tags.add('file-create-update-delete-mix-release-verifier-v5-ready');
   }
 }
 
