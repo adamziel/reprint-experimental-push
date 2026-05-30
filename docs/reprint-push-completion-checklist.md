@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 318.
-- Remaining open: 682.
+- Verified complete: 430.
+- Remaining open: 570.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -558,7 +558,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [ ] RPP-0519 (Mid-Far / executor-auth) Implement credential rotation behavior, variant 1. Success: apply revalidates the live source before mutation.
 - [ ] RPP-0520 (Mid-Far / executor-auth) Implement production audit event schema, variant 1. Success: verify:release includes the route evidence in one summary.
 - [x] RPP-0521 (Mid-Far / executor-auth) Prove production preflight route, variant 2. Success: real endpoint test runs against a live URL.
-- [ ] RPP-0522 (Mid-Far / executor-auth) Prove production snapshot hashes route, variant 2. Success: negative auth cases fail before JSON parsing and mutation.
+- [x] RPP-0522 (Mid-Far / executor-auth) Prove production snapshot hashes route, variant 2. Success: negative auth cases fail before JSON parsing and mutation.
 - [ ] RPP-0523 (Mid-Far / executor-auth) Prove production dry-run route, variant 2. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [x] RPP-0524 (Mid-Far / executor-auth) Prove production apply route, variant 2. Success: apply revalidates the live source before mutation.
 - [x] RPP-0525 (Mid-Far / executor-auth) Prove production journal route, variant 2. Success: verify:release includes the route evidence in one summary.
