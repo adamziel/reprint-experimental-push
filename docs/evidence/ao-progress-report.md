@@ -1,17 +1,33 @@
-# AO Progress Report - 2026-05-30 05:26 CEST
+# AO Progress Report - 2026-05-30 05:33 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0481 driver
-registration API release-verifier proof refresh ending at `a7e7f71b5`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0482 driver owner
+identity release-verifier proof refresh ending at `b320a6bc1`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 342 are
-  checked from integrated evidence and 658 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 343 are
+  checked from integrated evidence and 657 remain open.
+- `RPP-0482` is now checked with focused driver owner identity
+  release-verifier variant-5 evidence in
+  `docs/evidence/rpp-0482-driver-owner-identity-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/rpp-0482-driver-owner-identity-release-verifier-v5.test.js`. `node
+  --check scripts/harness/generated-push-cases.js`, `node --check
+  test/rpp-0482-driver-owner-identity-release-verifier-v5.test.js`, `node
+  --test test/rpp-0482-driver-owner-identity-release-verifier-v5.test.js`, the
+  adjacent owner-identity slice, and targeted production-shaped owner/driver
+  checks exited 0, and `node --test test/generated-push-harness.test.js` passed
+  65/65, proving one supported exact-owner driver path and four unsupported
+  fail-closed variants carry through the release-verifier evidence envelope,
+  remote hashes are preserved after refusal, stale owner-context generated
+  expectations match planner blocker evidence, checklist lint, artifact
+  redaction scan, and `git diff --check` while final release remains **NO-GO**.
 - `RPP-0481` is now checked with focused driver registration API
   release-verifier variant-5 evidence in
   `docs/evidence/rpp-0481-driver-registration-api-release-verifier-v5.md`,

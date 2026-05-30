@@ -6,20 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:26 CEST.
+- Last update: 2026-05-30 05:33 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0481 driver registration API release-verifier proof merge ending at
-  `a7e7f71b5`.
+  the RPP-0482 driver owner identity release-verifier proof merge ending at
+  `b320a6bc1`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 342
-  items checked and leaves 658 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 343
+  items checked and leaves 657 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  65 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  66 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 58 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Release verifier driver owner identity variant-5 refresh: the current lane
+  now contains `RPP-0482` evidence in
+  `docs/evidence/rpp-0482-driver-owner-identity-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/rpp-0482-driver-owner-identity-release-verifier-v5.test.js`. `node
+  --check scripts/harness/generated-push-cases.js`, `node --check
+  test/rpp-0482-driver-owner-identity-release-verifier-v5.test.js`, the focused
+  RPP-0482 test, the adjacent owner-identity slice, and the targeted
+  production-shaped owner/driver checks all exited 0, and the full generated
+  harness passed 65/65. The proof carries one supported exact-owner driver path
+  and four unsupported fail-closed owner variants through a
+  release-verifier-shaped evidence envelope, preserves remote hashes after
+  refusal, updates the stale owner-context generated expectation, and keeps
+  evidence hash-only. Checklist lint, artifact redaction scan, and `git diff
+  --check` also passed. Counts are now 343/657; final release remains `NO-GO`.
 - Release verifier driver registration API variant-5 refresh: the current lane
   now contains `RPP-0481` evidence in
   `docs/evidence/rpp-0481-driver-registration-api-release-verifier-v5.md`,
