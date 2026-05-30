@@ -234,6 +234,9 @@ const requiredFamilies = [
   'wp-options-scalar-v3',
   'wp-options-scalar-v3-ready',
   'wp-options-scalar-v3-non-ready',
+  'wp-options-scalar-v4',
+  'wp-options-scalar-v4-ready',
+  'wp-options-scalar-v4-non-ready',
   'wp-options-serialized-ready',
   'wp-options-serialized-conflict',
   'wp-options-serialized',
@@ -4770,14 +4773,106 @@ test('RPP-0145 wp_options scalar option changes variant 3 records surface and in
   assert.equal(evidenceText.includes('remote-scalar-option-'), false, 'variant 3 evidence leaked remote scalar option payload');
 });
 
+test('RPP-0165 wp_options scalar option changes variant 4 records surface and invariant', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpOptionsScalarChangesVariant4;
+
+  assert.ok(coverage, 'missing wp_options scalar option changes variant 4 target coverage');
+  assert.equal(coverage.family, 'wp-options-scalar-variant4');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-options-scalar-v4']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.ok(coverage.statuses.ready > 0, 'variant 4 target should include ready scalar option cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 4 target should include non-ready scalar option cases');
+  assert.equal(report.summary.featureFamilies['wp-options-scalar-v4-ready'], 10);
+  assert.equal(report.summary.featureFamilies['wp-options-scalar-v4-non-ready'], 10);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const firstEvidence = generatedWpOptionsScalarChangesVariant4Evidence(coverage);
+  const replayEvidence = generatedWpOptionsScalarChangesVariant4Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0165 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 4 scalar option evidence changed between runs');
+  assert.equal(firstEvidence.target, 'wpOptionsScalarChangesVariant4');
+  assert.equal(firstEvidence.family, 'wp-options-scalar-variant4');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.status),
+    ['ready', 'conflict'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.ok(readyCase.tags.includes('wp-options-scalar-v4-ready'));
+  assert.ok(nonReadyCase.tags.includes('wp-options-scalar-v4-non-ready'));
+  assert.equal(readyCase.variant, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.equal(readyCase.scalarMutation.action, 'put');
+  assert.equal(readyCase.scalarMutation.changeKind, 'update');
+  assert.equal(readyCase.scalarMutation.plannedMutation, true);
+  assert.equal(readyCase.scalarMutation.plannedPrecondition, true);
+  assert.equal(readyCase.scalarMutation.appliedHash, readyCase.surface.option.localHash);
+  assert.equal(readyCase.scalarMutation.preconditionExpectedHash, readyCase.scalarMutation.remoteBeforeHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(nonReadyCase.variant, 'non-ready');
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.equal(nonReadyCase.conflict.resourceKey, nonReadyCase.surface.option.resourceKey);
+  assert.equal(nonReadyCase.conflict.plannedMutation, false);
+  assert.match(nonReadyCase.conflict.conflictHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('base-scalar-option-'), false, 'variant 4 evidence leaked base scalar option payload');
+  assert.equal(evidenceText.includes('local-scalar-option-'), false, 'variant 4 evidence leaked local scalar option payload');
+  assert.equal(evidenceText.includes('remote-scalar-option-'), false, 'variant 4 evidence leaked remote scalar option payload');
+});
+
 function generatedWpOptionsScalarChangesVariant3Evidence(targetCoverage) {
+  return generatedWpOptionsScalarChangesVariantEvidence(targetCoverage, {
+    target: 'wpOptionsScalarChangesVariant3',
+    tag: 'wp-options-scalar-v3',
+    label: 'variant 3',
+  });
+}
+
+function generatedWpOptionsScalarChangesVariant4Evidence(targetCoverage) {
+  return generatedWpOptionsScalarChangesVariantEvidence(targetCoverage, {
+    target: 'wpOptionsScalarChangesVariant4',
+    tag: 'wp-options-scalar-v4',
+    label: 'variant 4',
+  });
+}
+
+function generatedWpOptionsScalarChangesVariantEvidence(targetCoverage, { target, tag, label }) {
   const perTier = {};
   const statuses = {};
   const selectedCases = new Map();
   let totalCases = 0;
 
   for (const testCase of generatePushHarnessCases()) {
-    if (!testCase.tags.has('wp-options-scalar-v3')) {
+    if (!testCase.tags.has(tag)) {
       continue;
     }
 
@@ -4795,14 +4890,14 @@ function generatedWpOptionsScalarChangesVariant3Evidence(targetCoverage) {
   const sortedPerTier = sortNumericObject(perTier);
   const sortedStatuses = sortStringObject(statuses);
 
-  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 scalar option target recount should match summary tiers');
-  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 scalar option target recount should match summary statuses');
-  assert.equal(totalCases, targetCoverage.total, 'variant 3 scalar option target recount should match summary total');
-  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready scalar option case');
-  assert.ok(selectedCases.has('non-ready'), 'variant 3 target should select one non-ready scalar option case');
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, `${label} scalar option target recount should match summary tiers`);
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, `${label} scalar option target recount should match summary statuses`);
+  assert.equal(totalCases, targetCoverage.total, `${label} scalar option target recount should match summary total`);
+  assert.ok(selectedCases.has('ready'), `${label} target should select one ready scalar option case`);
+  assert.ok(selectedCases.has('non-ready'), `${label} target should select one non-ready scalar option case`);
 
   return {
-    target: 'wpOptionsScalarChangesVariant3',
+    target,
     family: targetCoverage.family,
     evidenceScope: 'local-generated-model',
     productionBacked: false,
