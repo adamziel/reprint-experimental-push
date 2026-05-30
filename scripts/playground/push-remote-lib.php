@@ -158,6 +158,17 @@ function reprint_push_protocol_run_payload(
     }
 
     $lab_fail_after_mutations = reprint_push_protocol_lab_fail_after_mutations($options);
+    $apply_batch_size_configured = array_key_exists('applyBatchSize', $options)
+        && $options['applyBatchSize'] !== null
+        && $options['applyBatchSize'] !== '';
+    $apply_batch_size = reprint_push_protocol_apply_batch_size($options);
+    $apply_batches = reprint_push_protocol_apply_batches($mutations, $apply_batch_size);
+    $apply_batch_sizing = reprint_push_protocol_apply_batch_sizing_evidence(
+        $apply_batch_size,
+        $apply_batches,
+        $mutations,
+        $apply_batch_size_configured
+    );
     $mutation_event_callback = reprint_push_protocol_mutation_event_callback($options);
     $recovery_entries = reprint_push_protocol_recovery_entries($mutations, $preconditions);
     $started_entry = reprint_push_protocol_append_journal_event('apply-started', $journal_context + $plan_evidence + [
@@ -165,6 +176,7 @@ function reprint_push_protocol_run_payload(
         'verifiedPreconditions' => reprint_push_protocol_compact_precondition_hashes($verified_preconditions),
         'recoveryPlan' => $recovery_entries,
         'labFailAfterMutations' => $lab_fail_after_mutations,
+        'applyBatchSizing' => $apply_batch_sizing,
     ]);
 
     $applied = 0;
@@ -180,7 +192,23 @@ function reprint_push_protocol_run_payload(
             ]);
         }
 
-        foreach ($mutations as $index => $mutation) {
+        foreach ($apply_batches as $batch) {
+            $batch_verified_preconditions = reprint_push_protocol_revalidate_apply_batch(
+                $plan,
+                $batch,
+                $preconditions,
+                $journal_context,
+                $plan_evidence,
+                $receipt,
+                $started_entry,
+                $apply_batch_size,
+                $applied,
+                $mutation_event_callback
+            );
+
+            foreach ($batch['entries'] as $batch_entry) {
+                $index = (int) $batch_entry['index'];
+                $mutation = $batch_entry['mutation'];
             $mutation_id = (string) $mutation['id'];
             $precondition = $preconditions[$mutation_id] ?? [];
             $before_hash = (string) ($precondition['expectedHash'] ?? '');
@@ -344,6 +372,32 @@ function reprint_push_protocol_run_payload(
                 ]);
             }
         }
+            $batch_commit_evidence = $journal_context + $plan_evidence + [
+                'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+                'startedCursor' => $started_entry['cursor'],
+                'phase' => 'after-apply-batch',
+                'status' => 'committed',
+                'batchId' => (string) $batch['batchId'],
+                'batchIndex' => (int) $batch['batchIndex'],
+                'batchCount' => (int) $batch['batchCount'],
+                'applyBatchSize' => $apply_batch_size,
+                'mutationOffset' => (int) $batch['mutationOffset'],
+                'mutationCount' => (int) $batch['mutationCount'],
+                'appliedCount' => $applied,
+                'lastBatch' => (bool) $batch['lastBatch'],
+                'batchHash' => hash('sha256', reprint_push_stable_json([
+                    'batchId' => (string) $batch['batchId'],
+                    'batchIndex' => (int) $batch['batchIndex'],
+                    'resourceKeys' => reprint_push_protocol_apply_batch_resource_keys($batch),
+                    'verifiedPreconditions' => reprint_push_protocol_compact_precondition_hashes($batch_verified_preconditions),
+                    'appliedCount' => $applied,
+                ])),
+                'resourceKeys' => reprint_push_protocol_apply_batch_resource_keys($batch),
+                'verifiedPreconditionCount' => count($batch_verified_preconditions),
+            ];
+            reprint_push_protocol_emit_mutation_event($mutation_event_callback, 'apply-batch-committed', $batch_commit_evidence);
+            reprint_push_protocol_append_journal_event('apply-batch-committed', $batch_commit_evidence);
+        }
     } catch (Reprint_Push_Protocol_Error $error) {
         reprint_push_protocol_record_apply_failure(
             $error->result,
@@ -382,6 +436,7 @@ function reprint_push_protocol_run_payload(
         'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
         'startedCursor' => $started_entry['cursor'],
         'verifiedKeys' => $verified_keys,
+        'applyBatchSizing' => $apply_batch_sizing,
     ]);
 
     return [
@@ -390,6 +445,7 @@ function reprint_push_protocol_run_payload(
         'applied' => count($mutations),
         'verifiedKeys' => $verified_keys,
         'verifiedPreconditions' => $verified_preconditions,
+        'applyBatchSizing' => $apply_batch_sizing,
         'receipt' => $receipt,
         'journal' => reprint_push_protocol_journal_evidence($committed_entry),
         'afterSnapshot' => $after,
@@ -739,6 +795,171 @@ function reprint_push_protocol_lab_fail_after_mutations(array $options): ?int
     }
 
     return $after;
+}
+
+function reprint_push_protocol_apply_batch_size(array $options): int
+{
+    if (!array_key_exists('applyBatchSize', $options) || $options['applyBatchSize'] === null || $options['applyBatchSize'] === '') {
+        return 500;
+    }
+
+    $raw = $options['applyBatchSize'];
+    if (is_bool($raw) || is_array($raw) || is_object($raw) || !is_numeric($raw)) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'applyBatchSize must be an integer between 1 and 500 when supplied.',
+            'mode' => 'apply',
+        ]);
+    }
+
+    $batch_size = (int) $raw;
+    if ((string) $batch_size !== (string) $raw && (string) $batch_size !== trim((string) $raw)) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'applyBatchSize must be an integer between 1 and 500 when supplied.',
+            'mode' => 'apply',
+        ]);
+    }
+    if ($batch_size < 1 || $batch_size > 500) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'applyBatchSize must be between 1 and 500.',
+            'mode' => 'apply',
+        ]);
+    }
+
+    return $batch_size;
+}
+
+function reprint_push_protocol_apply_batches(array $mutations, int $batch_size): array
+{
+    $mutation_count = count($mutations);
+    if ($mutation_count === 0) {
+        return [];
+    }
+
+    $batches = [];
+    for ($offset = 0; $offset < $mutation_count; $offset += $batch_size) {
+        $entries = [];
+        foreach (array_slice($mutations, $offset, $batch_size, true) as $index => $mutation) {
+            $entries[] = [
+                'index' => (int) $index,
+                'mutation' => $mutation,
+            ];
+        }
+
+        $batch_index = count($batches);
+        $batches[] = [
+            'batchId' => 'apply-batch-' . ($batch_index + 1),
+            'batchIndex' => $batch_index,
+            'batchCount' => (int) ceil($mutation_count / $batch_size),
+            'mutationOffset' => $offset,
+            'mutationCount' => count($entries),
+            'lastBatch' => $offset + count($entries) >= $mutation_count,
+            'entries' => $entries,
+        ];
+    }
+
+    return $batches;
+}
+
+function reprint_push_protocol_apply_batch_sizing_evidence(
+    int $batch_size,
+    array $batches,
+    array $mutations,
+    bool $configured
+): array {
+    return [
+        'schemaVersion' => 1,
+        'mode' => 'apply',
+        'batchSize' => $batch_size,
+        'maxBatchSize' => 500,
+        'batchCount' => count($batches),
+        'mutationCount' => count($mutations),
+        'configuredBy' => $configured ? 'request' : 'default',
+        'revalidation' => 'fresh-live-hashes-before-each-batch',
+        'storageBoundary' => 'per-mutation-storage-boundary-cas',
+    ];
+}
+
+function reprint_push_protocol_apply_batch_preconditions(array $batch, array $preconditions): array
+{
+    $batch_preconditions = [];
+    foreach ($batch['entries'] as $entry) {
+        $mutation = $entry['mutation'];
+        $mutation_id = (string) ($mutation['id'] ?? '');
+        if (isset($preconditions[$mutation_id])) {
+            $batch_preconditions[] = $preconditions[$mutation_id];
+        }
+    }
+    return $batch_preconditions;
+}
+
+function reprint_push_protocol_apply_batch_resource_keys(array $batch): array
+{
+    return array_values(array_map(
+        static fn (array $entry): string => (string) ($entry['mutation']['resourceKey'] ?? ''),
+        $batch['entries']
+    ));
+}
+
+function reprint_push_protocol_revalidate_apply_batch(
+    array $plan,
+    array $batch,
+    array $preconditions,
+    array $journal_context,
+    array $plan_evidence,
+    ?array $receipt,
+    array $started_entry,
+    int $batch_size,
+    int $applied,
+    $mutation_event_callback
+): array {
+    $batch_preconditions = reprint_push_protocol_apply_batch_preconditions($batch, $preconditions);
+    $resource_keys = reprint_push_protocol_apply_batch_resource_keys($batch);
+    $batch_context = $journal_context + $plan_evidence + [
+        'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+        'startedCursor' => $started_entry['cursor'],
+        'phase' => 'before-apply-batch',
+        'status' => 'revalidated',
+        'batchId' => (string) $batch['batchId'],
+        'batchIndex' => (int) $batch['batchIndex'],
+        'batchCount' => (int) $batch['batchCount'],
+        'applyBatchSize' => $batch_size,
+        'mutationOffset' => (int) $batch['mutationOffset'],
+        'mutationCount' => (int) $batch['mutationCount'],
+        'appliedCount' => $applied,
+    ];
+
+    $current = reprint_push_export_snapshot();
+    $verified_preconditions = reprint_push_protocol_verify_preconditions(
+        $current,
+        $batch_preconditions,
+        $batch_context + ['checkedAgainst' => 'live-remote']
+    );
+    $snapshot_hash = hash('sha256', reprint_push_stable_json($current));
+    $batch_hash = hash('sha256', reprint_push_stable_json([
+        'batchId' => (string) $batch['batchId'],
+        'batchIndex' => (int) $batch['batchIndex'],
+        'resourceKeys' => $resource_keys,
+        'verifiedPreconditions' => reprint_push_protocol_compact_precondition_hashes($verified_preconditions),
+    ]));
+    $evidence = $batch_context + [
+        'checkedAgainst' => 'live-remote',
+        'snapshotHash' => $snapshot_hash,
+        'batchHash' => $batch_hash,
+        'verifiedPreconditionCount' => count($verified_preconditions),
+        'resourceKeys' => $resource_keys,
+        'verifiedPreconditions' => reprint_push_protocol_compact_precondition_hashes($verified_preconditions),
+    ];
+
+    reprint_push_protocol_emit_mutation_event($mutation_event_callback, 'apply-batch-revalidated', $evidence);
+    reprint_push_protocol_append_journal_event('apply-batch-revalidated', $evidence);
+
+    return $verified_preconditions;
 }
 
 function reprint_push_protocol_mutation_event_callback(array $options)
