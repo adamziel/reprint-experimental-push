@@ -351,6 +351,17 @@ remote. RPP-0130 and RPP-0150 prove the ready and stale target cases across
 every tier and keep generated comment/commentmeta row values out of the summary
 evidence.
 
+RPP-0170 adds `wpCommentsCommentmetaGraphVariant4` coverage for the same
+`wp_comments` and `wp_commentmeta` graph surface with an explicit variant-4
+target tag. The deterministic roster emits 20 variant-4 target cases: 10 ready
+comment/commentmeta graph creates and 10 stale non-ready comment drift cases,
+with two cases in every tier. The focused proof recounts the variant-4 summary,
+verifies the ready comment and commentmeta mutations apply with matching
+preconditions and stale replay refusal, and verifies the stale comment target
+blocks the new commentmeta row and refuses apply without mutating the remote
+digest. Evidence remains hash-only and omits generated comment content,
+commentmeta keys, and commentmeta values.
+
 The `wpTermsTermmetaGraph` target coverage records per-tier counts for generated
 `wp_terms` rows and their `wp_termmeta` graph relationships. Ready cases create
 the term and termmeta row in one plan, preserve unplanned remote resources, and
