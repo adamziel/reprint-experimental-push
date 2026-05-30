@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 14:38 CEST.
+- Last update: 2026-05-30 14:43 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0517 same-key different-body idempotency conflict merge ending at
-  `fd8a5c04d`.
+  the RPP-0612 supplemental blocked recovery restart regression merge ending at
+  `0246cd703`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -20,6 +20,23 @@ linked implementation artifacts.
   13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Supplemental blocked recovery restart regression: the current lane now adds
+  a second `RPP-0612` process-restart proof in
+  `test/recovery-journal.test.js` and updates
+  `docs/evidence/rpp-0612-blocked-recovery-classification.md` without changing
+  checklist counts because `RPP-0612` was already checked. The regression
+  writes a claim-fenced file-backed recovery journal in a child process, injects
+  failure after two committed mutations, rereads the JSONL journal from the
+  parent process, and proves monotonic sequences, durable planned targets, two
+  persisted mutation rows, no completion row, fsync evidence on every row, and
+  a restarted `blocked-recovery` classification with 2 new, 6 old, and 0
+  blocked-unknown targets. Validation passed with Node syntax checks, focused
+  RPP-0612 coverage 1/1 in both the dedicated and recovery-journal tests,
+  adjacent restart/classification coverage 9/9, recovery journal and repair
+  coverage 38/38, the file-journal restart smoke, checklist lint, scoped
+  artifact redaction scan, and merge diff whitespace checks. Counts remain
+  455/545; final release remains `NO-GO` because this is local durability
+  evidence, not externally hosted production topology proof.
 - Same-key different-body idempotency conflict proof: the current lane now
   contains `RPP-0517` evidence in
   `docs/evidence/rpp-0517-same-key-different-body-conflict.md`,
