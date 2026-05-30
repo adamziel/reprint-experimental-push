@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 16:35 CEST +02:00.
+- Last update: 2026-05-30 16:39 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0523 production dry-run route v2 merge ending at `4ff116b59`.
+  the RPP-0497 driver dry-run validation hook verifier merge ending at `f6587856f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 479
-  items checked and leaves 521 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 480
+  items checked and leaves 520 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  82 plugin-driver boundary items, 29 executor/auth items, 36 recovery items,
+  83 plugin-driver boundary items, 29 executor/auth items, 36 recovery items,
   19 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Driver dry-run validation hook release-verifier v5: the current lane now
+  contains `RPP-0497` evidence in
+  `docs/evidence/rpp-0497-driver-dry-run-validation-hook-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0497-driver-dry-run-validation-hook-release-verifier-v5.test.js`.
+  The release verifier now emits hash-only
+  `pluginDriver.dryRunValidationHook` evidence for one supported hook that
+  reaches a ready plan and apply, and one unsupported hook that fails closed
+  before mutation with `PLAN_NOT_READY` while preserving the remote hash. It
+  keeps the proof local/support-only with a `NO-GO` release gate posture.
+  Validation passed with Node syntax checks, focused RPP-0497 coverage 4/4,
+  adjacent dry-run hook coverage 4/4, nearby release-verifier coverage 21/21
+  including RPP-0496/RPP-0498/RPP-0499, checklist lint, scoped artifact
+  redaction scan, and merge diff whitespace checks. Counts are now 480/520;
+  final release remains `NO-GO` because this is local release-verifier
+  plugin-driver evidence, not production-backed plugin-driver proof.
 - Production dry-run route v2: the current lane now contains `RPP-0523`
   evidence in
   `docs/evidence/rpp-0523-production-dry-run-route-v2.md`,
