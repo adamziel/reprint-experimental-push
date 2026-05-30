@@ -484,6 +484,14 @@ export const driverApplyValidationHookReleaseVerifierBoundary = Object.freeze({
   }),
 });
 
+export const localDeleteRemoteEditReleaseVerifierBoundary = Object.freeze({
+  table: 'wp_posts',
+  rowId: 'ID:283',
+  resourceKey: 'row:["wp_posts","ID:283"]',
+  independentFilePath: 'wp-content/themes/reprint-push/rpp-0283.css',
+  independentFileKey: 'file:wp-content/themes/reprint-push/rpp-0283.css',
+});
+
 const coreWordPressDriverBoundaryTables = new Set([
   'wp_options',
   'wp_postmeta',
@@ -1112,6 +1120,429 @@ function wpOptionsDriverReleaseVerifierSnapshot(mode) {
           __pluginOwner: boundary.owner,
         },
       },
+    },
+  };
+}
+
+export function summarizeLocalDeleteRemoteEditReleaseVerifierProof({
+  now = new Date('2026-05-30T14:28:30.000Z'),
+} = {}) {
+  try {
+    return buildLocalDeleteRemoteEditReleaseVerifierProof(now);
+  } catch (error) {
+    return {
+      rpp: 'RPP-0283',
+      evidenceSource: 'release-verifier-local-delete-remote-edit-v5',
+      status: 'blocked',
+      verdict: 'LOCAL_DELETE_REMOTE_EDIT_RELEASE_VERIFIER_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      invariant: 'local-delete-versus-remote-edit',
+      resource: localDeleteRemoteEditReleaseVerifierResourceEvidence(),
+      independentMutationResource: localDeleteRemoteEditReleaseVerifierIndependentResourceEvidence(),
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildLocalDeleteRemoteEditReleaseVerifierProof(now) {
+  const boundary = localDeleteRemoteEditReleaseVerifierBoundary;
+  const targetResource = localDeleteRemoteEditReleaseVerifierTargetResource();
+  const independentResource = localDeleteRemoteEditReleaseVerifierIndependentResource();
+  const rawFixtures = {
+    baseTitle: 'rpp-0283-release-verifier-base-private-title',
+    baseBody: 'rpp-0283-release-verifier-base-private-body',
+    remoteTitle: 'rpp-0283-release-verifier-remote-private-title',
+    remoteBody: 'rpp-0283-release-verifier-remote-private-body',
+    localFile: 'rpp-0283-release-verifier-local-private-file',
+  };
+  const base = localDeleteRemoteEditReleaseVerifierSnapshot({
+    title: rawFixtures.baseTitle,
+    body: rawFixtures.baseBody,
+    file: 'rpp-0283-release-verifier-base-file',
+  });
+  const local = cloneReleaseVerifierJson(base);
+  const remote = cloneReleaseVerifierJson(base);
+  delete local.db[boundary.table][boundary.rowId];
+  local.files[boundary.independentFilePath] = rawFixtures.localFile;
+  remote.db[boundary.table][boundary.rowId].post_title = rawFixtures.remoteTitle;
+  remote.db[boundary.table][boundary.rowId].post_content = rawFixtures.remoteBody;
+
+  const plan = createPushPlan({ base, local, remote, now });
+  const targetConflict = plan.conflicts.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const targetMutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const targetPrecondition = plan.preconditions.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const independentMutation =
+    plan.mutations.find((entry) => entry.resourceKey === boundary.independentFileKey) || null;
+  const independentPrecondition =
+    plan.preconditions.find((entry) => entry.resourceKey === boundary.independentFileKey) || null;
+  const allMutationsHaveLiveRemotePreconditions = plan.mutations.every((mutation) => {
+    const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation.id);
+    return precondition?.resourceKey === mutation.resourceKey
+      && precondition.expectedHash === mutation.remoteBeforeHash
+      && precondition.checkedAgainst === 'live-remote';
+  });
+  const planEvidence = localDeleteRemoteEditReleaseVerifierPlanEvidence({
+    plan,
+    targetResourceKey: boundary.resourceKey,
+    independentResourceKey: boundary.independentFileKey,
+  });
+  const serializedPlanEvidence = JSON.stringify(planEvidence);
+  const durableJournal = releaseVerifierMemoryDurableJournal();
+  const replayRemote = cloneReleaseVerifierJson(remote);
+  const replayBefore = JSON.stringify(replayRemote);
+  const targetRowHashBefore = resourceHash(replayRemote, targetResource);
+  const independentHashBefore = resourceHash(replayRemote, independentResource);
+  const remoteHashBefore = sha256Evidence(replayRemote);
+  let beforeMutationCalls = 0;
+  let applyError = null;
+  try {
+    applyPlan(replayRemote, plan, {
+      durableJournal,
+      mutateRemote: true,
+      beforeMutation() {
+        beforeMutationCalls += 1;
+      },
+    });
+  } catch (error) {
+    applyError = error;
+  }
+  const targetRowHashAfter = resourceHash(replayRemote, targetResource);
+  const independentHashAfter = resourceHash(replayRemote, independentResource);
+  const remoteHashAfter = sha256Evidence(replayRemote);
+  const remoteDataPreserved =
+    JSON.stringify(replayRemote) === replayBefore
+    && targetRowHashAfter === targetRowHashBefore
+    && independentHashAfter === independentHashBefore
+    && remoteHashAfter === remoteHashBefore;
+  const conflictIsLocalDeleteRemoteEdit =
+    targetConflict?.class === 'row-conflict'
+    && targetConflict?.resolutionPolicy === 'preserve-remote-and-stop'
+    && targetConflict?.change?.localChange === 'delete'
+    && targetConflict?.change?.remoteChange === 'update'
+    && targetConflict?.change?.base?.state === 'present'
+    && targetConflict?.change?.local?.state === 'absent'
+    && targetConflict?.change?.remote?.state === 'present'
+    && targetConflict?.remoteHash === targetConflict?.change?.remote?.hash;
+  const targetUnplanned = targetMutation === null && targetPrecondition === null;
+  const independentMutationRetained =
+    independentMutation?.action === 'put'
+    && independentMutation?.changeKind === 'update'
+    && independentPrecondition?.mutationId === independentMutation.id
+    && independentPrecondition?.expectedHash === independentMutation.remoteBeforeHash
+    && independentPrecondition?.checkedAgainst === 'live-remote';
+  const refusalOk =
+    applyError instanceof PushPlanError
+    && applyError.code === 'PLAN_NOT_READY'
+    && beforeMutationCalls === 0
+    && durableJournal.events.length === 0
+    && remoteDataPreserved;
+  const rawPlanEvidenceValuesIncluded = Object.values(rawFixtures).some((raw) =>
+    serializedPlanEvidence.includes(raw));
+  const ok = plan.status === 'conflict'
+    && plan.summary.mutations === 1
+    && plan.summary.conflicts === 1
+    && plan.summary.blockers === 0
+    && conflictIsLocalDeleteRemoteEdit
+    && targetUnplanned
+    && independentMutationRetained
+    && allMutationsHaveLiveRemotePreconditions
+    && refusalOk
+    && !rawPlanEvidenceValuesIncluded;
+
+  const proof = {
+    rpp: 'RPP-0283',
+    evidenceSource: 'release-verifier-local-delete-remote-edit-v5',
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'LOCAL_DELETE_REMOTE_EDIT_HASH_ONLY_CONFLICT_PRESERVED'
+      : 'LOCAL_DELETE_REMOTE_EDIT_RELEASE_VERIFIER_REQUIRED',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    evidenceScope: 'local-production-shaped',
+    invariant: 'local-delete-versus-remote-edit',
+    resource: localDeleteRemoteEditReleaseVerifierResourceEvidence(),
+    independentMutationResource: localDeleteRemoteEditReleaseVerifierIndependentResourceEvidence(),
+    rawValuesIncluded: rawPlanEvidenceValuesIncluded,
+    releaseVerifier: {
+      checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+      check: 'local-delete-versus-remote-edit',
+      variant: 'v5',
+      serializedPlanEvidence: 'hash-only',
+      remoteEditPreserved: remoteDataPreserved,
+    },
+    plan: {
+      status: plan.status,
+      summary: {
+        mutations: plan.summary.mutations,
+        decisions: plan.summary.decisions,
+        conflicts: plan.summary.conflicts,
+        blockers: plan.summary.blockers,
+        atomicGroups: plan.summary.atomicGroups,
+      },
+      mutationCount: plan.mutations.length,
+      preconditionCount: plan.preconditions.length,
+      conflictCount: plan.conflicts.length,
+      hash: sha256Evidence(planEvidence),
+    },
+    targetConflict: targetConflict ? {
+      id: targetConflict.id,
+      resourceKey: targetConflict.resourceKey,
+      class: targetConflict.class,
+      resolutionPolicy: targetConflict.resolutionPolicy,
+      localChange: targetConflict.change?.localChange || null,
+      remoteChange: targetConflict.change?.remoteChange || null,
+      states: {
+        base: targetConflict.change?.base?.state || null,
+        local: targetConflict.change?.local?.state || null,
+        remote: targetConflict.change?.remote?.state || null,
+      },
+      hashes: {
+        base: targetConflict.baseHash || null,
+        local: targetConflict.localHash || null,
+        remote: targetConflict.remoteHash || null,
+      },
+      conflictIsLocalDeleteRemoteEdit,
+      targetMutationPresent: targetMutation !== null,
+      targetPreconditionPresent: targetPrecondition !== null,
+    } : null,
+    independentMutation: independentMutation ? {
+      id: independentMutation.id,
+      resourceKey: independentMutation.resourceKey,
+      action: independentMutation.action,
+      changeKind: independentMutation.changeKind,
+      baseHash: independentMutation.baseHash,
+      localHash: independentMutation.localHash,
+      remoteBeforeHash: independentMutation.remoteBeforeHash,
+      precondition: independentPrecondition ? {
+        mutationId: independentPrecondition.mutationId,
+        resourceKey: independentPrecondition.resourceKey,
+        expectedHash: independentPrecondition.expectedHash,
+        checkedAgainst: independentPrecondition.checkedAgainst,
+      } : null,
+      retainedWithLiveRemotePrecondition: independentMutationRetained,
+    } : null,
+    preconditions: {
+      allMutationsHaveLiveRemotePreconditions,
+      targetPreconditionPresent: targetPrecondition !== null,
+      count: plan.preconditions.length,
+    },
+    applyRefusal: {
+      code: applyError?.code || null,
+      detailsHash: applyError ? sha256Evidence(applyError.details || null) : null,
+      beforeMutationCalls,
+      durableJournalEventTypes: durableJournal.events.map((entry) => entry.type),
+      remoteHashBefore,
+      remoteHashAfter,
+      targetRowHashBefore: `sha256:${targetRowHashBefore}`,
+      targetRowHashAfter: `sha256:${targetRowHashAfter}`,
+      independentHashBefore: `sha256:${independentHashBefore}`,
+      independentHashAfter: `sha256:${independentHashAfter}`,
+      remoteDataPreserved,
+    },
+    planEvidence,
+    redaction: {
+      format: 'hash-only',
+      surfaces: [
+        'release-verifier-local-delete-remote-edit-plan-evidence',
+        'apply-refusal-details',
+        'release-verifier-proof',
+      ],
+      serializedPlanEvidenceHash: sha256Evidence(planEvidence),
+      rawValuesIncluded: rawPlanEvidenceValuesIncluded,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    releaseVerifier: proof.releaseVerifier,
+    plan: proof.plan,
+    targetConflict: proof.targetConflict,
+    independentMutation: proof.independentMutation,
+    preconditions: proof.preconditions,
+    applyRefusal: proof.applyRefusal,
+    redaction: proof.redaction,
+  });
+
+  const serializedProof = JSON.stringify(proof);
+  const rawProofValuesIncluded = Object.values(rawFixtures).some((raw) => serializedProof.includes(raw));
+  if (rawProofValuesIncluded || rawPlanEvidenceValuesIncluded) {
+    return {
+      rpp: proof.rpp,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'LOCAL_DELETE_REMOTE_EDIT_EVIDENCE_REDACTION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      evidenceScope: proof.evidenceScope,
+      invariant: proof.invariant,
+      resource: proof.resource,
+      independentMutationResource: proof.independentMutationResource,
+      rawValuesIncluded: true,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: true,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'LOCAL_DELETE_REMOTE_EDIT_EVIDENCE_REDACTION_REQUIRED',
+        resource: proof.resource,
+      }),
+    };
+  }
+
+  return proof;
+}
+
+function localDeleteRemoteEditReleaseVerifierSnapshot({ title, body, file }) {
+  const boundary = localDeleteRemoteEditReleaseVerifierBoundary;
+  return {
+    files: {
+      [boundary.independentFilePath]: file,
+    },
+    db: {
+      [boundary.table]: {
+        [boundary.rowId]: {
+          ID: 283,
+          post_type: 'post',
+          post_status: 'publish',
+          post_title: title,
+          post_content: body,
+        },
+      },
+    },
+  };
+}
+
+function localDeleteRemoteEditReleaseVerifierTargetResource() {
+  const boundary = localDeleteRemoteEditReleaseVerifierBoundary;
+  return {
+    type: 'row',
+    table: boundary.table,
+    id: boundary.rowId,
+    key: boundary.resourceKey,
+  };
+}
+
+function localDeleteRemoteEditReleaseVerifierIndependentResource() {
+  const boundary = localDeleteRemoteEditReleaseVerifierBoundary;
+  return {
+    type: 'file',
+    path: boundary.independentFilePath,
+    key: boundary.independentFileKey,
+  };
+}
+
+function localDeleteRemoteEditReleaseVerifierResourceEvidence() {
+  const boundary = localDeleteRemoteEditReleaseVerifierBoundary;
+  return {
+    resourceKey: boundary.resourceKey,
+    table: boundary.table,
+    rowId: boundary.rowId,
+  };
+}
+
+function localDeleteRemoteEditReleaseVerifierIndependentResourceEvidence() {
+  const boundary = localDeleteRemoteEditReleaseVerifierBoundary;
+  return {
+    resourceKey: boundary.independentFileKey,
+    type: 'file',
+  };
+}
+
+function localDeleteRemoteEditReleaseVerifierPlanEvidence({
+  plan,
+  targetResourceKey,
+  independentResourceKey,
+}) {
+  return {
+    status: plan.status,
+    summary: {
+      mutations: plan.summary.mutations,
+      decisions: plan.summary.decisions,
+      conflicts: plan.summary.conflicts,
+      blockers: plan.summary.blockers,
+      atomicGroups: plan.summary.atomicGroups,
+    },
+    target: {
+      resourceKey: targetResourceKey,
+      mutationPresent: plan.mutations.some((entry) => entry.resourceKey === targetResourceKey),
+      preconditionPresent: plan.preconditions.some((entry) => entry.resourceKey === targetResourceKey),
+    },
+    independentMutation: {
+      resourceKey: independentResourceKey,
+      mutationPresent: plan.mutations.some((entry) => entry.resourceKey === independentResourceKey),
+      preconditionPresent: plan.preconditions.some((entry) => entry.resourceKey === independentResourceKey),
+    },
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      localChange: mutation.change?.localChange || null,
+      remoteChange: mutation.change?.remoteChange || null,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      class: conflict.class,
+      resolutionPolicy: conflict.resolutionPolicy || null,
+      baseHash: conflict.baseHash,
+      localHash: conflict.localHash,
+      remoteHash: conflict.remoteHash,
+      localChange: conflict.change?.localChange || null,
+      remoteChange: conflict.change?.remoteChange || null,
+      states: {
+        base: conflict.change?.base?.state || null,
+        local: conflict.change?.local?.state || null,
+        remote: conflict.change?.remote?.state || null,
+      },
+      stateHashes: {
+        base: conflict.change?.base?.hash || null,
+        local: conflict.change?.local?.hash || null,
+        remote: conflict.change?.remote?.hash || null,
+      },
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      id: blocker.id,
+      resourceKey: blocker.resourceKey || null,
+      class: blocker.class,
+    })),
+    atomicGroups: plan.atomicGroups.map((group) => ({
+      id: group.id,
+      status: group.status,
+      mutationIds: group.mutationIds,
+      blockerIds: group.blockerIds,
+    })),
+  };
+}
+
+function releaseVerifierMemoryDurableJournal() {
+  return {
+    claimFenced: true,
+    claimHash: 'b'.repeat(64),
+    events: [],
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      const record = { sequence: this.nextSequence, type, ...payload };
+      this.events.push(record);
+      this.nextSequence += 1;
+      return record;
     },
   };
 }
@@ -4330,6 +4761,9 @@ try {
             wpPostmeta: wpPostmetaReleaseVerifierEvidence,
             wpTermmeta: wpTermmetaReleaseVerifierEvidence,
           },
+          mergeInvariants: {
+            localDeleteRemoteEdit: summarizeLocalDeleteRemoteEditReleaseVerifierProof(),
+          },
           ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
         };
         const mergeInvariantProofs = summarizeMergeInvariantReleaseVerifierProofs();
@@ -4642,6 +5076,9 @@ try {
         coreSemantics: {
           wpPostmeta: wpPostmetaReleaseVerifierEvidence,
           wpTermmeta: wpTermmetaReleaseVerifierEvidence,
+        },
+        mergeInvariants: {
+          localDeleteRemoteEdit: summarizeLocalDeleteRemoteEditReleaseVerifierProof(),
         },
         ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
       };
