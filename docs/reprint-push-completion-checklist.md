@@ -527,7 +527,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [x] RPP-0493 (Mid / plugin-driver) Carry through the release verifier for owner context stale plugin file refusal, variant 5. Success: local production proof carries one real mutation through apply.
 - [x] RPP-0494 (Mid / plugin-driver) Carry through the release verifier for owner context stale metadata refusal, variant 5. Success: remote drift preserves plugin-owned remote data.
 - [x] RPP-0495 (Mid / plugin-driver) Carry through the release verifier for remote plugin removal refusal, variant 5. Success: release gate notes whether evidence is local or production-backed.
-- [ ] RPP-0496 (Mid / plugin-driver) Carry through the release verifier for driver delete support flag, variant 5. Success: focused test proves exact driver behavior.
+- [x] RPP-0496 (Mid / plugin-driver) Carry through the release verifier for driver delete support flag, variant 5. Success: focused test proves exact driver behavior.
 - [ ] RPP-0497 (Mid / plugin-driver) Carry through the release verifier for driver dry-run validation hook, variant 5. Success: generated harness covers supported and unsupported variants.
 - [x] RPP-0498 (Mid / plugin-driver) Carry through the release verifier for driver apply validation hook, variant 5. Success: local production proof carries one real mutation through apply.
 - [x] RPP-0499 (Mid / plugin-driver) Carry through the release verifier for driver audit evidence redaction, variant 5. Success: remote drift preserves plugin-owned remote data.

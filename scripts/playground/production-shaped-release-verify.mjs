@@ -494,6 +494,15 @@ export const wpOptionsDriverReleaseVerifierBoundary = Object.freeze({
   }),
 });
 
+export const driverDeleteSupportReleaseVerifierBoundary = Object.freeze({
+  driver: 'wp-option',
+  decoyDriver: 'wp-postmeta',
+  owner: 'forms',
+  table: 'wp_options',
+  rowId: 'option_name:rpp_0496_forms_settings',
+  resourceKey: 'row:["wp_options","option_name:rpp_0496_forms_settings"]',
+});
+
 export const pluginUninstallDeleteReleaseVerifierBoundary = Object.freeze({
   owner: 'forms',
   driver: 'wp-option',
@@ -2774,6 +2783,388 @@ function wpOptionsDriverReleaseVerifierSnapshot(mode) {
         },
       },
     },
+  };
+}
+
+export function summarizeDriverDeleteSupportReleaseVerifierProof({
+  now = new Date('2026-05-30T13:49:00.000Z'),
+} = {}) {
+  try {
+    return buildDriverDeleteSupportReleaseVerifierProof(now);
+  } catch (error) {
+    return {
+      rpp: 'RPP-0496',
+      evidenceSource: 'release-verifier-driver-delete-support-flag-v5',
+      status: 'blocked',
+      verdict: 'DRIVER_DELETE_SUPPORT_FLAG_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: {
+        status: 'NO-GO',
+        acceptedForReleaseGate: false,
+      },
+      driver: driverDeleteSupportReleaseVerifierBoundary.driver,
+      owner: driverDeleteSupportReleaseVerifierBoundary.owner,
+      resource: driverDeleteSupportReleaseVerifierResourceEvidence(),
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildDriverDeleteSupportReleaseVerifierProof(now) {
+  const rawFixtures = {
+    base: 'rpp-0496-delete-support-base-option',
+    nested: 'rpp-0496-delete-support-nested-marker',
+  };
+  const exactDriverBinding = driverDeleteSupportExactDriverBindingScenario(now, rawFixtures);
+  const supportedDelete = driverDeleteSupportSupportedDeleteScenario(now, rawFixtures);
+  const forgedDelete = driverDeleteSupportForgedDeleteScenario(now, rawFixtures);
+  const scenarios = {
+    exactDriverBinding: exactDriverBinding.evidence,
+    supportedDelete: supportedDelete.evidence,
+    forgedDelete: forgedDelete.evidence,
+  };
+  const ok = exactDriverBinding.ok && supportedDelete.ok && forgedDelete.ok;
+  const proof = {
+    rpp: 'RPP-0496',
+    evidenceSource: 'release-verifier-driver-delete-support-flag-v5',
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'DRIVER_DELETE_SUPPORT_FLAG_CARRIED_THROUGH'
+      : 'DRIVER_DELETE_SUPPORT_FLAG_REQUIRED',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: {
+      status: 'NO-GO',
+      acceptedForReleaseGate: false,
+      reason: 'local release-verifier support evidence for plugin-driver delete support only',
+    },
+    driver: driverDeleteSupportReleaseVerifierBoundary.driver,
+    owner: driverDeleteSupportReleaseVerifierBoundary.owner,
+    resource: driverDeleteSupportReleaseVerifierResourceEvidence(),
+    rawValuesIncluded: false,
+    scenarios,
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    scenarios: proof.scenarios,
+    releaseGate: proof.releaseGate,
+  });
+
+  const serialized = JSON.stringify(proof);
+  if (
+    Object.values(rawFixtures).some((raw) => serialized.includes(raw))
+    || serialized.includes('option_value')
+  ) {
+    return {
+      rpp: proof.rpp,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'DRIVER_DELETE_SUPPORT_EVIDENCE_REDACTION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: {
+        status: 'NO-GO',
+        acceptedForReleaseGate: false,
+      },
+      driver: proof.driver,
+      owner: proof.owner,
+      resource: proof.resource,
+      rawValuesIncluded: true,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: true,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'DRIVER_DELETE_SUPPORT_EVIDENCE_REDACTION_REQUIRED',
+        resource: proof.resource,
+      }),
+    };
+  }
+
+  return proof;
+}
+
+function driverDeleteSupportExactDriverBindingScenario(now, rawFixtures) {
+  const boundary = driverDeleteSupportReleaseVerifierBoundary;
+  const { base, local, remote } = driverDeleteSupportDeleteScenario(rawFixtures);
+  local.meta = driverDeleteSupportPolicy(
+    {
+      resourceKey: boundary.resourceKey,
+      pluginOwner: boundary.owner,
+      driver: boundary.decoyDriver,
+      table: 'wp_postmeta',
+      supportsDelete: true,
+    },
+    driverDeleteSupportAllowedResource({ supportsDelete: false }),
+  );
+  const plan = createPushPlan({ base, local, remote, now });
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const remoteBeforeHash = digest(remote);
+  const error = captureReleaseVerifierError(() => applyPlan(remote, plan));
+  const remoteAfterHash = digest(remote);
+  const blockerHash = blocker ? sha256Evidence(blocker) : null;
+  const exactBlocker = blocker?.class === 'unsupported-plugin-owned-resource'
+    && blocker?.reason === 'Plugin-owned resource driver does not support delete mutations.'
+    && blocker?.pluginOwner === boundary.owner
+    && blocker?.driver === boundary.driver
+    && blocker?.supportsDelete === false
+    && blocker?.deleteSupportRefusalEvidence?.reasonCode === 'PLUGIN_DRIVER_DELETE_UNSUPPORTED'
+    && blocker?.deleteRefusalEvidence?.reasonCode === 'PLUGIN_OWNED_RESOURCE_DELETE_UNSUPPORTED';
+  const noDecoyDriverInBlocker = !JSON.stringify(blocker || {}).includes(boundary.decoyDriver);
+  const ok = plan.status === 'blocked'
+    && plan.summary.mutations === 0
+    && plan.mutations.length === 0
+    && exactBlocker
+    && noDecoyDriverInBlocker
+    && error instanceof PushPlanError
+    && error.code === 'PLAN_NOT_READY'
+    && remoteAfterHash === remoteBeforeHash;
+
+  return {
+    ok,
+    evidence: {
+      ok,
+      check: 'exact-driver-delete-support-binding',
+      status: plan.status,
+      mutationCount: plan.mutations.length,
+      blockerCount: plan.blockers.length,
+      decoyDriver: boundary.decoyDriver,
+      decoySupportsDelete: true,
+      matchedDriver: blocker?.driver || null,
+      noDecoyDriverInBlocker,
+      blocker: blocker ? {
+        class: blocker.class,
+        resourceKey: blocker.resourceKey,
+        pluginOwner: blocker.pluginOwner || null,
+        driver: blocker.driver || null,
+        supportsDelete: blocker.supportsDelete === true,
+        deleteSupportReasonCode: blocker.deleteSupportRefusalEvidence?.reasonCode || null,
+        deleteRefusalReasonCode: blocker.deleteRefusalEvidence?.reasonCode || null,
+        blockerHash,
+      } : null,
+      applyRefusal: {
+        code: error?.code || null,
+        remoteUnchanged: remoteAfterHash === remoteBeforeHash,
+        remoteBeforeHash,
+        remoteAfterHash,
+        detailsHash: error ? sha256Evidence(error.details || null) : null,
+      },
+      planHash: sha256Evidence(plan),
+    },
+  };
+}
+
+function driverDeleteSupportSupportedDeleteScenario(now, rawFixtures) {
+  const boundary = driverDeleteSupportReleaseVerifierBoundary;
+  const { base, local, remote } = driverDeleteSupportDeleteScenario(rawFixtures);
+  local.meta = driverDeleteSupportPolicy(
+    driverDeleteSupportAllowedResource({ supportsDelete: true }),
+  );
+  const plan = createPushPlan({ base, local, remote, now });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const precondition = plan.preconditions.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const applied = plan.status === 'ready' ? applyPlan(remote, plan) : null;
+  const rowDeleted = applied
+    ? Object.hasOwn(applied.site.db[boundary.table], boundary.rowId) === false
+    : false;
+  const pluginPreserved = applied?.site?.plugins?.[boundary.owner]?.active === true;
+  const exactMutation = mutation?.resource?.type === 'row'
+    && mutation.resource.table === boundary.table
+    && mutation.resource.id === boundary.rowId
+    && mutation.action === 'delete'
+    && mutation.pluginOwnedResource?.pluginOwner === boundary.owner
+    && mutation.pluginOwnedResource?.driver === boundary.driver
+    && mutation.pluginOwnedResource?.supportsDelete === true;
+  const exactPrecondition = precondition?.resourceKey === boundary.resourceKey
+    && precondition?.expectedHash === mutation?.remoteBeforeHash
+    && precondition?.checkedAgainst === 'live-remote';
+  const ok = plan.status === 'ready'
+    && plan.summary.mutations === 1
+    && plan.summary.blockers === 0
+    && exactMutation
+    && exactPrecondition
+    && applied?.appliedMutations === 1
+    && rowDeleted
+    && pluginPreserved;
+
+  return {
+    ok,
+    evidence: {
+      ok,
+      check: 'supported-delete-applies',
+      status: plan.status,
+      mutationCount: plan.mutations.length,
+      blockerCount: plan.blockers.length,
+      preconditionCount: plan.preconditions.length,
+      mutation: mutation ? {
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        driver: mutation.pluginOwnedResource?.driver || null,
+        pluginOwner: mutation.pluginOwnedResource?.pluginOwner || null,
+        supportsDelete: mutation.pluginOwnedResource?.supportsDelete === true,
+        policySource: mutation.pluginOwnedResource?.policySource || null,
+        ownerContextRequired: mutation.pluginOwnedResource?.ownerContextRequired === true,
+        exactMutation,
+        baseHash: mutation.baseHash,
+        localHash: mutation.localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+        auditEvidenceHash: sha256Evidence(mutation.pluginOwnedResource?.auditEvidence || null),
+        driverDecisionEvidenceHash: sha256Evidence(mutation.pluginOwnedResource?.driverAuditEvidence || null),
+        mutationHash: sha256Evidence({
+          resourceKey: mutation.resourceKey,
+          action: mutation.action,
+          baseHash: mutation.baseHash,
+          localHash: mutation.localHash,
+          remoteBeforeHash: mutation.remoteBeforeHash,
+        }),
+      } : null,
+      precondition: precondition ? {
+        resourceKey: precondition.resourceKey,
+        expectedHash: precondition.expectedHash,
+        checkedAgainst: precondition.checkedAgainst,
+        exactPrecondition,
+        preconditionHash: sha256Evidence(precondition),
+      } : null,
+      apply: applied ? {
+        appliedMutations: applied.appliedMutations,
+        rowDeleted,
+        pluginPreserved,
+        journalHash: sha256Evidence(applied.journal),
+      } : null,
+      planHash: sha256Evidence(plan),
+    },
+  };
+}
+
+function driverDeleteSupportForgedDeleteScenario(now, rawFixtures) {
+  const boundary = driverDeleteSupportReleaseVerifierBoundary;
+  const { base, local, remote } = driverDeleteSupportDeleteScenario(rawFixtures);
+  local.meta = driverDeleteSupportPolicy(
+    driverDeleteSupportAllowedResource({ supportsDelete: true }),
+  );
+  const plan = createPushPlan({ base, local, remote, now });
+  const forgedPlan = cloneReleaseVerifierJson(plan);
+  const forgedMutation = forgedPlan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  if (forgedMutation?.pluginOwnedResource) {
+    forgedMutation.pluginOwnedResource.supportsDelete = false;
+  }
+  const forgedRemote = driverDeleteSupportSnapshot(rawFixtures.base, rawFixtures.nested);
+  const remoteBeforeHash = digest(forgedRemote);
+  const error = captureReleaseVerifierError(() => applyPlan(forgedRemote, forgedPlan));
+  const remoteAfterHash = digest(forgedRemote);
+  const applyEvidence = error?.details?.applyValidationEvidence || null;
+  const ok = plan.status === 'ready'
+    && forgedMutation?.pluginOwnedResource?.supportsDelete === false
+    && error instanceof PushPlanError
+    && error.code === 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE'
+    && applyEvidence?.reasonCode === 'PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED'
+    && applyEvidence?.action === 'delete'
+    && applyEvidence?.driver === boundary.driver
+    && applyEvidence?.supportsDelete === false
+    && remoteAfterHash === remoteBeforeHash;
+
+  return {
+    ok,
+    evidence: {
+      ok,
+      check: 'forged-delete-support-rejected',
+      sourcePlanStatus: plan.status,
+      sourceMutationCount: plan.mutations.length,
+      forgedSupportsDelete: forgedMutation?.pluginOwnedResource?.supportsDelete === true,
+      applyRefusal: {
+        code: error?.code || null,
+        reasonCode: applyEvidence?.reasonCode || null,
+        outcome: applyEvidence?.outcome || null,
+        action: applyEvidence?.action || null,
+        driver: applyEvidence?.driver || null,
+        pluginOwner: error?.details?.pluginOwner || null,
+        supportsDelete: applyEvidence?.supportsDelete === true,
+        remoteUnchanged: remoteAfterHash === remoteBeforeHash,
+        remoteBeforeHash,
+        remoteAfterHash,
+        detailsHash: error ? sha256Evidence(error.details || null) : null,
+      },
+      planHash: sha256Evidence(plan),
+      forgedPlanHash: sha256Evidence(forgedPlan),
+    },
+  };
+}
+
+function driverDeleteSupportDeleteScenario(rawFixtures) {
+  const base = driverDeleteSupportSnapshot(rawFixtures.base, rawFixtures.nested);
+  const local = cloneReleaseVerifierJson(base);
+  delete local.db[driverDeleteSupportReleaseVerifierBoundary.table][driverDeleteSupportReleaseVerifierBoundary.rowId];
+  return {
+    base,
+    local,
+    remote: cloneReleaseVerifierJson(base),
+  };
+}
+
+function driverDeleteSupportSnapshot(mode, nestedMarker) {
+  const boundary = driverDeleteSupportReleaseVerifierBoundary;
+  return {
+    files: {
+      'wp-content/plugins/forms/forms.php': '<?php /* forms delete support release verifier fixture */',
+    },
+    plugins: {
+      [boundary.owner]: {
+        version: '1.0.0',
+        active: true,
+      },
+    },
+    db: {
+      [boundary.table]: {
+        [boundary.rowId]: {
+          option_name: 'rpp_0496_forms_settings',
+          option_value: {
+            mode,
+            nested: { marker: nestedMarker },
+          },
+          autoload: 'no',
+          __pluginOwner: boundary.owner,
+        },
+      },
+    },
+  };
+}
+
+function driverDeleteSupportPolicy(...allowedResources) {
+  return {
+    pushPolicy: {
+      pluginOwnedResources: {
+        allowedResources,
+      },
+    },
+  };
+}
+
+function driverDeleteSupportAllowedResource(extra = {}) {
+  const boundary = driverDeleteSupportReleaseVerifierBoundary;
+  return {
+    resourceKey: boundary.resourceKey,
+    pluginOwner: boundary.owner,
+    driver: boundary.driver,
+    ...extra,
+  };
+}
+
+function driverDeleteSupportReleaseVerifierResourceEvidence() {
+  const boundary = driverDeleteSupportReleaseVerifierBoundary;
+  return {
+    resourceKey: boundary.resourceKey,
+    table: boundary.table,
+    rowId: boundary.rowId,
   };
 }
 
@@ -9232,6 +9623,7 @@ try {
           productionOwned: productionPluginDriverProof,
           driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
           wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
+          deleteSupport: summarizeDriverDeleteSupportReleaseVerifierProof(),
           uninstallDeleteRefusal: summarizePluginUninstallDeleteReleaseVerifierProof(),
           serializedOptionValidator: summarizeSerializedOptionValidatorReleaseVerifierProof(),
           auditEvidenceRedaction: summarizeDriverAuditEvidenceRedactionReleaseVerifierProof(),
@@ -9563,6 +9955,7 @@ try {
         productionOwned: productionPluginDriverProof,
         driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
         wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
+        deleteSupport: summarizeDriverDeleteSupportReleaseVerifierProof(),
         uninstallDeleteRefusal: summarizePluginUninstallDeleteReleaseVerifierProof(),
         serializedOptionValidator: summarizeSerializedOptionValidatorReleaseVerifierProof(),
         auditEvidenceRedaction: summarizeDriverAuditEvidenceRedactionReleaseVerifierProof(),
