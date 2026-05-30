@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 13:06 CEST.
+- Last update: 2026-05-30 13:10 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0621 journal table schema migration v2 merge ending at `d4c32b44`.
+  the RPP-0709 chunk replay idempotency merge ending at `df64aa3d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 436
-  items checked and leaves 564 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 437
+  items checked and leaves 563 open.
 - Checked slices: 100 release-gate foundation items, 45 graph identity items,
   73 plugin-driver boundary items, 23 executor/auth items, 26 recovery items,
-  11 storage/performance items, 3 production-topology items, 78 generated
+  12 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Chunk replay idempotency: the current lane now contains `RPP-0709` evidence in
+  `docs/evidence/rpp-0709-chunk-replay-idempotency.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/bench/guarded-executor-benchmark.js`, and
+  `test/guarded-executor-benchmark.test.js`. The guarded benchmark now models
+  lost-response chunk replay against plan-scoped durable receipts, requires
+  matching plan/resource/chunk/range/digest/idempotency fields, records zero
+  duplicate receipt rows, zero rewritten bytes, and zero duplicate mutation
+  work for accepted replays, and fails closed when receipts are missing,
+  cross-plan, or digest-mismatched. Validation passed with Node syntax checks,
+  the guarded executor/performance model suite 18/18, a replay-only
+  `guardedLarge` run with 48 chunks and all five replay gates passing, a full
+  `guardedLarge` run with 8 passed / 3 blocked rollout gates, checklist lint,
+  scoped artifact redaction scan, and merge diff whitespace checks. Counts are
+  now 437/563; final release remains `NO-GO` because production storage
+  receipts, row batch execution, and atomic-group commit receipts are still not
+  measured.
 - Journal table schema migration v2: the current lane now contains `RPP-0621`
   evidence in
   `docs/evidence/rpp-0621-journal-table-schema-migration-v2.md`,
