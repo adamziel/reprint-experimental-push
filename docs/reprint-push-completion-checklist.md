@@ -418,7 +418,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [ ] RPP-0389 (Mid / graph-identity) Carry through the release verifier for category term taxonomy reference, variant 5. Success: local production verifier carries the target through apply.
 - [ ] RPP-0390 (Mid / graph-identity) Carry through the release verifier for post_tag taxonomy reference, variant 5. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0391 (Mid / graph-identity) Carry through the release verifier for custom taxonomy fail-closed reference, variant 5. Success: mapper rewrites or proves stable identity for the target.
-- [ ] RPP-0392 (Mid / graph-identity) Carry through the release verifier for termmeta term reference, variant 5. Success: unsupported target fails closed with hash-only evidence.
+- [x] RPP-0392 (Mid / graph-identity) Carry through the release verifier for termmeta term reference, variant 5. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0393 (Mid / graph-identity) Carry through the release verifier for term relationship object reference, variant 5. Success: generated harness includes ready and stale cases.
 - [ ] RPP-0394 (Mid / graph-identity) Carry through the release verifier for term relationship taxonomy reference, variant 5. Success: local production verifier carries the target through apply.
 - [ ] RPP-0395 (Mid / graph-identity) Carry through the release verifier for nav menu item fail-closed reference, variant 5. Success: docs state remaining unmapped WordPress surfaces.
