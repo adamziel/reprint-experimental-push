@@ -1,18 +1,28 @@
-# AO Progress Report - 2026-05-30 12:16 CEST
+# AO Progress Report - 2026-05-30 12:20 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0387 comment user
-release-verifier proof ending at `e4653a32`.
+`lane/evidence-integration-20260527` through the current RPP-0388 commentmeta
+comment release-verifier proof ending at `0052684e`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 427 are
-  checked from integrated evidence and 573 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 428 are
+  checked from integrated evidence and 572 remain open.
+- `RPP-0388` is now checked with local release-verifier carry-through proof for
+  `wp_commentmeta.comment_id` comment references in
+  `docs/evidence/rpp-0388-commentmeta-comment-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0388-commentmeta-comment-reference-release-verifier-v5.test.js`.
+  `node --check` passed for the focused test, focused RPP-0388 coverage passed
+  3/3, adjacent RPP-0308/commentmeta coverage passed 5/5, and the generated
+  commentmeta harness subset passed 6/6. Checklist lint, scoped artifact
+  redaction scan, and merge diff whitespace checks also passed. This remains
+  local graph release-verifier support evidence, not production endpoint proof.
 - `RPP-0387` is now checked with local fail-closed release-verifier proof for
   unsupported `wp_comments.user_id` targets in
   `docs/evidence/rpp-0387-comment-user-reference-release-verifier-v5.md`,
@@ -2802,8 +2812,8 @@ tracks the near-to-far slices used to supervise the AO team:
 | --- | --- | --- |
 | `RPP-0001`-`RPP-0100` | Release gate foundation | 100 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 78 / 100 |
-| `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 68 / 100 |
-| `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 44 / 100 |
+| `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 77 / 100 |
+| `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 45 / 100 |
 | `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 73 / 100 |
 | `RPP-0501`-`RPP-0600` | Production executor and auth protocol | 22 / 100 |
 | `RPP-0601`-`RPP-0700` | Durable journal and recovery | 19 / 100 |
@@ -2832,7 +2842,7 @@ Checked IDs in this report are:
   `RPP-0332`, `RPP-0333`, `RPP-0334`, `RPP-0340`, `RPP-0342`,
   `RPP-0347`, `RPP-0374`, `RPP-0375`, `RPP-0376`, `RPP-0377`,
   `RPP-0378`, `RPP-0379`, `RPP-0380`, `RPP-0381`, `RPP-0382`,
-  `RPP-0383`, `RPP-0384`, `RPP-0385`, `RPP-0386`, `RPP-0387`.
+  `RPP-0383`, `RPP-0384`, `RPP-0385`, `RPP-0386`, `RPP-0387`, `RPP-0388`.
 - Plugin driver: `RPP-0401`, `RPP-0402`, `RPP-0403`, `RPP-0404`, `RPP-0408`,
   `RPP-0409`, `RPP-0410`, `RPP-0412`, `RPP-0414`, `RPP-0415`, `RPP-0421`, `RPP-0422`,
   `RPP-0423`, `RPP-0424`,
