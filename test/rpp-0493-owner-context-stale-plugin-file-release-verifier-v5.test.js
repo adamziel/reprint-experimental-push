@@ -127,7 +127,7 @@ test('RPP-0493 production-shaped release verifier includes the owner-context pro
   );
   assert.match(
     verifierSource,
-    /ownerContext:\s*\{\s*stalePluginFile: ownerContextStalePluginFileEvidence,\s*\}/,
+    /ownerContext:\s*\{\s*stalePluginFile: ownerContextStalePluginFileEvidence,\s*staleMetadata: summarizeOwnerContextStaleMetadataReleaseVerifierEvidence\(\),\s*\}/,
   );
   assertHashOnly(proof);
 });
