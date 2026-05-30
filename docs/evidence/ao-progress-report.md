@@ -1,19 +1,33 @@
-# AO Progress Report - 2026-05-30 07:40 CEST
+# AO Progress Report - 2026-05-30 07:49 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0170
-wp_comments/wp_commentmeta graph variant-4 generated-harness refresh ending at
-`43a1758d6`.
+`lane/evidence-integration-20260527` through the current RPP-0171
+wp_terms/wp_termmeta graph variant-4 generated-harness refresh ending at
+`5fab710e7`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 363 are
-  checked from integrated evidence and 637 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 364 are
+  checked from integrated evidence and 636 remain open.
+- `RPP-0171` is now checked with focused wp_terms/wp_termmeta graph variant-4
+  generated-harness evidence in
+  `docs/evidence/rpp-0171-wp-terms-termmeta-graph-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0171 test passed 1/1, the adjacent
+  RPP-0111/RPP-0131/RPP-0151/RPP-0171 terms/termmeta graph slice passed 3/3,
+  the generated-family cross-check passed 3/3, and
+  `npm run test:generated-push-harness` passed 78/78 across 620 deterministic
+  generated cases. Checklist lint, artifact redaction scan, and merge diff
+  whitespace checks also passed. This remains deterministic generated-model
+  coverage, not production endpoint proof.
 - `RPP-0170` is now checked with focused wp_comments/wp_commentmeta graph
   variant-4 generated-harness evidence in
   `docs/evidence/rpp-0170-wp-comments-commentmeta-graph-v4.md`,
