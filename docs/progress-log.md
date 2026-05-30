@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 10:29 CEST.
+- Last update: 2026-05-30 10:31 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0266 remote-only plugin metadata preservation variant-4 merge ending
-  at `2c0d97af1`.
+  the RPP-0267 local plugin data stale owner-context variant-4 merge ending at
+  `7eb8456ae`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 396
-  items checked and leaves 604 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 397
+  items checked and leaves 603 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 61 merge-invariant items. No release-ops items are checked
+  harness items, and 62 merge-invariant items. No release-ops items are checked
   yet.
+- Local plugin data stale owner-context variant-4 refresh: the current lane now
+  contains `RPP-0267` evidence in
+  `docs/evidence/rpp-0267-local-plugin-data-stale-owner-context-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, `src/apply.js`,
+  `test/rpp-0247-local-plugin-data-stale-owner-context-v3.test.js`, and
+  `test/rpp-0267-local-plugin-data-stale-owner-context-v4.test.js`. `node
+  --check` passed for both changed owner-context tests, the focused
+  RPP-0267/RPP-0247 test files passed 4/4, the adjacent RPP-0207/RPP-0227
+  planner slice passed 2/2, and the broader owner-context regression files
+  passed 17/17. Checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 397/603; final release remains
+  `NO-GO`.
 - Remote-only plugin metadata preservation variant-4 refresh: the current lane
   now contains `RPP-0266` evidence in
   `docs/evidence/rpp-0266-remote-only-plugin-metadata-preservation-v4.md`,
