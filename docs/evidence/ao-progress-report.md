@@ -1,18 +1,34 @@
-# AO Progress Report - 2026-05-30 09:09 CEST
+# AO Progress Report - 2026-05-30 09:36 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0177 stale remote
-after dry-run variant-4 generated-harness refresh ending at `80f9a0f4d`.
+`lane/evidence-integration-20260527` through the current RPP-0247 local plugin
+data stale owner-context variant-3 merge-invariant refresh ending at
+`3bdd7ec3e`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 379 are
-  checked from integrated evidence and 621 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 380 are
+  checked from integrated evidence and 620 remain open.
+- `RPP-0247` is now checked with focused local plugin data stale owner-context
+  variant-3 merge-invariant evidence in
+  `docs/evidence/rpp-0247-local-plugin-data-stale-owner-context-v3.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `src/apply.js`, and
+  `test/rpp-0247-local-plugin-data-stale-owner-context-v3.test.js`. The
+  focused RPP-0247 test passed 2/2, the prior same-plan plugin-owned postmeta
+  apply path passed 1/1 after the executor guard was narrowed to accept
+  planner-proven empty owner-context sets, the full `test/push-planner.test.js`
+  suite passed 147/147, owner-context regression files passed 17/17, the
+  adjacent RPP-0154 generated harness slice passed 1/1, and the final
+  `npm test` run passed 1118 tests with 1107 pass / 0 fail / 11 skipped.
+  Checklist lint, scoped artifact redaction scan, and merge diff whitespace
+  checks also passed. This remains local planner/apply generated-fixture
+  evidence, not production endpoint proof.
 - `RPP-0177` is now checked with stale remote after dry-run variant-4
   generated-harness evidence in
   `docs/evidence/rpp-0177-stale-remote-after-dry-run-v4.md`,
@@ -2250,7 +2266,7 @@ tracks the near-to-far slices used to supervise the AO team:
 | --- | --- | --- |
 | `RPP-0001`-`RPP-0100` | Release gate foundation | 100 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 77 / 100 |
-| `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 45 / 100 |
+| `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 46 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 29 / 100 |
 | `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 73 / 100 |
 | `RPP-0501`-`RPP-0600` | Production executor and auth protocol | 22 / 100 |

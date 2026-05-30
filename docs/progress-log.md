@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 09:09 CEST.
+- Last update: 2026-05-30 09:36 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0177 stale remote after dry-run variant-4 generated-harness merge
-  ending at `80f9a0f4d`.
+  the RPP-0247 local plugin data stale owner-context variant-3 merge ending at
+  `3bdd7ec3e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 379
-  items checked and leaves 621 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 380
+  items checked and leaves 620 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 77 generated
-  harness items, and 45 merge-invariant items. No release-ops items are checked
+  harness items, and 46 merge-invariant items. No release-ops items are checked
   yet.
+- Local plugin data stale owner-context variant-3 refresh: the current lane now
+  contains `RPP-0247` evidence in
+  `docs/evidence/rpp-0247-local-plugin-data-stale-owner-context-v3.md`,
+  `docs/reprint-push-completion-checklist.md`, `src/apply.js`, and
+  `test/rpp-0247-local-plugin-data-stale-owner-context-v3.test.js`. The
+  focused RPP-0247 test passed 2/2, the same-plan plugin-owned postmeta apply
+  path passed 1/1 after the executor guard was narrowed to accept
+  planner-proven empty owner-context sets, `test/push-planner.test.js` passed
+  147/147, owner-context regression files passed 17/17, the adjacent RPP-0154
+  generated slice passed 1/1, and final `npm test` passed 1118 tests with 1107
+  pass / 0 fail / 11 skipped. Checklist lint, scoped artifact redaction scan,
+  and merge diff whitespace checks also passed. Counts are now 380/620; final
+  release remains `NO-GO`.
 - Stale remote after dry-run variant-4 refresh: the current lane now contains
   `RPP-0177` evidence in
   `docs/evidence/rpp-0177-stale-remote-after-dry-run-v4.md`,
