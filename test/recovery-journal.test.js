@@ -831,6 +831,129 @@ test('restart inspection classifies fail-after-2 as blocked recovery with two ne
   assert.deepEqual(inspection.counts, { old: 6, new: 2, blockedUnknown: 0 });
 });
 
+test('RPP-0632 blocked recovery classification variant 2 survives process restart with durable rows', () => {
+  const filePath = tempJournalPath();
+  fs.chmodSync(path.dirname(filePath), 0o700);
+  const base = baseSite();
+  const local = localSite();
+  const remote = baseSite();
+  const claimId = 'rpp-0632-blocked-classification-writer';
+  const plan = planFor(base, local, remote);
+  const partialRemote = clone(remote);
+  applyFirstMutations(partialRemote, plan, 2);
+  const recoveryJournalModule = new URL('../src/recovery-journal.js', import.meta.url).href;
+  const plannerModule = new URL('../src/planner.js', import.meta.url).href;
+  const applyModule = new URL('../src/apply.js', import.meta.url).href;
+  const childScript = `
+    import { openRecoveryJournal } from ${JSON.stringify(recoveryJournalModule)};
+    import { createPushPlan } from ${JSON.stringify(plannerModule)};
+    import { applyPlan } from ${JSON.stringify(applyModule)};
+
+    const fixedNow = new Date('2026-05-24T00:00:00.000Z');
+    const filePath = process.env.RPP0632_JOURNAL_PATH;
+    const base = JSON.parse(process.env.RPP0632_BASE_SITE);
+    const local = JSON.parse(process.env.RPP0632_LOCAL_SITE);
+    const remote = JSON.parse(process.env.RPP0632_REMOTE_SITE);
+    const plan = createPushPlan({ base, local, remote, now: fixedNow });
+    const durableJournal = openRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: ${JSON.stringify(claimId)},
+    });
+
+    try {
+      applyPlan(remote, plan, {
+        durableJournal,
+        failDuringCommitAtMutation: 2,
+        mutateRemote: true,
+      });
+      console.error('expected injected partial commit failure');
+      process.exit(3);
+    } catch (error) {
+      if (error?.code !== 'INJECTED_FAILURE_DURING_COMMIT') {
+        console.error(error?.stack || String(error));
+        process.exit(2);
+      }
+      process.exit(0);
+    }
+  `;
+
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', childScript], {
+    env: {
+      ...process.env,
+      RPP0632_JOURNAL_PATH: filePath,
+      RPP0632_BASE_SITE: JSON.stringify(base),
+      RPP0632_LOCAL_SITE: JSON.stringify(local),
+      RPP0632_REMOTE_SITE: JSON.stringify(remote),
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(child.error, undefined);
+  assert.equal(child.status, 0, child.stderr || child.stdout);
+
+  const restarted = readRecoveryJournal(filePath);
+  const mutationRows = restarted.records.filter((record) => record.type === 'mutation-observed');
+  const recoveryStateRow = restarted.records.find((record) => record.type === 'recovery-state');
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.deepEqual(
+    restarted.records.map((record) => record.sequence),
+    Array.from({ length: 16 }, (_, index) => index + 1),
+  );
+  assert.deepEqual(
+    restarted.records.map((record) => record.type),
+    [
+      'recovery-claim-opened',
+      'journal-opened',
+      'target-planned',
+      'target-planned',
+      'target-planned',
+      'target-planned',
+      'target-planned',
+      'target-planned',
+      'target-planned',
+      'target-planned',
+      'apply-staged',
+      'dependencies-validated',
+      'apply-committing',
+      'mutation-observed',
+      'mutation-observed',
+      'recovery-state',
+    ],
+  );
+  assert.equal(mutationRows.length, 2);
+  assert.equal(recoveryStateRow.state, 'blocked-recovery');
+  assert.equal(restarted.committedState.restartReadable, true);
+  assert.equal(restarted.committedState.status, 'committed');
+  assert.equal(restarted.committedState.mutationRows, 2);
+  assert.equal(restarted.committedState.completedRows, 0);
+  assert.equal(restarted.committedState.targetEnvelope.plannedTargets, plan.mutations.length);
+  assert.equal(restarted.committedState.targetEnvelope.committedTargets, 2);
+  assert.equal(restarted.committedState.targetEnvelope.allTargetsCommitted, false);
+  assert.equal(restarted.committedState.leaseOwner.claimId, claimId);
+  assert.equal(restarted.committedState.leaseOwner.claimHash, recoveryClaimHash(claimId));
+  assert.ok(restarted.records.every((record) => record.fsync.requested === true));
+
+  const inspection = inspectRecoveryJournal({
+    journalPath: filePath,
+    plan,
+    current: partialRemote,
+  });
+
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.match(inspection.reason, /partially updated/);
+  assert.deepEqual(inspection.counts, { old: 6, new: 2, blockedUnknown: 0 });
+  assert.deepEqual(
+    inspection.targets.map((target) => target.state),
+    ['new', 'new', 'old', 'old', 'old', 'old', 'old', 'old'],
+  );
+  assert.equal(inspection.journal.committedState.restartReadable, true);
+  assert.equal(inspection.journal.committedState.leaseOwner.claimId, claimId);
+  const journalText = fs.readFileSync(filePath, 'utf8');
+  assert.equal(journalText.includes('base-private-content'), false);
+  assert.equal(journalText.includes('local-private-content'), false);
+});
+
 test('file-backed journal refuses completion when apply is incomplete', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
