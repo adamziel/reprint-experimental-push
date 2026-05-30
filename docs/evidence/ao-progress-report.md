@@ -1,17 +1,33 @@
-# AO Progress Report - 2026-05-30 05:15 CEST
+# AO Progress Report - 2026-05-30 05:20 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0479 driver audit
-evidence redaction proof refresh ending at `bebf85c54`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0158 same
+independent content variant-3 proof refresh ending at `4f9990ebe`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 339 are
-  checked from integrated evidence and 661 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 340 are
+  checked from integrated evidence and 660 remain open.
+- `RPP-0158` is now checked with generated same independent content variant-3
+  evidence in `docs/evidence/rpp-0158-same-independent-content-v3.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  scripts/harness/generated-push-cases.js`, `node --check
+  test/generated-push-harness.test.js`, `node --test
+  --test-name-pattern=RPP-0158 test/generated-push-harness.test.js`, the
+  `generated push harness covers|RPP-0158` pattern, and the
+  `RPP-0118|RPP-0138|RPP-0158` adjacent same-content slice exited 0, and `npm
+  run test:generated-push-harness` passed 65/65, proving 10 ready variant-3
+  cases across all tiers, no mutation or live precondition for the
+  already-synchronized shared row, unplanned remote resources preserved by
+  hash, checklist lint, artifact redaction scan, and `git diff --check` while
+  final release remains **NO-GO**.
 - `RPP-0479` is now checked with focused driver audit evidence redaction
   variant-4 evidence in
   `docs/evidence/rpp-0479-driver-audit-evidence-redaction-v4.md`,

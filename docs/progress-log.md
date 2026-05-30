@@ -6,20 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:15 CEST.
+- Last update: 2026-05-30 05:20 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0479 driver audit evidence redaction proof merge ending at
-  `bebf85c54`.
+  the RPP-0158 same independent content variant-3 proof merge ending at
+  `4f9990ebe`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 339
-  items checked and leaves 661 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 340
+  items checked and leaves 660 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   63 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 57 generated
+  11 storage/performance items, 3 production-topology items, 58 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Generated same independent content variant-3 refresh: the current lane now
+  contains `RPP-0158` evidence in
+  `docs/evidence/rpp-0158-same-independent-content-v3.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  scripts/harness/generated-push-cases.js`, `node --check
+  test/generated-push-harness.test.js`, the focused `RPP-0158` test, the
+  `generated push harness covers|RPP-0158` pattern, and the
+  `RPP-0118|RPP-0138|RPP-0158` adjacent same-content slice all exited 0, and
+  `npm run test:generated-push-harness` passed 65/65. The proof exposes 10
+  ready variant-3 cases across all tiers, verifies no mutation or precondition
+  is emitted for the already-synchronized shared row, preserves every unplanned
+  remote resource by hash, and keeps generated evidence hash-only. Checklist
+  lint, artifact redaction scan, and `git diff --check` also passed. Counts are
+  now 340/660; final release remains `NO-GO`.
 - Focused driver audit evidence redaction variant-4 refresh: the current lane
   now contains `RPP-0479` evidence in
   `docs/evidence/rpp-0479-driver-audit-evidence-redaction-v4.md`,
