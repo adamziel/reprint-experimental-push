@@ -267,6 +267,9 @@ const requiredFamilies = [
   'wp-postmeta-create-update-delete-v3',
   'wp-postmeta-create-update-delete-v3-ready',
   'wp-postmeta-create-update-delete-v3-non-ready',
+  'wp-postmeta-create-update-delete-v4',
+  'wp-postmeta-create-update-delete-v4-ready',
+  'wp-postmeta-create-update-delete-v4-non-ready',
   'wp-comments-commentmeta-graph-ready',
   'wp-comments-commentmeta-graph-stale',
   'wp-comments-commentmeta-graph',
@@ -6319,14 +6322,112 @@ test('RPP-0148 wp_postmeta create/update/delete variant 3 records per-tier surfa
   assert.equal(evidenceText.includes('remote concurrent wp_postmeta update'), false, 'variant 3 evidence leaked remote drift value');
 });
 
+test('RPP-0168 wp_postmeta create/update/delete variant 4 applies ready changes without unplanned overwrite', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpPostmetaCreateUpdateDeleteVariant4;
+
+  assert.ok(coverage, 'missing wp_postmeta create/update/delete variant 4 target coverage');
+  assert.equal(coverage.family, 'wp-postmeta-create-update-delete-variant4');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-postmeta-create-update-delete-v4']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.ok(coverage.statuses.ready > 0, 'variant 4 target should include ready wp_postmeta cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 4 target should include non-ready wp_postmeta cases');
+  assert.equal(report.summary.featureFamilies['wp-postmeta-create-update-delete-v4-ready'], 10);
+  assert.equal(report.summary.featureFamilies['wp-postmeta-create-update-delete-v4-non-ready'], 10);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const firstEvidence = generatedWpPostmetaCreateUpdateDeleteVariant4Evidence(coverage);
+  const replayEvidence = generatedWpPostmetaCreateUpdateDeleteVariant4Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0168 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 4 wp_postmeta evidence changed between runs');
+  assert.equal(firstEvidence.target, 'wpPostmetaCreateUpdateDeleteVariant4');
+  assert.equal(firstEvidence.family, 'wp-postmeta-create-update-delete-variant4');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.status),
+    ['ready', 'conflict'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.ok(readyCase.tags.includes('wp-postmeta-create-update-delete-v4-ready'));
+  assert.ok(nonReadyCase.tags.includes('wp-postmeta-create-update-delete-v4-non-ready'));
+
+  assert.equal(readyCase.variant, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.deepEqual(readyCase.plannedChangeKinds, { create: 1, delete: 1, update: 1 });
+  for (const change of ['create', 'update', 'delete']) {
+    const mutation = readyCase.postmetaMutations[change];
+    assert.equal(mutation.changeKind, change);
+    assert.equal(mutation.plannedMutation, true);
+    assert.equal(mutation.plannedPrecondition, true);
+    assert.equal(mutation.appliedHash, readyCase.surface[change].localHash);
+    assert.equal(mutation.preconditionExpectedHash, mutation.remoteBeforeHash);
+  }
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(nonReadyCase.variant, 'non-ready');
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.equal(nonReadyCase.conflict.resourceKey, nonReadyCase.surface.update.resourceKey);
+  assert.equal(nonReadyCase.conflict.plannedMutation, false);
+  assert.match(nonReadyCase.conflict.conflictHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('generated wp_postmeta create'), false, 'variant 4 evidence leaked created meta value');
+  assert.equal(evidenceText.includes('generated wp_postmeta update'), false, 'variant 4 evidence leaked updated meta value');
+  assert.equal(evidenceText.includes('base postmeta update'), false, 'variant 4 evidence leaked base update meta value');
+  assert.equal(evidenceText.includes('base postmeta delete'), false, 'variant 4 evidence leaked deleted meta value');
+  assert.equal(evidenceText.includes('remote concurrent wp_postmeta update'), false, 'variant 4 evidence leaked remote drift value');
+});
+
 function generatedWpPostmetaCreateUpdateDeleteVariant3Evidence(targetCoverage) {
+  return generatedWpPostmetaCreateUpdateDeleteVariantEvidence(targetCoverage, {
+    target: 'wpPostmetaCreateUpdateDeleteVariant3',
+    tag: 'wp-postmeta-create-update-delete-v3',
+    label: 'variant 3',
+  });
+}
+
+function generatedWpPostmetaCreateUpdateDeleteVariant4Evidence(targetCoverage) {
+  return generatedWpPostmetaCreateUpdateDeleteVariantEvidence(targetCoverage, {
+    target: 'wpPostmetaCreateUpdateDeleteVariant4',
+    tag: 'wp-postmeta-create-update-delete-v4',
+    label: 'variant 4',
+  });
+}
+
+function generatedWpPostmetaCreateUpdateDeleteVariantEvidence(targetCoverage, { target, tag, label }) {
   const perTier = {};
   const statuses = {};
   const selectedCases = new Map();
   let totalCases = 0;
 
   for (const testCase of generatePushHarnessCases()) {
-    if (!testCase.tags.has('wp-postmeta-create-update-delete-v3')) {
+    if (!testCase.tags.has(tag)) {
       continue;
     }
 
@@ -6344,14 +6445,14 @@ function generatedWpPostmetaCreateUpdateDeleteVariant3Evidence(targetCoverage) {
   const sortedPerTier = sortNumericObject(perTier);
   const sortedStatuses = sortStringObject(statuses);
 
-  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 wp_postmeta target recount should match summary tiers');
-  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 wp_postmeta target recount should match summary statuses');
-  assert.equal(totalCases, targetCoverage.total, 'variant 3 wp_postmeta target recount should match summary total');
-  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready wp_postmeta case');
-  assert.ok(selectedCases.has('non-ready'), 'variant 3 target should select one non-ready wp_postmeta case');
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, `${label} wp_postmeta target recount should match summary tiers`);
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, `${label} wp_postmeta target recount should match summary statuses`);
+  assert.equal(totalCases, targetCoverage.total, `${label} wp_postmeta target recount should match summary total`);
+  assert.ok(selectedCases.has('ready'), `${label} target should select one ready wp_postmeta case`);
+  assert.ok(selectedCases.has('non-ready'), `${label} target should select one non-ready wp_postmeta case`);
 
   return {
-    target: 'wpPostmetaCreateUpdateDeleteVariant3',
+    target,
     family: targetCoverage.family,
     evidenceScope: 'local-generated-model',
     productionBacked: false,
