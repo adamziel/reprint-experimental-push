@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 08:38 CEST.
+- Last update: 2026-05-30 08:44 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0500 arbitrary plugin fixture package release-verifier merge ending
-  at `78fe37e2a`.
+  the RPP-0524 production apply route proof merge ending at `25112be86`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 371
-  items checked and leaves 629 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 372
+  items checked and leaves 628 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  73 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
+  73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 75 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Production apply route proof refresh: the current lane now contains
+  `RPP-0524` evidence in
+  `docs/evidence/rpp-0524-production-apply-route-v2.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-apply-route-live-smoke.mjs`, and
+  `test/production-apply-route.test.js`. `node --check` passed for the touched
+  smoke script and test, the focused production apply route suite passed 5/5,
+  the sandbox-local apply route smoke returned `ok: true`, and the adjacent
+  route/auth bundle passed 145/145. Checklist lint, scoped artifact redaction
+  scan, and merge diff whitespace checks also passed. Counts are now 372/628;
+  final release remains `NO-GO` because the proof is still sandbox-local
+  loopback evidence with `labBacked: true`.
 - Arbitrary plugin fixture package release-verifier refresh: the current lane
   now contains `RPP-0500` evidence in
   `docs/evidence/rpp-0500-arbitrary-plugin-fixture-package-release-verifier-v5.md`,

@@ -1,18 +1,31 @@
-# AO Progress Report - 2026-05-30 08:38 CEST
+# AO Progress Report - 2026-05-30 08:44 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0500 arbitrary
-plugin fixture package release-verifier refresh ending at `78fe37e2a`.
+`lane/evidence-integration-20260527` through the current RPP-0524 production
+apply route proof refresh ending at `25112be86`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 371 are
-  checked from integrated evidence and 629 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 372 are
+  checked from integrated evidence and 628 remain open.
+- `RPP-0524` is now checked with production-shaped apply route proof in
+  `docs/evidence/rpp-0524-production-apply-route-v2.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-apply-route-live-smoke.mjs`, and
+  `test/production-apply-route.test.js`. `node --check` passed for the touched
+  smoke script and route test, the focused production apply route suite passed
+  5/5, the sandbox-local apply route smoke returned `ok: true` with unsigned
+  requests rejected before mutation and authenticated apply reaching
+  `/wp-json/reprint/v1/push/apply`, and the adjacent production route/auth
+  bundle passed 145/145. Checklist lint, scoped artifact redaction scan, and
+  merge diff whitespace checks also passed. This remains production-shaped
+  sandbox-local loopback evidence with `labBacked: true`, not external
+  production host proof.
 - `RPP-0500` is now checked with focused arbitrary plugin fixture package
   release-verifier carry-through evidence in
   `docs/evidence/rpp-0500-arbitrary-plugin-fixture-package-release-verifier-v5.md`,
@@ -2159,15 +2172,15 @@ tracks the near-to-far slices used to supervise the AO team:
 
 | Range | Goal slice | Checked / total |
 | --- | --- | --- |
-| `RPP-0001`-`RPP-0100` | Release gate foundation | 94 / 100 |
-| `RPP-0101`-`RPP-0200` | Generated harness expansion | 36 / 100 |
-| `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 21 / 100 |
-| `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 19 / 100 |
-| `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 29 / 100 |
-| `RPP-0501`-`RPP-0600` | Production executor and auth protocol | 10 / 100 |
-| `RPP-0601`-`RPP-0700` | Durable journal and recovery | 12 / 100 |
-| `RPP-0701`-`RPP-0800` | Storage, chunking, and performance | 7 / 100 |
-| `RPP-0801`-`RPP-0900` | Production topology and integrations | 2 / 100 |
+| `RPP-0001`-`RPP-0100` | Release gate foundation | 100 / 100 |
+| `RPP-0101`-`RPP-0200` | Generated harness expansion | 75 / 100 |
+| `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 40 / 100 |
+| `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 29 / 100 |
+| `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 73 / 100 |
+| `RPP-0501`-`RPP-0600` | Production executor and auth protocol | 22 / 100 |
+| `RPP-0601`-`RPP-0700` | Durable journal and recovery | 19 / 100 |
+| `RPP-0701`-`RPP-0800` | Storage, chunking, and performance | 11 / 100 |
+| `RPP-0801`-`RPP-0900` | Production topology and integrations | 3 / 100 |
 | `RPP-0901`-`RPP-1000` | Audit, release, and operations | 0 / 100 |
 
 Checked IDs in this report are:
