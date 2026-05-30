@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 14:23 CEST.
+- Last update: 2026-05-30 14:30 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0372 termmeta term reference merge ending at `69c5be064`.
+  the RPP-0488 serialized option validator release-verifier merge ending at
+  `5e8d68442`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 453
-  items checked and leaves 547 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 454
+  items checked and leaves 546 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  73 plugin-driver boundary items, 25 executor/auth items, 29 recovery items,
+  74 plugin-driver boundary items, 25 executor/auth items, 29 recovery items,
   13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Serialized option validator release-verifier carry-through: the current lane
+  now contains `RPP-0488` evidence in
+  `docs/evidence/rpp-0488-serialized-option-validator-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/push-planner.test.js`. The support-only proof emits
+  `pluginDriver.serializedOptionValidator` for a one-row serialized
+  `wp_options` mutation, carries accepted validator evidence through local
+  production-shaped apply, proves invalid planning and forged apply payloads are
+  refused before mutation, and keeps raw serialized option values out of the
+  evidence envelope. Validation passed with Node syntax checks, focused RPP-0488
+  coverage 1/1, adjacent serialized-option coverage 3/3, adjacent
+  release-verifier plugin-driver coverage 17/17, targeted production-shaped
+  verifier coverage 13/13, checklist lint, scoped artifact redaction scan, and
+  merge diff whitespace checks. Counts are now 454/546; final release remains
+  `NO-GO` because this is local support evidence, not externally hosted
+  production topology proof.
 - Termmeta term reference focused regression: the current lane now contains
   `RPP-0372` evidence in
   `docs/evidence/rpp-0372-termmeta-term-reference-v4.md`,
