@@ -101,6 +101,10 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.parallelSnapshotHashing.fastPathLane.updated, true);
   assert.equal(report.shape.snapshotHashJobs, report.shape.snapshotHashResources * 3);
   assert.ok(report.shape.snapshotHashConcurrency > 0);
+  assert.equal(report.evidence.timeoutBudgetProof.status, 'passed');
+  assert.equal(report.evidence.timeoutBudgetProof.resume.receiptOnlyResumeSafe, true);
+  assert.equal(report.evidence.timeoutBudgetProof.resume.duplicateMutationWork, 0);
+  assert.equal(report.evidence.timeoutBudgetProof.apply.noDuplicateMutationWork, true);
   assert.equal(report.evidence.guardedTransfer.visibility.livePathChangesOnlyAfterFinalize, true);
   assert.equal(report.evidence.preconditions.liveRemoteMutationPreconditions, report.shape.mutations);
   assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
@@ -529,6 +533,7 @@ function deterministicTransferProjection(report) {
       resume: report.evidence.guardedTransfer.resume,
       replayIdempotency: report.evidence.guardedTransfer.replayIdempotency,
       transactionBoundaryPolicy: report.evidence.guardedTransfer.transactionBoundaryPolicy,
+      timeoutBudgetProof: report.evidence.guardedTransfer.timeoutBudgetProof,
       visibility: report.evidence.guardedTransfer.visibility,
     },
     parallelSnapshotHashing: report.evidence.parallelSnapshotHashing,
