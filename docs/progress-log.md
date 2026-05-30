@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 13:02 CEST.
+- Last update: 2026-05-30 13:06 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0620 manual recovery audit export merge ending at `fffb62a2`.
+  the RPP-0621 journal table schema migration v2 merge ending at `d4c32b44`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 435
-  items checked and leaves 565 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 436
+  items checked and leaves 564 open.
 - Checked slices: 100 release-gate foundation items, 45 graph identity items,
-  73 plugin-driver boundary items, 23 executor/auth items, 25 recovery items,
+  73 plugin-driver boundary items, 23 executor/auth items, 26 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Journal table schema migration v2: the current lane now contains `RPP-0621`
+  evidence in
+  `docs/evidence/rpp-0621-journal-table-schema-migration-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/recovery-journal.test.js`. The focused SQLite-backed regression seeds
+  a partially migrated journal table whose table schema column is present but
+  whose legacy `record_json` rows omit per-record schema versions, confirms the
+  strict reader blocks that state with `JOURNAL_SCHEMA_UNSUPPORTED`, migrates
+  the rows in place without adding a duplicate column, reopens the SQLite file,
+  and proves the partially committed recovery envelope still fails closed as
+  `blocked-recovery` with 3 new / 5 old / 0 blocked-unknown targets. Validation
+  passed with Node syntax checks, focused RPP-0621 coverage 1/1, full recovery
+  journal coverage 29/29, checklist lint, scoped artifact redaction scan, and
+  merge diff whitespace checks. Counts are now 436/564; final release remains
+  `NO-GO` because this is SQLite-backed sandbox evidence, not external
+  production durability proof.
 - Manual recovery audit export: the current lane now contains `RPP-0620`
   evidence in
   `docs/evidence/rpp-0620-manual-recovery-audit-export.md`,
