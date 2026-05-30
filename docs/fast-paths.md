@@ -129,6 +129,14 @@ present. That rule keeps retry behavior monotonic: the sender can resend a
 chunk, pause, or block, but it does not have to infer whether unacknowledged
 bytes reached the remote.
 
+Replay idempotency is stricter than resume. If a chunk request is replayed after
+a lost response, the receiver may return the existing durable receipt only when
+the plan id, resource key, local resource hash, chunk index, byte range, chunk
+digest, receipt key, and idempotency key all match. A replay with the same
+idempotency key but different bytes or range blocks as a conflict. Exact replays
+must create zero extra receipt records, write zero duplicate bytes, and perform
+zero mutation work.
+
 ## Database Row Batching
 
 Batch rows for throughput, but keep conflict semantics per row. A safe batch
@@ -327,7 +335,9 @@ gates are:
 - `guarded-transfer-manifest`
 - `chunk-hash-verification`
 - `receipt-only-resume`
+- `chunk-replay-idempotency`
 - `live-remote-preconditions`
+- `parallel-snapshot-hashing`
 - `durable-journal-integrity`
 - `failure-recovery-classification`
 - `atomic-group-visibility`
@@ -339,7 +349,10 @@ The guarded transfer evidence lives under `evidence.guardedTransfer`. It records
 the manifest digest and chunk ranges, proves each chunk digest and the assembled
 hash match the finalized file, and simulates a resume pass that skips all chunks
 only from exact durable receipts. Missing or mismatched receipts block the skip;
-they do not authorize duplicate-free resume by inference.
+they do not authorize duplicate-free resume by inference. It also exercises
+chunk replay idempotency: one exact replay per chunk returns the stored durable
+receipt without writing duplicate chunk bytes or creating duplicate receipt
+records, while missing-receipt and mismatched-idempotency probes fail closed.
 
 The quick check is:
 
@@ -355,8 +368,9 @@ node scripts/bench/guarded-executor-benchmark.js --profile=guardedLarge
 
 The report's `throughput.productionThroughput` field is always `not-claimed`
 unless every rollout safety gate passes. The current lab evidence passes the
-manifest, hash verification, receipt-only resume, live-precondition, journal,
-recovery, and atomic visibility gates. Production speed claims still block with:
+manifest, hash verification, receipt-only resume, chunk replay idempotency,
+live-precondition, parallel snapshot hashing, journal, recovery, and atomic
+visibility gates. Production speed claims still block with:
 
 - `production-atomic-group-commit-not-measured`: the existing apply model can
   stage and classify failures, but it has not measured a production storage

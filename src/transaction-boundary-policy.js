@@ -147,6 +147,7 @@ export function buildChunkTransferTransactionBoundaryPolicy({
       resumeCursorFields: [
         'planId',
         'resourceKey',
+        'localResourceHash',
         'chunkIndex',
         'offsetBytes',
         'sizeBytes',
@@ -180,6 +181,7 @@ export function receiptMatchesManifestEntry(record, scope, entry) {
   return Boolean(record && entry)
     && record.planId === scope.planId
     && record.resourceKey === scope.resourceKey
+    && record.localResourceHash === entry.localResourceHash
     && record.chunkIndex === entry.chunkIndex
     && record.offsetBytes === entry.offsetBytes
     && record.sizeBytes === entry.sizeBytes

@@ -15,6 +15,7 @@ receipt matches all replay cursor fields:
 
 - `planId`
 - `resourceKey`
+- `localResourceHash`
 - `chunkIndex`
 - `offsetBytes`
 - `sizeBytes`
@@ -26,6 +27,13 @@ The proof fails closed when the receipt is missing, belongs to another plan or
 resource, has a different byte range, or carries a mismatched digest. Accepted
 replays return the existing receipt and record zero duplicate chunk bytes, zero
 new duplicate receipt records, and zero duplicate mutation work.
+
+The integration also keeps a supplemental focused module in
+`src/chunk-replay-idempotency.js`. That module exercises the same replay
+contract without depending on the full guarded benchmark: exact replay returns
+the durable receipt, missing receipt returns `upload-required`, a reused
+idempotency key with different chunk bytes blocks as `idempotency-key-conflict`,
+and budget evidence fails closed when the documented replay budget is exceeded.
 
 The guarded benchmark also reports conservative runtime budgets under `runtime`
 and `resources.runtimeBudget`. Production throughput remains blocked unless the
@@ -51,8 +59,8 @@ Observed summary:
 - duplicate receipt records written: `0`
 - bytes rewritten during replay: `0`
 - duplicate mutation work: `0`
-- duration: `2901.56 ms` within the documented `120000 ms` budget
-- heap used: `5947760 bytes` within the documented `536870912 bytes` budget
+- duration: `2541.86 ms` within the documented `120000 ms` budget
+- heap used: `6100624 bytes` within the documented `536870912 bytes` budget
 - gates: `durable-chunk-receipts`, `chunk-hash-verification`,
   `chunk-replay-idempotency`, `no-duplicate-mutation-work`, and
   `large-site-runtime-budget` all reported `pass`
@@ -89,13 +97,17 @@ Focused validation performed while preparing this evidence:
 
 ```sh
 node --check scripts/bench/guarded-executor-benchmark.js
+node --check src/chunk-replay-idempotency.js
+node --check test/chunk-replay-idempotency.test.js
+node --test test/chunk-replay-idempotency.test.js
 node --test test/guarded-executor-benchmark.test.js
 node scripts/bench/guarded-executor-benchmark.js --chunk-replay-idempotency-only --profile=guardedLarge > /tmp/rpp-0709-chunk-replay-idempotency.json
 node scripts/bench/guarded-executor-benchmark.js --profile=guardedLarge > /tmp/guarded-large-full-rpp0709.json
 ```
 
-The focused test file reports 8 passing tests, including the RPP-0709 replay
-idempotency budget test and adjacent guarded executor regressions.
+The supplemental focused module reports 4 passing tests. The guarded executor
+focused pattern reports the RPP-0709 replay idempotency and RPP-0710 parallel
+snapshot hashing checks passing together.
 
 Additional local validation before commit:
 

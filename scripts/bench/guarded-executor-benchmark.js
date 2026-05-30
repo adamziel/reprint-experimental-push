@@ -601,7 +601,7 @@ function stageGeneratedFileBytes({
   const fd = fs.openSync(stagingPath, 'w');
   const fileHash = crypto.createHash('sha256');
   const chunkCount = Math.ceil(fileBytes / chunkSizeBytes);
-  const manifestEntries = [];
+  const pendingEntries = [];
   let bytesMoved = 0;
 
   try {
@@ -611,37 +611,17 @@ function stageGeneratedFileBytes({
       const chunk = deterministicChunk(sizeBytes, seed, chunkIndex);
       const chunkDigest = digestBuffer(chunk);
       const chunkDigestLabel = `sha256:${chunkDigest}`;
-      const idempotencyKey = `${planId}:${resourceKey}:chunk:${chunkIndex}`;
-      const receiptKey = `${planId}:${resourceKey}:${chunkIndex}:sha256:${chunkDigest}`;
-      const manifestEntry = {
+      const pendingEntry = {
         chunkIndex,
         offsetBytes,
         sizeBytes,
         chunkDigest: chunkDigestLabel,
-        idempotencyKey,
-        receiptKey,
         canonicalVisible: false,
       };
       fileHash.update(chunk);
       fs.writeSync(fd, chunk, 0, chunk.length, offsetBytes);
       bytesMoved += chunk.length;
-      manifestEntries.push(manifestEntry);
-      journal.appendEvent('chunk-receipt', {
-        planId,
-        resourceKey,
-        state: 'staged',
-        chunkIndex,
-        chunkCount,
-        offsetBytes,
-        sizeBytes,
-        chunkDigest: chunkDigestLabel,
-        canonicalVisible: false,
-        idempotencyKey,
-        receiptKey,
-        artifactRefs: {
-          staging: `bench-staging:${resourceKey}:${chunkIndex}`,
-        },
-      });
+      pendingEntries.push(pendingEntry);
     }
     fs.fsyncSync(fd);
   } finally {
@@ -649,6 +629,33 @@ function stageGeneratedFileBytes({
   }
 
   const assembledDigest = fileHash.digest('hex');
+  const localResourceHash = `sha256:${assembledDigest}`;
+  const manifestEntries = pendingEntries.map((entry) => ({
+    ...entry,
+    localResourceHash,
+    idempotencyKey: `${planId}:${resourceKey}:${localResourceHash}:chunk:${entry.chunkIndex}`,
+    receiptKey: `${planId}:${resourceKey}:${localResourceHash}:chunk:${entry.chunkIndex}:`
+      + `${entry.offsetBytes}:${entry.sizeBytes}:${entry.chunkDigest}`,
+  }));
+  for (const manifestEntry of manifestEntries) {
+    journal.appendEvent('chunk-receipt', {
+      planId,
+      resourceKey,
+      state: 'staged',
+      chunkIndex: manifestEntry.chunkIndex,
+      chunkCount,
+      offsetBytes: manifestEntry.offsetBytes,
+      sizeBytes: manifestEntry.sizeBytes,
+      localResourceHash,
+      chunkDigest: manifestEntry.chunkDigest,
+      canonicalVisible: false,
+      idempotencyKey: manifestEntry.idempotencyKey,
+      receiptKey: manifestEntry.receiptKey,
+      artifactRefs: {
+        staging: `bench-staging:${resourceKey}:${manifestEntry.chunkIndex}`,
+      },
+    });
+  }
   const stat = fs.statSync(stagingPath);
   const manifest = {
     planId,
@@ -656,7 +663,7 @@ function stageGeneratedFileBytes({
     fileBytes,
     chunkSizeBytes,
     chunkCount,
-    assembledHash: `sha256:${assembledDigest}`,
+    assembledHash: localResourceHash,
     entries: manifestEntries,
   };
   const manifestDigest = `sha256:${stableDigest(manifest)}`;
@@ -668,7 +675,7 @@ function stageGeneratedFileBytes({
     chunkSizeBytes,
     sizeBytes: stat.size,
     manifestDigest,
-    assembledHash: `sha256:${assembledDigest}`,
+    assembledHash: localResourceHash,
     canonicalVisible: false,
     idempotencyKey: `${planId}:${resourceKey}:chunk-manifest-finalize`,
     artifactRefs: {
@@ -681,7 +688,7 @@ function stageGeneratedFileBytes({
     state: 'staged-file-complete',
     chunkReceipts: chunkCount,
     sizeBytes: stat.size,
-    assembledHash: `sha256:${assembledDigest}`,
+    assembledHash: localResourceHash,
     canonicalVisible: false,
     idempotencyKey: `${planId}:${resourceKey}:file-staging-finalize`,
     artifactRefs: {
@@ -699,10 +706,10 @@ function stageGeneratedFileBytes({
     fileBytes: stat.size,
     manifestDigest,
     manifestEntries,
-    assembledHash: `sha256:${assembledDigest}`,
+    assembledHash: localResourceHash,
     descriptor: fileDescriptor({
       sizeBytes: stat.size,
-      contentDigest: `sha256:${assembledDigest}`,
+      contentDigest: localResourceHash,
       storage: 'bench-generated-chunk-staging',
     }),
   };
@@ -1108,9 +1115,11 @@ function buildGuardedTransferEvidence({ stagedFile, successPersisted, config }) 
       everyReceiptPlanScoped: chunkReceiptRecords.every((record) =>
         record.planId === stagedFile.planId
         && record.resourceKey === stagedFile.resourceKey
+        && record.localResourceHash === stagedFile.assembledHash
         && typeof record.receiptKey === 'string'
         && record.receiptKey.includes(stagedFile.planId)
-        && record.receiptKey.includes(stagedFile.resourceKey)),
+        && record.receiptKey.includes(stagedFile.resourceKey)
+        && record.receiptKey.includes(stagedFile.assembledHash)),
       canonicalVisibleBeforeFinalize: chunkReceiptRecords.some((record) => record.canonicalVisible === true),
     },
     hashVerification,
@@ -1528,11 +1537,13 @@ function buildReceiptResumeProbe({ stagedFile, chunkReceiptRecords }) {
     resumeCursorFields: [
       'planId',
       'resourceKey',
+      'localResourceHash',
       'chunkIndex',
       'offsetBytes',
       'sizeBytes',
       'chunkDigest',
       'receiptKey',
+      'idempotencyKey',
     ],
   };
 }
@@ -1701,6 +1712,7 @@ function receiptMatchesManifestEntry(record, stagedFile, entry) {
   return Boolean(record)
     && record.planId === stagedFile.planId
     && record.resourceKey === stagedFile.resourceKey
+    && record.localResourceHash === entry.localResourceHash
     && record.chunkIndex === entry.chunkIndex
     && record.offsetBytes === entry.offsetBytes
     && record.sizeBytes === entry.sizeBytes
