@@ -489,7 +489,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [ ] RPP-0455 (Mid / plugin-driver) Add generated coverage for remote plugin removal refusal, variant 3. Success: release gate notes whether evidence is local or production-backed.
 - [x] RPP-0456 (Mid / plugin-driver) Add generated coverage for driver delete support flag, variant 3. Success: focused test proves exact driver behavior.
 - [x] RPP-0457 (Mid / plugin-driver) Add generated coverage for driver dry-run validation hook, variant 3. Success: generated harness covers supported and unsupported variants.
-- [ ] RPP-0458 (Mid / plugin-driver) Add generated coverage for driver apply validation hook, variant 3. Success: local production proof carries one real mutation through apply.
+- [x] RPP-0458 (Mid / plugin-driver) Add generated coverage for driver apply validation hook, variant 3. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0459 (Mid / plugin-driver) Add generated coverage for driver audit evidence redaction, variant 3. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0460 (Mid / plugin-driver) Add generated coverage for arbitrary plugin fixture package, variant 3. Success: release gate notes whether evidence is local or production-backed.
 - [x] RPP-0461 (Mid / plugin-driver) Add focused regression coverage for driver registration API, variant 4. Success: focused test proves exact driver behavior.
