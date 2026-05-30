@@ -460,6 +460,7 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
             'type' => $session_type,
             'id' => $signature['session']['id'] ?? null,
             'sessionHash' => $signature['session']['sessionHash'] ?? null,
+            'userIdentityHash' => $signature['session']['userIdentityHash'] ?? null,
             'sourceHash' => $signature['session']['sourceHash'] ?? null,
             'sourceUrlHash' => $signature['session']['sourceUrlHash'] ?? null,
             'applicationPasswordUuid' => $auth['session']['applicationPasswordUuid'] ?? null,
@@ -3046,6 +3047,7 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
     if ($mode === 'preflight') {
         $session = [
             'sessionHash' => '',
+            'userIdentityHash' => '',
             'issuedAt' => '',
             'expiresAt' => '',
         ];
@@ -3067,7 +3069,9 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
         }
         if (!hash_equals((string) ($session['credentialHash'] ?? ''), (string) ($auth['credentialHash'] ?? ''))
             || !hash_equals((string) ($session['signingKeyHash'] ?? ''), $signing_key_hash)
+            || !hash_equals((string) ($session['userIdentityHash'] ?? ''), reprint_push_lab_rest_signed_user_identity_hash($auth))
             || (int) ($session['userId'] ?? 0) !== (int) ($auth['userId'] ?? 0)
+            || !hash_equals((string) ($session['userLogin'] ?? ''), (string) ($auth['userLogin'] ?? ''))
             || (string) ($session['scope'] ?? '') !== REPRINT_PUSH_LAB_AUTH_SCOPE
             || !hash_equals((string) ($session['sourceHash'] ?? ''), (string) ($current_source['sourceHash'] ?? ''))
             || !hash_equals((string) ($session['sourceUrlHash'] ?? ''), (string) ($current_source['sourceUrlHash'] ?? ''))
@@ -3134,6 +3138,7 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
             'session' => [
                 'id' => $session_id,
                 'sessionHash' => (string) ($session['sessionHash'] ?? ''),
+                'userIdentityHash' => (string) ($session['userIdentityHash'] ?? ''),
                 'sourceHash' => (string) ($session['sourceHash'] ?? ''),
                 'sourceUrlHash' => (string) ($session['sourceUrlHash'] ?? ''),
                 'issuedAt' => (string) ($session['issuedAt'] ?? ''),
@@ -3258,9 +3263,11 @@ function reprint_push_lab_rest_mint_signed_session(array $auth, string $signing_
         'schemaVersion' => 1,
         'sessionHash' => $session_hash,
         'identityHash' => reprint_push_lab_rest_signed_identity_hash($auth),
+        'userIdentityHash' => reprint_push_lab_rest_signed_user_identity_hash($auth),
         'credentialHash' => (string) ($auth['credentialHash'] ?? ''),
         'applicationPasswordUuid' => (string) ($auth['applicationPasswordUuid'] ?? ''),
         'userId' => (int) ($auth['userId'] ?? 0),
+        'userLogin' => (string) ($auth['userLogin'] ?? ''),
         'scope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
         'signingKeyHash' => $signing_key_hash,
         'sourceHash' => (string) ($source_identity['sourceHash'] ?? ''),
@@ -3381,6 +3388,15 @@ function reprint_push_lab_rest_signed_identity_hash(array $auth): string
     ]));
 }
 
+function reprint_push_lab_rest_signed_user_identity_hash(array $auth): string
+{
+    return hash('sha256', implode("\n", [
+        (string) ($auth['userId'] ?? ''),
+        (string) ($auth['userLogin'] ?? ''),
+        REPRINT_PUSH_LAB_AUTH_SCOPE,
+    ]));
+}
+
 function reprint_push_lab_rest_signed_session_option(string $session_hash): string
 {
     return 'reprint_push_lab_signed_session_' . $session_hash;
@@ -3422,6 +3438,7 @@ function reprint_push_lab_rest_signed_request_evidence(WP_REST_Request $request)
             'schemaVersion' => 1,
             'type' => 'short-lived-push-session',
             'sessionHash' => (string) ($session['sessionHash'] ?? ''),
+            'userIdentityHash' => (string) ($session['userIdentityHash'] ?? ''),
             'sourceHash' => (string) ($session['sourceHash'] ?? ''),
             'sourceUrlHash' => (string) ($session['sourceUrlHash'] ?? ''),
             'issuedAt' => (string) ($session['issuedAt'] ?? ''),
@@ -4038,6 +4055,7 @@ function reprint_push_lab_rest_authenticated_push_session_issue_binding(
         'signingKeyHash' => (string) ($signed_request['signingKeyHash'] ?? ''),
         'scopeHash' => hash('sha256', (string) ($profile['authScope'] ?? '')),
         'identityHash' => hash('sha256', reprint_push_stable_json($identity)),
+        'userIdentityHash' => (string) ($session['userIdentityHash'] ?? ''),
         'sourceHash' => (string) ($session['sourceHash'] ?? ''),
         'sourceUrlHash' => (string) ($session['sourceUrlHash'] ?? ''),
         'issuedAt' => (string) ($session['issuedAt'] ?? ''),
