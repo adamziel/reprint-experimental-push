@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import {
   authenticatedHttpClient,
   dbJournalReadbackLimitForPlan,
@@ -23,6 +23,10 @@ const emptyBodySha256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991
 
 function hmacHex(key, data) {
   return createHmac('sha256', key).update(data, 'utf8').digest('hex');
+}
+
+function sha256Hex(data) {
+  return createHash('sha256').update(data, 'utf8').digest('hex');
 }
 
 test('db journal readback window scales with mutation count', () => {
@@ -3854,6 +3858,213 @@ test('production-shaped authenticated push can prove packaged stale-claim retry 
     assert.equal(applyRequests[0].body.labSimulateStaleClaimAllOld, true);
     assert.equal(applyRequests[1].body.labSimulateStaleClaimAllOld, true);
     assert.equal(applyRequests[2].body.labSimulateStaleClaimAllOld, true);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('RPP-0516 authenticated push records same-key same-body replay evidence', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  const session = 'psh_01j00000000000000000000000';
+  const idempotencyKey = 'idem-rpp-0516-same-key-same-body';
+  const auth = {
+    identity: { userLogin: 'reprint_push_admin' },
+    session: {
+      type: 'production-auth-session',
+      status: 'active',
+      id: session,
+      expiresAt: '2030-01-01T00:00:00Z',
+    },
+  };
+  const storageGuard = {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'update',
+    outcome: 'applied',
+  };
+  const base = {
+    meta: { fixture: 'remote-base' },
+    files: {
+      'wp-content/uploads/reprint-push/rpp-0516.txt': 'base',
+    },
+    plugins: {},
+    db: {},
+  };
+  const local = {
+    meta: { fixture: 'local-edited' },
+    files: {
+      'wp-content/uploads/reprint-push/rpp-0516.txt': 'local',
+    },
+    plugins: {},
+    db: {},
+  };
+  let applyCount = 0;
+  let snapshotCount = 0;
+
+  global.fetch = async (url, options = {}) => {
+    const urlString = String(url);
+    const pathname = new URL(urlString).pathname;
+    const body = options.body ? JSON.parse(options.body) : null;
+    const headers = options.headers || {};
+    const contentHash = headers['X-Auth-Content-Hash'] || emptyBodySha256;
+    seen.push({ url: urlString, pathname, body, headers });
+
+    const json = (payload, status = 200) => new Response(JSON.stringify(payload), {
+      status,
+      headers: { 'content-type': 'application/json' },
+    });
+    const signedRequest = (path) => ({
+      signed: true,
+      schemaVersion: 1,
+      contentHash,
+      sessionHash: 'session-hash-rpp-0516',
+      signingKeyHash: 'signing-key-hash-rpp-0516',
+      request: { method: 'POST', path },
+    });
+
+    if (pathname.endsWith('/preflight')) {
+      return json({
+        ok: true,
+        auth,
+        session: { id: session },
+      });
+    }
+
+    if (pathname.endsWith('/snapshot')) {
+      snapshotCount += 1;
+      return json({
+        ok: true,
+        snapshot: snapshotCount === 1 ? base : local,
+      });
+    }
+
+    if (pathname.endsWith('/dry-run')) {
+      return json({
+        ok: true,
+        mode: 'dry-run',
+        receipt: { receiptHash: 'receipt-rpp-0516' },
+        responseSchemaVersion: 1,
+        auth,
+        signedRequest: signedRequest('/wp-json/reprint/v1/push/dry-run'),
+      });
+    }
+
+    if (pathname.endsWith('/recovery/inspect')) {
+      return json({
+        ok: true,
+        mode: 'inspect',
+        responseSchemaVersion: 1,
+        auth,
+        recovery: {
+          state: 'fully-updated-remote',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: {
+            integrity: { status: 'ok' },
+          },
+        },
+        signedRequest: signedRequest('/wp-json/reprint/v1/push/recovery/inspect'),
+      });
+    }
+
+    if (pathname.endsWith('/apply')) {
+      applyCount += 1;
+      return json({
+        ok: true,
+        mode: 'apply',
+        ...(applyCount === 1 ? {} : { code: 'BATCH_ALREADY_COMMITTED' }),
+        applied: 1,
+        ...(applyCount === 1 ? { receipt: { receiptHash: 'receipt-rpp-0516' } } : {}),
+        responseSchemaVersion: 1,
+        auth,
+        idempotency: {
+          replayed: applyCount !== 1,
+          freshMutationWork: applyCount === 1,
+          conflict: false,
+        },
+        storageGuard,
+        signedRequest: signedRequest('/wp-json/reprint/v1/push/apply'),
+      });
+    }
+
+    if (pathname.endsWith('/db-journal')) {
+      return json({
+        ok: true,
+        dbJournal: {
+          scope: 'packaged production plugin journal surface; not local Playground fixture only',
+          latestRows: [
+            {
+              sequence: 1,
+              event: 'idempotency-opened',
+              idempotencyKeyHash: digest(idempotencyKey),
+              requestHash: seen.find((entry) => entry.pathname.endsWith('/apply'))?.headers['X-Auth-Content-Hash'] || null,
+            },
+            { sequence: 2, event: 'mutation-applied' },
+            { sequence: 3, event: 'apply-committed' },
+          ],
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'wpdb-single-statement-cas',
+          },
+          leaseFence: {
+            boundary: 'wpdb-single-statement-cas',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+          },
+        },
+        storageGuard,
+        auth,
+      });
+    }
+
+    throw new Error(`unexpected fetch to ${urlString}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base,
+      local,
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey,
+      routeProfile: 'production-shaped',
+    });
+
+    assert.equal(summary.ok, true);
+    assert.equal(summary.replayEquivalence.equivalent, true);
+    assert.equal(summary.replay.idempotency.replayed, true);
+    assert.equal(summary.replay.idempotency.freshMutationWork, false);
+
+    const applyRequests = seen.filter(({ pathname }) => pathname.endsWith('/apply'));
+    assert.equal(applyRequests.length, 2);
+    assert.deepEqual(applyRequests[0].body, applyRequests[1].body);
+    assert.equal(applyRequests[0].headers['X-Reprint-Push-Idempotency-Key'], idempotencyKey);
+    assert.equal(applyRequests[1].headers['X-Reprint-Push-Idempotency-Key'], idempotencyKey);
+
+    const requestBodyHash = sha256Hex(JSON.stringify(applyRequests[0].body));
+    assert.equal(applyRequests[0].headers['X-Auth-Content-Hash'], requestBodyHash);
+    assert.equal(applyRequests[1].headers['X-Auth-Content-Hash'], requestBodyHash);
+    assert.deepEqual(summary.sameKeySameBodyReplay, {
+      schemaVersion: 1,
+      required: 'same idempotency key, identical request body, replay without fresh mutation work',
+      idempotencyKeyHash: digest(idempotencyKey),
+      sessionHash: digest(session),
+      requestBodyHash,
+      applyContentHash: requestBodyHash,
+      replayContentHash: requestBodyHash,
+      signedContentHashesMatch: true,
+      signedContentHashMatchesSubmittedBody: true,
+      signedRequestEvidenceRequired: true,
+      signedRequestEvidenceProven: true,
+      replayed: true,
+      freshMutationWork: false,
+      noFreshMutationWork: true,
+      replayEquivalent: true,
+      proved: true,
+      verdict: 'SAME_KEY_SAME_BODY_REPLAY_PROVEN',
+    });
   } finally {
     global.fetch = originalFetch;
   }

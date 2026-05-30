@@ -552,7 +552,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [x] RPP-0513 (Mid-Far / executor-auth) Implement nonce replay store, variant 1. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0514 (Mid-Far / executor-auth) Implement receipt expiry validation, variant 1. Success: apply revalidates the live source before mutation.
 - [x] RPP-0515 (Mid-Far / executor-auth) Implement idempotency key requirement, variant 1. Success: verify:release includes the route evidence in one summary.
-- [ ] RPP-0516 (Mid-Far / executor-auth) Implement same-key same-body replay, variant 1. Success: real endpoint test runs against a live URL.
+- [ ] RPP-0516 (Mid-Far / executor-auth) Implement same-key same-body replay, variant 1. Success: real endpoint test runs against a live URL. Support evidence: `docs/evidence/rpp-0516-same-key-same-body-replay.md`; live endpoint proof remains required.
 - [ ] RPP-0517 (Mid-Far / executor-auth) Implement same-key different-body conflict, variant 1. Success: negative auth cases fail before JSON parsing and mutation.
 - [ ] RPP-0518 (Mid-Far / executor-auth) Implement capability downgrade rejection, variant 1. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0519 (Mid-Far / executor-auth) Implement credential rotation behavior, variant 1. Success: apply revalidates the live source before mutation.
