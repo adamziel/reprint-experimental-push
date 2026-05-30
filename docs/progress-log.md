@@ -6,20 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 10:34 CEST.
+- Last update: 2026-05-30 10:36 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0268 unknown plugin-owned resource refusal variant-4 merge ending at
-  `a23eaeddc`.
+  the RPP-0269 conflict evidence hash redaction variant-4 merge ending at
+  `3020e3235`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 398
-  items checked and leaves 602 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 399
+  items checked and leaves 601 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 63 merge-invariant items. No release-ops items are checked
+  harness items, and 64 merge-invariant items. No release-ops items are checked
   yet.
+- Conflict evidence hash redaction variant-4 refresh: the current lane now
+  contains `RPP-0269` evidence in
+  `docs/evidence/rpp-0269-conflict-evidence-hash-redaction-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, `docs/scenario-matrix.md`, and
+  `test/rpp-0269-conflict-evidence-hash-redaction-v4.test.js`. `node
+  --check` passed for the focused test, the focused RPP-0269 test passed 1/1,
+  adjacent RPP-0249 variant-3 coverage passed 1/1, and the adjacent
+  RPP-0209/RPP-0229 planner slice passed 2/2. Checklist lint, scoped artifact
+  redaction scan, and merge diff whitespace checks also passed. Counts are now
+  399/601; final release remains `NO-GO`.
 - Unknown plugin-owned resource refusal variant-4 refresh: the current lane now
   contains `RPP-0268` evidence in
   `docs/evidence/rpp-0268-unknown-plugin-owned-resource-refusal-v4.md`,
