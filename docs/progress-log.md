@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 08:18 CEST.
+- Last update: 2026-05-30 08:28 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0174 plugin-owned option changes variant-4 generated-harness merge
-  ending at `1d34a418e`.
+  the RPP-0175 plugin-owned custom-table changes variant-4 generated-harness
+  merge ending at `446c6607f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 367
-  items checked and leaves 633 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 368
+  items checked and leaves 632 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   70 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 74 generated
+  11 storage/performance items, 3 production-topology items, 75 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin-owned custom-table changes variant-4 refresh: the current lane now
+  contains `RPP-0175` evidence in
+  `docs/evidence/rpp-0175-plugin-owned-custom-table-changes-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0175 test passed 1/1, the adjacent
+  RPP-0115/RPP-0135/RPP-0155/RPP-0175 plugin-owned custom-table slice passed
+  4/4, and `npm run test:generated-push-harness` passed 82/82 across 620
+  deterministic generated cases. Checklist lint, artifact redaction scan, and
+  merge diff whitespace checks also passed. Counts are now 368/632; final
+  release remains `NO-GO`.
 - Plugin-owned option changes variant-4 refresh: the current lane now contains
   `RPP-0174` evidence in
   `docs/evidence/rpp-0174-plugin-owned-option-changes-v4.md`,
