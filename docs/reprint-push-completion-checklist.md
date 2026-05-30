@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 314.
-- Remaining open: 686.
+- Verified complete: 315.
+- Remaining open: 685.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -472,7 +472,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [x] RPP-0438 (Mid / plugin-driver) Prove driver apply validation hook, variant 2. Success: local production proof carries one real mutation through apply.
 - [x] RPP-0439 (Mid / plugin-driver) Prove driver audit evidence redaction, variant 2. Success: remote drift preserves plugin-owned remote data.
 - [x] RPP-0440 (Mid / plugin-driver) Prove arbitrary plugin fixture package, variant 2. Success: release gate notes whether evidence is local or production-backed.
-- [ ] RPP-0441 (Mid / plugin-driver) Add generated coverage for driver registration API, variant 3. Success: focused test proves exact driver behavior.
+- [x] RPP-0441 (Mid / plugin-driver) Add generated coverage for driver registration API, variant 3. Success: focused test proves exact driver behavior.
 - [ ] RPP-0442 (Mid / plugin-driver) Add generated coverage for driver owner identity binding, variant 3. Success: generated harness covers supported and unsupported variants.
 - [x] RPP-0443 (Mid / plugin-driver) Add generated coverage for custom table allowlist exact match, variant 3. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0444 (Mid / plugin-driver) Add generated coverage for wp_options driver semantics, variant 3. Success: remote drift preserves plugin-owned remote data.
