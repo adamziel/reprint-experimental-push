@@ -3577,6 +3577,7 @@ function reprint_push_lab_rest_provision_push_application_password(array $args):
         'reprint_push_credential_type' => 'push-application-password',
     ];
     update_user_meta($user_id, '_application_passwords', $items);
+    reprint_push_lab_rest_mark_application_passwords_in_use();
 
     return [
         'ok' => true,
@@ -3588,6 +3589,18 @@ function reprint_push_lab_rest_provision_push_application_password(array $args):
         'scope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
         'credentialType' => 'push-application-password',
     ];
+}
+
+function reprint_push_lab_rest_mark_application_passwords_in_use(): void
+{
+    if (!class_exists('WP_Application_Passwords')) {
+        return;
+    }
+
+    $network_id = get_main_network_id();
+    if (!get_network_option($network_id, WP_Application_Passwords::OPTION_KEY_IN_USE)) {
+        update_network_option($network_id, WP_Application_Passwords::OPTION_KEY_IN_USE, true);
+    }
 }
 
 function reprint_push_lab_rest_auth_bootstrap_enabled(): bool
@@ -3657,6 +3670,14 @@ function reprint_push_lab_rest_basic_auth_context(WP_REST_Request $request): ?ar
         return null;
     }
 
+    if (reprint_push_lab_rest_is_production_shaped_request($request)) {
+        $core = reprint_push_lab_rest_core_application_password_auth_context($login, $password);
+        if (is_array($core)) {
+            reprint_push_lab_rest_set_auth_context($request, $core);
+            return $core;
+        }
+    }
+
     $user = get_user_by('login', $login);
     if ($user) {
         $verified = reprint_push_lab_rest_verify_application_password((int) $user->ID, $login, $password);
@@ -3722,7 +3743,40 @@ function reprint_push_lab_rest_authorization_header(WP_REST_Request $request): s
     return '';
 }
 
-function reprint_push_lab_rest_verify_application_password(int $user_id, string $login, string $password): ?array
+function reprint_push_lab_rest_is_production_shaped_request(WP_REST_Request $request): bool
+{
+    return strpos((string) $request->get_route(), '/' . REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE . '/push/') === 0;
+}
+
+function reprint_push_lab_rest_core_application_password_auth_context(string $login, string $password): ?array
+{
+    if (!function_exists('wp_authenticate_application_password') || !class_exists('WP_Application_Passwords')) {
+        return null;
+    }
+
+    $authenticated = wp_authenticate_application_password(null, $login, $password);
+    if (!$authenticated instanceof WP_User) {
+        return null;
+    }
+
+    return reprint_push_lab_rest_verify_application_password(
+        (int) $authenticated->ID,
+        $login,
+        $password,
+        'wordpress-core-application-password',
+        false,
+        null
+    );
+}
+
+function reprint_push_lab_rest_verify_application_password(
+    int $user_id,
+    string $login,
+    string $password,
+    string $verifier = 'playground-basic-stored-application-password',
+    bool $playground_fallback = true,
+    ?string $warning = 'Lab-only Playground Basic verifier; not production authentication.'
+): ?array
 {
     $items = get_user_meta($user_id, '_application_passwords', true);
     $items = is_array($items) ? $items : [];
@@ -3744,23 +3798,48 @@ function reprint_push_lab_rest_verify_application_password(int $user_id, string 
             return null;
         }
 
-        return [
-            'type' => 'application-password-basic',
-            'verifier' => 'playground-basic-stored-application-password',
-            'userId' => $user_id,
-            'userLogin' => (string) $user->user_login,
-            'applicationPasswordUuid' => (string) ($item['uuid'] ?? ''),
-            'applicationPasswordAppId' => (string) ($item['app_id'] ?? ''),
-            'credentialScope' => reprint_push_lab_rest_application_password_item_scope($item),
-            'credentialType' => (string) ($item['reprint_push_credential_type'] ?? ''),
-            'credentialHash' => hash('sha256', $login . "\n" . $password),
-            'signingKey' => hash_hmac('sha256', 'reprint-push-lab-v1' . "\n" . $login, $password),
-            'playgroundFallback' => true,
-            'warning' => 'Lab-only Playground Basic verifier; not production authentication.',
-        ];
+        return reprint_push_lab_rest_application_password_auth_context_from_item(
+            $user,
+            $login,
+            $password,
+            $item,
+            $verifier,
+            $playground_fallback,
+            $warning
+        );
     }
 
     return null;
+}
+
+function reprint_push_lab_rest_application_password_auth_context_from_item(
+    WP_User $user,
+    string $login,
+    string $password,
+    array $item,
+    string $verifier,
+    bool $playground_fallback,
+    ?string $warning
+): array
+{
+    $context = [
+        'type' => 'application-password-basic',
+        'verifier' => $verifier,
+        'userId' => (int) $user->ID,
+        'userLogin' => (string) $user->user_login,
+        'applicationPasswordUuid' => (string) ($item['uuid'] ?? ''),
+        'applicationPasswordAppId' => (string) ($item['app_id'] ?? ''),
+        'credentialScope' => reprint_push_lab_rest_application_password_item_scope($item),
+        'credentialType' => (string) ($item['reprint_push_credential_type'] ?? ''),
+        'credentialHash' => hash('sha256', $login . "\n" . $password),
+        'signingKey' => hash_hmac('sha256', 'reprint-push-lab-v1' . "\n" . $login, $password),
+        'playgroundFallback' => $playground_fallback,
+    ];
+    if ($warning !== null) {
+        $context['warning'] = $warning;
+    }
+
+    return $context;
 }
 
 function reprint_push_lab_rest_application_password_item_allows_push(array $item): bool
