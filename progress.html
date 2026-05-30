@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T17:02:00+02:00">Last updated: May 30, 2026, 17:02 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T17:08:00+02:00">Last updated: May 30, 2026, 17:08 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>485</strong>
+        <strong>486</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>515</strong>
+        <strong>514</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay v2 release-proof carry-through, different-body idempotency conflict v2, process kill before mutation set v2, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay v2 release-proof carry-through, different-body idempotency conflict v2, process kill before mutation set v2, process kill mid mutation set v2, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,18 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0527</span>
+        <span>RPP-0638</span>
       </div>
-      <p>The latest refresh integrates RPP-0527 production recovery mutate route v2 evidence: the production-shaped recovery mutate route is discovered as POST, then malformed JSON-shaped requests fail at the auth and signed-request floor before JSON parsing, mutation, or journal writes. Counts are now 485/515; final release remains NO-GO because this is sandbox-local negative-auth evidence, not an external production host or implemented recovery mutation executor proof.</p>
+      <p>The latest refresh integrates RPP-0638 process-kill mid-mutation retry preservation evidence: a child writer fsyncs two mutation-observed rows, snapshots the partial remote, then dies by SIGKILL before completion. Restart inspection stays readable, recovery repair replays only the two still-old planned targets, skips already-updated targets, and preserves both remote-only changes. Counts are now 486/514; final release remains NO-GO because this is local file-backed crash-boundary evidence, not external WordPress crash/restart durability proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0638 focused: 1/1</span>
+        <span class="tag">recovery adjacent: 5/5</span>
+        <span class="tag">recovery journal full: 42/42</span>
+        <span class="tag">recovery repair: 5/5</span>
+        <span class="tag">file-journal smoke: pass</span>
+        <span class="tag">SIGKILL after 2 mutations</span>
+        <span class="tag">partial replay preserves remote-only changes</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0527 focused: 2/2</span>
         <span class="tag">live loopback smoke: pass</span>
         <span class="tag">negative auth cases: 4/4</span>
@@ -1142,7 +1150,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 485/1000</span>
+        <span class="tag">checked goals: 486/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>

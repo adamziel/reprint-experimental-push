@@ -6,19 +6,40 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 17:02 CEST +02:00.
+- Last update: 2026-05-30 17:08 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0527 production recovery mutate auth proof merge ending at `306449e0`.
+  the RPP-0638 process-kill mid-mutation retry preservation merge ending at
+  `e5428f4b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 485
-  items checked and leaves 515 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 486
+  items checked and leaves 514 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  83 plugin-driver boundary items, 30 executor/auth items, 38 recovery items,
+  83 plugin-driver boundary items, 30 executor/auth items, 39 recovery items,
   21 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Process kill mid mutation set v2: the current lane now contains `RPP-0638`
+  evidence in
+  `docs/evidence/rpp-0638-process-kill-mid-mutation-retry-preservation.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/recovery-journal.test.js`. The proof spawns a child Node writer with
+  the normal claim-fenced file-backed recovery journal, fsyncs two
+  `mutation-observed` rows, writes a durable remote snapshot, then terminates
+  with `SIGKILL` before `journal-completed`. Restart readback proves journal
+  integrity `ok`, committed state restart readability, two mutation rows, and
+  zero completion rows. Recovery repair classifies the state as
+  `partial-remote-replayable`, writes only the two still-old planned targets,
+  skips the two already-updated targets, preserves both pre-plan and post-kill
+  remote-only changes, and confirms the journal omits raw planned/preserved
+  fixture values. Validation passed with Node syntax checks, focused RPP-0638
+  coverage 1/1, adjacent recovery/retry coverage 5/5, full recovery-journal
+  coverage 42/42, recovery repair coverage 5/5, file-journal restart smoke,
+  checklist lint, scoped artifact redaction scan, raw fixture scan, and merge
+  diff whitespace checks. Counts are now 486/514; final release remains
+  `NO-GO` because this is local file-backed process-kill recovery evidence, not
+  external WordPress crash/restart durability proof.
 - Production recovery mutate route v2 auth proof: the current lane now contains
   `RPP-0527` evidence in
   `docs/evidence/rpp-0527-production-recovery-mutate-route-v2.md`,
