@@ -208,6 +208,10 @@ const requiredFamilies = [
   'wp-users-usermeta-graph-ready',
   'wp-users-usermeta-graph-stale',
   'wp-users-usermeta-graph',
+  'wp-users-usermeta-graph-v3',
+  'wp-users-usermeta-graph-v3-ready',
+  'wp-users-usermeta-graph-v3-stale',
+  'wp-users-usermeta-graph-v3-non-ready',
   'wp-users-create',
   'wp-usermeta-create',
   'wp-users-remote-drift',
@@ -5830,6 +5834,347 @@ function assertUsermetaGraphRawValuesAbsent(testCase, shape, redactedJson) {
       `${testCase.id} redacted evidence should not expose ${value}`,
     );
   }
+}
+
+test('RPP-0149 wp_users/wp_usermeta graph variant 3 records per-tier ready and stale non-ready coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpUsersUsermetaGraphVariant3;
+
+  assert.ok(coverage, 'missing wp_users/wp_usermeta graph variant 3 target coverage');
+  assert.equal(coverage.family, 'wp-users-usermeta-graph-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-users-usermeta-graph-v3']);
+  assert.equal(coverage.total, 20);
+  assert.equal(coverage.statuses.ready, 10);
+  assert.equal(nonReadyTargetCount(coverage), 10);
+  assert.ok(coverage.statuses.ready > 0, 'variant 3 target should include ready user/usermeta graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 3 target should include non-ready stale graph cases');
+  assert.equal(report.summary.featureFamilies['wp-users-usermeta-graph-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['wp-users-usermeta-graph-v3-stale'], 10);
+  assert.equal(report.summary.featureFamilies['wp-users-usermeta-graph-v3-non-ready'], 10);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const firstEvidence = generatedWpUsersUsermetaGraphVariant3Evidence(coverage);
+  const replayEvidence = generatedWpUsersUsermetaGraphVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0149 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 3 user/usermeta evidence changed between runs');
+  assert.equal(firstEvidence.target, 'wpUsersUsermetaGraphVariant3');
+  assert.equal(firstEvidence.family, 'wp-users-usermeta-graph-variant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.variant),
+    ['ready', 'stale-non-ready'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.status, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.deepEqual(readyCase.plannedChangeKinds, { create: 2 });
+  assert.equal(readyCase.graphMutations.user.changeKind, 'create');
+  assert.equal(readyCase.graphMutations.usermeta.changeKind, 'create');
+  assert.equal(readyCase.graphMutations.user.plannedPrecondition, true);
+  assert.equal(readyCase.graphMutations.usermeta.plannedPrecondition, true);
+  assert.equal(readyCase.graphMutations.user.appliedHash, readyCase.surface.user.localHash);
+  assert.equal(readyCase.graphMutations.usermeta.appliedHash, readyCase.surface.usermeta.localHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(nonReadyCase.status, 'blocked');
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.equal(nonReadyCase.staleBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(nonReadyCase.staleBlocker.resourceKey, nonReadyCase.surface.usermeta.resourceKey);
+  assert.equal(nonReadyCase.staleBlocker.targetResourceKey, nonReadyCase.surface.user.resourceKey);
+  assert.equal(nonReadyCase.staleBlocker.plannedMutation, false);
+  assert.deepEqual(nonReadyCase.staleBlocker.relationshipKeys, ['wp_usermeta.user_id']);
+  assert.match(nonReadyCase.staleBlocker.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('generated-private-user-pass'), false, 'variant 3 evidence leaked user password');
+  assert.equal(evidenceText.includes('generated-private-user-token'), false, 'variant 3 evidence leaked activation token');
+  assert.equal(evidenceText.includes('local-private-usermeta-token'), false, 'variant 3 evidence leaked usermeta token');
+  assert.equal(evidenceText.includes('local-private-usermeta-notes'), false, 'variant 3 evidence leaked usermeta notes');
+  assert.equal(evidenceText.includes('remote-private-user-'), false, 'variant 3 evidence leaked remote user drift email');
+  assert.equal(evidenceText.includes('Remote stale graph user'), false, 'variant 3 evidence leaked remote display name');
+});
+
+function generatedWpUsersUsermetaGraphVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('wp-users-usermeta-graph-v3')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedWpUsersUsermetaGraphVariant3CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'stale-non-ready';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 user/usermeta target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 user/usermeta target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'variant 3 user/usermeta target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready user/usermeta case');
+  assert.ok(selectedCases.has('stale-non-ready'), 'variant 3 target should select one stale non-ready user/usermeta case');
+
+  return {
+    target: 'wpUsersUsermetaGraphVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('stale-non-ready'),
+    ],
+  };
+}
+
+function generatedWpUsersUsermetaGraphVariant3CaseEvidence(testCase, result) {
+  const staleTarget = testCase.tags.has('wp-users-usermeta-graph-v3-stale');
+  assert.equal(
+    staleTarget,
+    testCase.family === 'wp-users-usermeta-graph-stale',
+    `${testCase.id} variant 3 stale tag should match stale graph family`,
+  );
+  const shape = assertUserUsermetaGraphShape(testCase, { staleTarget });
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const surface = wpUsersUsermetaGraphVariant3SurfaceEvidence(testCase, shape);
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant: result.status === 'ready' ? 'ready' : 'stale-non-ready',
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    surface,
+  };
+
+  if (result.status === 'ready') {
+    assert.equal(staleTarget, false, `${testCase.id} ready evidence should not use stale graph target`);
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const { plannedChangeKinds, graphMutations } = wpUsersUsermetaGraphVariant3ReadyMutationEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(result.applied, true, `${testCase.id} should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+    return {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      staleReplayRejected: result.staleReplayRejected,
+      staleReplayRejectionCode: result.staleReplayRejectionCode,
+      staleReplayRemoteUnchanged: result.staleReplayRemoteUnchanged,
+      plannedChangeKinds,
+      graphMutations,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        plannedChangeKinds,
+        graphMutations,
+      })}`,
+    };
+  }
+
+  assert.equal(staleTarget, true, `${testCase.id} non-ready evidence should use stale graph target`);
+  assert.notEqual(plan.status, 'ready', `${testCase.id} should plan as non-ready`);
+  assert.notEqual(result.status, 'ready', `${testCase.id} should validate as non-ready`);
+  assert.equal(result.applied, false, `${testCase.id} must not apply`);
+
+  const staleBlocker = wpUsersUsermetaGraphVariant3StaleBlockerEvidence({ testCase, plan, shape });
+  const refusal = wpUsersUsermetaGraphVariant3RefusalEvidence(testCase, plan);
+
+  return {
+    ...commonEvidence,
+    applied: result.applied,
+    staleBlocker,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      staleBlocker,
+      refusal,
+    })}`,
+  };
+}
+
+function wpUsersUsermetaGraphVariant3SurfaceEvidence(testCase, shape) {
+  const userResource = rowResource('wp_users', shape.userRowId);
+  const usermetaResource = rowResource('wp_usermeta', shape.metaRowId);
+
+  return {
+    user: {
+      resourceKey: userResource.key,
+      baseHash: resourceHash(testCase.base, userResource),
+      localHash: resourceHash(testCase.local, userResource),
+      remoteHash: resourceHash(testCase.remote, userResource),
+      userIdHash: `sha256:${digest(shape.userRowId)}`,
+    },
+    usermeta: {
+      resourceKey: usermetaResource.key,
+      baseHash: resourceHash(testCase.base, usermetaResource),
+      localHash: resourceHash(testCase.local, usermetaResource),
+      remoteHash: resourceHash(testCase.remote, usermetaResource),
+      userIdHash: `sha256:${digest(String(shape.usermetaRow.user_id))}`,
+      metaKeyHash: `sha256:${digest(shape.usermetaRow.meta_key)}`,
+    },
+  };
+}
+
+function wpUsersUsermetaGraphVariant3ReadyMutationEvidence({ testCase, plan, applied, shape }) {
+  const expected = [
+    { label: 'user', resource: rowResource('wp_users', shape.userRowId), changeKind: 'create' },
+    { label: 'usermeta', resource: rowResource('wp_usermeta', shape.metaRowId), changeKind: 'create' },
+  ];
+  const mutations = new Map(plan.mutations.map((mutation) => [mutation.resourceKey, mutation]));
+  const preconditions = new Map(plan.preconditions.map((precondition) => [precondition.resourceKey, precondition]));
+  const plannedChangeKinds = {};
+  const graphMutations = {};
+
+  for (const { label, resource, changeKind } of expected) {
+    const mutation = mutations.get(resource.key);
+    const precondition = preconditions.get(resource.key);
+    const localHash = resourceHash(testCase.local, resource);
+    const appliedHash = resourceHash(applied.site, resource);
+
+    assert.ok(mutation, `${testCase.id} should plan ${label} graph mutation for ${resource.key}`);
+    assert.ok(precondition, `${testCase.id} should precondition ${label} graph mutation for ${resource.key}`);
+    assert.equal(mutation.action, 'put');
+    assert.equal(mutation.changeKind, changeKind);
+    assert.equal(precondition.mutationId, mutation.id);
+    assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+    assert.equal(appliedHash, localHash, `${testCase.id} did not apply local ${label} graph row`);
+    incrementCount(plannedChangeKinds, changeKind);
+
+    graphMutations[label] = {
+      resourceKey: resource.key,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      preconditionExpectedHash: precondition.expectedHash,
+      appliedHash,
+      plannedMutation: true,
+      plannedPrecondition: true,
+      mutationHash: `sha256:${digest({
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        changeKind: mutation.changeKind,
+        localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+      })}`,
+    };
+  }
+
+  return {
+    plannedChangeKinds: sortStringObject(plannedChangeKinds),
+    graphMutations,
+  };
+}
+
+function wpUsersUsermetaGraphVariant3StaleBlockerEvidence({ testCase, plan, shape }) {
+  const userResourceKey = rowResourceKey('wp_users', shape.userRowId);
+  const usermetaResourceKey = rowResourceKey('wp_usermeta', shape.metaRowId);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === usermetaResourceKey
+    && entry.references?.some((reference) => reference.targetResourceKey === userResourceKey));
+  const userDecision = plan.decisions.find((entry) => entry.resourceKey === userResourceKey);
+  const plannedMutation = plan.mutations.some((mutation) =>
+    mutation.resourceKey === userResourceKey || mutation.resourceKey === usermetaResourceKey);
+
+  assert.ok(blocker, `${testCase.id} should report a stale user/usermeta graph blocker`);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.ok(userDecision, `${testCase.id} should keep the stale remote user`);
+  assert.equal(userDecision.decision, 'keep-remote');
+  assert.equal(plannedMutation, false, `${testCase.id} should not plan stale user/usermeta graph mutations`);
+
+  return {
+    resourceKey: blocker.resourceKey,
+    class: blocker.class,
+    plannedMutation,
+    relationshipKeys: blocker.references.map((reference) => reference.relationshipKey).sort(),
+    targetResourceKey: userResourceKey,
+    targetChange: blocker.references.find((reference) => reference.targetResourceKey === userResourceKey).targetChange,
+    blockerHash: `sha256:${digest(blocker)}`,
+    decision: {
+      resourceKey: userDecision.resourceKey,
+      decision: userDecision.decision,
+      decisionHash: `sha256:${digest(userDecision)}`,
+    },
+  };
+}
+
+function wpUsersUsermetaGraphVariant3RefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} non-ready plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} non-ready refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
 }
 
 

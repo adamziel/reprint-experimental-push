@@ -65,8 +65,9 @@ The default generated run covers:
   ready/stale non-ready outcomes, `wp_terms` + `wp_termmeta` graph cases
   with per-tier target counts and ready/stale non-ready outcomes, `wp_users`
   + `wp_usermeta` graph cases with per-tier target counts and
-  ready/stale non-ready outcomes, `wp_term_taxonomy` graph cases with per-tier
-  target counts and ready/stale non-ready outcomes, `wp_term_relationships`
+  ready/stale non-ready outcomes plus explicit variant-3 user/usermeta graph
+  coverage, `wp_term_taxonomy` graph cases with per-tier target counts and
+  ready/stale non-ready outcomes, `wp_term_relationships`
   graph cases with one target per tier, ready creates, stale taxonomy drift,
   and redacted hash-only evidence, plugin-owned `wp_options` update cases with
   ready/conflict outcomes and stale replay rejection before mutation,
@@ -256,6 +257,15 @@ in the base, drift that user remotely, and require the new usermeta reference to
 fail closed instead of overwriting the drifted remote. RPP-0129 also keeps
 private user password, activation-token, and usermeta payload values out of
 summary and planner evidence by checking only redacted hashes and metadata.
+
+RPP-0149 adds `wpUsersUsermetaGraphVariant3` coverage for the same `wp_users`
+and `wp_usermeta` graph surface with an explicit variant-3 target tag. The
+deterministic roster emits 20 variant-3 target cases: 10 ready user/usermeta
+graph creates and 10 stale non-ready graph references, with two cases in every
+tier. The focused proof records only resource keys, user-id/meta-key hashes,
+counts, and planner hashes, verifies the ready case applies the planned user
+and usermeta creates and rejects stale replay before mutation, then verifies
+the stale graph blocker refuses apply without mutating the remote digest.
 
 The `rowCreateUpdateDeleteMix` target coverage records per-tier counts for the
 generic row create/update/delete surface. Ready cases create, update, and delete
