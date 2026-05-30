@@ -15,6 +15,8 @@ const unavailableMysqlRuntime = () => ({
   unavailableCapabilities: ['mysql-server-socket'],
   detail: 'simulated focused test: mysql server socket unavailable',
 });
+const uniqueGuardSurfaceCount = MYSQL_CAS_SURFACE_DEFINITIONS
+  .filter((surface) => surface.uniqueKeyColumns?.length).length;
 
 test('MySQL CAS benchmark reports runtime, resources, and pass/fail gates', () => {
   const report = runMysqlCasWriteGuardBenchmark({
@@ -37,27 +39,31 @@ test('MySQL CAS benchmark reports runtime, resources, and pass/fail gates', () =
   assert.equal(report.resources.storage.boundary, MYSQL_CAS_BOUNDARY);
   assert.equal(report.resources.storage.engine, 'mysql');
   assert.equal(report.resources.storage.logicalTables, MYSQL_CAS_SURFACE_DEFINITIONS.length);
-  assert.equal(report.resources.storage.guardedWritesAttempted, MYSQL_CAS_SURFACE_DEFINITIONS.length * 3 * 3);
+  assert.equal(report.resources.storage.guardedWritesAttempted, (MYSQL_CAS_SURFACE_DEFINITIONS.length * 3 * 3) + (uniqueGuardSurfaceCount * 3));
   assert.equal(report.resources.storage.appliedWrites, MYSQL_CAS_SURFACE_DEFINITIONS.length * 3);
   assert.equal(report.resources.storage.staleAtWriteWrites, MYSQL_CAS_SURFACE_DEFINITIONS.length * 3);
   assert.equal(report.resources.storage.absentAtWriteWrites, MYSQL_CAS_SURFACE_DEFINITIONS.length * 3);
+  assert.equal(report.resources.storage.duplicateKeyRejectedWrites, uniqueGuardSurfaceCount * 3);
+  assert.equal(report.resources.storage.unsafeMultipleMatchWrites, 0);
   assert.equal(report.resources.sql.singleStatementShapes, MYSQL_CAS_SURFACE_DEFINITIONS.length);
   assert.equal(typeof report.resources.process.heapUsedBytes, 'number');
   assert.equal(typeof report.resources.process.userCpuMs, 'number');
 
   assert.ok(report.gates.length >= 5);
   assert.deepEqual([...new Set(report.gates.map((gate) => gate.status))], ['pass']);
+  assert.ok(report.gates.some((gate) => gate.id === 'duplicate-key-guard'));
   assert.ok(report.gates.some((gate) => gate.id === 'mysql-runtime-capability-recorded'));
   assert.ok(report.gates.some((gate) => gate.id === 'runtime-resource-budget'));
 });
 
-test('MySQL CAS shapes are single UPDATE statements with compared columns and no values', () => {
+test('MySQL CAS shapes are single null-safe UPDATE statements with compared columns and no values', () => {
   for (const surface of MYSQL_CAS_SURFACE_DEFINITIONS) {
     const shape = buildMysqlCasUpdateShape(surface);
 
     assert.equal(shape.singleStatement, true);
     assert.equal(shape.statementKind, 'UPDATE');
     assert.equal(shape.boundary, MYSQL_CAS_BOUNDARY);
+    assert.equal(shape.nullSafePredicate, true);
     assert.match(shape.sqlShape, /^UPDATE `[A-Za-z0-9_]+` SET /);
     assert.match(shape.sqlShape, / WHERE /);
     assert.match(shape.sqlShape, / LIMIT 1$/);
@@ -65,12 +71,79 @@ test('MySQL CAS shapes are single UPDATE statements with compared columns and no
     assert.match(shape.sqlShapeHash, /^[a-f0-9]{64}$/);
 
     for (const column of shape.comparedColumns) {
-      assert.ok(shape.sqlShape.includes(`\`${column}\``), `shape for ${surface.id} omits compared column ${column}`);
+      assert.ok(shape.sqlShape.includes(`\`${column}\` <=> ?`), `shape for ${surface.id} omits null-safe compared column ${column}`);
+    }
+    if (shape.uniqueKeyGuard) {
+      assert.match(shape.sqlShape, /SELECT COUNT\(\*\)/);
+      for (const column of shape.uniqueKeyColumns) {
+        assert.ok(shape.sqlShape.includes(`\`${column}\` <=> ?`), `shape for ${surface.id} omits unique-key guard column ${column}`);
+      }
     }
     for (const rawToken of ['base-value', 'planned-value', 'drift-value', 'payload-json', 'release-payload']) {
       assert.ok(!shape.sqlShape.includes(rawToken), `shape leaked raw fixture token ${rawToken}`);
     }
   }
+});
+
+test('guard uses null-safe comparisons and rejects ambiguous duplicate keys', () => {
+  const releaseFixture = createMysqlCasFixture('wp_reprint_push_release_state', 11);
+  const expectedWithNull = {
+    ...releaseFixture.expectedStorage,
+    updated_marker: null,
+  };
+  const plannedFromNull = {
+    ...expectedWithNull,
+    payload_json: 'release-payload-planned-null',
+    updated_marker: 'planned-null',
+  };
+  const driftedFromNull = {
+    ...expectedWithNull,
+    updated_marker: 'drift-null',
+  };
+
+  const nullSuccess = applyMysqlCasWriteGuard({
+    surface: 'wp_reprint_push_release_state',
+    rows: [expectedWithNull],
+    expectedResource: releaseFixture.expectedResource,
+    expectedStorage: expectedWithNull,
+    nextStorage: plannedFromNull,
+  });
+  assert.equal(nullSuccess.applied, true);
+  assert.equal(nullSuccess.storageGuard.rowsAffected, 1);
+  assert.equal([...nullSuccess.rows.values()][0].updated_marker, plannedFromNull.updated_marker);
+
+  const nullStale = applyMysqlCasWriteGuard({
+    surface: 'wp_reprint_push_release_state',
+    rows: [driftedFromNull],
+    expectedResource: releaseFixture.expectedResource,
+    expectedStorage: expectedWithNull,
+    nextStorage: plannedFromNull,
+  });
+  assert.equal(nullStale.applied, false);
+  assert.equal(nullStale.storageGuard.rowsAffected, 0);
+  assert.equal(nullStale.storageGuard.outcome, 'stale-at-write');
+  assert.equal([...nullStale.rows.values()][0].updated_marker, driftedFromNull.updated_marker);
+
+  const postmetaFixture = createMysqlCasFixture('wp_postmeta', 12);
+  const duplicate = applyMysqlCasWriteGuard({
+    surface: 'wp_postmeta',
+    rows: [
+      postmetaFixture.expectedStorage,
+      {
+        ...postmetaFixture.expectedStorage,
+        meta_value: 'duplicate-value-12',
+      },
+    ],
+    expectedResource: postmetaFixture.expectedResource,
+    expectedStorage: postmetaFixture.expectedStorage,
+    nextStorage: postmetaFixture.nextStorage,
+  });
+  assert.equal(duplicate.applied, false);
+  assert.equal(duplicate.storageGuard.rowsAffected, 0);
+  assert.equal(duplicate.storageGuard.outcome, 'stale-at-write');
+  assert.equal(duplicate.storageGuard.uniqueKeyGuard, true);
+  assert.deepEqual(duplicate.storageGuard.uniqueKeyColumns, ['post_id', 'meta_key']);
+  assertNoRawFixtureEvidence(duplicate.storageGuard);
 });
 
 test('guard applies matching storage and rejects stale or absent storage without raw evidence', () => {

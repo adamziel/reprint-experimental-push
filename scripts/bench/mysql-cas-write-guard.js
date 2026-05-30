@@ -37,6 +37,7 @@ export const MYSQL_CAS_SURFACE_DEFINITIONS = Object.freeze([
     setColumns: Object.freeze(['meta_value']),
     compareColumns: Object.freeze(['post_id', 'meta_key', 'meta_value']),
     uniquenessPredicate: 'single-row-per-post-and-key',
+    uniqueKeyColumns: Object.freeze(['post_id', 'meta_key']),
   }),
   Object.freeze({
     id: 'wp_reprint_push_forms_lab',
@@ -179,11 +180,9 @@ export function buildMysqlCasUpdateShape(surfaceInput) {
     ...surface.compareColumns,
   ]);
   const whereClause = predicateColumns
-    .map((column) => `${quoteMysqlIdentifier(column)} = ?`)
+    .map((column) => `${quoteMysqlIdentifier(column)} <=> ?`)
     .join(' AND ');
-  const uniquenessClause = surface.uniquenessPredicate
-    ? ' AND /* single-row-per-post-and-key */ 1 = 1'
-    : '';
+  const uniquenessClause = buildMysqlUniqueKeyGuardClause(surface);
   const sqlShape = `UPDATE ${quoteMysqlIdentifier(surface.physicalTable)} SET ${setClause} WHERE ${whereClause}${uniquenessClause} LIMIT 1`;
 
   return {
@@ -197,6 +196,9 @@ export function buildMysqlCasUpdateShape(surfaceInput) {
     keyColumns: [...surface.keyColumns],
     setColumns: [...surface.setColumns],
     comparedColumns: predicateColumns,
+    nullSafePredicate: true,
+    uniqueKeyColumns: surface.uniqueKeyColumns ? [...surface.uniqueKeyColumns] : [],
+    uniqueKeyGuard: Boolean(surface.uniqueKeyColumns?.length),
     singleStatement: true,
     statementKind: 'UPDATE',
     sqlShape,
@@ -213,20 +215,31 @@ export function applyMysqlCasWriteGuard({
   nextStorage,
 }) {
   const surface = resolveSurface(surfaceInput);
-  const rowMap = rows instanceof Map ? rows : rowsByKey(surface, rows || []);
+  const { rowMap, rowList } = normalizeMysqlCasRows(surface, rows || []);
   const rowKeyValue = rowKey(surface, key || expectedStorage);
-  const current = rowMap.get(rowKeyValue);
+  const candidateIndexes = rowList
+    .map((row, index) => (rowKey(surface, row) === rowKeyValue ? index : -1))
+    .filter((index) => index >= 0);
+  const current = candidateIndexes.length > 0 ? rowList[candidateIndexes[0]] : undefined;
   const shape = buildMysqlCasUpdateShape(surface);
-  const matches = current
-    ? shape.comparedColumns.every((column) => casValuesEqual(current[column], expectedStorage[column]))
-    : false;
-  const rowsAffected = matches ? 1 : 0;
+  const uniqueKeyGuardSatisfied = shape.uniqueKeyGuard ? candidateIndexes.length === 1 : true;
+  const matchingIndexes = uniqueKeyGuardSatisfied
+    ? candidateIndexes.filter((index) => shape.comparedColumns.every((column) => casValuesEqual(rowList[index][column], expectedStorage[column])))
+    : [];
+  const rowsAffected = matchingIndexes.length === 1
+    ? 1
+    : matchingIndexes.length > 1
+      ? matchingIndexes.length
+      : 0;
 
-  if (matches) {
-    rowMap.set(rowKeyValue, {
-      ...current,
+  if (rowsAffected === 1) {
+    const matchedIndex = matchingIndexes[0];
+    const updatedRow = {
+      ...rowList[matchedIndex],
       ...pickColumns(nextStorage, surface.setColumns),
-    });
+    };
+    rowList[matchedIndex] = updatedRow;
+    rowMap.set(rowKeyValue, updatedRow);
   }
 
   return {
@@ -356,6 +369,8 @@ function runDeterministicGuardCoverage(config) {
       applied: 0,
       staleAtWrite: 0,
       absentAtWrite: 0,
+      duplicateKeyRejected: 0,
+      unsafeMultipleMatch: 0,
     },
     sqlShapes: [],
     evidenceSamples: [],
@@ -428,6 +443,35 @@ function runDeterministicGuardCoverage(config) {
         coverage.failures.push(`${surface.id}: absent guard did not reject missing storage`);
       }
       recordEvidenceSample(coverage, absent.storageGuard);
+
+      if (surface.uniqueKeyColumns?.length) {
+        const duplicateStorage = {
+          ...fixture.expectedStorage,
+          meta_value: `duplicate-value-${iteration}`,
+        };
+        const duplicate = applyMysqlCasWriteGuard({
+          surface,
+          rows: [fixture.expectedStorage, duplicateStorage],
+          expectedResource: fixture.expectedResource,
+          expectedStorage: fixture.expectedStorage,
+          nextStorage: fixture.nextStorage,
+        });
+        coverage.writes.attempted += 1;
+        if (!duplicate.applied && duplicate.storageGuard.rowsAffected === 0 && duplicate.storageGuard.outcome === 'stale-at-write') {
+          coverage.writes.duplicateKeyRejected += 1;
+          surfaceSummary.duplicateKeyRejected += 1;
+        } else {
+          coverage.failures.push(`${surface.id}: duplicate logical key was not rejected by the uniqueness guard`);
+        }
+        recordEvidenceSample(coverage, duplicate.storageGuard);
+      }
+
+      for (const write of [success, stale, absent]) {
+        if (write.storageGuard.rowsAffected > 1) {
+          coverage.writes.unsafeMultipleMatch += 1;
+          coverage.failures.push(`${surface.id}: guard affected more than one row`);
+        }
+      }
     }
   }
 
@@ -447,6 +491,7 @@ function addSurfaceSummary(coverage, surface, shape) {
     applied: 0,
     staleAtWrite: 0,
     absentAtWrite: 0,
+    duplicateKeyRejected: 0,
   };
   coverage.surfaces.push(summary);
   return summary;
@@ -470,9 +515,12 @@ function dedupeShapes(shapes) {
       driver: shape.driver,
       statementKind: shape.statementKind,
       singleStatement: shape.singleStatement,
+      nullSafePredicate: shape.nullSafePredicate,
       keyColumns: shape.keyColumns,
       setColumns: shape.setColumns,
       comparedColumns: shape.comparedColumns,
+      uniqueKeyColumns: shape.uniqueKeyColumns,
+      uniqueKeyGuard: shape.uniqueKeyGuard,
       sqlShapeHash: shape.sqlShapeHash,
       predicateCount: shape.comparedColumns.length,
       assignmentCount: shape.setColumns.length,
@@ -502,6 +550,8 @@ function buildResourceReport({ deterministicCoverage, startUsage, endUsage, star
       appliedWrites: deterministicCoverage.writes.applied,
       staleAtWriteWrites: deterministicCoverage.writes.staleAtWrite,
       absentAtWriteWrites: deterministicCoverage.writes.absentAtWrite,
+      duplicateKeyRejectedWrites: deterministicCoverage.writes.duplicateKeyRejected,
+      unsafeMultipleMatchWrites: deterministicCoverage.writes.unsafeMultipleMatch,
       comparedColumnsByTable: Object.fromEntries(
         deterministicCoverage.surfaces.map((surface) => [surface.logicalTable, surface.comparedColumns]),
       ),
@@ -515,6 +565,8 @@ function buildResourceReport({ deterministicCoverage, startUsage, endUsage, star
 
 function evaluateMysqlCasGates({ deterministicCoverage, runtime, resources, maxDurationMs, maxHeapUsedBytes }) {
   const expectedPerOutcome = deterministicCoverage.iterations * MYSQL_CAS_SURFACE_DEFINITIONS.length;
+  const expectedDuplicateKeyRejections = deterministicCoverage.iterations * MYSQL_CAS_SURFACE_DEFINITIONS
+    .filter((surface) => surface.uniqueKeyColumns?.length).length;
   const shapeChecks = deterministicCoverage.sqlShapes.map((shape) => {
     const fullShape = buildMysqlCasUpdateShape(shape.logicalTable).sqlShape;
     return fullShape.startsWith('UPDATE ')
@@ -522,7 +574,8 @@ function evaluateMysqlCasGates({ deterministicCoverage, runtime, resources, maxD
       && fullShape.includes(' WHERE ')
       && fullShape.endsWith(' LIMIT 1')
       && !fullShape.includes(';')
-      && shape.comparedColumns.every((column) => fullShape.includes(quoteMysqlIdentifier(column)));
+      && shape.comparedColumns.every((column) => fullShape.includes(`${quoteMysqlIdentifier(column)} <=> ?`))
+      && (!shape.uniqueKeyGuard || fullShape.includes('SELECT COUNT(*)'));
   });
   const evidenceHashesOk = deterministicCoverage.evidenceSamples.every((evidence) => (
     /^[a-f0-9]{64}$/.test(evidence.expectedResourceHash)
@@ -552,6 +605,14 @@ function evaluateMysqlCasGates({ deterministicCoverage, runtime, resources, maxD
         applied: deterministicCoverage.writes.applied,
         staleAtWrite: deterministicCoverage.writes.staleAtWrite,
         absentAtWrite: deterministicCoverage.writes.absentAtWrite,
+      }),
+    gate('duplicate-key-guard',
+      deterministicCoverage.writes.duplicateKeyRejected === expectedDuplicateKeyRejections
+        && deterministicCoverage.writes.unsafeMultipleMatch === 0,
+      {
+        expectedDuplicateKeyRejections,
+        duplicateKeyRejected: deterministicCoverage.writes.duplicateKeyRejected,
+        unsafeMultipleMatch: deterministicCoverage.writes.unsafeMultipleMatch,
       }),
     gate('single-statement-cas-shapes',
       deterministicCoverage.sqlShapes.length === MYSQL_CAS_SURFACE_DEFINITIONS.length
@@ -618,12 +679,15 @@ function mysqlCasStorageGuardEvidence({
     keyColumns: [...surface.keyColumns],
     setColumns: [...surface.setColumns],
     comparedColumns: [...shape.comparedColumns],
+    nullSafePredicate: shape.nullSafePredicate,
+    uniqueKeyColumns: [...shape.uniqueKeyColumns],
+    uniqueKeyGuard: shape.uniqueKeyGuard,
     expectedResourceHash: digest(expectedResource),
     expectedStorageHash: digest(pickColumns(expectedStorage, shape.comparedColumns)),
     plannedStorageHash: digest(pickColumns(nextStorage, surface.setColumns)),
     observedStorageHash: digest(observedStorage === ABSENT ? ABSENT : pickColumns(observedStorage, shape.comparedColumns)),
     rowsAffected,
-    outcome: rowsAffected === 1 ? 'applied' : 'stale-at-write',
+    outcome: rowsAffected === 1 ? 'applied' : rowsAffected === 0 ? 'stale-at-write' : 'unsafe-multiple-match',
     sqlShapeHash: shape.sqlShapeHash,
   };
 }
@@ -669,6 +733,24 @@ function resolveSurface(surfaceInput) {
   throw new Error('MySQL CAS surface is required.');
 }
 
+function normalizeMysqlCasRows(surfaceInput, rows) {
+  const surface = resolveSurface(surfaceInput);
+  if (rows instanceof Map) {
+    return {
+      rowMap: rows,
+      rowList: [...rows.values()],
+    };
+  }
+  if (!Array.isArray(rows)) {
+    throw new Error('MySQL CAS rows must be an array or Map.');
+  }
+  const rowList = rows.map((row) => ({ ...row }));
+  return {
+    rowMap: rowsByKey(surface, rowList),
+    rowList,
+  };
+}
+
 function rowsByKey(surfaceInput, rows) {
   const surface = resolveSurface(surfaceInput);
   const map = new Map();
@@ -689,9 +771,20 @@ function pickColumns(row, columns) {
   }
   const picked = {};
   for (const column of columns) {
-    picked[column] = row?.[column];
+    picked[column] = row?.[column] ?? null;
   }
   return picked;
+}
+
+function buildMysqlUniqueKeyGuardClause(surface) {
+  if (!surface.uniqueKeyColumns?.length) {
+    return '';
+  }
+  const table = quoteMysqlIdentifier(surface.physicalTable);
+  const whereClause = surface.uniqueKeyColumns
+    .map((column) => `${quoteMysqlIdentifier(column)} <=> ?`)
+    .join(' AND ');
+  return ` AND (SELECT COUNT(*) FROM (SELECT 1 FROM ${table} AS reprint_push_guard_unique WHERE ${whereClause}) AS reprint_push_guard_unique_count) = 1`;
 }
 
 function casValuesEqual(left, right) {
@@ -738,6 +831,14 @@ function parseCliArgs(argv) {
       options.maxDurationMs = Number(argv[index]);
       continue;
     }
+    if (arg === '--max-heap-used-bytes') {
+      index += 1;
+      if (index >= argv.length) {
+        throw new Error('--max-heap-used-bytes requires a value');
+      }
+      options.maxHeapUsedBytes = Number(argv[index]);
+      continue;
+    }
     if (arg === '--help' || arg === '-h') {
       options.help = true;
       continue;
@@ -749,7 +850,7 @@ function parseCliArgs(argv) {
 
 function printHelp() {
   process.stdout.write([
-    'Usage: node scripts/bench/mysql-cas-write-guard.js [--iterations <n>] [--max-duration-ms <ms>]',
+    'Usage: node scripts/bench/mysql-cas-write-guard.js [--iterations <n>] [--max-duration-ms <ms>] [--max-heap-used-bytes <bytes>]',
     '',
     'Reports runtime, resource usage, and pass/fail gates for the RPP-0701 MySQL compare-and-swap write guard benchmark.',
     'When a MySQL runtime is unavailable, the report records the exact missing capability and still runs deterministic guard coverage.',
