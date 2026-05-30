@@ -1,18 +1,34 @@
-# AO Progress Report - 2026-05-30 11:15 CEST
+# AO Progress Report - 2026-05-30 11:19 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0283 local delete
-versus remote edit release-verifier carry-through ending at `30b3e3aaa`.
+`lane/evidence-integration-20260527` through the current RPP-0284 local
+directory delete versus remote descendant release-verifier carry-through ending
+at `163d1cb97`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 410 are
-  checked from integrated evidence and 590 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 411 are
+  checked from integrated evidence and 589 remain open.
+- `RPP-0284` is now checked with support-only release-verifier carry-through
+  for local directory delete versus remote descendant evidence in
+  `docs/evidence/rpp-0284-local-directory-delete-remote-descendant-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, `docs/scenario-matrix.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0284-local-directory-delete-remote-descendant-release-verifier-v5.test.js`.
+  `node --check` passed for the verifier script and focused test, focused
+  RPP-0284 coverage passed 2/2, the RPP-0204/RPP-0224 planner slice passed
+  2/2, adjacent RPP-0244 generated coverage passed 1/1, nearby
+  release-verifier adjacency passed 6/6, and the combined
+  RPP-0281/RPP-0282/RPP-0283/RPP-0284 merge-invariant compatibility suite
+  passed 9/9. Checklist lint, scoped artifact redaction scan,
+  checklist/redaction guard tests, and merge diff whitespace checks also
+  passed. This remains local support-only release-verifier evidence, not
+  production endpoint proof.
 - `RPP-0283` is now checked with support-only release-verifier carry-through
   for local delete versus remote edit evidence in
   `docs/evidence/rpp-0283-local-delete-remote-edit-release-verifier-v5.md`,
