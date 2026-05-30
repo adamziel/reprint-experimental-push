@@ -1,18 +1,32 @@
-# AO Progress Report - 2026-05-30 03:30 CEST
+# AO Progress Report - 2026-05-30 03:35 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0234
-already-in-sync decision safety refresh ending at `9919e831e`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0151
+terms/termmeta graph variant-3 refresh ending at `06ec656ee`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 308 are
-  checked from integrated evidence and 692 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 309 are
+  checked from integrated evidence and 691 remain open.
+- `RPP-0151` is now checked with generated `wp_terms`/`wp_termmeta` graph
+  variant-3 evidence in
+  `docs/evidence/rpp-0151-wp-terms-termmeta-graph-v3.md`,
+  `docs/generated-push-harness.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  test/generated-push-harness.test.js` exited 0, `node --test
+  --test-name-pattern=RPP-0151 test/generated-push-harness.test.js` passed
+  1/1, the `generated push harness covers|RPP-0151` pattern passed 2/2, and
+  `npm run test:generated-push-harness` passed 59/59, proving 20 deterministic
+  variant-3 term/termmeta graph cases across all tiers, ready graph creates,
+  stale term-drift blockers, stale replay refusal before mutation, hash-only
+  redacted evidence, checklist lint, artifact redaction scan, and `git diff
+  --check` while final release remains **NO-GO**.
 - `RPP-0234` is now checked with focused already-in-sync decision safety
   evidence in `docs/evidence/rpp-0234-already-in-sync-decision-v2.md`,
   `docs/scenario-matrix.md`, and

@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:30 CEST.
+- Last update: 2026-05-30 03:35 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0234 already-in-sync decision safety merge ending at `9919e831e`.
+  the RPP-0151 terms/termmeta graph variant-3 merge ending at `06ec656ee`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 308
-  items checked and leaves 692 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 309
+  items checked and leaves 691 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   42 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 51 generated
+  11 storage/performance items, 3 production-topology items, 52 generated
   harness items, and 36 merge-invariant items. No release-ops items are checked
   yet.
+- Generated wp_terms/wp_termmeta graph variant-3 refresh: the current lane now
+  contains `RPP-0151` evidence in
+  `docs/evidence/rpp-0151-wp-terms-termmeta-graph-v3.md`,
+  `docs/generated-push-harness.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  test/generated-push-harness.test.js` exited 0, `node --test
+  --test-name-pattern=RPP-0151 test/generated-push-harness.test.js` passed
+  1/1, the `generated push harness covers|RPP-0151` pattern passed 2/2, and
+  `npm run test:generated-push-harness` passed 59/59. The proof adds 20
+  deterministic variant-3 `wp_terms`/`wp_termmeta` graph cases across all 10
+  tiers, with ready term/termmeta graph creates, stale term-drift blockers,
+  stale replay refusal before mutation, and hash-only redacted term/termmeta
+  evidence. Checklist lint, artifact redaction scan, and `git diff --check`
+  also passed. Counts are now 309/691; final release remains `NO-GO`.
 - Focused already-in-sync decision safety refresh: the current lane now
   contains `RPP-0234` evidence in
   `docs/evidence/rpp-0234-already-in-sync-decision-v2.md`,
