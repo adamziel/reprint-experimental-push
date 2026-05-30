@@ -6,20 +6,41 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 15:02 CEST.
+- Last update: 2026-05-30 15:05 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0490 plugin update dependency release-verifier merge ending at
-  `06baf281d`.
+  the RPP-0628 restart-readable staged-state v2 merge ending at `07c0fafc8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 460
-  items checked and leaves 540 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 461
+  items checked and leaves 539 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  76 plugin-driver boundary items, 27 executor/auth items, 29 recovery items,
+  76 plugin-driver boundary items, 27 executor/auth items, 30 recovery items,
   15 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Restart-readable staged-state recovery v2: the current lane now contains
+  `RPP-0628` evidence in
+  `docs/evidence/rpp-0628-restart-readable-staged-state-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/recovery-journal.test.js`. The proof uses the production recovery
+  journal wrapper with a claim-fenced journal, writes the target envelope,
+  stages through `applyPlan()`, stops at the injected post-staging boundary,
+  and reads the journal back from the parent process. Parent readback verifies
+  integrity, monotonic sequences, row-level fsync evidence, ownership and active
+  claim rows, one staged row, no duplicate target envelope, hash-only staged
+  snapshot evidence, and `stagedState.restartReadable: true`. A restarted
+  same-claim production retry appends a retry-open row and emits a production
+  inspection surface whose `openState` and `stagedState` match persisted
+  readback exactly. Recovery repair then replays only the planned old target
+  while preserving remote-only changes present before the plan and after the
+  simulated crash, with journal text checked for raw-value exclusion.
+  Validation passed with Node syntax checks, focused RPP-0628 coverage 1/1,
+  adjacent restart-readable recovery coverage 5/5, full recovery-journal
+  coverage 34/34, checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks. Counts are now 461/539; final release remains `NO-GO`
+  because this is local production-wrapper recovery evidence, not an external
+  WordPress crash/restart durability run.
 - Plugin update dependency release-verifier carry-through: the current lane now
   contains `RPP-0490` evidence in
   `docs/evidence/rpp-0490-plugin-update-dependency-release-verifier-v5.md`,
