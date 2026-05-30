@@ -9,8 +9,8 @@ plugin-driver semantics, variant 5. It adds a verifier summary for exact
 `umeta_id:<id>` `wp_usermeta` mutations so the plugin-driver release proof
 records whether the row evidence is local/support-only or production-backed.
 It also keeps generated supported and unsupported `wp_usermeta` variants
-visible as local support evidence. It does not claim a live production release
-run.
+visible as local/generated support evidence. It does not claim a live
+production release run.
 
 ## Proof surface
 
@@ -25,7 +25,8 @@ run.
   `releaseGate.status: GO`, without changing this lane's final release posture;
 - generated supported `wp_usermeta` cases stay `ready` and summarize as
   support-only verifier evidence, while generated unsupported cases remain
-  `blocked` with no planned mutation; and
+  `blocked` with no planned mutation and are represented in the verifier
+  summary as checked unsupported coverage; and
 - `production-shaped-release-verify.mjs` carries the summary under
   `pluginDriver.coreSemantics.wpUsermeta`, while the summary includes only
   resource ids, row identity, hashes, owner/driver labels, scope markers, and
@@ -39,9 +40,11 @@ verifier summary.
 ## Focused verification observed locally
 
 ```sh
-node --check scripts/playground/production-shaped-release-verify.mjs test/rpp-0487-wp-usermeta-release-verifier-v5.test.js
+node --check scripts/playground/production-shaped-release-verify.mjs
+node --check test/rpp-0487-wp-usermeta-release-verifier-v5.test.js
 node --test test/rpp-0487-wp-usermeta-release-verifier-v5.test.js
 node --test test/rpp-0487-wp-usermeta-release-verifier-v5.test.js test/rpp-0467-wp-usermeta-driver-semantics-v4.test.js test/plugin-driver-usermeta-semantics.test.js test/rpp-0427-wp-usermeta-driver-semantics-v2.test.js
+node --test --test-name-pattern 'RPP-0487|RPP-0467|RPP-0427|RPP-0407' test/rpp-0487-wp-usermeta-release-verifier-v5.test.js test/rpp-0467-wp-usermeta-driver-semantics-v4.test.js test/rpp-0427-wp-usermeta-driver-semantics-v2.test.js test/plugin-driver-usermeta-semantics.test.js
 node --test test/generated-push-harness.test.js
 node --test test/production-plugin-package-scenarios.test.js
 npm run test:playground:production-plugin-driver-verifier-guards
@@ -52,18 +55,19 @@ git diff --cached --check
 ```
 
 Observed result after validation: all commands exited 0. The focused RPP-0487
-test reported 5 subtests ok and 0 failed. The adjacent wp_usermeta
-plugin-driver slice reported 15 subtests ok and 0 failed. The generated push
-harness reported 85 subtests ok and 0 failed on the integrated lane. The production plugin package
-scenario summary tests reported 9 subtests ok and 0 failed, and the packaged
-plugin driver verifier guard smoke completed all requested guard scenarios
-successfully. Checklist lint returned `"ok": true`; the scoped artifact
-redaction scan returned `"ok": true` for the touched docs.
+test reported 6 subtests ok and 0 failed. The adjacent `wp_usermeta`
+plugin-driver slice and focused pattern run each reported 16 subtests ok and 0
+failed. The generated push harness reported 90 subtests ok and 0 failed on the
+integrated lane. The production plugin package scenario summary tests reported
+9 subtests ok and 0 failed, and the packaged plugin driver verifier guard
+smoke completed all requested guard scenarios successfully. Checklist lint
+returned `"ok": true`; the scoped artifact redaction scan returned `"ok": true`
+for the touched docs.
 
 ## Release posture
 
-This lane is local focused release-verifier evidence. Local/support-only
-`wp_usermeta` evidence remains release-gate `NO-GO`; production-backed evidence
-is summarized separately only when the verifier proof explicitly supplies a
-checked production evidence boundary. Final release remains `NO-GO` without
-live production proof.
+This lane is local focused release-verifier evidence. Local/generated
+support-only `wp_usermeta` evidence remains release-gate `NO-GO`;
+production-backed evidence is summarized separately only when the verifier
+proof explicitly supplies a checked production evidence boundary. Final release
+remains `NO-GO` without live production proof.

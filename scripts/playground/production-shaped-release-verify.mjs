@@ -716,6 +716,9 @@ const wpUsermetaReleaseVerifierBoundary = Object.freeze({
   driverAliases: Object.freeze(['wp-usermeta', 'wp-user-meta']),
   table: 'wp_usermeta',
   proofKind: 'wp-usermeta-driver-semantics',
+  supportedFamily: 'supported-plugin-usermeta',
+  unsupportedFamily: 'unsupported-plugin-usermeta',
+  generatedEvidenceScope: 'local-generated-release-verifier',
 });
 
 export const ownerContextStaleMetadataReleaseVerifierBoundary = Object.freeze({
@@ -11276,6 +11279,7 @@ function buildWpTermmetaReleaseGate({
 export function summarizeWpUsermetaReleaseVerifierEvidence({
   proof,
   checkedProductionEvidence = false,
+  generatedCases = null,
 } = {}) {
   const boundary = wpUsermetaReleaseVerifierBoundary;
   const plan = proof && Object.hasOwn(proof, 'planObject')
@@ -11292,29 +11296,36 @@ export function summarizeWpUsermetaReleaseVerifierEvidence({
     && proof?.apply?.applyRevalidation?.checkedAgainst === 'live-remote'
     && usermetaMutations.length > 0
     && usermetaMutations.every((entry) => verifiedResourceKeys.includes(entry.resourceKey));
-  const missingEvidence = [];
-  if (!plan) {
-    missingEvidence.push('releaseProof.planObject');
-  }
-  if (usermetaMutations.length === 0) {
-    missingEvidence.push('wp-usermeta-mutation');
-  }
-  if (!verifiedBeforeFirstMutation) {
-    missingEvidence.push('apply-revalidation');
-  }
-
-  const evidenceScopes = uniqueNonEmpty(
+  const generatedHarness = summarizeWpUsermetaGeneratedHarnessReleaseVerifierCoverage(generatedCases);
+  const mutationEvidenceScopes = uniqueNonEmpty(
     usermetaMutations.map((entry) => entry.releaseGateEvidenceScope || entry.evidenceScope),
   );
-  const releaseGateEvidenceScope = summarizeReleaseGateEvidenceScopes(evidenceScopes);
-  const productionScopeClaimed = evidenceScopes.includes('production-backed');
-  const checked = missingEvidence.length === 0
-    && usermetaMutations.every((entry) =>
-      entry.supported === true
-        && entry.table === boundary.table
-        && boundary.driverAliases.includes(entry.driver)
-        && entry.rowIdKind === 'umeta_id');
+  const releaseGateEvidenceScope = mutationEvidenceScopes.length > 0
+    ? summarizeReleaseGateEvidenceScopes(mutationEvidenceScopes)
+    : boundary.generatedEvidenceScope;
+  const productionScopeClaimed = mutationEvidenceScopes.includes('production-backed');
+  const mutationEvidenceChecked = usermetaMutations.length === 0
+    || (
+      verifiedBeforeFirstMutation
+      && usermetaMutations.every((entry) =>
+        entry.supported === true
+          && entry.table === boundary.table
+          && boundary.driverAliases.includes(entry.driver)
+          && entry.rowIdKind === 'umeta_id')
+    );
+  const missingEvidence = [];
+  if (!generatedHarness.checked) {
+    missingEvidence.push('generated-wp-usermeta-supported-unsupported-coverage');
+  }
+  if (usermetaMutations.length > 0 && !verifiedBeforeFirstMutation) {
+    missingEvidence.push('apply-revalidation');
+  }
+  if (!mutationEvidenceChecked) {
+    missingEvidence.push('wp-usermeta-mutation');
+  }
+  const checked = generatedHarness.checked === true && mutationEvidenceChecked;
   const productionBacked = checked === true
+    && usermetaMutations.length > 0
     && checkedProductionEvidence === true
     && productionScopeClaimed;
   const releaseGate = buildWpUsermetaReleaseGate({
@@ -11323,6 +11334,7 @@ export function summarizeWpUsermetaReleaseVerifierEvidence({
     evidenceScope: releaseGateEvidenceScope,
     productionScopeClaimed,
     productionBacked,
+    generatedHarnessCovered: generatedHarness.covered,
   });
 
   return {
@@ -11346,6 +11358,7 @@ export function summarizeWpUsermetaReleaseVerifierEvidence({
     checked,
     acceptedForReleaseGate: releaseGate.acceptedForReleaseGate,
     releaseGate,
+    generatedHarness,
     applyTimeRevalidation: {
       verifiedBeforeFirstMutation,
       checkedAgainst: proof?.apply?.applyRevalidation?.checkedAgainst || null,
@@ -11354,6 +11367,221 @@ export function summarizeWpUsermetaReleaseVerifierEvidence({
     },
     mutations: usermetaMutations,
     missingEvidence,
+  };
+}
+
+function summarizeWpUsermetaGeneratedHarnessReleaseVerifierCoverage(generatedCases = null) {
+  const boundary = wpUsermetaReleaseVerifierBoundary;
+  const cases = Array.isArray(generatedCases) ? generatedCases : generatePushHarnessCases();
+  const supported = summarizeWpUsermetaGeneratedHarnessFamily(
+    cases.filter((testCase) => testCase.family === boundary.supportedFamily),
+    { supported: true, expectedStatus: 'ready' },
+  );
+  const unsupported = summarizeWpUsermetaGeneratedHarnessFamily(
+    cases.filter((testCase) => testCase.family === boundary.unsupportedFamily),
+    { supported: false, expectedStatus: 'blocked' },
+  );
+  const checked = supported.checked === true && unsupported.checked === true;
+  const coverage = {
+    evidenceScope: boundary.generatedEvidenceScope,
+    checked,
+    covered: checked,
+    supported,
+    unsupported,
+  };
+  coverage.coverageHash = sha256Evidence({
+    supported: {
+      family: supported.family,
+      totalCases: supported.totalCases,
+      tiers: supported.tiers,
+      statuses: supported.statuses,
+      checked: supported.checked,
+      rowsHash: supported.rowsHash,
+    },
+    unsupported: {
+      family: unsupported.family,
+      totalCases: unsupported.totalCases,
+      tiers: unsupported.tiers,
+      statuses: unsupported.statuses,
+      checked: unsupported.checked,
+      rowsHash: unsupported.rowsHash,
+    },
+  });
+  return coverage;
+}
+
+function summarizeWpUsermetaGeneratedHarnessFamily(cases, { supported, expectedStatus }) {
+  const rows = cases.map((testCase) =>
+    summarizeWpUsermetaGeneratedHarnessCase(testCase, { supported, expectedStatus }));
+  const tiers = [...new Set(rows.map((row) => row.tier))].sort((a, b) => a - b);
+  const perTier = {};
+  const statuses = {};
+  for (const row of rows) {
+    incrementReleaseVerifierCount(perTier, row.tier);
+    incrementReleaseVerifierCount(statuses, row.planStatus);
+  }
+  const expectedTiersCovered = tiers.length === 10
+    && tiers.every((tier, index) => tier === index);
+  const checked = rows.length >= 10
+    && expectedTiersCovered
+    && rows.every((row) => row.checked === true && row.planStatus === expectedStatus);
+
+  return {
+    family: supported
+      ? wpUsermetaReleaseVerifierBoundary.supportedFamily
+      : wpUsermetaReleaseVerifierBoundary.unsupportedFamily,
+    expectedStatus,
+    supported,
+    checked,
+    totalCases: rows.length,
+    tiers,
+    perTier,
+    statuses,
+    rows,
+    rowsHash: sha256Evidence(rows.map((row) => ({
+      id: row.id,
+      tier: row.tier,
+      planStatus: row.planStatus,
+      validationStatus: row.validationStatus,
+      resourceKey: row.resourceKey,
+      rowId: row.rowId,
+      driver: row.driver,
+      owner: row.owner,
+      checked: row.checked,
+      proofHash: row.proofHash,
+    }))),
+  };
+}
+
+function summarizeWpUsermetaGeneratedHarnessCase(testCase, { supported, expectedStatus }) {
+  const shape = generatedWpUsermetaReleaseVerifierShape(testCase);
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: new Date('2026-05-30T00:00:00.000Z'),
+  });
+  const validation = validateGeneratedCase(testCase);
+  const mutation = shape
+    ? plan.mutations.find((entry) => entry.resourceKey === shape.resourceKey) || null
+    : null;
+  const blocker = shape
+    ? plan.blockers.find((entry) => entry.resourceKey === shape.resourceKey) || null
+    : null;
+  const precondition = mutation
+    ? plan.preconditions.find((entry) => entry.mutationId === mutation.id) || null
+    : null;
+  const driverEvidence = mutation?.pluginOwnedResource?.driverEvidence
+    || blocker?.driverEvidence
+    || {};
+  const driver = mutation?.pluginOwnedResource?.driver
+    || blocker?.driver
+    || driverEvidence.driver
+    || null;
+  const owner = mutation?.pluginOwnedResource?.pluginOwner
+    || blocker?.pluginOwner
+    || driverEvidence.pluginOwner
+    || null;
+  const supportedCaseChecked = supported
+    && shape !== null
+    && plan.status === expectedStatus
+    && validation.status === expectedStatus
+    && validation.applied === true
+    && validation.staleReplayRejected === true
+    && validation.staleReplayRejectionCode === 'PRECONDITION_FAILED'
+    && validation.staleReplayRemoteUnchanged === true
+    && mutation !== null
+    && blocker === null
+    && driverEvidence.supported === true
+    && driverEvidence.table === wpUsermetaReleaseVerifierBoundary.table
+    && wpUsermetaReleaseVerifierBoundary.driverAliases.includes(driver)
+    && driverEvidence.rowIdKind === 'umeta_id'
+    && precondition?.checkedAgainst === 'live-remote';
+  const unsupportedCaseChecked = !supported
+    && shape !== null
+    && plan.status === expectedStatus
+    && validation.status === expectedStatus
+    && validation.applied === false
+    && validation.nonReadyRemoteUnchanged === true
+    && mutation === null
+    && blocker?.class === 'unsupported-plugin-owned-resource'
+    && blocker?.driver === wpUsermetaReleaseVerifierBoundary.driver
+    && blocker?.driverEvidence?.supported === false
+    && blocker?.driverEvidence?.table === wpUsermetaReleaseVerifierBoundary.table
+    && blocker?.driverEvidence?.rowIdKind === 'umeta_id';
+  const row = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    planStatus: plan.status,
+    validationStatus: validation.status,
+    resourceKey: shape?.resourceKey || null,
+    rowId: shape?.rowId || null,
+    driver,
+    owner,
+    table: driverEvidence.table || null,
+    rowIdKind: driverEvidence.rowIdKind || null,
+    userId: driverEvidence.userId ?? null,
+    metaKey: driverEvidence.metaKey ?? null,
+    mutation: mutation ? {
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      supportsDelete: mutation.pluginOwnedResource?.supportsDelete === true,
+      ownerContextRequired: mutation.pluginOwnedResource?.ownerContextRequired === true,
+      preconditionCheckedAgainst: precondition?.checkedAgainst || null,
+      driverEvidenceHash: driverEvidence && Object.keys(driverEvidence).length > 0
+        ? digest(driverEvidence)
+        : null,
+      mutationHash: digest(mutation),
+      preconditionHash: precondition ? digest(precondition) : null,
+    } : null,
+    blocker: blocker ? {
+      class: blocker.class || null,
+      reasonHash: digest(blocker.reason || ''),
+      driverEvidenceHash: blocker.driverEvidence ? digest(blocker.driverEvidence) : null,
+      blockerHash: digest(blocker),
+    } : null,
+    validation: supported ? {
+      applied: validation.applied === true,
+      staleReplayRejected: validation.staleReplayRejected === true,
+      staleReplayRejectionCode: validation.staleReplayRejectionCode || null,
+      staleReplayRemoteUnchanged: validation.staleReplayRemoteUnchanged === true,
+    } : {
+      applied: validation.applied === true,
+      nonReadyRemoteUnchanged: validation.nonReadyRemoteUnchanged === true,
+    },
+    checked: supported ? supportedCaseChecked : unsupportedCaseChecked,
+  };
+  row.proofHash = sha256Evidence({
+    id: row.id,
+    tier: row.tier,
+    planStatus: row.planStatus,
+    validationStatus: row.validationStatus,
+    resourceKey: row.resourceKey,
+    rowId: row.rowId,
+    driver: row.driver,
+    owner: row.owner,
+    mutation: row.mutation,
+    blocker: row.blocker,
+    validation: row.validation,
+    checked: row.checked,
+  });
+  return row;
+}
+
+function generatedWpUsermetaReleaseVerifierShape(testCase) {
+  const entries = Object.entries(testCase?.local?.db?.wp_usermeta || {});
+  const entry = entries.find(([, row]) => row?.__pluginOwner === 'forms'
+    && typeof row.meta_key === 'string'
+    && row.meta_key.startsWith('_forms_generated_user_flag_'));
+  if (!entry) {
+    return null;
+  }
+  const [rowId, row] = entry;
+  return {
+    rowId,
+    row,
+    resourceKey: `row:${JSON.stringify(['wp_usermeta', rowId])}`,
   };
 }
 
@@ -11399,6 +11627,7 @@ function buildWpUsermetaReleaseGate({
   evidenceScope,
   productionScopeClaimed,
   productionBacked,
+  generatedHarnessCovered,
 }) {
   if (checked && productionBacked) {
     return {
@@ -11407,7 +11636,7 @@ function buildWpUsermetaReleaseGate({
       evidenceScope,
       productionBacked: true,
       acceptedForReleaseGate: true,
-      note: 'wp_usermeta driver semantics proof is production-backed and apply-revalidated on the checked release path',
+      note: 'wp_usermeta driver semantics proof is production-backed, apply-revalidated, and generated supported/unsupported coverage is present on the checked release path',
     };
   }
 
@@ -11430,7 +11659,7 @@ function buildWpUsermetaReleaseGate({
     evidenceScope,
     productionBacked: false,
     acceptedForReleaseGate: false,
-    note: `wp_usermeta driver semantics proof is local/support-only; evidenceScope=${evidenceScope}; production-backed release gate evidence is still required`,
+    note: `wp_usermeta driver semantics proof is local/generated support-only; generatedHarnessCovered=${generatedHarnessCovered === true}; evidenceScope=${evidenceScope}; production-backed release gate evidence is still required`,
   };
 }
 

@@ -18,7 +18,9 @@ import {
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const fixedNow = new Date('2026-05-30T00:00:00.000Z');
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
+const generatedCases = generatePushHarnessCases();
 const expectedGeneratedTiers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+const sha256EvidencePattern = /^sha256:[a-f0-9]{64}$/;
 const rowId = 'umeta_id:487';
 const resourceKey = 'row:["wp_usermeta","umeta_id:487"]';
 
@@ -119,6 +121,21 @@ function perTierKeys(coverage) {
   return Object.keys(coverage.perTier).map(Number);
 }
 
+function summaryFor(args = {}) {
+  return summarizeWpUsermetaReleaseVerifierEvidence({
+    generatedCases,
+    ...args,
+  });
+}
+
+function assertGeneratedTiers(familySummary) {
+  assert.deepEqual(familySummary.tiers, expectedGeneratedTiers);
+  assert.deepEqual(
+    Object.fromEntries(expectedGeneratedTiers.map((tier) => [String(tier), 1])),
+    familySummary.perTier,
+  );
+}
+
 function assertNoRawUsermetaPayloads(value, forbiddenValues = []) {
   const json = JSON.stringify(value);
   for (const forbiddenValue of forbiddenValues) {
@@ -126,7 +143,59 @@ function assertNoRawUsermetaPayloads(value, forbiddenValues = []) {
   }
   assert.equal(json.includes('meta_value'), false, 'release verifier summary must not include raw meta_value fields');
   assert.equal(json.includes('metaValue'), false, 'release verifier summary must not include raw metaValue fields');
+  assert.equal(json.includes('local-invalid'), false, 'generated unsupported payload marker must stay out of evidence');
+  assert.equal(json.includes('"mode"'), false, 'generated structured payload keys must stay out of evidence');
+  assert.equal(json.includes('"ordinal"'), false, 'generated payload ordinals must stay out of evidence');
+  assert.equal(json.includes('"usermetaId"'), false, 'generated payload ids must stay out of evidence');
 }
+
+test('RPP-0487 release verifier carries generated wp_usermeta supported and unsupported variants', () => {
+  const summary = summaryFor();
+  const { supported, unsupported } = summary.generatedHarness;
+
+  assert.equal(summary.checked, true);
+  assert.equal(summary.status, 'support_only');
+  assert.equal(summary.verdict, 'WP_USERMETA_DRIVER_SEMANTICS_SUPPORT_ONLY');
+  assert.equal(summary.evidenceScope, 'local-generated-release-verifier');
+  assert.equal(summary.productionBacked, false);
+  assert.equal(summary.acceptedForReleaseGate, false);
+  assert.equal(summary.releaseGate.status, 'NO-GO');
+  assert.equal(summary.releaseGate.productionBacked, false);
+  assert.equal(summary.releaseGate.acceptedForReleaseGate, false);
+  assert.match(summary.releaseGate.note, /local\/generated support-only/);
+  assert.match(summary.releaseGate.note, /generatedHarnessCovered=true/);
+  assert.match(summary.releaseGate.note, /production-backed release gate evidence is still required/);
+  assert.equal(summary.generatedHarness.checked, true);
+  assert.equal(summary.generatedHarness.covered, true);
+  assert.match(summary.generatedHarness.coverageHash, sha256EvidencePattern);
+
+  assert.equal(supported.family, 'supported-plugin-usermeta');
+  assert.equal(supported.expectedStatus, 'ready');
+  assert.equal(supported.supported, true);
+  assert.equal(supported.checked, true);
+  assert.equal(supported.totalCases, expectedGeneratedTiers.length);
+  assert.deepEqual(supported.statuses, { ready: expectedGeneratedTiers.length });
+  assertGeneratedTiers(supported);
+  assert.equal(supported.rows.every((row) => row.checked === true), true);
+  assert.equal(supported.rows.every((row) => row.mutation?.action === 'put'), true);
+  assert.equal(supported.rows.every((row) => row.mutation?.preconditionCheckedAgainst === 'live-remote'), true);
+  assert.equal(supported.rows.every((row) => row.validation.staleReplayRejected === true), true);
+  assert.match(supported.rowsHash, sha256EvidencePattern);
+
+  assert.equal(unsupported.family, 'unsupported-plugin-usermeta');
+  assert.equal(unsupported.expectedStatus, 'blocked');
+  assert.equal(unsupported.supported, false);
+  assert.equal(unsupported.checked, true);
+  assert.equal(unsupported.totalCases, expectedGeneratedTiers.length);
+  assert.deepEqual(unsupported.statuses, { blocked: expectedGeneratedTiers.length });
+  assertGeneratedTiers(unsupported);
+  assert.equal(unsupported.rows.every((row) => row.checked === true), true);
+  assert.equal(unsupported.rows.every((row) => row.mutation === null), true);
+  assert.equal(unsupported.rows.every((row) => row.blocker?.class === 'unsupported-plugin-owned-resource'), true);
+  assert.equal(unsupported.rows.every((row) => row.validation.nonReadyRemoteUnchanged === true), true);
+  assert.match(unsupported.rowsHash, sha256EvidencePattern);
+  assertNoRawUsermetaPayloads(summary);
+});
 
 test('RPP-0487 release verifier labels local wp_usermeta semantics as support-only NO-GO evidence', () => {
   const basePayload = 'sensitive-base-usermeta-payload-0487';
@@ -150,7 +219,7 @@ test('RPP-0487 release verifier labels local wp_usermeta semantics as support-on
   const remote = cloneJson(base);
   const plan = planFor(base, local, remote);
 
-  const summary = summarizeWpUsermetaReleaseVerifierEvidence({
+  const summary = summaryFor({
     proof: releaseProof(plan),
     checkedProductionEvidence: false,
   });
@@ -167,11 +236,12 @@ test('RPP-0487 release verifier labels local wp_usermeta semantics as support-on
   assert.equal(summary.releaseGate.status, 'NO-GO');
   assert.equal(summary.releaseGate.productionBacked, false);
   assert.equal(summary.releaseGate.acceptedForReleaseGate, false);
-  assert.match(summary.releaseGate.note, /local\/support-only/);
+  assert.match(summary.releaseGate.note, /local\/generated support-only/);
   assert.match(summary.releaseGate.note, /evidenceScope=local-candidate/);
   assert.match(summary.releaseGate.note, /production-backed release gate evidence is still required/);
   assert.equal(summary.applyTimeRevalidation.verifiedBeforeFirstMutation, true);
   assert.deepEqual(summary.missingEvidence, []);
+  assert.equal(summary.generatedHarness.covered, true);
   assert.equal(summary.mutations.length, 1);
   assert.deepEqual(summary.mutations[0], {
     id: plan.mutations[0].id,
@@ -221,7 +291,7 @@ test('RPP-0487 release verifier keeps production-scoped wp_usermeta evidence NO-
   };
   const plan = planFor(base, local, remote);
 
-  const summary = summarizeWpUsermetaReleaseVerifierEvidence({
+  const summary = summaryFor({
     proof: releaseProof(plan),
     checkedProductionEvidence: false,
   });
@@ -237,6 +307,7 @@ test('RPP-0487 release verifier keeps production-scoped wp_usermeta evidence NO-
   assert.equal(summary.releaseGate.evidenceScope, 'production-backed');
   assert.match(summary.releaseGate.note, /production-backed scope/);
   assert.match(summary.releaseGate.note, /release gate remains NO-GO/);
+  assert.equal(summary.generatedHarness.covered, true);
   assert.equal(summary.mutations[0].rowIdKind, 'umeta_id');
   assert.equal(summary.mutations[0].userId, 488);
   assert.equal(summary.mutations[0].metaKey, '_forms_remote_user_payload_v5');
@@ -266,7 +337,7 @@ test('RPP-0487 release verifier labels checked production-backed wp_usermeta sem
   };
   const plan = planFor(base, local, remote);
 
-  const summary = summarizeWpUsermetaReleaseVerifierEvidence({
+  const summary = summaryFor({
     proof: releaseProof(plan),
     checkedProductionEvidence: true,
   });
@@ -285,7 +356,9 @@ test('RPP-0487 release verifier labels checked production-backed wp_usermeta sem
   assert.equal(summary.releaseGate.productionBacked, true);
   assert.equal(summary.releaseGate.acceptedForReleaseGate, true);
   assert.match(summary.releaseGate.note, /production-backed/);
+  assert.match(summary.releaseGate.note, /generated supported\/unsupported coverage/);
   assert.equal(summary.applyTimeRevalidation.verifiedBeforeFirstMutation, true);
+  assert.equal(summary.generatedHarness.covered, true);
   assert.deepEqual(summary.mutations.map((mutation) => mutation.resourceKey), [resourceKey]);
   assertNoRawUsermetaPayloads(summary, [basePayload, localPayload]);
 });
@@ -325,12 +398,8 @@ test('RPP-0487 release verifier keeps generated wp_usermeta support evidence dis
     remote: unsupportedCase.remote,
     now: fixedGeneratedHarnessNow,
   });
-  const supportedSummary = summarizeWpUsermetaReleaseVerifierEvidence({
+  const supportedSummary = summaryFor({
     proof: releaseProof(supportedPlan),
-    checkedProductionEvidence: false,
-  });
-  const unsupportedSummary = summarizeWpUsermetaReleaseVerifierEvidence({
-    proof: releaseProof(unsupportedPlan),
     checkedProductionEvidence: false,
   });
   const supportedResult = validateGeneratedCase(supportedCase);
@@ -359,12 +428,10 @@ test('RPP-0487 release verifier keeps generated wp_usermeta support evidence dis
   assert.equal(unsupportedBlocker.driverEvidence.supported, false);
   assert.equal(unsupportedBlocker.driverEvidence.rowIdKind, 'umeta_id');
   assert.match(unsupportedBlocker.reason, /umeta_id to match the resource id/);
-  assert.equal(unsupportedSummary.status, 'blocked');
-  assert.equal(unsupportedSummary.checked, false);
-  assert.equal(unsupportedSummary.releaseGate.status, 'NO-GO');
-  assert.deepEqual(unsupportedSummary.missingEvidence, ['wp-usermeta-mutation', 'apply-revalidation']);
+  assert.equal(supportedSummary.generatedHarness.unsupported.checked, true);
+  assert.equal(supportedSummary.generatedHarness.unsupported.totalCases, expectedGeneratedTiers.length);
+  assert.deepEqual(supportedSummary.generatedHarness.unsupported.statuses, { blocked: expectedGeneratedTiers.length });
   assertNoRawUsermetaPayloads(supportedSummary);
-  assertNoRawUsermetaPayloads(unsupportedSummary);
   assertNoRawUsermetaPayloads(unsupportedBlocker, ['local-invalid']);
 });
 
