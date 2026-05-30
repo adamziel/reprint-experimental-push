@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T15:18:00+02:00">Last updated: May 30, 2026, 15:18 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T15:23:00+02:00">Last updated: May 30, 2026, 15:23 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>464</strong>
+        <strong>465</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>536</strong>
+        <strong>535</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -393,7 +393,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production chunking not checked">
-            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, and dry-run batch sizing, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
+            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, and apply batch sizing, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Release CI not checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0629</span>
+        <span>RPP-0713</span>
       </div>
-      <p>The latest refresh integrates RPP-0629 restart-readable committed-state recovery evidence: a separate Node process writes a claim-fenced file-backed recovery journal, applies every planned mutation, exits only after the durable journal-completed row, and the parent process reopens the JSONL journal to verify committedState.restartReadable, target-envelope completion, row-level fsync markers, completed-row sequence evidence, hash-only latest mutation metadata, and lease owner identity. Counts are now 464/536; final release remains NO-GO because this is local file-backed recovery journal evidence, not external WordPress crash/restart durability proof.</p>
+      <p>The latest refresh integrates RPP-0713 apply batch sizing evidence: the apply route accepts bounded applyBatchSize / apply_batch_size values from 1 through 500, defaults to 500, rejects invalid values before mutation, records applyBatchSizing at apply start, partitions mutations into batches, revalidates each batch from a fresh live snapshot before mutation work, journals and emits apply-batch-revalidated and apply-batch-committed, preserves per-mutation storage-boundary-cas, and stores hash/count/resource-key batch evidence without row, file, option, post, or payload values. Counts are now 465/535; final release remains NO-GO because this is deterministic/local source-path evidence, not live production throughput or durability proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0713 focused: 3/3</span>
+        <span class="tag">apply-route adjacent: 10/10</span>
+        <span class="tag">PHP syntax: pass</span>
+        <span class="tag">batch evidence hash-only</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0629 focused: 1/1</span>
         <span class="tag">restart-readable adjacent: 4/4</span>
         <span class="tag">recovery journal full: 35/35</span>
@@ -1012,7 +1017,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 464/1000</span>
+        <span class="tag">checked goals: 465/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
