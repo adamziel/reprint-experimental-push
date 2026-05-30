@@ -414,6 +414,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-term-relationships-graph-variant4',
     tag: 'wp-term-relationships-graph-v4',
   },
+  wpTermRelationshipsGraphReleaseVerifierVariant5: {
+    family: 'wp-term-relationships-graph-release-verifier-v5',
+    tag: 'wp-term-relationships-graph-release-verifier-v5',
+  },
   atomicPluginInstallStack: {
     family: 'atomic-plugin-stack-ready',
     tag: 'atomic-plugin-install-stack-v3',
@@ -4652,6 +4656,8 @@ function addWpTermRelationshipsGraph(base, local, remote, allocator, tags, { sta
     tags.add('wp-term-relationships-graph-v3-non-ready');
     tags.add('wp-term-relationships-graph-v4-stale');
     tags.add('wp-term-relationships-graph-v4-non-ready');
+    tags.add('wp-term-relationships-graph-release-verifier-v5-stale');
+    tags.add('wp-term-relationships-graph-release-verifier-v5-non-ready');
     tags.add('wp-term-relationships-remote-drift');
   } else {
     setRow(local, 'wp_terms', termRowId, term);
@@ -4659,6 +4665,7 @@ function addWpTermRelationshipsGraph(base, local, remote, allocator, tags, { sta
     tags.add('wp-term-relationships-graph-ready');
     tags.add('wp-term-relationships-graph-v3-ready');
     tags.add('wp-term-relationships-graph-v4-ready');
+    tags.add('wp-term-relationships-graph-release-verifier-v5-ready');
   }
 
   setRow(local, 'wp_term_relationships', relationshipRowId, {
@@ -4674,6 +4681,7 @@ function addWpTermRelationshipsGraph(base, local, remote, allocator, tags, { sta
   tags.add('wp-term-relationships-graph-target');
   tags.add('wp-term-relationships-graph-v3');
   tags.add('wp-term-relationships-graph-v4');
+  tags.add('wp-term-relationships-graph-release-verifier-v5');
   tags.add('wp-term-relationships-create');
   tags.add('term-relationship-object-graph');
   tags.add('term-relationship-taxonomy-graph');

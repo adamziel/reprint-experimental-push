@@ -78,8 +78,9 @@ The default generated run covers:
   ready/stale non-ready outcomes, and explicit variant-3 term-taxonomy graph
   coverage, `wp_term_relationships`
   graph cases with one target per tier, ready creates, stale taxonomy drift,
-  redacted hash-only evidence, and explicit variant-3 and variant-4 relationship graph
-  coverage, plugin-owned `wp_options` update cases with
+  redacted hash-only evidence, explicit variant-3 and variant-4 relationship
+  graph coverage, and explicit release-verifier variant-5 carry-through,
+  plugin-owned `wp_options` update cases with
   ready/conflict outcomes, stale replay rejection before mutation, and explicit
   variant-3 and variant-4 plugin-owned option coverage plus explicit
   variant-3 `wp-option` driver semantics coverage,
@@ -695,6 +696,20 @@ local hash without overwriting the unplanned remote-only file, rejects stale
 replay before mutation, and verifies the stale taxonomy reference refuses apply
 without mutating the remote digest. The evidence remains hash-only for term,
 taxonomy, relationship, blocker, refusal, and remote-only preservation data.
+
+RPP-0193 adds `wpTermRelationshipsGraphReleaseVerifierVariant5` coverage for
+the same `wp_term_relationships` graph surface with an explicit
+release-verifier-v5 target tag. The deterministic roster emits 10 variant-5
+target cases: five ready term/taxonomy/relationship graph creates and five
+stale non-ready taxonomy drift cases, with one relationship target in every
+tier. The focused proof keeps evidence hash-only, verifies every ready case
+applies all three graph rows with matching live-remote preconditions, preserves
+unplanned remote data, and rejects stale replay against the term, taxonomy, and
+relationship rows with `PRECONDITION_FAILED` before mutation. The stale cases
+keep the remote-drifted taxonomy as non-ready support evidence, emit no graph
+row mutation or precondition, and refuse apply with `PLAN_NOT_READY` before
+mutation. This is local generated-model support evidence only; release posture
+remains `NO-GO` without production-backed release-gate validation.
 
 The `pluginOwnedOptionChange` target coverage records per-tier counts for
 generated plugin-owned `wp_options` rows using the supported forms driver.
