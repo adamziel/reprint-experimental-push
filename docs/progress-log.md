@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 02:58 CEST.
+- Last update: 2026-05-30 03:09 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0425 postmeta driver semantics merge ending at `a41a050c1`.
+  the RPP-0231 mutation/precondition mapping merge ending at `8acb9c80f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 301
-  items checked and leaves 699 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 302
+  items checked and leaves 698 open.
 - Checked slices: 100 release-gate foundation items, 28 graph identity items,
   40 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 50 generated
-  harness items, and 33 merge-invariant items. No release-ops items are checked
+  harness items, and 34 merge-invariant items. No release-ops items are checked
   yet.
+- Focused mutation/precondition mapping refresh: the current lane now contains
+  `RPP-0231` evidence in
+  `docs/evidence/rpp-0231-mutation-precondition-one-to-one-v2.md`,
+  `test/push-planner.test.js`, and `test/generated-push-harness.test.js`.
+  `node --test --test-name-pattern=RPP-0231 test/push-planner.test.js
+  test/generated-push-harness.test.js` passed 3/3, the RPP-0211 regression
+  pattern passed 3/3, and `npm run test:generated-push-harness` passed 57/57.
+  The proof covers focused ready, conflict, and blocked atomic cases, generated
+  deterministic cases, and forged extra precondition rejection before durable
+  journal or mutation. Checklist lint, artifact redaction scan, and `git diff
+  --check` also passed. Counts are now 302/698; final release remains
+  `NO-GO`.
 - Focused wp_postmeta plugin-driver semantics refresh: the current lane now
   contains `RPP-0425` evidence in
   `docs/evidence/rpp-0425-wp-postmeta-driver-semantics.md` and

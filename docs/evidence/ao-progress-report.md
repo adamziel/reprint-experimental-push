@@ -1,18 +1,28 @@
-# AO Progress Report - 2026-05-30 02:58 CEST
+# AO Progress Report - 2026-05-30 03:09 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through the current restored live-team
-and RPP-0425 postmeta driver refresh ending at `a41a050c1`. It separates
+and RPP-0231 mutation/precondition refresh ending at `8acb9c80f`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 301 are
-  checked from integrated evidence and 699 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 302 are
+  checked from integrated evidence and 698 remain open.
+- `RPP-0231` is now checked with focused and generated mutation/precondition
+  mapping evidence in `test/push-planner.test.js`,
+  `test/generated-push-harness.test.js`, and
+  `docs/evidence/rpp-0231-mutation-precondition-one-to-one-v2.md`.
+  `node --test --test-name-pattern=RPP-0231 test/push-planner.test.js
+  test/generated-push-harness.test.js` passed 3/3, the RPP-0211 regression
+  pattern passed 3/3, and `npm run test:generated-push-harness` passed 57/57,
+  proving every planned mutation has a matching precondition, generated cases
+  keep the invariant, and forged extra preconditions fail before durable
+  journal or mutation while final release remains **NO-GO**.
 - `RPP-0425` is now checked with focused wp_postmeta plugin-driver semantics
   evidence in `docs/evidence/rpp-0425-wp-postmeta-driver-semantics.md` and
   `test/rpp-0425-wp-postmeta-driver-semantics.test.js`. `node --test
