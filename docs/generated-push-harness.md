@@ -57,8 +57,9 @@ The default generated run covers:
   target counts plus explicit variant-3 scalar option coverage, serialized
   option changes with per-tier target counts and
   redacted hash-only evidence for private serialized payloads, `wp_posts`
-  create/update/delete mixes with per-tier target counts and ready/conflict
-  outcomes, `wp_postmeta` create/update/delete mixes with per-tier target
+  create/update/delete mixes with per-tier target counts, ready/conflict
+  outcomes, and explicit variant-4 summary coverage, `wp_postmeta`
+  create/update/delete mixes with per-tier target
   counts, ready/conflict outcomes, stale replay rejection before mutation, and
   explicit variant-3 postmeta coverage,
   `wp_comments` + `wp_commentmeta` graph cases with per-tier target counts and
@@ -209,6 +210,16 @@ cases in every tier. The focused proof records only resource keys, post types,
 counts, and hashes, verifies the ready case applies the planned create, update,
 and delete mutations and rejects stale replay before mutation, then verifies
 the conflicting updated post refuses apply without mutating the remote digest.
+
+RPP-0167 adds `wpPostsCreateUpdateDeleteVariant4` coverage for the same
+`wp_posts` create/update/delete surface with an explicit variant-4 target tag.
+The deterministic roster emits 20 variant-4 target cases: 10 ready post
+create/update/delete plans and 10 non-ready remote-drift conflicts, with two
+cases in every tier. The focused proof recounts the variant-4 summary,
+verifies the ready create, update, and delete post mutations apply with
+matching preconditions and stale replay refusal, and verifies the conflicting
+updated post refuses apply without mutating the remote digest. Evidence remains
+hash-only and omits generated post titles and content payloads.
 
 The `fileTypeSwap` target coverage records per-tier counts for file topology
 type swaps. Ready cases replace an empty directory with the planned file value
