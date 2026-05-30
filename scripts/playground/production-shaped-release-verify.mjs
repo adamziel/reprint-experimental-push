@@ -531,6 +531,21 @@ export const pluginActivationDependencyReleaseVerifierBoundary = Object.freeze({
   groupId: 'rpp-0489-activate-dependent-plugin',
   driver: 'wp-option',
 });
+export const pluginUpdateDependencyReleaseVerifierBoundary = Object.freeze({
+  rpp: 'RPP-0490',
+  evidenceSource: 'release-verifier-plugin-update-dependency-validator-v5',
+  dependencyPlugin: 'reprint-push-atomic-dependency-fixture',
+  dependentPlugin: 'reprint-push-atomic-dependent-fixture',
+  dependencyVersion: '2.1.0',
+  dependentBaseVersion: '1.0.0',
+  dependentUpdatedVersion: '1.1.0',
+  versionRange: '>=2.0.0 <3.0.0',
+  dataResourceKey: 'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]',
+  dataTable: 'wp_options',
+  dataRowId: 'option_name:reprint_push_atomic_fixture_data',
+  dataDriver: 'wp-option',
+});
+
 
 export const remoteOnlyPluginMetadataReleaseVerifierBoundary = Object.freeze({
   pluginName: 'forms',
@@ -3551,6 +3566,522 @@ function sha256Evidence(value) {
 function prefixedResourceHash(value) {
   return typeof value === 'string' ? `sha256:${value}` : null;
 }
+export function summarizePluginUpdateDependencyReleaseVerifierProof({
+  now = new Date('2026-05-30T13:49:00.000Z'),
+  evidenceScope = 'local-candidate',
+  checkedProductionEvidence = false,
+} = {}) {
+  try {
+    return buildPluginUpdateDependencyReleaseVerifierProof({
+      now,
+      evidenceScope,
+      checkedProductionEvidence,
+    });
+  } catch (error) {
+    const scope = normalizeReleaseVerifierEvidenceScope(evidenceScope);
+    const releaseGate = buildPluginUpdateDependencyReleaseGate({
+      checked: false,
+      checkedProductionEvidence,
+      evidenceScope: scope,
+      productionScopeClaimed: scope === 'production-backed',
+      productionBacked: false,
+    });
+    return {
+      rpp: pluginUpdateDependencyReleaseVerifierBoundary.rpp,
+      evidenceSource: pluginUpdateDependencyReleaseVerifierBoundary.evidenceSource,
+      status: 'blocked',
+      verdict: 'PLUGIN_UPDATE_DEPENDENCY_VALIDATOR_REQUIRED',
+      evidenceScope: scope,
+      releaseGateEvidenceScope: scope,
+      productionScopeClaimed: scope === 'production-backed',
+      checkedProductionEvidence: checkedProductionEvidence === true,
+      productionBacked: false,
+      supportOnly: true,
+      releaseEligible: false,
+      acceptedForReleaseGate: false,
+      releaseGate,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'PLUGIN_UPDATE_DEPENDENCY_VALIDATOR_REQUIRED',
+        evidenceScope: scope,
+      }),
+    };
+  }
+}
+
+function buildPluginUpdateDependencyReleaseVerifierProof({
+  now,
+  evidenceScope,
+  checkedProductionEvidence,
+}) {
+  const boundary = pluginUpdateDependencyReleaseVerifierBoundary;
+  const scope = normalizeReleaseVerifierEvidenceScope(evidenceScope);
+  const rawFixtures = {
+    dependencySecret: 'rpp-0490-private-dependency-build-token',
+    dependentSecret: 'rpp-0490-private-dependent-release-note',
+    localRowSecret: 'rpp-0490-private-local-row-mode',
+    staleRemoteRowSecret: 'rpp-0490-private-stale-remote-row-mode',
+  };
+  const base = pluginUpdateDependencyReleaseVerifierSnapshot({
+    dependencyVersion: boundary.dependencyVersion,
+    dependentVersion: boundary.dependentBaseVersion,
+    dependencyBuildToken: rawFixtures.dependencySecret,
+    dependentReleaseNote: 'base-release',
+    dataMode: 'base-row',
+  });
+  const local = cloneReleaseVerifierJson(base);
+  const remote = cloneReleaseVerifierJson(base);
+  const dependencyResource = pluginUpdateDependencyPluginResource(boundary.dependencyPlugin);
+  const dependentResource = pluginUpdateDependencyPluginResource(boundary.dependentPlugin);
+  const dependencyRemoteHash = resourceHash(remote, dependencyResource);
+
+  local.plugins[boundary.dependentPlugin] = {
+    ...local.plugins[boundary.dependentPlugin],
+    version: boundary.dependentUpdatedVersion,
+    releaseNote: rawFixtures.dependentSecret,
+  };
+  local.db[boundary.dataTable][boundary.dataRowId].option_value = {
+    mode: rawFixtures.localRowSecret,
+  };
+  local.pushIntents = [
+    {
+      id: 'rpp-0490-update-dependent-plugin-release-verifier',
+      kind: 'plugin-update',
+      requireAtomic: true,
+      resources: [
+        dependentResource.key,
+        boundary.dataResourceKey,
+      ],
+      dependencies: {
+        plugins: [
+          {
+            name: boundary.dependencyPlugin,
+            expectedVersion: boundary.dependencyVersion,
+            versionRange: boundary.versionRange,
+            hash: dependencyRemoteHash,
+            active: true,
+          },
+        ],
+      },
+      resourcePolicy: {
+        pluginOwnedResources: {
+          allowedResources: [
+            {
+              resourceKey: boundary.dataResourceKey,
+              pluginOwner: boundary.dependentPlugin,
+              driver: boundary.dataDriver,
+            },
+          ],
+        },
+      },
+    },
+  ];
+
+  const plan = createPushPlan({ base, local, remote, now });
+  const group = plan.atomicGroups.find((entry) =>
+    entry.id === 'rpp-0490-update-dependent-plugin-release-verifier') || null;
+  const requirement = group?.dependencyRequirements?.[0] || null;
+  const updateMutation = plan.mutations.find((entry) => entry.resourceKey === dependentResource.key) || null;
+  const dataMutation = plan.mutations.find((entry) => entry.resourceKey === boundary.dataResourceKey) || null;
+  const updatePrecondition = plan.preconditions.find((entry) => entry.resourceKey === dependentResource.key) || null;
+  const dataPrecondition = plan.preconditions.find((entry) => entry.resourceKey === boundary.dataResourceKey) || null;
+
+  let acceptedResult = null;
+  let acceptedError = null;
+  try {
+    acceptedResult = applyPlan(cloneReleaseVerifierJson(remote), plan);
+  } catch (error) {
+    acceptedError = error;
+  }
+
+  const versionMismatchRefusal = summarizePluginUpdateDependencyRefusal(
+    remote,
+    pluginUpdateDependencyTamperedPlan(plan, (copy) => {
+      copy.atomicGroups[0].dependencyRequirements[0].expectedVersion = '9.9.9';
+    }),
+  );
+  const unsupportedRangeRefusal = summarizePluginUpdateDependencyRefusal(
+    remote,
+    pluginUpdateDependencyTamperedPlan(plan, (copy) => {
+      copy.atomicGroups[0].dependencyRequirements[0].versionRange = '^2.1.0';
+    }),
+  );
+  const staleRefusal = summarizePluginUpdateDependencyStaleRefusal({
+    remote,
+    plan,
+    boundary,
+    dependencyResource,
+    dataMutation,
+    staleRemoteRowSecret: rawFixtures.staleRemoteRowSecret,
+  });
+
+  const exactDependency = requirement?.plugin === boundary.dependencyPlugin
+    && requirement?.source === 'live-remote'
+    && requirement?.expectedVersion === boundary.dependencyVersion
+    && requirement?.versionRange === boundary.versionRange
+    && requirement?.expectedHash === dependencyRemoteHash
+    && requirement?.remoteHash === dependencyRemoteHash
+    && requirement?.active === true
+    && /^[a-f0-9]{64}$/.test(requirement?.baseHash || '');
+  const exactUpdateMutation = updateMutation?.resource?.type === 'plugin'
+    && updateMutation.resource.name === boundary.dependentPlugin
+    && updateMutation.action === 'put'
+    && updateMutation.changeKind === 'update';
+  const exactDataMutation = dataMutation?.resource?.type === 'row'
+    && dataMutation.resource.table === boundary.dataTable
+    && dataMutation.resource.id === boundary.dataRowId
+    && dataMutation.pluginOwnedResource?.pluginOwner === boundary.dependentPlugin
+    && dataMutation.pluginOwnedResource?.driver === boundary.dataDriver
+    && dataMutation.pluginOwnedResource?.auditEvidence?.format === 'hash-only'
+    && dataMutation.pluginOwnedResource?.auditEvidence?.rawValuesIncluded === false;
+  const acceptedApply = acceptedResult !== null
+    && acceptedResult.site?.plugins?.[boundary.dependentPlugin]?.version === boundary.dependentUpdatedVersion
+    && acceptedResult.site?.plugins?.[boundary.dependencyPlugin]?.buildToken === rawFixtures.dependencySecret
+    && acceptedResult.site?.db?.[boundary.dataTable]?.[boundary.dataRowId]?.option_value?.mode
+      === rawFixtures.localRowSecret;
+  const refusalsAccepted =
+    versionMismatchRefusal.code === 'ATOMIC_GROUP_DEPENDENCY_VERSION_MISMATCH'
+    && versionMismatchRefusal.remoteDataPreserved === true
+    && unsupportedRangeRefusal.code === 'ATOMIC_GROUP_DEPENDENCY_VERSION_RANGE_UNSUPPORTED'
+    && unsupportedRangeRefusal.remoteDataPreserved === true
+    && staleRefusal.code === 'ATOMIC_GROUP_DEPENDENCY_STALE'
+    && staleRefusal.remoteDataPreserved === true;
+  const checked = plan.status === 'ready'
+    && group?.status === 'ready'
+    && exactDependency
+    && exactUpdateMutation
+    && exactDataMutation
+    && acceptedApply
+    && refusalsAccepted
+    && acceptedError === null;
+  const productionScopeClaimed = scope === 'production-backed';
+  const productionBacked = checked === true
+    && checkedProductionEvidence === true
+    && productionScopeClaimed;
+  const releaseGate = buildPluginUpdateDependencyReleaseGate({
+    checked,
+    checkedProductionEvidence,
+    evidenceScope: scope,
+    productionScopeClaimed,
+    productionBacked,
+  });
+  const proof = {
+    rpp: boundary.rpp,
+    evidenceSource: boundary.evidenceSource,
+    status: checked
+      ? (productionBacked ? 'checked' : 'support_only')
+      : 'blocked',
+    verdict: checked
+      ? (productionBacked
+          ? 'PLUGIN_UPDATE_DEPENDENCY_VALIDATOR_PRODUCTION_BACKED'
+          : 'PLUGIN_UPDATE_DEPENDENCY_VALIDATOR_SUPPORT_ONLY')
+      : 'PLUGIN_UPDATE_DEPENDENCY_VALIDATOR_REQUIRED',
+    evidenceScope: scope,
+    releaseGateEvidenceScope: scope,
+    productionScopeClaimed,
+    checkedProductionEvidence: checkedProductionEvidence === true,
+    productionBacked,
+    supportOnly: !productionBacked,
+    releaseEligible: productionBacked,
+    checked,
+    acceptedForReleaseGate: releaseGate.acceptedForReleaseGate,
+    releaseGate,
+    plan: {
+      status: plan.status,
+      summary: {
+        mutations: plan.summary.mutations,
+        conflicts: plan.summary.conflicts,
+        blockers: plan.summary.blockers,
+        atomicGroups: plan.summary.atomicGroups,
+      },
+      mutationCount: plan.mutations.length,
+      preconditionCount: plan.preconditions.length,
+      hash: sha256Evidence(plan),
+    },
+    dependency: requirement ? {
+      groupId: group.id,
+      plugin: requirement.plugin,
+      dependentPlugin: boundary.dependentPlugin,
+      source: requirement.source,
+      expectedVersion: requirement.expectedVersion,
+      versionRange: requirement.versionRange,
+      active: requirement.active === true,
+      expectedHash: `sha256:${requirement.expectedHash}`,
+      remoteHash: `sha256:${requirement.remoteHash}`,
+      baseHash: `sha256:${requirement.baseHash}`,
+      expectedHashEvidence: sha256Evidence(requirement.expectedHash),
+      requirementHash: sha256Evidence(requirement),
+      exactDependency,
+    } : null,
+    updateMutation: updateMutation ? {
+      id: updateMutation.id,
+      resourceKey: updateMutation.resourceKey,
+      action: updateMutation.action,
+      changeKind: updateMutation.changeKind,
+      exactUpdateMutation,
+      baseHash: updateMutation.baseHash,
+      localHash: updateMutation.localHash,
+      remoteBeforeHash: updateMutation.remoteBeforeHash,
+      mutationHash: sha256Evidence({
+        resourceKey: updateMutation.resourceKey,
+        action: updateMutation.action,
+        localHash: updateMutation.localHash,
+        remoteBeforeHash: updateMutation.remoteBeforeHash,
+      }),
+      preconditionHash: updatePrecondition ? sha256Evidence(updatePrecondition) : null,
+    } : null,
+    pluginOwnedData: dataMutation ? {
+      id: dataMutation.id,
+      resourceKey: dataMutation.resourceKey,
+      action: dataMutation.action,
+      driver: dataMutation.pluginOwnedResource?.driver || null,
+      owner: dataMutation.pluginOwnedResource?.pluginOwner || null,
+      exactDataMutation,
+      auditEvidenceHash: sha256Evidence(dataMutation.pluginOwnedResource?.auditEvidence || null),
+      driverDecisionEvidenceHash: sha256Evidence(dataMutation.pluginOwnedResource?.driverAuditEvidence || null),
+      resultRowHash: acceptedResult
+        ? `sha256:${resourceHash(acceptedResult.site, dataMutation.resource)}`
+        : null,
+      preconditionHash: dataPrecondition ? sha256Evidence(dataPrecondition) : null,
+    } : null,
+    acceptedApply: {
+      appliedMutations: acceptedResult?.appliedMutations ?? 0,
+      dependentPluginUpdated: acceptedResult?.site?.plugins?.[boundary.dependentPlugin]?.version
+        === boundary.dependentUpdatedVersion,
+      dependencyStatePreserved: acceptedResult?.site?.plugins?.[boundary.dependencyPlugin]?.buildToken
+        === rawFixtures.dependencySecret,
+      pluginOwnedDataApplied: acceptedResult?.site?.db?.[boundary.dataTable]?.[boundary.dataRowId]?.option_value?.mode
+        === rawFixtures.localRowSecret,
+      errorCode: acceptedError?.code || null,
+    },
+    refusals: {
+      versionMismatch: versionMismatchRefusal,
+      unsupportedRange: unsupportedRangeRefusal,
+      staleDependency: staleRefusal,
+    },
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+
+  proof.proofHash = sha256Evidence({
+    plan: proof.plan,
+    dependency: proof.dependency,
+    updateMutation: proof.updateMutation,
+    pluginOwnedData: proof.pluginOwnedData,
+    acceptedApply: proof.acceptedApply,
+    refusals: proof.refusals,
+    releaseGate: proof.releaseGate,
+  });
+
+  if (Object.values(rawFixtures).some((raw) => JSON.stringify(proof).includes(raw))) {
+    return {
+      rpp: boundary.rpp,
+      evidenceSource: boundary.evidenceSource,
+      status: 'blocked',
+      verdict: 'PLUGIN_UPDATE_DEPENDENCY_VALIDATOR_REDACTION_REQUIRED',
+      evidenceScope: scope,
+      releaseGateEvidenceScope: scope,
+      productionBacked: false,
+      releaseEligible: false,
+      acceptedForReleaseGate: false,
+      releaseGate: {
+        status: 'NO-GO',
+        verdict: 'PLUGIN_UPDATE_DEPENDENCY_VALIDATOR_REDACTION_REQUIRED',
+        evidenceScope: scope,
+        productionBacked: false,
+        acceptedForReleaseGate: false,
+        note: 'plugin update dependency validator proof leaked raw fixture data; release gate remains NO-GO',
+      },
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: true,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'PLUGIN_UPDATE_DEPENDENCY_VALIDATOR_REDACTION_REQUIRED',
+        evidenceScope: scope,
+      }),
+    };
+  }
+
+  return proof;
+}
+
+function buildPluginUpdateDependencyReleaseGate({
+  checked,
+  checkedProductionEvidence,
+  evidenceScope,
+  productionScopeClaimed,
+  productionBacked,
+}) {
+  if (checked && productionBacked) {
+    return {
+      status: 'GO',
+      verdict: 'PLUGIN_UPDATE_DEPENDENCY_VALIDATOR_PRODUCTION_BACKED',
+      evidenceScope,
+      productionBacked: true,
+      acceptedForReleaseGate: true,
+      note: 'plugin update dependency validator proof is production-backed and dependency-revalidated on the checked release path',
+    };
+  }
+
+  if (productionScopeClaimed) {
+    return {
+      status: 'NO-GO',
+      verdict: checkedProductionEvidence
+        ? 'PLUGIN_UPDATE_DEPENDENCY_VALIDATOR_INCOMPLETE'
+        : 'PLUGIN_UPDATE_DEPENDENCY_VALIDATOR_PRODUCTION_PROOF_REQUIRED',
+      evidenceScope,
+      productionBacked: false,
+      acceptedForReleaseGate: false,
+      note: 'plugin update dependency validator proof carries production-backed scope but lacks complete checked production verifier proof; release gate remains NO-GO',
+    };
+  }
+
+  return {
+    status: 'NO-GO',
+    verdict: checked ? 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED' : 'PLUGIN_UPDATE_DEPENDENCY_VALIDATOR_REQUIRED',
+    evidenceScope,
+    productionBacked: false,
+    acceptedForReleaseGate: false,
+    note: `plugin update dependency validator proof is local/support-only; evidenceScope=${evidenceScope}; production-backed release gate evidence is still required`,
+  };
+}
+
+function pluginUpdateDependencyReleaseVerifierSnapshot({
+  dependencyVersion,
+  dependentVersion,
+  dependencyBuildToken,
+  dependentReleaseNote,
+  dataMode,
+}) {
+  const boundary = pluginUpdateDependencyReleaseVerifierBoundary;
+  return {
+    files: {
+      [pluginUpdateDependencyMainFile(boundary.dependencyPlugin)]: '<?php /* dependency stable */',
+      [pluginUpdateDependencyMainFile(boundary.dependentPlugin)]: '<?php /* dependent stable */',
+    },
+    plugins: {
+      [boundary.dependencyPlugin]: {
+        version: dependencyVersion,
+        active: true,
+        buildToken: dependencyBuildToken,
+      },
+      [boundary.dependentPlugin]: {
+        version: dependentVersion,
+        active: true,
+        requires: [boundary.dependencyPlugin],
+        releaseNote: dependentReleaseNote,
+      },
+    },
+    db: {
+      [boundary.dataTable]: {
+        [boundary.dataRowId]: {
+          option_name: 'reprint_push_atomic_fixture_data',
+          option_value: { mode: dataMode },
+          __pluginOwner: boundary.dependentPlugin,
+        },
+      },
+    },
+  };
+}
+
+function summarizePluginUpdateDependencyRefusal(remote, plan) {
+  const targetRemote = cloneReleaseVerifierJson(remote);
+  const remoteHashBefore = sha256Evidence(targetRemote);
+  const error = captureReleaseVerifierError(() => applyPlan(targetRemote, plan));
+  const remoteHashAfter = sha256Evidence(targetRemote);
+  return {
+    code: error?.code || null,
+    preMutation: error instanceof PushPlanError,
+    detailsHash: error ? sha256Evidence(error.details || null) : null,
+    remoteHashBefore,
+    remoteHashAfter,
+    remoteDataPreserved: remoteHashAfter === remoteHashBefore,
+  };
+}
+
+function summarizePluginUpdateDependencyStaleRefusal({
+  remote,
+  plan,
+  boundary,
+  dependencyResource,
+  dataMutation,
+  staleRemoteRowSecret,
+}) {
+  const staleRemote = cloneReleaseVerifierJson(remote);
+  staleRemote.plugins[boundary.dependencyPlugin] = {
+    ...staleRemote.plugins[boundary.dependencyPlugin],
+    version: '2.2.0',
+  };
+  staleRemote.db[boundary.dataTable][boundary.dataRowId].option_value = {
+    mode: staleRemoteRowSecret,
+  };
+  const dependencyHashBefore = resourceHash(staleRemote, dependencyResource);
+  const rowHashBefore = dataMutation ? resourceHash(staleRemote, dataMutation.resource) : null;
+  const remoteHashBefore = sha256Evidence(staleRemote);
+  const error = captureReleaseVerifierError(() => applyPlan(staleRemote, plan));
+  const dependencyHashAfter = resourceHash(staleRemote, dependencyResource);
+  const rowHashAfter = dataMutation ? resourceHash(staleRemote, dataMutation.resource) : null;
+  const remoteHashAfter = sha256Evidence(staleRemote);
+
+  return {
+    code: error?.code || null,
+    preMutation: error instanceof PushPlanError,
+    detailsHash: error ? sha256Evidence(error.details || null) : null,
+    dependencyHashBefore: `sha256:${dependencyHashBefore}`,
+    dependencyHashAfter: `sha256:${dependencyHashAfter}`,
+    rowHashBefore: rowHashBefore ? `sha256:${rowHashBefore}` : null,
+    rowHashAfter: rowHashAfter ? `sha256:${rowHashAfter}` : null,
+    remoteHashBefore,
+    remoteHashAfter,
+    remoteDataPreserved: remoteHashAfter === remoteHashBefore
+      && dependencyHashAfter === dependencyHashBefore
+      && rowHashAfter === rowHashBefore,
+  };
+}
+
+function pluginUpdateDependencyTamperedPlan(plan, mutate) {
+  const copy = cloneReleaseVerifierJson(plan);
+  mutate(copy);
+  copy.status = 'ready';
+  copy.blockers = [];
+  copy.conflicts = [];
+  copy.summary = {
+    ...copy.summary,
+    blockers: 0,
+    conflicts: 0,
+  };
+  return copy;
+}
+
+function captureReleaseVerifierError(fn) {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  return null;
+}
+
+function pluginUpdateDependencyPluginResource(name) {
+  return {
+    type: 'plugin',
+    name,
+    key: `plugin:${name}`,
+  };
+}
+
+function pluginUpdateDependencyMainFile(name) {
+  return `wp-content/plugins/${name}/${name}.php`;
+}
+
 
 export function summarizeIndependentLocalFileRemoteRowReleaseVerifierProof({
   now = new Date('2026-05-30T15:40:00.000Z'),
@@ -6410,6 +6941,7 @@ try {
           serializedOptionValidator: summarizeSerializedOptionValidatorReleaseVerifierProof(),
           auditEvidenceRedaction: summarizeDriverAuditEvidenceRedactionReleaseVerifierProof(),
           arbitraryPluginFixturePackage: arbitraryPluginFixturePackageReleaseVerifierEvidence,
+          pluginUpdateDependencyValidator: summarizePluginUpdateDependencyReleaseVerifierProof(),
           coreSemantics: {
             pluginActivationDependency: summarizePluginActivationDependencyReleaseVerifierProof(),
             wpPostmeta: wpPostmetaReleaseVerifierEvidence,
@@ -6731,6 +7263,7 @@ try {
         serializedOptionValidator: summarizeSerializedOptionValidatorReleaseVerifierProof(),
         auditEvidenceRedaction: summarizeDriverAuditEvidenceRedactionReleaseVerifierProof(),
         arbitraryPluginFixturePackage: arbitraryPluginFixturePackageReleaseVerifierEvidence,
+        pluginUpdateDependencyValidator: summarizePluginUpdateDependencyReleaseVerifierProof(),
         coreSemantics: {
           pluginActivationDependency: summarizePluginActivationDependencyReleaseVerifierProof(),
           wpPostmeta: wpPostmetaReleaseVerifierEvidence,
