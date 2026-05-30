@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 23:10 CEST +02:00.
+- Last update: 2026-05-30 23:12 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0328 commentmeta comment reference variant 2 merge ending at
-  `f6ba7bc`.
+  the RPP-0335 nav menu item fail-closed reference variant 2 merge ending at
+  `2699de8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 534
-  items checked and leaves 466 open.
-- Checked slices: 100 release-gate foundation items, 77 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 535
+  items checked and leaves 465 open.
+- Checked slices: 100 release-gate foundation items, 78 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 91 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Nav menu item fail-closed reference variant-2 proof: the current lane now
+  checks `RPP-0335` with focused graph-identity evidence for unsupported
+  navigation menu item surfaces. The proof verifies direct `nav_menu_item`
+  posts, menu item metadata, `nav_menu` taxonomy rows, and dependent term
+  relationships remain blocked with hash-only evidence, documents the remaining
+  unmapped WordPress surfaces, and proves apply refuses before mutation.
+  Validation passed with Node syntax checks, focused RPP-0335 coverage 2/2,
+  adjacent RPP-0315/RPP-0375/RPP-0395 nav-menu-item coverage 6/6, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 535/465;
+  final release remains `NO-GO` because this is local graph-identity evidence,
+  not production-backed release proof.
 - Commentmeta comment reference variant-2 generated-model proof: the current
   lane now checks `RPP-0328` with focused graph-identity evidence for
   `wp_commentmeta.comment_id` references. The proof consumes the existing
