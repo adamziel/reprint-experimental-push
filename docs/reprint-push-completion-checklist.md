@@ -267,7 +267,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [ ] RPP-0243 (Near-Mid / merge-invariants) Add generated coverage for local delete versus remote edit, variant 3. Success: no raw private value appears in serialized plan evidence.
 - [ ] RPP-0244 (Near-Mid / merge-invariants) Add generated coverage for local directory delete versus remote descendant create, variant 3. Success: scenario matrix row names the behavior and command.
 - [ ] RPP-0245 (Near-Mid / merge-invariants) Add generated coverage for local file type swap versus remote descendant, variant 3. Success: progress log records the command and caveat.
-- [ ] RPP-0246 (Near-Mid / merge-invariants) Add generated coverage for remote-only plugin metadata preservation, variant 3. Success: node test proves the invariant over generated and focused fixtures.
+- [x] RPP-0246 (Near-Mid / merge-invariants) Add generated coverage for remote-only plugin metadata preservation, variant 3. Success: node test proves the invariant over generated and focused fixtures.
 - [ ] RPP-0247 (Near-Mid / merge-invariants) Add generated coverage for local plugin data with stale owner context, variant 3. Success: executor rejects forged or stale mutation attempts.
 - [ ] RPP-0248 (Near-Mid / merge-invariants) Add generated coverage for unknown plugin-owned resource refusal, variant 3. Success: no raw private value appears in serialized plan evidence.
 - [ ] RPP-0249 (Near-Mid / merge-invariants) Add generated coverage for conflict evidence hash redaction, variant 3. Success: scenario matrix row names the behavior and command.
