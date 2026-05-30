@@ -344,6 +344,9 @@ const requiredFamilies = [
   'plugin-owned-option-change-v3',
   'plugin-owned-option-change-v3-ready',
   'plugin-owned-option-change-v3-non-ready',
+  'plugin-owned-option-change-v4',
+  'plugin-owned-option-change-v4-ready',
+  'plugin-owned-option-change-v4-non-ready',
   'comment-user-graph-ready',
   'comment-user-graph-stale',
   'comment-user-graph',
@@ -9871,6 +9874,93 @@ test('RPP-0154 plugin-owned option changes variant 3 rejects stale replay before
   assert.equal(evidenceText.includes('private_notes'), false, 'variant 3 evidence leaked private note keys');
 });
 
+test('RPP-0174 plugin-owned option changes variant 4 rejects stale replay before mutation', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.pluginOwnedOptionChangeVariant4;
+
+  assert.ok(coverage, 'missing plugin-owned option variant 4 target coverage');
+  assert.equal(coverage.family, 'plugin-owned-option-change-variant4');
+  assert.equal(coverage.total, report.summary.featureFamilies['plugin-owned-option-change-v4']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.ok(coverage.statuses.ready > 0, 'variant 4 target should include ready plugin-owned option cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 4 target should include non-ready plugin-owned option cases');
+  assert.equal(report.summary.featureFamilies['plugin-owned-option-change-v4-ready'], 10);
+  assert.equal(report.summary.featureFamilies['plugin-owned-option-change-v4-non-ready'], 10);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+  assert.equal(JSON.stringify(report).includes('private-plugin-owned-option'), false);
+  assert.equal(JSON.stringify(report).includes('private_plugin_owned_option'), false);
+
+  const firstEvidence = generatedPluginOwnedOptionChangeVariant4Evidence(coverage);
+  const replayEvidence = generatedPluginOwnedOptionChangeVariant4Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0174 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 4 plugin-owned option evidence changed between runs');
+  assert.equal(firstEvidence.target, 'pluginOwnedOptionChangeVariant4');
+  assert.equal(firstEvidence.family, 'plugin-owned-option-change-variant4');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.variant),
+    ['ready', 'conflict-non-ready'],
+  );
+
+  const [readyCase, conflictCase] = firstEvidence.selectedCases;
+  assert.ok(readyCase.tags.includes('plugin-owned-option-change-v4-ready'));
+  assert.ok(conflictCase.tags.includes('plugin-owned-option-change-v4-non-ready'));
+  assert.equal(readyCase.status, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.equal(readyCase.optionMutation.changeKind, 'update');
+  assert.equal(readyCase.optionMutation.pluginOwner, 'forms');
+  assert.equal(readyCase.optionMutation.driver, 'wp-option');
+  assert.equal(readyCase.optionMutation.ownerContextRequired, true);
+  assert.equal(readyCase.optionMutation.appliedHash, readyCase.surface.localHash);
+  assert.equal(readyCase.optionMutation.plannedPrecondition, true);
+  assert.equal(readyCase.staleReplay.code, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplay.resourceKey, readyCase.surface.resourceKey);
+  assert.equal(readyCase.staleReplay.expectedHash, readyCase.optionMutation.remoteBeforeHash);
+  assert.notEqual(readyCase.staleReplay.actualHash, readyCase.staleReplay.expectedHash);
+  assert.equal(readyCase.staleReplay.remoteBeforeHash, readyCase.staleReplay.remoteAfterHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(conflictCase.status, 'conflict');
+  assert.equal(conflictCase.applied, false);
+  assert.equal(conflictCase.conflict.class, 'plugin-data-conflict');
+  assert.equal(conflictCase.conflict.pluginOwner, 'forms');
+  assert.equal(conflictCase.conflict.plannedMutation, false);
+  assert.equal(conflictCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(conflictCase.refusal.remoteBeforeHash, conflictCase.refusal.remoteAfterHash);
+  assert.match(conflictCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('base-private-plugin-owned-option'), false, 'variant 4 evidence leaked base option value');
+  assert.equal(evidenceText.includes('local-private-plugin-owned-option'), false, 'variant 4 evidence leaked local option value');
+  assert.equal(evidenceText.includes('remote-private-plugin-owned-option'), false, 'variant 4 evidence leaked remote option value');
+  assert.equal(evidenceText.includes('plugin-owned-option-local-'), false, 'variant 4 evidence leaked local token value');
+  assert.equal(evidenceText.includes('plugin-owned-option-remote-'), false, 'variant 4 evidence leaked remote token value');
+  assert.equal(evidenceText.includes('private_token'), false, 'variant 4 evidence leaked private token keys');
+  assert.equal(evidenceText.includes('private_notes'), false, 'variant 4 evidence leaked private note keys');
+});
+
 function assertPluginOwnedOptionShape(testCase, { conflict }) {
   const optionRows = Object.entries(testCase.local.db.wp_options)
     .filter(([id, row]) => id.startsWith('option_name:generated_plugin_owned_option_')
@@ -9980,18 +10070,43 @@ function assertPluginOwnedOptionRawValuesAbsent(testCase, shape, redactedJson) {
 }
 
 function generatedPluginOwnedOptionChangeVariant3Evidence(targetCoverage) {
+  return generatedPluginOwnedOptionChangeVariantEvidence(targetCoverage, {
+    target: 'pluginOwnedOptionChangeVariant3',
+    tag: 'plugin-owned-option-change-v3',
+    label: 'variant 3',
+    staleReplayPrefix: 'rpp0154',
+  });
+}
+
+function generatedPluginOwnedOptionChangeVariant4Evidence(targetCoverage) {
+  return generatedPluginOwnedOptionChangeVariantEvidence(targetCoverage, {
+    target: 'pluginOwnedOptionChangeVariant4',
+    tag: 'plugin-owned-option-change-v4',
+    label: 'variant 4',
+    staleReplayPrefix: 'rpp0174',
+  });
+}
+
+function generatedPluginOwnedOptionChangeVariantEvidence(
+  targetCoverage,
+  { target, tag, label, staleReplayPrefix },
+) {
   const perTier = {};
   const statuses = {};
   const selectedCases = new Map();
   let totalCases = 0;
 
   for (const testCase of generatePushHarnessCases()) {
-    if (!testCase.tags.has('plugin-owned-option-change-v3')) {
+    if (!testCase.tags.has(tag)) {
       continue;
     }
 
     const result = validateGeneratedCase(testCase);
-    const evidence = generatedPluginOwnedOptionChangeVariant3CaseEvidence(testCase, result);
+    const evidence = generatedPluginOwnedOptionChangeVariantCaseEvidence(
+      testCase,
+      result,
+      { tag, label, staleReplayPrefix },
+    );
     const selectedKey = result.status === 'ready' ? 'ready' : 'conflict-non-ready';
     totalCases += 1;
     incrementCount(perTier, testCase.tier);
@@ -10004,14 +10119,14 @@ function generatedPluginOwnedOptionChangeVariant3Evidence(targetCoverage) {
   const sortedPerTier = sortNumericObject(perTier);
   const sortedStatuses = sortStringObject(statuses);
 
-  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 plugin-owned option target recount should match summary tiers');
-  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 plugin-owned option target recount should match summary statuses');
-  assert.equal(totalCases, targetCoverage.total, 'variant 3 plugin-owned option target recount should match summary total');
-  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready plugin-owned option case');
-  assert.ok(selectedCases.has('conflict-non-ready'), 'variant 3 target should select one conflicting plugin-owned option case');
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, `${label} plugin-owned option target recount should match summary tiers`);
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, `${label} plugin-owned option target recount should match summary statuses`);
+  assert.equal(totalCases, targetCoverage.total, `${label} plugin-owned option target recount should match summary total`);
+  assert.ok(selectedCases.has('ready'), `${label} target should select one ready plugin-owned option case`);
+  assert.ok(selectedCases.has('conflict-non-ready'), `${label} target should select one conflicting plugin-owned option case`);
 
   return {
-    target: 'pluginOwnedOptionChangeVariant3',
+    target,
     family: targetCoverage.family,
     evidenceScope: 'local-generated-model',
     productionBacked: false,
@@ -10027,17 +10142,21 @@ function generatedPluginOwnedOptionChangeVariant3Evidence(targetCoverage) {
   };
 }
 
-function generatedPluginOwnedOptionChangeVariant3CaseEvidence(testCase, result) {
-  const conflict = testCase.tags.has('plugin-owned-option-change-v3-non-ready');
+function generatedPluginOwnedOptionChangeVariantCaseEvidence(
+  testCase,
+  result,
+  { tag, label, staleReplayPrefix },
+) {
+  const conflict = testCase.tags.has(`${tag}-non-ready`);
   assert.equal(
-    testCase.tags.has('plugin-owned-option-change-v3-ready'),
+    testCase.tags.has(`${tag}-ready`),
     !conflict,
-    `${testCase.id} should carry exactly one plugin-owned option variant 3 outcome tag`,
+    `${testCase.id} should carry exactly one plugin-owned option ${label} outcome tag`,
   );
   assert.equal(
     conflict,
     testCase.family === 'plugin-owned-option-change-conflict',
-    `${testCase.id} plugin-owned option variant 3 outcome tag should match its family`,
+    `${testCase.id} plugin-owned option ${label} outcome tag should match its family`,
   );
 
   const shape = assertPluginOwnedOptionShape(testCase, { conflict });
@@ -10049,7 +10168,7 @@ function generatedPluginOwnedOptionChangeVariant3CaseEvidence(testCase, result) 
     remote: testCase.remote,
     now: fixedGeneratedHarnessNow,
   });
-  const surface = pluginOwnedOptionVariant3SurfaceEvidence(testCase, shape);
+  const surface = pluginOwnedOptionVariantSurfaceEvidence(testCase, shape);
   const commonEvidence = {
     id: testCase.id,
     tier: testCase.tier,
@@ -10071,16 +10190,18 @@ function generatedPluginOwnedOptionChangeVariant3CaseEvidence(testCase, result) 
     assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
 
     const applied = applyPlan(cloneJson(testCase.remote), plan);
-    const optionMutation = pluginOwnedOptionVariant3ReadyMutationEvidence({
+    const optionMutation = pluginOwnedOptionVariantReadyMutationEvidence({
       testCase,
       plan,
       applied,
       shape,
+      label,
     });
-    const staleReplay = pluginOwnedOptionVariant3ReadyStaleReplayEvidence({
+    const staleReplay = pluginOwnedOptionVariantReadyStaleReplayEvidence({
       testCase,
       plan,
       shape,
+      staleReplayPrefix,
     });
 
     return {
@@ -10108,8 +10229,8 @@ function generatedPluginOwnedOptionChangeVariant3CaseEvidence(testCase, result) 
   assert.equal(result.applied, false, `${testCase.id} conflict should not apply`);
   assert.equal(result.nonReadyRemoteUnchanged, true, `${testCase.id} conflict should leave remote unchanged`);
 
-  const conflictEvidence = pluginOwnedOptionVariant3ConflictEvidence({ testCase, plan, shape });
-  const refusal = pluginOwnedOptionVariant3RefusalEvidence(testCase, plan);
+  const conflictEvidence = pluginOwnedOptionVariantConflictEvidence({ testCase, plan, shape });
+  const refusal = pluginOwnedOptionVariantRefusalEvidence(testCase, plan);
 
   return {
     ...commonEvidence,
@@ -10127,7 +10248,7 @@ function generatedPluginOwnedOptionChangeVariant3CaseEvidence(testCase, result) 
   };
 }
 
-function pluginOwnedOptionVariant3SurfaceEvidence(testCase, shape) {
+function pluginOwnedOptionVariantSurfaceEvidence(testCase, shape) {
   const resource = rowResource('wp_options', shape.rowId);
 
   return {
@@ -10141,15 +10262,15 @@ function pluginOwnedOptionVariant3SurfaceEvidence(testCase, shape) {
   };
 }
 
-function pluginOwnedOptionVariant3ReadyMutationEvidence({ testCase, plan, applied, shape }) {
+function pluginOwnedOptionVariantReadyMutationEvidence({ testCase, plan, applied, shape, label }) {
   const resource = rowResource('wp_options', shape.rowId);
   const mutation = plan.mutations.find((entry) => entry.resourceKey === resource.key);
   const precondition = plan.preconditions.find((entry) => entry.resourceKey === resource.key);
   const localHash = resourceHash(testCase.local, resource);
   const appliedHash = resourceHash(applied.site, resource);
 
-  assert.ok(mutation, `${testCase.id} should plan the variant 3 plugin-owned option mutation`);
-  assert.ok(precondition, `${testCase.id} should precondition the variant 3 plugin-owned option mutation`);
+  assert.ok(mutation, `${testCase.id} should plan the ${label} plugin-owned option mutation`);
+  assert.ok(precondition, `${testCase.id} should precondition the ${label} plugin-owned option mutation`);
   assert.equal(mutation.action, 'put');
   assert.equal(mutation.changeKind, 'update');
   assert.equal(mutation.pluginOwnedResource?.pluginOwner, 'forms');
@@ -10192,7 +10313,12 @@ function pluginOwnedOptionVariant3ReadyMutationEvidence({ testCase, plan, applie
   };
 }
 
-function pluginOwnedOptionVariant3ReadyStaleReplayEvidence({ testCase, plan, shape }) {
+function pluginOwnedOptionVariantReadyStaleReplayEvidence({
+  testCase,
+  plan,
+  shape,
+  staleReplayPrefix,
+}) {
   const resource = rowResource('wp_options', shape.rowId);
   const mutation = plan.mutations.find((entry) => entry.resourceKey === resource.key);
   const precondition = plan.preconditions.find((entry) => entry.resourceKey === resource.key);
@@ -10201,7 +10327,7 @@ function pluginOwnedOptionVariant3ReadyStaleReplayEvidence({ testCase, plan, sha
     ...shape.remoteRow,
     option_value: {
       mode: 'stale-replay',
-      value: `rpp0154-stale-replay-${testCase.tier}`,
+      value: `${staleReplayPrefix}-stale-replay-${testCase.tier}`,
     },
   };
 
@@ -10232,7 +10358,7 @@ function pluginOwnedOptionVariant3ReadyStaleReplayEvidence({ testCase, plan, sha
   };
 }
 
-function pluginOwnedOptionVariant3ConflictEvidence({ testCase, plan, shape }) {
+function pluginOwnedOptionVariantConflictEvidence({ testCase, plan, shape }) {
   const resource = rowResource('wp_options', shape.rowId);
   const mutation = plan.mutations.find((entry) => entry.resourceKey === resource.key);
   const conflict = plan.conflicts.find((entry) => entry.resourceKey === resource.key);
@@ -10262,7 +10388,7 @@ function pluginOwnedOptionVariant3ConflictEvidence({ testCase, plan, shape }) {
   };
 }
 
-function pluginOwnedOptionVariant3RefusalEvidence(testCase, plan) {
+function pluginOwnedOptionVariantRefusalEvidence(testCase, plan) {
   const remoteBefore = cloneJson(testCase.remote);
   const remoteBeforeHash = digest(remoteBefore);
   const error = captureError(() => applyPlan(remoteBefore, plan));
