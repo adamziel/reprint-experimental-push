@@ -6,19 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 15:05 CEST.
+- Last update: 2026-05-30 15:09 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0628 restart-readable staged-state v2 merge ending at `07c0fafc8`.
+  the RPP-0712 dry-run batch sizing merge ending at `92d28a1a0`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 461
-  items checked and leaves 539 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 462
+  items checked and leaves 538 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
   76 plugin-driver boundary items, 27 executor/auth items, 30 recovery items,
-  15 storage/performance items, 3 production-topology items, 78 generated
+  16 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Dry-run batch sizing benchmark: the current lane now contains `RPP-0712`
+  evidence in `docs/evidence/rpp-0712-dry-run-batch-sizing.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/bench/dry-run-batch-sizing.js`, and
+  `test/dry-run-batch-sizing.test.js`. The deterministic benchmark sizes
+  `push_plan_dry_run` validation batches without apply authority, carries one
+  expected storage hash per planned resource, requires all batch receipts before
+  issuing the final dry-run receipt, and records that dry-run batch/final
+  receipts are not locks and do not authorize apply. The focused unit profile
+  covers 62 planned resources, 62 preconditions, and 9 dry-run batches with
+  resource, byte, and precondition limits; projects stale-at-write behavior when
+  live storage changes after dry-run; and fails closed for invalid limits,
+  oversized resource envelopes, and missing precondition hashes before receipt
+  issuance. Validation passed with Node syntax checks, focused RPP-0712 coverage
+  5/5, the dry-run batch sizing CLI benchmark with 11 passing gates, adjacent
+  storage benchmark coverage 10/10, checklist lint, scoped artifact redaction
+  scan, and merge diff whitespace checks. Counts are now 462/538; final release
+  remains `NO-GO` because this is deterministic local dry-run batch sizing
+  evidence, not production storage receipt or row batch execution proof.
 - Restart-readable staged-state recovery v2: the current lane now contains
   `RPP-0628` evidence in
   `docs/evidence/rpp-0628-restart-readable-staged-state-v2.md`,
