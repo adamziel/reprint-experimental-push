@@ -1,18 +1,28 @@
-# AO Progress Report - 2026-05-30 11:33 CEST
+# AO Progress Report - 2026-05-30 11:37 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0375 nav menu item
-fail-closed graph proof ending at `143ff6d6`.
+`lane/evidence-integration-20260527` through the current RPP-0376
+`wp_navigation` fail-closed graph proof ending at `efe35247`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 415 are
-  checked from integrated evidence and 585 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 416 are
+  checked from integrated evidence and 584 remain open.
+- `RPP-0376` is now checked with focused fail-closed graph proof for
+  `wp_navigation` post-reference rewrites in
+  `docs/evidence/rpp-0376-wp-navigation-fail-closed-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0376-wp-navigation-fail-closed-reference-v4.test.js`. `node
+  --check` passed for the focused test, focused RPP-0376 coverage passed 2/2,
+  and the adjacent RPP-0316/RPP-0376 `wp_navigation` graph identity slice
+  passed 5/5. Checklist lint, scoped artifact redaction scan, checklist
+  redaction guard coverage, and merge diff whitespace checks also passed. This
+  remains local graph support evidence, not production endpoint proof.
 - `RPP-0375` is now checked with focused fail-closed graph proof for
   unsupported nav menu item and `nav_menu` taxonomy references in
   `docs/evidence/rpp-0375-nav-menu-item-fail-closed-reference-v4.md`,

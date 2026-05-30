@@ -6,20 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 11:33 CEST.
+- Last update: 2026-05-30 11:37 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0375 nav menu item fail-closed graph proof merge ending at
-  `143ff6d6`.
+  the RPP-0376 `wp_navigation` fail-closed graph proof merge ending at
+  `efe35247`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 415
-  items checked and leaves 585 open.
-- Checked slices: 100 release-gate foundation items, 32 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 416
+  items checked and leaves 584 open.
+- Checked slices: 100 release-gate foundation items, 33 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- `wp_navigation` fail-closed graph proof: the current lane now contains
+  `RPP-0376` evidence in
+  `docs/evidence/rpp-0376-wp-navigation-fail-closed-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0376-wp-navigation-fail-closed-reference-v4.test.js`. `node
+  --check` passed for the focused test, focused RPP-0376 coverage passed 2/2,
+  and adjacent RPP-0316/RPP-0376 `wp_navigation` graph identity coverage passed
+  5/5. Checklist lint, scoped artifact redaction scan, checklist/redaction
+  guard tests, and merge diff whitespace checks also passed. Counts are now
+  416/584; final release remains `NO-GO`.
 - Nav menu item fail-closed graph proof: the current lane now contains
   `RPP-0375` evidence in
   `docs/evidence/rpp-0375-nav-menu-item-fail-closed-reference-v4.md`,
