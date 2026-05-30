@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T12:54:00+02:00">Last updated: May 30, 2026, 12:54 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T12:58:00+02:00">Last updated: May 30, 2026, 12:58 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>433</strong>
+        <strong>434</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>567</strong>
+        <strong>566</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, old-remote, new-remote, and blocked partial-remote classification, same-key rejected replay, different-body idempotency conflict, retry hardening, ownership-record restart readback, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, old-remote, new-remote, and blocked partial-remote classification, same-key rejected replay, different-body idempotency conflict, before-mutation process-kill readback, retry hardening, ownership-record restart readback, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0616</span>
+        <span>RPP-0617</span>
       </div>
-      <p>The latest refresh integrates RPP-0616 different-body idempotency conflict evidence: the durable recovery release proof now requires distinct original and conflicting request hashes, no fresh mutation work, unchanged target state, no mutation events after the conflict, and a database-backed restart-readable fully-updated recovery state. Counts are now 433/567; final release remains NO-GO because this is local SQLite/release-verifier evidence, not external production durability proof.</p>
+      <p>The latest refresh integrates RPP-0617 process-kill-before-first-mutation evidence: a lab-only apply delay now opens the crash window after the DB journal writes `apply-started` and before any mutation callback, and the focused proof kills the local Playground process, restarts the same mount, and verifies durable DB rows plus all-old target hashes. Counts are now 434/566; final release remains NO-GO because this is local Playground crash/restart evidence, not external production durability proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0617 hard kill: 1/1</span>
+        <span class="tag">recovery journal: 28/28</span>
+        <span class="tag">file-journal smoke: pass</span>
+        <span class="tag">PHP and Node syntax: pass</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0616/proof/recovery: 163 tests</span>
         <span class="tag">152 pass / 11 skipped</span>
         <span class="tag">SQLite restart readback: pass</span>
