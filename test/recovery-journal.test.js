@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import {
   appendJournalCompleted,
   appendRecoveryClaimOpened,
@@ -53,6 +53,10 @@ function tempSqlitePath() {
   return path.join(dir, 'recovery.sqlite');
 }
 
+function tempRecoveryDir(prefix = 'reprint-recovery-journal-') {
+  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+}
+
 function baseSite() {
   const files = {};
   for (let index = 1; index <= 8; index++) {
@@ -81,6 +85,57 @@ function applyFirstMutations(site, plan, count) {
   for (const mutation of plan.mutations.slice(0, count)) {
     setResource(site, mutation.resource, deserializeResourceValue(mutation.value));
   }
+}
+
+function journalEventTypes(records) {
+  return records.map((record) => record.type);
+}
+
+function waitForFile(filePath, { timeoutMs = 5000 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  return new Promise((resolve, reject) => {
+    const poll = () => {
+      if (fs.existsSync(filePath)) {
+        resolve(fs.readFileSync(filePath, 'utf8'));
+        return;
+      }
+      if (Date.now() >= deadline) {
+        reject(new Error(`Timed out waiting for ${filePath}`));
+        return;
+      }
+      setTimeout(poll, 25);
+    };
+    poll();
+  });
+}
+
+function waitForChildExit(child, { timeoutMs = 5000 } = {}) {
+  return new Promise((resolve, reject) => {
+    if (child.exitCode !== null || child.signalCode !== null) {
+      resolve({ code: child.exitCode, signal: child.signalCode });
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      child.off('exit', onExit);
+      reject(new Error(`Timed out waiting for child process ${child.pid} to exit`));
+    }, timeoutMs);
+
+    function onExit(code, signal) {
+      clearTimeout(timer);
+      resolve({ code, signal });
+    }
+
+    child.once('exit', onExit);
+  });
+}
+
+async function killChildIfRunning(child, signal = 'SIGKILL') {
+  if (!child || child.exitCode !== null || child.signalCode !== null) {
+    return { code: child?.exitCode ?? null, signal: child?.signalCode ?? null };
+  }
+  child.kill(signal);
+  return waitForChildExit(child, { timeoutMs: 5000 });
 }
 
 function withoutSchemaVersion(record) {
@@ -317,6 +372,218 @@ test('file-backed journal open state survives process restart readback', () => {
   });
   assert.equal(inspection.status, 'old-remote');
   assert.equal(inspection.journal.openState.restartReadable, true);
+});
+
+test('RPP-0637 process kill before mutation set retries exactly once', { timeout: 20_000 }, async (t) => {
+  const workDir = tempRecoveryDir('reprint-rpp-0637-before-mutation-');
+  fs.chmodSync(workDir, 0o700);
+  const filePath = path.join(workDir, 'recovery.jsonl');
+  const markerPath = path.join(workDir, 'before-mutation-marker.json');
+  const claimId = 'rpp-0637-before-mutation-claim';
+  const remote = baseSite();
+  const local = localSite();
+  const plan = planFor(baseSite(), local, remote);
+  const recoveryJournalModule = new URL('../src/recovery-journal.js', import.meta.url).href;
+  const plannerModule = new URL('../src/planner.js', import.meta.url).href;
+  const applyModule = new URL('../src/apply.js', import.meta.url).href;
+  const stableJsonModule = new URL('../src/stable-json.js', import.meta.url).href;
+  const childScript = `
+    import fs from 'node:fs';
+    import {
+      appendRecoveryClaimOpened,
+      openRecoveryJournal,
+    } from ${JSON.stringify(recoveryJournalModule)};
+    import { createPushPlan } from ${JSON.stringify(plannerModule)};
+    import { applyPlan } from ${JSON.stringify(applyModule)};
+    import { digest } from ${JSON.stringify(stableJsonModule)};
+
+    const fixedNow = new Date('2026-05-24T00:00:00.000Z');
+    const filePath = process.env.RPP0637_JOURNAL_PATH;
+    const markerPath = process.env.RPP0637_MARKER_PATH;
+    const claimId = process.env.RPP0637_CLAIM_ID;
+    const base = JSON.parse(process.env.RPP0637_BASE_SITE);
+    const local = JSON.parse(process.env.RPP0637_LOCAL_SITE);
+    const remote = JSON.parse(process.env.RPP0637_REMOTE_SITE);
+    const plan = createPushPlan({ base, local, remote, now: fixedNow });
+    const durableJournal = openRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId,
+    });
+    appendRecoveryClaimOpened(durableJournal, {
+      plan,
+      current: remote,
+      claimId,
+      artifactRefs: { processKill: 'artifact://rpp-0637-before-mutation' },
+      reason: 'RPP-0637 process-kill proof opened a claim before the retry window.',
+    });
+    durableJournal.claimOpened = true;
+
+    try {
+      applyPlan(remote, plan, {
+        durableJournal,
+        mutateRemote: true,
+        beforeMutation({ mutationIndex, mutation, remote: currentRemote }) {
+          if (mutationIndex !== 1) {
+            return;
+          }
+          fs.writeFileSync(markerPath, JSON.stringify({
+            boundary: 'before-first-mutation',
+            mutationIndex,
+            mutationId: mutation.id,
+            resourceKey: mutation.resourceKey,
+            planId: plan.id,
+            mutationCount: plan.mutations.length,
+            remoteHashBeforeMutation: digest(currentRemote),
+          }) + '\\n');
+          const killGate = new Int32Array(new SharedArrayBuffer(4));
+          Atomics.wait(killGate, 0, 0);
+        },
+      });
+      fs.writeFileSync(markerPath + '.unexpected-success', 'apply unexpectedly completed before kill\\n');
+      process.exit(3);
+    } catch (error) {
+      fs.writeFileSync(markerPath + '.unexpected-error', (error?.stack || String(error)) + '\\n');
+      process.exit(2);
+    }
+  `;
+  const logs = [];
+  let child = spawn(process.execPath, ['--input-type=module', '-e', childScript], {
+    env: {
+      ...process.env,
+      RPP0637_JOURNAL_PATH: filePath,
+      RPP0637_MARKER_PATH: markerPath,
+      RPP0637_CLAIM_ID: claimId,
+      RPP0637_BASE_SITE: JSON.stringify(baseSite()),
+      RPP0637_LOCAL_SITE: JSON.stringify(local),
+      RPP0637_REMOTE_SITE: JSON.stringify(remote),
+    },
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  child.stdout.setEncoding('utf8');
+  child.stderr.setEncoding('utf8');
+  child.stdout.on('data', (chunk) => logs.push(chunk));
+  child.stderr.on('data', (chunk) => logs.push(chunk));
+  t.after(async () => {
+    await killChildIfRunning(child).catch(() => {});
+  });
+
+  const markerText = await waitForFile(markerPath, { timeoutMs: 5000 }).catch(async (error) => {
+    await killChildIfRunning(child).catch(() => {});
+    throw new Error(`${error.message}\nchild output:\n${logs.join('')}`);
+  });
+  const marker = JSON.parse(markerText);
+  assert.equal(marker.boundary, 'before-first-mutation');
+  assert.equal(marker.mutationIndex, 1);
+  assert.equal(marker.planId, plan.id);
+  assert.equal(marker.mutationCount, plan.mutations.length);
+  assert.equal(marker.remoteHashBeforeMutation, digest(remote));
+
+  const preKillJournal = readRecoveryJournal(filePath);
+  assert.equal(preKillJournal.integrity.status, 'ok');
+  assert.deepEqual(
+    journalEventTypes(preKillJournal.records),
+    [
+      'recovery-claim-opened',
+      'journal-opened',
+      ...Array.from({ length: plan.mutations.length }, () => 'target-planned'),
+      'apply-staged',
+      'dependencies-validated',
+      'apply-committing',
+    ],
+  );
+  assert.equal(preKillJournal.records.filter((record) => record.type === 'mutation-observed').length, 0);
+  assert.equal(preKillJournal.records.filter((record) => record.type === 'journal-completed').length, 0);
+  assert.ok(preKillJournal.records.every((record) => record.fsync.requested === true));
+
+  const killed = await killChildIfRunning(child, 'SIGKILL');
+  assert.equal(killed.signal, 'SIGKILL');
+  assert.equal(fs.existsSync(`${markerPath}.unexpected-success`), false);
+  assert.equal(fs.existsSync(`${markerPath}.unexpected-error`), false);
+
+  const restarted = readRecoveryJournal(filePath);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.deepEqual(
+    restarted.records.map((record) => record.sequence),
+    preKillJournal.records.map((record) => record.sequence),
+  );
+  const restartedClaim = restarted.records.find((record) => record.type === 'recovery-claim-opened');
+  assert.ok(restartedClaim);
+  assert.equal(restartedClaim.claimId, claimId);
+  assert.equal(restartedClaim.claimHash, recoveryClaimHash(claimId));
+  assert.equal(restarted.openState.restartReadable, true);
+  assert.equal(restarted.stagedState.restartReadable, true);
+  assert.equal(restarted.committedState.restartReadable, false);
+
+  const restartInspection = inspectRecoveryJournal({ journal: restarted, plan, current: remote });
+  assert.equal(restartInspection.status, 'old-remote');
+  assert.deepEqual(restartInspection.counts, {
+    old: plan.mutations.length,
+    new: 0,
+    blockedUnknown: 0,
+  });
+
+  const retryRemote = clone(remote);
+  const beforeRetry = inspectRecoveryRepair({ journalPath: filePath, plan, current: retryRemote });
+  assert.equal(beforeRetry.status, 'old-remote-replayable');
+  assert.equal(beforeRetry.canRollForward, true);
+  assert.deepEqual(beforeRetry.counts, {
+    old: plan.mutations.length,
+    new: 0,
+    unknown: 0,
+    total: plan.mutations.length,
+  });
+
+  const writes = [];
+  const retry = replayRecoveryRepair({
+    journalPath: filePath,
+    plan,
+    current: retryRemote,
+    mutateCurrent: true,
+    writeResource(site, resource, value, context) {
+      writes.push({
+        mutationId: context.mutation.id,
+        resourceKey: context.target.resourceKey,
+        repairAction: context.repairAction,
+      });
+      setResource(site, resource, value);
+    },
+  });
+
+  assert.equal(retry.status, 'replayed');
+  assert.equal(retry.appliedMutations, plan.mutations.length);
+  assert.equal(writes.length, plan.mutations.length);
+  assert.deepEqual(
+    writes.map((write) => write.mutationId),
+    plan.mutations.map((mutation) => mutation.id),
+  );
+  assert.equal(new Set(writes.map((write) => write.mutationId)).size, plan.mutations.length);
+  assert.equal(digest(retryRemote), digest(local));
+  assert.equal(retry.after.status, 'fully-updated-remote');
+  assert.equal(retry.after.canMarkRepaired, true);
+
+  const duplicateWrites = [];
+  assert.throws(
+    () => replayRecoveryRepair({
+      journalPath: filePath,
+      plan,
+      current: retryRemote,
+      mutateCurrent: true,
+      writeResource(site, resource, value, context) {
+        duplicateWrites.push(context.mutation.id);
+        setResource(site, resource, value);
+      },
+    }),
+    (error) => {
+      assert.equal(error.code, 'RECOVERY_REPAIR_ALREADY_COMPLETE');
+      return true;
+    },
+  );
+  assert.deepEqual(duplicateWrites, []);
+  assert.equal(fs.readFileSync(filePath, 'utf8').includes('local-private-content'), false);
+  assert.equal(fs.readFileSync(filePath, 'utf8').includes('base-private-content'), false);
 });
 
 test('file-backed journal staged state survives restart and retry preserves remote-only changes', () => {
