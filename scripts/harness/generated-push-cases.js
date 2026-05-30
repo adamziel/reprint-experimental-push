@@ -275,6 +275,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-term-relationships-graph',
     tag: 'wp-term-relationships-graph-target',
   },
+  wpTermRelationshipsGraphVariant3: {
+    family: 'wp-term-relationships-graph-variant3',
+    tag: 'wp-term-relationships-graph-v3',
+  },
   atomicPluginInstallStack: {
     family: 'atomic-plugin-stack-ready',
     tag: 'atomic-plugin-install-stack-v3',
@@ -3152,11 +3156,14 @@ function addWpTermRelationshipsGraph(base, local, remote, allocator, tags, { sta
       count: 2,
     });
     tags.add('wp-term-relationships-graph-stale');
+    tags.add('wp-term-relationships-graph-v3-stale');
+    tags.add('wp-term-relationships-graph-v3-non-ready');
     tags.add('wp-term-relationships-remote-drift');
   } else {
     setRow(local, 'wp_terms', termRowId, term);
     setRow(local, 'wp_term_taxonomy', taxonomyRowId, taxonomy);
     tags.add('wp-term-relationships-graph-ready');
+    tags.add('wp-term-relationships-graph-v3-ready');
   }
 
   setRow(local, 'wp_term_relationships', relationshipRowId, {
@@ -3170,6 +3177,7 @@ function addWpTermRelationshipsGraph(base, local, remote, allocator, tags, { sta
   tags.add('remote-preserve');
   tags.add('wp-term-relationships-graph');
   tags.add('wp-term-relationships-graph-target');
+  tags.add('wp-term-relationships-graph-v3');
   tags.add('wp-term-relationships-create');
   tags.add('term-relationship-object-graph');
   tags.add('term-relationship-taxonomy-graph');
