@@ -63,6 +63,7 @@ export function inspectRecoveryJournal({ journal, journalPath, plan, current, jo
 
   return {
     status,
+    remoteClassification: recoveryRemoteClassification({ status, counts, total: targets.length }),
     reason: reasonForStatus(status, counts, targets.length),
     planId: plan.id,
     counts,
@@ -119,11 +120,17 @@ function classifyMutationTarget({ mutation, target, current }) {
 function blockedInspection({ plan, persisted, reason }) {
   const targets = (plan.mutations || []).map((mutation) =>
     unknownTarget(mutation, 'journal-integrity-blocked', reason));
+  const counts = countTargets(targets);
   return {
     status: 'blocked-recovery',
+    remoteClassification: recoveryRemoteClassification({
+      status: 'blocked-recovery',
+      counts,
+      total: targets.length,
+    }),
     reason,
     planId: plan.id,
-    counts: countTargets(targets),
+    counts,
     targets,
     claim: classifyRecoveryJournalClaims(persisted.records),
     journal: persisted,
@@ -178,6 +185,32 @@ function reasonForStatus(status, counts, total) {
     return 'At least one planned target cannot be classified from the persisted journal.';
   }
   return `Remote is partially updated: ${counts.new} new and ${counts.old} old of ${total} planned targets.`;
+}
+
+function recoveryRemoteClassification({ status, counts, total }) {
+  const allTargetsAccountedFor = counts.old + counts.new + counts.blockedUnknown === total;
+  if (status === 'fully-updated-remote') {
+    return {
+      state: 'new-remote',
+      status,
+      evidence: 'hash-only-before-after-target-envelope',
+      allTargetsAccountedFor,
+    };
+  }
+  if (status === 'old-remote') {
+    return {
+      state: 'old-remote',
+      status,
+      evidence: 'hash-only-before-after-target-envelope',
+      allTargetsAccountedFor,
+    };
+  }
+  return {
+    state: 'blocked-recovery',
+    status,
+    evidence: 'hash-only-before-after-target-envelope',
+    allTargetsAccountedFor,
+  };
 }
 
 function withIntegrityErrors(persisted, errors) {
