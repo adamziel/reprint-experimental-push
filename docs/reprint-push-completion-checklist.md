@@ -410,7 +410,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [x] RPP-0381 (Mid / graph-identity) Carry through the release verifier for post_parent page hierarchy, variant 5. Success: mapper rewrites or proves stable identity for the target.
 - [x] RPP-0382 (Mid / graph-identity) Carry through the release verifier for featured image attachment reference, variant 5. Success: unsupported target fails closed with hash-only evidence.
 - [x] RPP-0383 (Mid / graph-identity) Carry through the release verifier for post author reference, variant 5. Success: generated harness includes ready and stale cases.
-- [ ] RPP-0384 (Mid / graph-identity) Carry through the release verifier for postmeta post_id reference, variant 5. Success: local production verifier carries the target through apply.
+- [x] RPP-0384 (Mid / graph-identity) Carry through the release verifier for postmeta post_id reference, variant 5. Success: local production verifier carries the target through apply.
 - [ ] RPP-0385 (Mid / graph-identity) Carry through the release verifier for comment post reference, variant 5. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0386 (Mid / graph-identity) Carry through the release verifier for comment parent thread reference, variant 5. Success: mapper rewrites or proves stable identity for the target.
 - [ ] RPP-0387 (Mid / graph-identity) Carry through the release verifier for comment user reference, variant 5. Success: unsupported target fails closed with hash-only evidence.
