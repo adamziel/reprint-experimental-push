@@ -8042,6 +8042,69 @@ test('RPP-0137 stale remote after dry-run variant 2 proves hash-only per-tier re
   assert.equal(evidenceText.includes('remote-private'), false, 'variant 2 evidence leaked generated remote payload');
 });
 
+test('RPP-0157 stale remote after dry-run variant 3 exposes per-tier hash-only replay refusals', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.staleRemoteAfterDryRunVariant3;
+  const legacyCoverage = report.summary.targetCoverage.staleRemoteAfterDryRun;
+
+  assert.ok(coverage, 'missing stale remote after dry-run variant 3 target coverage');
+  assert.ok(legacyCoverage, 'missing stale remote after dry-run legacy target coverage');
+
+  const firstEvidence = generatedStaleRemoteAfterDryRunVariant3Evidence(coverage);
+  const replayEvidence = generatedStaleRemoteAfterDryRunVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0157 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.equal(coverage.family, 'ready-plan-stale-remote-after-dry-run-variant3');
+  assert.equal(coverage.total, legacyCoverage.total);
+  assert.deepEqual(coverage.perTier, legacyCoverage.perTier);
+  assert.deepEqual(coverage.statuses, legacyCoverage.statuses);
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 3 stale replay evidence changed between runs');
+  assert.equal(firstEvidence.target, 'staleRemoteAfterDryRunVariant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    Object.keys(firstEvidence.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.tier),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(firstEvidence.selectedCases.length, 10, 'variant 3 evidence should select one replay refusal per tier');
+  assert.equal(
+    Object.values(firstEvidence.perTier).reduce((sum, count) => sum + count, 0),
+    firstEvidence.totalCases,
+  );
+
+  for (const entry of firstEvidence.selectedCases) {
+    assert.equal(entry.status, 'ready', `${entry.id} should be a ready stale replay target`);
+    assert.ok(entry.staleReplay.mutationCount > 1, `${entry.id} should prove a non-leading mutation precondition`);
+    assert.equal(entry.staleReplay.mutationIndex, entry.staleReplay.mutationCount - 1);
+    assert.equal(entry.staleReplay.code, 'PRECONDITION_FAILED');
+    assert.equal(entry.staleReplay.remoteBeforeHash, entry.staleReplay.remoteAfterHash);
+    assert.equal(entry.staleReplay.expectedHash, entry.staleReplay.mutationRemoteBeforeHash);
+    assert.notEqual(entry.staleReplay.actualHash, entry.staleReplay.expectedHash);
+    assert.match(entry.staleReplay.detailsHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.staleReplay.plannedValueHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.staleReplay.preconditionHash, /^sha256:[a-f0-9]{64}$/);
+  }
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('stale-private-rpp0157'), false, 'variant 3 evidence leaked stale replay payload');
+  assert.equal(evidenceText.includes('local-private'), false, 'variant 3 evidence leaked generated local payload');
+  assert.equal(evidenceText.includes('remote-private'), false, 'variant 3 evidence leaked generated remote payload');
+});
+
 
 test('RPP-0114/RPP-0134 plugin-owned option target exposes ready, conflict, and redacted coverage', () => {
   const report = runGeneratedPushHarness();
@@ -10635,6 +10698,150 @@ function generatedStaleRemoteAfterDryRunCaseEvidence(testCase, result) {
       remoteBeforeHash,
       remoteAfterHash,
     },
+  };
+}
+
+function generatedStaleRemoteAfterDryRunVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedByTier = new Map();
+
+  for (const testCase of generatePushHarnessCases()) {
+    const result = validateGeneratedCase(testCase);
+    const targetMatch = result.status === 'ready'
+      && result.staleReplayRejected === true
+      && result.staleReplayRejectionCode === 'PRECONDITION_FAILED'
+      && result.staleReplayRemoteUnchanged === true;
+
+    if (!targetMatch) {
+      continue;
+    }
+
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+
+    if (!selectedByTier.has(testCase.tier)) {
+      selectedByTier.set(
+        testCase.tier,
+        generatedStaleRemoteAfterDryRunVariant3CaseEvidence(testCase, result),
+      );
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+  const totalCases = Object.values(sortedPerTier).reduce((sum, count) => sum + count, 0);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'variant 3 target recount should match summary total');
+
+  return {
+    target: 'staleRemoteAfterDryRunVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [...selectedByTier.values()].sort((left, right) => left.tier - right.tier),
+  };
+}
+
+function generatedStaleRemoteAfterDryRunVariant3CaseEvidence(testCase, result) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const mutationIndex = plan.mutations.length - 1;
+  const mutation = plan.mutations[mutationIndex];
+  const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation?.id);
+  const staleRemote = cloneJson(testCase.remote);
+  const stalePayload = `stale-private-rpp0157-${testCase.tier}-${mutation.id}`;
+  const plannedValue = deserializeResourceValue(mutation.value);
+
+  assert.equal(plan.status, 'ready', `${testCase.id} should be ready for variant 3 stale replay evidence`);
+  assert.ok(plan.mutations.length > 1, `${testCase.id} should prove non-leading mutation precondition refusal`);
+  assert.ok(mutation, `${testCase.id} should have a planned mutation to drift after dry-run`);
+  assert.ok(precondition, `${testCase.id} should have a live-remote precondition for ${mutation.resourceKey}`);
+  assert.equal(precondition.resourceKey, mutation.resourceKey);
+  assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+  assert.equal(resourceHash(staleRemote, mutation.resource), precondition.expectedHash);
+
+  setResource(
+    staleRemote,
+    mutation.resource,
+    rpp0157StaleRemoteValue(mutation.resource, getResource(staleRemote, mutation.resource), stalePayload),
+  );
+  const staleResourceHash = resourceHash(staleRemote, mutation.resource);
+  const remoteBeforeHash = digest(staleRemote);
+  const error = captureError(() => applyPlan(staleRemote, plan));
+  const remoteAfterHash = digest(staleRemote);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(error.details.resourceKey, mutation.resourceKey);
+  assert.equal(error.details.expectedHash, precondition.expectedHash);
+  assert.equal(error.details.actualHash, staleResourceHash);
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} variant 3 stale replay mutated remote before refusal`);
+  assert.equal(result.status, 'ready');
+  assert.equal(result.staleReplayRejected, true);
+  assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(result.staleReplayRemoteUnchanged, true);
+
+  return {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    summary: plan.summary,
+    staleReplay: {
+      mutationId: mutation.id,
+      mutationIndex,
+      mutationCount: plan.mutations.length,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      code: error.code,
+      expectedHash: error.details.expectedHash,
+      actualHash: error.details.actualHash,
+      mutationRemoteBeforeHash: mutation.remoteBeforeHash,
+      plannedValueHash: `sha256:${digest(plannedValue)}`,
+      preconditionHash: `sha256:${digest(precondition)}`,
+      detailsHash: `sha256:${digest(error.details)}`,
+      remoteBeforeHash,
+      remoteAfterHash,
+    },
+  };
+}
+
+function rpp0157StaleRemoteValue(resource, currentValue, stalePayload) {
+  if (resource.type === 'file') {
+    return currentValue === ABSENT
+      ? stalePayload
+      : { type: 'file', content: stalePayload };
+  }
+
+  if (resource.type === 'plugin') {
+    return {
+      ...(currentValue === ABSENT ? {} : currentValue),
+      version: stalePayload,
+    };
+  }
+
+  if (currentValue && currentValue !== ABSENT && typeof currentValue === 'object' && !Array.isArray(currentValue)) {
+    return {
+      ...currentValue,
+      __rpp0157StaleRemoteAfterDryRun: stalePayload,
+    };
+  }
+
+  return {
+    value: currentValue === ABSENT ? 'absent-before-dry-run-v3' : currentValue,
+    __rpp0157StaleRemoteAfterDryRun: stalePayload,
   };
 }
 

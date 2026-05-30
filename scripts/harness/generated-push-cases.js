@@ -322,6 +322,13 @@ const targetCoverageDefinitions = Object.freeze({
       && result.staleReplayRejectionCode === 'PRECONDITION_FAILED'
       && result.staleReplayRemoteUnchanged === true,
   },
+  staleRemoteAfterDryRunVariant3: {
+    family: 'ready-plan-stale-remote-after-dry-run-variant3',
+    matches: (_testCase, result) => result.status === 'ready'
+      && result.staleReplayRejected === true
+      && result.staleReplayRejectionCode === 'PRECONDITION_FAILED'
+      && result.staleReplayRemoteUnchanged === true,
+  },
   postAuthorGraph: {
     family: 'same-plan-post-author-graph',
     tag: 'post-author-graph',
