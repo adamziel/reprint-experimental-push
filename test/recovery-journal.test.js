@@ -110,6 +110,22 @@ function writeLegacySqliteJournalTable(database, records, tableName = 'recovery_
   return legacyRecords;
 }
 
+function writePartiallyMigratedSqliteJournalTable(database, records, tableName = 'recovery_journal') {
+  database.exec(`CREATE TABLE ${tableName} (
+    sequence INTEGER PRIMARY KEY,
+    schema_version INTEGER NOT NULL DEFAULT 1,
+    record_json TEXT NOT NULL
+  )`);
+  const insert = database.prepare(
+    `INSERT INTO ${tableName} (sequence, schema_version, record_json) VALUES (?, ?, ?)`,
+  );
+  const legacyRecords = records.map(withoutSchemaVersion);
+  for (const record of legacyRecords) {
+    insert.run(record.sequence, 1, JSON.stringify(record));
+  }
+  return legacyRecords;
+}
+
 function buildRecoveryReleaseSummary({ inspection, plan, mutationEvents, oldRemoteRecovery = null }) {
   const originalRequestHash = '8'.repeat(64);
   const conflictingRequestHash = '9'.repeat(64);
@@ -744,6 +760,104 @@ test('SQLite-backed journal table schema migration preserves rows and remains re
     unsupported.integrity.errors.some((error) => error.code === 'JOURNAL_TABLE_SCHEMA_UNSUPPORTED'),
     true,
   );
+  database.close();
+});
+
+test('RPP-0621 SQLite-backed journal table schema migration v2 preserves partial recovery state', {
+  skip: DatabaseSync === null ? 'node:sqlite is unavailable in this Node.js runtime' : false,
+}, () => {
+  const sqlitePath = tempSqlitePath();
+  const seedFilePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const partiallyUpdated = clone(remote);
+  const seedJournal = openPlanRecoveryJournal({
+    filePath: seedFilePath,
+    plan,
+    current: remote,
+    now: fixedNow,
+  });
+  applyFirstMutations(partiallyUpdated, plan, 3);
+  for (const mutation of plan.mutations.slice(0, 3)) {
+    appendMutationObserved(seedJournal, {
+      plan,
+      mutation,
+      current: partiallyUpdated,
+      state: 'applied',
+    });
+  }
+  seedJournal.close();
+
+  const currentRows = readRecoveryJournal(seedFilePath).records;
+  let database = new DatabaseSync(sqlitePath);
+  const legacyRows = writePartiallyMigratedSqliteJournalTable(database, currentRows);
+  const strictLegacyRead = readSqliteRecoveryJournalTable(database);
+
+  assert.equal(strictLegacyRead.integrity.status, 'blocked');
+  assert.equal(strictLegacyRead.schemaVersionColumnPresent, true);
+  assert.deepEqual(strictLegacyRead.tableSchemaVersions, [1]);
+  assert.equal(
+    strictLegacyRead.integrity.errors.some((error) => error.code === 'JOURNAL_SCHEMA_UNSUPPORTED'),
+    true,
+  );
+  assert.equal(
+    strictLegacyRead.integrity.errors.some((error) => error.code === 'JOURNAL_TABLE_SCHEMA_VERSION_MISSING'),
+    false,
+  );
+
+  const migration = migrateSqliteRecoveryJournalTableSchema(database);
+
+  assert.equal(migration.storage, 'sqlite');
+  assert.equal(migration.tableName, 'recovery_journal');
+  assert.equal(migration.schemaVersion, 1);
+  assert.equal(migration.tableSchemaVersion, 1);
+  assert.deepEqual(migration.tableSchemaVersions, [1]);
+  assert.deepEqual(migration.recordSchemaVersions, [1]);
+  assert.equal(migration.migrated, true);
+  assert.equal(migration.schemaVersionColumnAdded, false);
+  assert.equal(migration.records, legacyRows.length);
+  assert.equal(migration.migratedRecords, legacyRows.length);
+  assert.equal(migration.updatedTableRows, legacyRows.length);
+  assert.equal(migration.preservedRows, true);
+  assert.equal(migration.restartReadable, true);
+  assert.equal(migration.integrity.status, 'ok');
+  assert.equal(migration.journal.committedState.status, 'committed');
+  assert.equal(migration.journal.committedState.restartReadable, true);
+  assert.equal(migration.journal.committedState.mutationRows, 3);
+
+  database.close();
+  database = new DatabaseSync(sqlitePath);
+  const restarted = readSqliteRecoveryJournalTable(database);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.schemaVersionColumnPresent, true);
+  assert.deepEqual(restarted.tableSchemaVersions, [1]);
+  assert.deepEqual(restarted.recordSchemaVersions, [1]);
+  assert.deepEqual(
+    restarted.records.map((record) => record.sequence),
+    Array.from({ length: legacyRows.length }, (_, index) => index + 1),
+  );
+  assert.ok(restarted.records.every((record) => record.schemaVersion === 1));
+  assert.deepEqual(restarted.records.map(withoutSchemaVersion), legacyRows);
+  assert.equal(restarted.committedState.status, 'committed');
+  assert.equal(restarted.committedState.restartReadable, true);
+  assert.equal(restarted.committedState.mutationRows, 3);
+  assert.equal(restarted.committedState.committedTargetRows, 3);
+  assert.deepEqual(restarted.committedState.targetEnvelope, {
+    plannedTargets: plan.mutations.length,
+    committedTargets: 3,
+    allCommittedTargetsHaveHashes: true,
+    allTargetsCommitted: false,
+  });
+
+  const inspection = inspectRecoveryJournal({
+    journal: restarted,
+    plan,
+    current: partiallyUpdated,
+  });
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.deepEqual(inspection.counts, { old: 5, new: 3, blockedUnknown: 0 });
+  assert.match(inspection.reason, /partially updated/);
+
   database.close();
 });
 

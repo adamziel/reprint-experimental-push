@@ -662,7 +662,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [x] RPP-0618 (Far / recovery) Implement process kill mid mutation set, variant 1. Success: retry does not overwrite preserved remote changes.
 - [x] RPP-0619 (Far / recovery) Implement missing commit finalization, variant 1. Success: lease owner identity is visible in audit evidence.
 - [x] RPP-0620 (Far / recovery) Implement manual recovery audit export, variant 1. Success: release verifier reports the recovery gate as proven on the same path.
-- [ ] RPP-0621 (Far / recovery) Prove journal table schema migration, variant 2. Success: MySQL or SQLite-backed test proves the recovery state.
+- [x] RPP-0621 (Far / recovery) Prove journal table schema migration, variant 2. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0622 (Far / recovery) Prove journal ownership record, variant 2. Success: journal rows are durable after process restart.
 - [x] RPP-0623 (Far / recovery) Prove single-writer lease claim, variant 2. Success: retry does not overwrite preserved remote changes.
 - [x] RPP-0624 (Far / recovery) Prove stale claim rejection, variant 2. Success: lease owner identity is visible in audit evidence.
