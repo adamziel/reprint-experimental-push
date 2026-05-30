@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:33 CEST.
+- Last update: 2026-05-30 04:40 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0465 wp_postmeta driver semantics proof merge ending at `acfcd32fe`.
+  the RPP-0155 plugin-owned custom-table variant-3 proof merge ending at
+  `c713dbb2f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 327
-  items checked and leaves 673 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 328
+  items checked and leaves 672 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   53 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 55 generated
+  11 storage/performance items, 3 production-topology items, 56 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Generated plugin-owned custom-table variant-3 refresh: the current lane now
+  contains `RPP-0155` evidence in
+  `docs/evidence/rpp-0155-plugin-owned-custom-table-changes-v3.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  scripts/harness/generated-push-cases.js`, `node --check
+  test/generated-push-harness.test.js`, the focused `RPP-0155` test, the
+  `generated push harness covers|RPP-0155` pattern, and the
+  `RPP-0115|RPP-0135|RPP-0155` adjacent custom-table slice all exited 0, and
+  `npm run test:generated-push-harness` passed 63/63. The proof exposes 10
+  deterministic variant-3 plugin-owned custom-table cases across all tiers,
+  verifies ready apply, remote-only preservation, stale replay refusal, conflict
+  refusal, and hash-only row/evidence metadata. Checklist lint, artifact
+  redaction scan, and `git diff --check` also passed. Counts are now 328/672;
+  final release remains `NO-GO`.
 - Focused wp_postmeta driver semantics variant-4 refresh: the current lane now
   contains `RPP-0465` evidence in
   `docs/evidence/rpp-0465-wp-postmeta-driver-semantics-v4.md`,
