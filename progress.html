@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T13:40:00+02:00">Last updated: May 30, 2026, 13:40 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T13:46:00+02:00">Last updated: May 30, 2026, 13:46 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>443</strong>
+        <strong>444</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>557</strong>
+        <strong>556</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, manage_options, production-shaped preflight and snapshot-hashes route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, credential rotation, manage_options, production-shaped preflight and snapshot-hashes route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,14 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0627</span>
+        <span>RPP-0519</span>
       </div>
-      <p>The latest refresh integrates RPP-0627 restart-readable open-state v2 evidence: the production recovery journal wrapper now proves an opened journal survives process restart, can be reopened with the same claim as an append-only retry, preserves monotonic rows and fsync evidence, and reports the same production inspection openState that restart inspection classifies as old-remote. Counts are now 443/557; final release remains NO-GO because this is local file-backed recovery-journal evidence, not external production crash or restart proof.</p>
+      <p>The latest refresh integrates RPP-0519 credential rotation behavior evidence: the production-shaped local Playground route now binds short-lived sessions and dry-run receipts to the credential hash, signing-key hash, authenticated user identity, scope, and source hashes before mutation admission. Invalid credentials and rotated same-user credentials fail before mutation, while the original credential applies only after before-first-mutation revalidation. Counts are now 444/556; final release remains NO-GO because this is local Playground route evidence, not externally hosted production credential lifecycle proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0519 focused: 2/2</span>
+        <span class="tag">auth/route suite: 162/162</span>
+        <span class="tag">production-shaped smoke: pass</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0627 focused: 1/1</span>
         <span class="tag">restart-readable group: 4/4</span>
         <span class="tag">recovery journal: 32/32</span>
