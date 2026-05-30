@@ -6,20 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 11:40 CEST.
+- Last update: 2026-05-30 11:41 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0377 serialized block reference detection proof merge ending at
-  `06221922`.
+  the RPP-0378 GUID and slug collision graph proof merge ending at
+  `f4e5c639`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 417
-  items checked and leaves 583 open.
-- Checked slices: 100 release-gate foundation items, 34 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 418
+  items checked and leaves 582 open.
+- Checked slices: 100 release-gate foundation items, 35 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- GUID and slug collision graph proof: the current lane now contains `RPP-0378`
+  evidence in
+  `docs/evidence/rpp-0378-guid-slug-collision-handling-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0378-guid-slug-collision-handling-v4.test.js`. `node --check`
+  passed for the focused test, focused RPP-0378 coverage passed 1/1, and
+  adjacent planner graph identity coverage for explicit maps and GUID/slug
+  collisions passed 4/4. Checklist lint, scoped artifact redaction scan,
+  checklist/redaction guard tests, and merge diff whitespace checks also
+  passed. Counts are now 418/582; final release remains `NO-GO`.
 - Serialized block reference detection proof: the current lane now contains
   `RPP-0377` evidence in
   `docs/evidence/rpp-0377-serialized-block-reference-detection-v4.md`,
