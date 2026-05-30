@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:20 CEST.
+- Last update: 2026-05-30 05:24 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0158 same independent content variant-3 proof merge ending at
-  `4f9990ebe`.
+  the RPP-0480 arbitrary plugin fixture package proof merge ending at
+  `5c476db98`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 340
-  items checked and leaves 660 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 341
+  items checked and leaves 659 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  63 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  64 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 58 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused arbitrary plugin fixture package variant-4 refresh: the current lane
+  now contains `RPP-0480` evidence in
+  `docs/evidence/rpp-0480-arbitrary-plugin-fixture-package-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0480-arbitrary-plugin-fixture-package-v4.test.js`. `node --check
+  test/rpp-0480-arbitrary-plugin-fixture-package-v4.test.js` exited 0, the
+  focused RPP-0480 test passed 6/6, the adjacent arbitrary package slice passed
+  13/13, the production-shaped package guard slice passed 2/2, and the bounded
+  driver-guard package smoke exited 0. The proof keeps local arbitrary fixture
+  package evidence support-only and `NO-GO`, accepts production-backed package
+  summaries only when checks are clean, rejects near-miss owner/table/driver
+  allowlists before mutation, and keeps evidence hash-only. Checklist lint,
+  artifact redaction scan, and `git diff --check` also passed. Counts are now
+  341/659; final release remains `NO-GO`.
 - Generated same independent content variant-3 refresh: the current lane now
   contains `RPP-0158` evidence in
   `docs/evidence/rpp-0158-same-independent-content-v3.md`,
