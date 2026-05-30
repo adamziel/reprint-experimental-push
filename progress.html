@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T06:00:00+02:00">Last updated: May 30, 2026, 06:00 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T06:03:00+02:00">Last updated: May 30, 2026, 06:03 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>351</strong>
+        <strong>352</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>649</strong>
+        <strong>648</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, manage_options, and secret handling need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, manage_options, production-shaped preflight route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,14 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0486</span>
+        <span>RPP-0521</span>
       </div>
-      <p>The latest refresh integrates RPP-0486 wp_termmeta release-verifier evidence: focused, adjacent, package-scenario, and local verifier-guard checks prove wp_termmeta driver mutation evidence is carried as hash-only support evidence unless checked production-backed verifier proof supplies the release boundary. Counts are now 351/649; final release remains NO-GO.</p>
+      <p>The latest refresh integrates RPP-0521 production preflight route evidence: PHP syntax, focused route tests, sandbox-local loopback smoke, and the route-proof/authenticated client regression suite prove the production-shaped preflight endpoint rejects unsigned requests and returns hash-only session evidence. Counts are now 352/648; final release remains NO-GO because this proof is local-lab backed, not external production-backed.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0521 focused: 5/5</span>
+        <span class="tag">preflight live smoke: pass</span>
+        <span class="tag">auth/route suite: pass</span>
+        <span class="tag">local-lab backed</span>
         <span class="tag">RPP-0486 focused: 4/4</span>
         <span class="tag">wp_termmeta slice: 16/16</span>
         <span class="tag">package scenarios: 9/9</span>
