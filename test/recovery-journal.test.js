@@ -110,6 +110,18 @@ function writeLegacySqliteJournalTable(database, records, tableName = 'recovery_
   return legacyRecords;
 }
 
+function writeSqliteJournalTable(database, records, tableName = 'recovery_journal') {
+  database.exec(`CREATE TABLE ${tableName} (
+    sequence INTEGER PRIMARY KEY,
+    schema_version INTEGER NOT NULL,
+    record_json TEXT NOT NULL
+  )`);
+  const insert = database.prepare(`INSERT INTO ${tableName} (sequence, schema_version, record_json) VALUES (?, ?, ?)`);
+  for (const record of records) {
+    insert.run(record.sequence, record.schemaVersion, JSON.stringify(record));
+  }
+}
+
 function buildRecoveryReleaseSummary({ inspection, plan, mutationEvents, oldRemoteRecovery = null }) {
   const latestEvents = [
     { sequence: 1, event: 'idempotency-opened' },
@@ -806,6 +818,63 @@ test('restart inspection classifies fail-before mutation journal as old remote',
   assert.equal(inspection.status, 'old-remote');
   assert.deepEqual(inspection.counts, { old: 8, new: 0, blockedUnknown: 0 });
   assert.ok(inspection.targets.every((target) => target.state === 'old'));
+});
+
+test('RPP-0631 SQLite-backed restart inspection proves new remote recovery classification', {
+  skip: DatabaseSync === null ? 'node:sqlite is unavailable in this Node.js runtime' : false,
+}, () => {
+  const sqlitePath = tempSqlitePath();
+  const seedFilePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const current = clone(remote);
+  const journal = openPlanRecoveryJournal({ filePath: seedFilePath, plan, current: remote, now: fixedNow });
+
+  applyFirstMutations(current, plan, plan.mutations.length);
+  appendJournalCompleted(journal, { plan, current });
+  journal.close();
+
+  const completedRows = readRecoveryJournal(seedFilePath).records;
+  let database = new DatabaseSync(sqlitePath);
+  writeSqliteJournalTable(database, completedRows);
+  database.close();
+
+  database = new DatabaseSync(sqlitePath);
+  const restarted = readSqliteRecoveryJournalTable(database);
+  assert.equal(restarted.storage, 'sqlite');
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.schemaVersionColumnPresent, true);
+  assert.deepEqual(restarted.tableSchemaVersions, [1]);
+  assert.deepEqual(restarted.recordSchemaVersions, [1]);
+  assert.equal(restarted.committedState.status, 'completed');
+  assert.equal(restarted.committedState.restartReadable, true);
+  assert.equal(restarted.committedState.targetRows, plan.mutations.length);
+  assert.deepEqual(
+    restarted.records.map((record) => record.sequence),
+    Array.from({ length: completedRows.length }, (_, index) => index + 1),
+  );
+
+  const inspection = inspectRecoveryJournal({
+    journal: restarted,
+    plan,
+    current,
+  });
+  assert.equal(inspection.status, 'fully-updated-remote');
+  assert.deepEqual(inspection.counts, { old: 0, new: plan.mutations.length, blockedUnknown: 0 });
+  assert.ok(inspection.targets.every((target) => target.state === 'new'));
+  assert.ok(inspection.targets.every((target) => target.observedHash === target.afterHash));
+  assert.ok(inspection.targets.every((target) => target.beforeHash !== target.afterHash));
+
+  const unchangedRemoteInspection = inspectRecoveryJournal({
+    journal: restarted,
+    plan,
+    current: remote,
+  });
+  assert.equal(unchangedRemoteInspection.status, 'old-remote');
+  assert.deepEqual(unchangedRemoteInspection.counts, { old: plan.mutations.length, new: 0, blockedUnknown: 0 });
+  assert.ok(unchangedRemoteInspection.targets.every((target) => target.state === 'old'));
+
+  database.close();
 });
 
 test('restart inspection classifies fail-after-2 as blocked recovery with two new and six old', () => {
