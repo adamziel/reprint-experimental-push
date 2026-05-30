@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:58 CEST.
+- Last update: 2026-05-30 04:04 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0436 driver delete support flag merge ending at `b5eb1558b`.
+  the RPP-0153 relationship graph generated coverage merge ending at
+  `c0ca21003`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 317
-  items checked and leaves 683 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 318
+  items checked and leaves 682 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   45 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 53 generated
+  11 storage/performance items, 3 production-topology items, 54 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Generated wp_term_relationships graph variant-3 refresh: the current lane now
+  contains `RPP-0153` evidence in
+  `docs/evidence/rpp-0153-wp-term-relationships-graph-v3.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  test/generated-push-harness.test.js` exited 0, `node --test
+  --test-name-pattern=RPP-0153 test/generated-push-harness.test.js` passed
+  1/1, the `generated push harness covers|RPP-0153` pattern passed 2/2, and
+  `npm run test:generated-push-harness` passed 61/61. The proof adds 10
+  deterministic variant-3 `wp_term_relationships` graph cases across all 10
+  tiers, applies ready term/taxonomy/relationship graph rows without unplanned
+  remote overwrite, preserves an unplanned remote-only file, refuses stale
+  taxonomy drift before mutation, and keeps relationship graph evidence
+  hash-only. Checklist lint, artifact redaction scan, and `git diff --check`
+  also passed. Counts are now 318/682; final release remains `NO-GO`.
 - Focused driver delete support flag refresh: the current lane now contains
   `RPP-0436` evidence in
   `docs/evidence/rpp-0436-driver-delete-support-flag.md`,
