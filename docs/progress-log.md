@@ -6,20 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 18:21 CEST +02:00.
+- Last update: 2026-05-30 18:25 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0389 category term taxonomy reference release-verifier proof merge
-  ending at `1350f754`.
+  the RPP-0390 post_tag taxonomy reference release-verifier proof merge ending
+  at `0913c45c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 499
-  items checked and leaves 501 open.
-- Checked slices: 100 release-gate foundation items, 59 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 500
+  items checked and leaves 500 open.
+- Checked slices: 100 release-gate foundation items, 60 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Post_tag taxonomy reference release-verifier proof v5: the current lane now
+  contains `RPP-0390` evidence in
+  `docs/evidence/rpp-0390-post-tag-taxonomy-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0390-post-tag-taxonomy-reference-release-verifier-v5.test.js`.
+  The focused release-verifier proof requires a `post_tag`
+  `wp_term_taxonomy` mutation to carry the expected term and relationship keys,
+  live-remote precondition, apply-time revalidation, and final local match; it
+  fails closed when taxonomy type, precondition hash, or apply revalidation is
+  weakened. The evidence note also keeps intentionally unmapped WordPress graph
+  surfaces documented. Validation passed with Node syntax checks, focused
+  RPP-0390 coverage 3/3, adjacent post_tag release-verifier coverage 7/7,
+  documented-unmapped graph coverage 10/10, checklist lint, scoped artifact
+  redaction scan, raw fixture scan, and merge diff whitespace checks. Counts
+  are now 500/500; final release remains `NO-GO` because this is local
+  release-verifier carry-through evidence, not live external production proof.
 - Category term taxonomy reference release-verifier proof v5: the current lane
   now contains `RPP-0389` evidence in
   `docs/evidence/rpp-0389-category-term-taxonomy-reference-release-verifier-v5.md`,

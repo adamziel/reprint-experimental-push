@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>499</strong>
+        <strong>500</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>501</strong>
+        <strong>500</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -348,7 +348,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
-            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, production importer/exporter identity-map metadata, post_parent page hierarchy local and release-verifier proof, postmeta post_id release-verifier proof, category term taxonomy release-verifier carry-through, comment post, comment parent, comment user, and commentmeta comment release-verifier proof, featured image fail-closed release-verifier proof, post-author release-verifier proof, focused post_author stale-target regression, focused featured image attachment stale/unsupported-target regression, focused postmeta post_id rewrite and stale-target regression, focused term relationship object ready/stale regression, focused comment_post_ID rewrite and stale-target regression, focused comment_parent stable-target and rewrite regression, focused comment user stale-target and unsupported-target regression, focused commentmeta comment generated-model regression, focused category taxonomy apply regression, focused post_tag taxonomy identity-map rewrite and fail-closed regression, focused custom taxonomy fail-closed and identity-map rewrite regression, focused termmeta term fail-closed regression, featured image attachment references, term relationship taxonomy references, nav menu item fail-closed references, `wp_navigation` fail-closed references, cross-table create batch mapping, post_tag taxonomy proof, serialized block reference detection, GUID/slug collision handling, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
+            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, production importer/exporter identity-map metadata, post_parent page hierarchy local and release-verifier proof, postmeta post_id release-verifier proof, category term taxonomy release-verifier carry-through, post_tag taxonomy release-verifier carry-through, comment post, comment parent, comment user, and commentmeta comment release-verifier proof, featured image fail-closed release-verifier proof, post-author release-verifier proof, focused post_author stale-target regression, focused featured image attachment stale/unsupported-target regression, focused postmeta post_id rewrite and stale-target regression, focused term relationship object ready/stale regression, focused comment_post_ID rewrite and stale-target regression, focused comment_parent stable-target and rewrite regression, focused comment user stale-target and unsupported-target regression, focused commentmeta comment generated-model regression, focused category taxonomy apply regression, focused post_tag taxonomy identity-map rewrite and fail-closed regression, focused custom taxonomy fail-closed and identity-map rewrite regression, focused termmeta term fail-closed regression, featured image attachment references, term relationship taxonomy references, nav menu item fail-closed references, `wp_navigation` fail-closed references, cross-table create batch mapping, post_tag taxonomy proof, serialized block reference detection, GUID/slug collision handling, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0389</span>
+        <span>RPP-0390</span>
       </div>
-      <p>The latest refresh integrates RPP-0389 category term taxonomy reference release-verifier evidence: the verifier now proves the category wp_term_taxonomy mutation is in the release plan, carries its term_id reference, has live-remote precondition and apply-time revalidation, matches local after apply, and fails closed when revalidation is omitted. Counts are now 499/501; final release remains NO-GO because this is local release-verifier carry-through evidence, not live external production proof.</p>
+      <p>The latest refresh integrates RPP-0390 post_tag taxonomy reference release-verifier evidence: the verifier now requires the post_tag wp_term_taxonomy mutation to carry expected term and relationship keys, live-remote precondition, apply-time revalidation, and final local match, and fails closed when taxonomy type, precondition hash, or revalidation is weakened. Counts are now 500/500; final release remains NO-GO because this is local release-verifier carry-through evidence, not live external production proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0390 focused: 3/3</span>
+        <span class="tag">post_tag adjacent: 7/7</span>
+        <span class="tag">unmapped graph docs: 10/10</span>
+        <span class="tag">fail-closed verifier</span>
+        <span class="tag">remaining surfaces documented</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0389 focused: 2/2</span>
         <span class="tag">category adjacent: 5/5</span>
         <span class="tag">local-production taxonomy: 4/4</span>
@@ -1232,7 +1238,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 499/1000</span>
+        <span class="tag">checked goals: 500/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
