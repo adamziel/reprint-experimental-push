@@ -518,7 +518,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [x] RPP-0484 (Mid / plugin-driver) Carry through the release verifier for wp_options driver semantics, variant 5. Success: remote drift preserves plugin-owned remote data.
 - [x] RPP-0485 (Mid / plugin-driver) Carry through the release verifier for wp_postmeta driver semantics, variant 5. Success: release gate notes whether evidence is local or production-backed.
 - [x] RPP-0486 (Mid / plugin-driver) Carry through the release verifier for wp_termmeta driver semantics, variant 5. Success: focused test proves exact driver behavior.
-- [ ] RPP-0487 (Mid / plugin-driver) Carry through the release verifier for wp_usermeta driver semantics, variant 5. Success: generated harness covers supported and unsupported variants.
+- [x] RPP-0487 (Mid / plugin-driver) Carry through the release verifier for wp_usermeta driver semantics, variant 5. Success: generated harness covers supported and unsupported variants.
 - [ ] RPP-0488 (Mid / plugin-driver) Carry through the release verifier for serialized option validator, variant 5. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0489 (Mid / plugin-driver) Carry through the release verifier for plugin activation dependency validator, variant 5. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0490 (Mid / plugin-driver) Carry through the release verifier for plugin update dependency validator, variant 5. Success: release gate notes whether evidence is local or production-backed.
