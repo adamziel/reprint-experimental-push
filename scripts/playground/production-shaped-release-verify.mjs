@@ -239,6 +239,14 @@ export function resolveAuthSessionBoundaryProof({
     && userContinuity
     && userIdContinuity
     && manageOptionsContinuity;
+  const userIdentity = buildAuthSessionUserIdentityBinding({
+    issued,
+    read,
+    sameSession,
+    sameUserLogin: Boolean(userContinuity),
+    sameUserId: userIdContinuity,
+    manageOptions: manageOptionsContinuity,
+  });
 
   return {
     required: 'same live auth/session source at issuance and readback',
@@ -277,6 +285,7 @@ export function resolveAuthSessionBoundaryProof({
       sameUserId: userIdContinuity,
       manageOptions: manageOptionsContinuity,
     },
+    userIdentity,
     forgedSessionSourceAccepted: false,
     packagedFixtureCredentialFallback: {
       observed: packagedSourceFixture ? 'packaged-production-plugin-fallback' : 'disabled',
@@ -288,6 +297,75 @@ export function resolveAuthSessionBoundaryProof({
         ? 'PACKAGED_RELEASE_BOUNDARY_SUPPORT_ONLY'
         : 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
   };
+}
+
+const authSessionUserIdentityScope = 'reprint-push-lab:authenticated-http-push';
+
+function buildAuthSessionUserIdentityBinding({
+  issued,
+  read,
+  sameSession = false,
+  sameUserLogin = false,
+  sameUserId = false,
+  manageOptions = false,
+} = {}) {
+  const issuedUserIdentityHash = hashAuthSessionUserIdentity(issued);
+  const readbackUserIdentityHash = hashAuthSessionUserIdentity(read);
+  const issuedSessionHash = hashAuthSessionSessionId(issued?.sessionId);
+  const readbackSessionHash = hashAuthSessionSessionId(read?.sessionId);
+  const sameUserIdentityHash = Boolean(
+    issuedUserIdentityHash
+    && readbackUserIdentityHash
+    && issuedUserIdentityHash === readbackUserIdentityHash,
+  );
+  const ok = Boolean(sameSession && sameUserLogin && sameUserId && sameUserIdentityHash);
+
+  return {
+    required: 'same authenticated WordPress user identity bound to the short-lived push session',
+    ok,
+    observed: ok ? 'same-session-user-identity' : 'mismatched-session-user-identity',
+    verdict: ok ? 'AUTH_SESSION_USER_IDENTITY_BOUND' : 'AUTH_SESSION_USER_IDENTITY_REQUIRED',
+    scopeHash: createHash('sha256').update(authSessionUserIdentityScope, 'utf8').digest('hex'),
+    sameSession: Boolean(sameSession),
+    sameUserLogin: Boolean(sameUserLogin),
+    sameUserId: sameUserId === true,
+    sameUserIdentityHash,
+    manageOptions: manageOptions === true,
+    issued: {
+      step: issued?.step || null,
+      sessionHash: issuedSessionHash,
+      userIdentityHash: issuedUserIdentityHash,
+    },
+    readback: {
+      step: read?.step || null,
+      sessionHash: readbackSessionHash,
+      userIdentityHash: readbackUserIdentityHash,
+    },
+  };
+}
+
+function hashAuthSessionUserIdentity(observation) {
+  if (
+    !observation
+    || typeof observation.userLogin !== 'string'
+    || observation.userLogin === ''
+    || !Number.isInteger(observation.userId)
+    || observation.userId <= 0
+  ) {
+    return '';
+  }
+
+  return createHash('sha256')
+    .update(`${observation.userId}\n${observation.userLogin}\n${authSessionUserIdentityScope}`, 'utf8')
+    .digest('hex');
+}
+
+function hashAuthSessionSessionId(sessionId) {
+  if (typeof sessionId !== 'string' || sessionId.trim() === '') {
+    return '';
+  }
+
+  return createHash('sha256').update(sessionId, 'utf8').digest('hex');
 }
 
 function positiveIntegerEnv(name, fallback) {
