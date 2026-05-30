@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 13:53 CEST.
+- Last update: 2026-05-30 14:03 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0365 comment post reference merge ending at `5d2bf3b83`.
+  the RPP-0366 comment parent reference merge ending at `4dad311c7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 446
-  items checked and leaves 554 open.
-- Checked slices: 100 release-gate foundation items, 48 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 447
+  items checked and leaves 553 open.
+- Checked slices: 100 release-gate foundation items, 49 graph identity items,
   73 plugin-driver boundary items, 25 executor/auth items, 29 recovery items,
   13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Comment parent reference focused regression: the current lane now contains
+  `RPP-0366` evidence in
+  `docs/evidence/rpp-0366-comment-parent-thread-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0366-comment-parent-thread-reference-v4.test.js`. The focused graph
+  identity proof keeps stable `wp_comments.comment_parent` targets unchanged,
+  rewrites mapped local parent IDs to remote parent IDs through explicit
+  WordPress graph identity evidence, applies the ready child comment, and keeps
+  parent/child fixture payloads out of the hash-only proof envelope. Validation
+  passed with Node syntax checks, focused RPP-0366 coverage 2/2, adjacent
+  comment-parent planner coverage 4/4, checklist lint, scoped artifact
+  redaction scan, and merge diff whitespace checks. The broader `npm test`
+  signal still has a pre-existing RPP-0615 release-verifier assertion failure,
+  reproduced on pre-merge lane commit `97ba8f0da`. Counts are now 447/553; final
+  release remains `NO-GO` because this is local graph identity regression
+  evidence, not externally hosted production topology proof.
 - Comment post reference focused regression: the current lane now contains
   `RPP-0365` evidence in
   `docs/evidence/rpp-0365-comment-post-reference-v4.md`,
