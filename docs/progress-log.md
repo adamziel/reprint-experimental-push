@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 08:28 CEST.
+- Last update: 2026-05-30 08:31 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0175 plugin-owned custom-table changes variant-4 generated-harness
-  merge ending at `446c6607f`.
+  the RPP-0498 driver apply-validation hook release-verifier merge ending at
+  `0e3a8acc3`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 368
-  items checked and leaves 632 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 369
+  items checked and leaves 631 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  70 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
+  71 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 75 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Driver apply-validation hook release-verifier refresh: the current lane now
+  contains `RPP-0498` evidence in
+  `docs/evidence/rpp-0498-driver-apply-validation-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0498-driver-apply-validation-release-verifier-v5.test.js`.
+  `node --check` passed for the changed verifier and test file, the focused
+  RPP-0498 test passed 2/2, the adjacent apply-validation hook slice passed
+  4/4, and adjacent v5 release-verifier plugin-driver slices passed 17 tests.
+  Checklist lint, artifact redaction scan, and merge diff whitespace checks
+  also passed. Counts are now 369/631; final release remains `NO-GO`.
 - Plugin-owned custom-table changes variant-4 refresh: the current lane now
   contains `RPP-0175` evidence in
   `docs/evidence/rpp-0175-plugin-owned-custom-table-changes-v4.md`,

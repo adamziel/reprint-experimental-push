@@ -1,19 +1,30 @@
-# AO Progress Report - 2026-05-30 08:28 CEST
+# AO Progress Report - 2026-05-30 08:31 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0175
-plugin-owned custom-table changes variant-4 generated-harness refresh ending at
-`446c6607f`.
+`lane/evidence-integration-20260527` through the current RPP-0498 driver apply
+validation hook release-verifier refresh ending at `0e3a8acc3`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 368 are
-  checked from integrated evidence and 632 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 369 are
+  checked from integrated evidence and 631 remain open.
+- `RPP-0498` is now checked with focused driver apply-validation hook
+  release-verifier carry-through evidence in
+  `docs/evidence/rpp-0498-driver-apply-validation-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0498-driver-apply-validation-release-verifier-v5.test.js`.
+  `node --check` passed for the changed verifier and test file, the focused
+  RPP-0498 test passed 2/2, the adjacent apply-validation hook slice passed
+  4/4, and the adjacent v5 release-verifier plugin-driver slices passed 17
+  tests. Checklist lint, artifact redaction scan, and merge diff whitespace
+  checks also passed. This remains local/support-only release-verifier
+  evidence, not live production-backed release proof.
 - `RPP-0175` is now checked with focused plugin-owned custom-table changes
   variant-4 generated-harness evidence in
   `docs/evidence/rpp-0175-plugin-owned-custom-table-changes-v4.md`,
