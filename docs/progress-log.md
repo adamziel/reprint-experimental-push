@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:50 CEST.
+- Last update: 2026-05-30 03:52 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0152 term taxonomy graph coverage merge ending at `56d8d5c54`.
+  the RPP-0238 forged ready plan defense merge ending at `9c3dc9c44`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 313
-  items checked and leaves 687 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 314
+  items checked and leaves 686 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   43 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 53 generated
-  harness items, and 38 merge-invariant items. No release-ops items are checked
+  harness items, and 39 merge-invariant items. No release-ops items are checked
   yet.
+- Focused forged ready plan defense refresh: the current lane now contains
+  `RPP-0238` evidence in
+  `docs/evidence/rpp-0238-forged-ready-plan-defense-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0238-forged-ready-plan-defense-v2.test.js`. `node --check
+  test/rpp-0238-forged-ready-plan-defense-v2.test.js` exited 0, `node --test
+  --test-name-pattern=RPP-0238
+  test/rpp-0238-forged-ready-plan-defense-v2.test.js` passed 2/2,
+  `node --test --test-name-pattern='RPP-0218|RPP-0238'
+  test/push-planner.test.js test/rpp-0238-forged-ready-plan-defense-v2.test.js`
+  passed 4/4, and standalone `node --test
+  test/rpp-0238-forged-ready-plan-defense-v2.test.js` passed 2/2. The proof
+  rejects forged and stale ready plans before mutation, records no target
+  durable-journal rows, preserves remote data, and serializes only hash-only
+  refusal evidence. Checklist lint, artifact redaction scan, and `git diff
+  --check` also passed. Counts are now 314/686; final release remains
+  `NO-GO`.
 - Generated wp_term_taxonomy graph variant-3 refresh: the current lane now
   contains `RPP-0152` evidence in
   `docs/evidence/rpp-0152-wp-term-taxonomy-graph-v3.md`,

@@ -1,18 +1,33 @@
-# AO Progress Report - 2026-05-30 03:50 CEST
+# AO Progress Report - 2026-05-30 03:52 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0152
-term taxonomy graph coverage refresh ending at `56d8d5c54`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0238
+forged ready plan defense refresh ending at `9c3dc9c44`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 313 are
-  checked from integrated evidence and 687 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 314 are
+  checked from integrated evidence and 686 remain open.
+- `RPP-0238` is now checked with focused forged ready plan defense evidence in
+  `docs/evidence/rpp-0238-forged-ready-plan-defense-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0238-forged-ready-plan-defense-v2.test.js`. `node --check
+  test/rpp-0238-forged-ready-plan-defense-v2.test.js` exited 0, `node --test
+  --test-name-pattern=RPP-0238
+  test/rpp-0238-forged-ready-plan-defense-v2.test.js` passed 2/2, `node
+  --test --test-name-pattern='RPP-0218|RPP-0238' test/push-planner.test.js
+  test/rpp-0238-forged-ready-plan-defense-v2.test.js` passed 4/4, and
+  standalone `node --test
+  test/rpp-0238-forged-ready-plan-defense-v2.test.js` passed 2/2, proving
+  forged and stale ready plans reject before mutation, target durable-journal
+  mutation rows are not recorded, remote data is preserved, serialized refusal
+  evidence is hash-only, checklist lint, artifact redaction scan, and `git diff
+  --check` while final release remains **NO-GO**.
 - `RPP-0152` is now checked with generated `wp_term_taxonomy` graph variant-3
   evidence in `docs/evidence/rpp-0152-wp-term-taxonomy-graph-v3.md`,
   `docs/generated-push-harness.md`,
