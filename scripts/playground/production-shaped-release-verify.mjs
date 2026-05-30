@@ -230,6 +230,28 @@ export function resolveAuthSessionBoundaryProof({
   const sameSourceAtReadback = normalizeReleaseBoundarySourceUrl(effectiveSourceUrl)
     === normalizeReleaseBoundarySourceUrl(liveSourceUrlEnv || effectiveSourceUrl);
   const liveSuccessCandidate = !packagedSourceFixture && Boolean(liveSourceUrlEnv || effectiveSourceUrl);
+  const userIdentityBinding = {
+    required: 'same authenticated user identity bound to the push session and dry-run receipt',
+    ok: Boolean(sameSession && userContinuity && userIdContinuity && manageOptionsContinuity),
+    sameSession,
+    sameUserLogin: Boolean(userContinuity),
+    sameUserId: userIdContinuity,
+    manageOptions: manageOptionsContinuity,
+    issued: {
+      step: issued.step,
+      sessionId: issued.sessionId,
+      userLogin: issued.userLogin,
+      userId: issued.userId,
+      capabilities: issued.capabilities,
+    },
+    readback: {
+      step: read.step,
+      sessionId: read.sessionId,
+      userLogin: read.userLogin,
+      userId: read.userId,
+      capabilities: read.capabilities,
+    },
+  };
   const acceptedForReleaseSuccess = liveSuccessCandidate
     && sourceCommandPresent
     && authSessionSource?.ok === true
@@ -277,6 +299,7 @@ export function resolveAuthSessionBoundaryProof({
       sameUserId: userIdContinuity,
       manageOptions: manageOptionsContinuity,
     },
+    userIdentityBinding,
     forgedSessionSourceAccepted: false,
     packagedFixtureCredentialFallback: {
       observed: packagedSourceFixture ? 'packaged-production-plugin-fallback' : 'disabled',
@@ -1845,6 +1868,7 @@ try {
               },
               plan: proof.plan || null,
               authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+              sessionUserIdentityBinding: proof.sessionUserIdentityBinding || null,
               dryRun: proof.dryRun,
               apply: proof.apply,
               recoveryInspect: proof.recoveryInspect,
@@ -2661,6 +2685,7 @@ try {
             releaseProof: proof,
             authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
             authSessionBoundary,
+            sessionUserIdentityBinding: proof.sessionUserIdentityBinding || authSessionBoundary.userIdentityBinding,
             authSessionLifecycle: proof.authSessionLifecycle,
             authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
             authSessionLifecycleSummary,
