@@ -1,0 +1,59 @@
+# RPP-0612 blocked recovery classification evidence
+
+Date: 2026-05-30
+Issue: RPP-0612
+Lane: recovery
+
+## Proof added
+
+- Recovery inspection now exposes a hash-only `classification` summary alongside
+  the existing recovery `status`. For blocked partial remotes, the summary uses
+  reason code `BLOCKED_PARTIAL_REMOTE`, reports the restart-read durable row
+  count, and marks retry disposition as `blocked`.
+- The classification summary contains only state, reason code, journal
+  integrity, durable row count, retry disposition, and old/new/unknown target
+  counts. It does not carry before or after payload values.
+- Existing old-remote, fully-updated-remote, journal-integrity-blocked, and
+  target-unknown states receive explicit reason codes without changing their
+  existing status strings.
+
+## Focused regression
+
+`test/rpp-0612-blocked-recovery-classification.test.js` proves the blocked
+classification across a process restart:
+
+1. A child Node process opens a claim-fenced file recovery journal and runs the
+   normal apply path with a deterministic failure after the first committed
+   mutation.
+2. The child exits without closing the writer; the parent process re-reads the
+   JSONL journal from disk and verifies integrity is `ok`, sequence numbers are
+   monotonic, `mutation-observed` and `recovery-state` rows are present, and all
+   rows carry `fsync.requested: true`.
+3. The restarted inspection sees one target at the after hash and two targets at
+   the before hash, classifies the state as `blocked-recovery`, and reports
+   `BLOCKED_PARTIAL_REMOTE` with retry disposition `blocked`.
+4. The test scans the journal text, parsed journal, and inspection result for
+   the fixture payload strings and asserts none are present.
+
+## Validation run
+
+```bash
+node --test test/rpp-0612-blocked-recovery-classification.test.js
+node --test test/recovery-journal.test.js test/recovery-repair.test.js
+npm run test:recovery:file-journal
+node --test test/checklist-completion-lint.test.js
+node scripts/release/artifact-redaction-scan.mjs docs/evidence
+git diff --check
+```
+
+Observed result: focused RPP-0612 coverage exited 0 with 1 subtest. The
+recovery journal and repair regressions exited 0 with 33 subtests, the file
+journal restart smoke exited 0, and the checklist lint, evidence redaction scan,
+and whitespace check all exited 0.
+
+## Residual scope
+
+This evidence is limited to file-backed recovery journal restart readback and
+blocked partial-remote classification. It does not extend generated harness
+coverage, production route authentication, plugin-driver behavior, topology
+proofs, release verifier carry-through, or public progress reporting.

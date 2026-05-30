@@ -5,6 +5,14 @@ import {
   readRecoveryJournalPaged,
 } from './recovery-journal.js';
 
+export const RECOVERY_INSPECT_REASON_CODES = Object.freeze({
+  fullyUpdatedRemote: 'FULLY_UPDATED_REMOTE',
+  oldRemote: 'OLD_REMOTE',
+  blockedJournalIntegrity: 'BLOCKED_JOURNAL_INTEGRITY',
+  blockedTargetUnknown: 'BLOCKED_TARGET_UNKNOWN',
+  blockedPartialRemote: 'BLOCKED_PARTIAL_REMOTE',
+});
+
 export function inspectRecoveryJournal({ journal, journalPath, plan, current, journalPageSize = null }) {
   const persisted = journal || (journalPageSize
     ? readRecoveryJournalPaged(journalPath, { pageSize: journalPageSize })
@@ -59,11 +67,14 @@ export function inspectRecoveryJournal({ journal, journalPath, plan, current, jo
     }));
   const counts = countTargets(targets);
   const status = overallStatus(counts, targets.length);
+  const classification = classifyInspection({ status, counts, targets, persisted });
   const claim = classifyRecoveryJournalClaims(persisted.records);
 
   return {
     status,
+    reasonCode: classification.reasonCode,
     reason: reasonForStatus(status, counts, targets.length),
+    classification,
     planId: plan.id,
     counts,
     targets,
@@ -119,11 +130,20 @@ function classifyMutationTarget({ mutation, target, current }) {
 function blockedInspection({ plan, persisted, reason }) {
   const targets = (plan.mutations || []).map((mutation) =>
     unknownTarget(mutation, 'journal-integrity-blocked', reason));
+  const counts = countTargets(targets);
+  const classification = classifyInspection({
+    status: 'blocked-recovery',
+    counts,
+    targets,
+    persisted,
+  });
   return {
     status: 'blocked-recovery',
+    reasonCode: classification.reasonCode,
     reason,
+    classification,
     planId: plan.id,
-    counts: countTargets(targets),
+    counts,
     targets,
     claim: classifyRecoveryJournalClaims(persisted.records),
     journal: persisted,
@@ -165,6 +185,49 @@ function overallStatus(counts, total) {
     return 'old-remote';
   }
   return 'blocked-recovery';
+}
+
+function classifyInspection({ status, counts, targets, persisted }) {
+  const reasonCode = recoveryInspectionReasonCode({ status, counts, targets, persisted });
+  return {
+    state: status,
+    reasonCode,
+    journalIntegrity: persisted.integrity?.status || 'unknown',
+    durableRows: persisted.integrity?.status === 'ok' ? persisted.records.length : 0,
+    retry: retryDispositionForStatus(status),
+    targetEnvelope: {
+      total: targets.length,
+      old: counts.old,
+      new: counts.new,
+      blockedUnknown: counts.blockedUnknown,
+    },
+  };
+}
+
+function recoveryInspectionReasonCode({ status, counts, targets, persisted }) {
+  if (status === 'fully-updated-remote') {
+    return RECOVERY_INSPECT_REASON_CODES.fullyUpdatedRemote;
+  }
+  if (status === 'old-remote') {
+    return RECOVERY_INSPECT_REASON_CODES.oldRemote;
+  }
+  if (persisted.integrity?.status !== 'ok') {
+    return RECOVERY_INSPECT_REASON_CODES.blockedJournalIntegrity;
+  }
+  if (counts.blockedUnknown > 0 || targets.some((target) => target.state === 'blocked-unknown')) {
+    return RECOVERY_INSPECT_REASON_CODES.blockedTargetUnknown;
+  }
+  return RECOVERY_INSPECT_REASON_CODES.blockedPartialRemote;
+}
+
+function retryDispositionForStatus(status) {
+  if (status === 'fully-updated-remote') {
+    return 'no-op';
+  }
+  if (status === 'old-remote') {
+    return 'retry-after-revalidation';
+  }
+  return 'blocked';
 }
 
 function reasonForStatus(status, counts, total) {
