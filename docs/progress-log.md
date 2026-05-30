@@ -6,19 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 15:23 CEST +02:00.
+- Last update: 2026-05-30 15:27 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0713 apply batch sizing merge ending at `974d10b1a`.
+  the RPP-0492 direct active_plugins release-verifier merge ending at
+  `66cbf7c47`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 465
-  items checked and leaves 535 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 466
+  items checked and leaves 534 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  77 plugin-driver boundary items, 27 executor/auth items, 31 recovery items,
+  78 plugin-driver boundary items, 27 executor/auth items, 31 recovery items,
   17 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Direct active_plugins release-verifier carry-through: the current lane now
+  contains `RPP-0492` evidence in
+  `docs/evidence/rpp-0492-direct-active-plugins-mutation-refusal-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0492-direct-active-plugins-release-verifier-v5.test.js`. The
+  verifier emits hash-only `pluginDriver.directActivePluginsMutationRefusal`
+  proof beside plugin-driver release evidence; keeps a supported
+  plugin-managed `wp_options` path separate from direct `active_plugins`;
+  exposes unsupported direct `active_plugins` planner blockers with
+  `DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED`; rejects forged ready direct
+  `active_plugins` mutations with `UNSUPPORTED_ACTIVE_PLUGINS_MUTATION` before
+  mutation hooks run; and records only hashes, counts, resource keys, reason
+  codes, and proof hashes. Validation passed with Node syntax checks, focused
+  RPP-0492 coverage 4/4, adjacent active_plugins refusal coverage 3/3,
+  adjacent plugin-driver release-verifier coverage 29/29, checklist lint,
+  scoped artifact redaction scan, and merge diff whitespace checks. Counts are
+  now 466/534; final release remains `NO-GO` because this is support-only
+  release-verifier evidence, not production-backed active_plugins proof.
 - Apply batch sizing: the current lane now contains `RPP-0713` evidence in
   `docs/evidence/rpp-0713-apply-batch-sizing.md`,
   `docs/reprint-push-completion-checklist.md`,
