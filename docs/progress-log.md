@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 20:57 CEST +02:00.
+- Last update: 2026-05-30 21:05 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0701 MySQL CAS write guard ancestry merge ending at `9bc89f`.
+  the RPP-0709 chunk replay idempotency ancestry merge ending at `bce0e7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -19,6 +19,21 @@ linked implementation artifacts.
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Chunk replay idempotency ancestry refinement: the current lane now preserves
+  the older `session/rpp-709` RPP-0709 ancestry while retaining the stronger
+  current guarded executor benchmark gates. Chunk receipts now carry
+  `localResourceHash` through manifest entries, receipt matching, and
+  transaction-boundary cursor evidence, and a supplemental
+  `src/chunk-replay-idempotency.js` module proves exact replay, missing-receipt
+  upload-required behavior, mismatched idempotency-key conflicts, and budget
+  fail-closed behavior. Validation passed with Node syntax checks, focused
+  supplemental replay coverage 4/4, focused RPP-0709/RPP-0710 guarded coverage
+  2/2, guarded executor/performance coverage 19/19, the guardedLarge
+  chunk-replay benchmark reporting 96/96 idempotent skips with 0 duplicate
+  receipt records, 0 bytes rewritten, 0 duplicate mutation work, checklist
+  lint, scoped artifact redaction scan, and diff whitespace checks. Counts
+  remain 514/486; final release remains `NO-GO` because this is lab guarded
+  executor evidence, not production storage receipt or atomic commit proof.
 - MySQL compare-and-swap write guard refinement: the current lane now preserves
   the older `session/rpp-701` RPP-0701 ancestry while retaining the stronger
   current runtime-capability evidence. The MySQL CAS benchmark now includes a
