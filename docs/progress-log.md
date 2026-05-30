@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 16:24 CEST +02:00.
+- Last update: 2026-05-30 16:29 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0715 large media library benchmark merge ending at `59b1baf2b`.
+  the RPP-0635 same-key replay after rejection merge ending at `173cb1316`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 477
-  items checked and leaves 523 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 478
+  items checked and leaves 522 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  82 plugin-driver boundary items, 28 executor/auth items, 35 recovery items,
+  82 plugin-driver boundary items, 28 executor/auth items, 36 recovery items,
   19 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key replay after rejection v2: the current lane now contains `RPP-0635`
+  evidence in
+  `docs/evidence/rpp-0635-same-key-replay-after-rejection-v2.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-live-release-verify-lib.js`, and
+  `test/recovery-journal.test.js`. The release proof now carries both the
+  canonical same-key replay-after-rejection boundary and the explicit
+  `sameKeyRejectedReplay` summary, proving the checked GATE-2 path returns the
+  same 412 `PRECONDITION_FAILED` response on replay, performs no fresh mutation
+  work, preserves the rejected remote snapshot, orders rejection before replay,
+  and records no mutation or commit before failure. Validation passed with Node
+  syntax checks, focused RPP-0635 coverage 1/1, adjacent recovery coverage 7/7,
+  full recovery-journal coverage 39/39, file-journal restart smoke, durable
+  recovery release-proof coverage 1/1, checklist lint, scoped artifact
+  redaction scan, raw fixture diff scan, and merge diff whitespace checks.
+  Counts are now 478/522; final release remains `NO-GO` because this is local
+  durable recovery evidence, not external WordPress crash/restart durability
+  proof.
 - Large media library benchmark: the current lane now contains `RPP-0715`
   evidence in
   `docs/evidence/rpp-0715-large-media-library-benchmark.md`,
