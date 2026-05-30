@@ -647,7 +647,14 @@ model evidence samples one ready stack and one non-ready missing-dependency
 stack from the real generated harness while retaining hash-only resource and
 blocker summaries.
 
-At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 345 ready, 201 conflict, and 74 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 10 `sameIndependentContent` cases, 10 `sameIndependentContentVariant3` cases, 20 `postAuthorGraph` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, 9 `remoteOnlyPreservation` cases, 9 `remoteOnlyPreservationVariant3` cases, 344 `staleRemoteAfterDryRun` ready-plan stale-replay precondition cases, and 344 `staleRemoteAfterDryRunVariant3` ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
+The `atomicPluginInstallStackV4` target coverage records the same generated
+atomic plugin install stack under variant-4 tags for RPP-0176. Its focused
+regression proof samples one ready stack and one non-ready missing-dependency
+stack from the real generated harness, checks per-tier summary counts, and
+keeps dependency hashes, resource keys, and blockers without serializing plugin
+file contents or private install option values.
+
+At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 345 ready, 201 conflict, and 74 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 10 `sameIndependentContent` cases, 10 `sameIndependentContentVariant3` cases, 20 `postAuthorGraph` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 20 `atomicPluginInstallStackV2` cases, 20 `atomicPluginInstallStackV4` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, 9 `remoteOnlyPreservation` cases, 9 `remoteOnlyPreservationVariant3` cases, 344 `staleRemoteAfterDryRun` ready-plan stale-replay precondition cases, and 344 `staleRemoteAfterDryRunVariant3` ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
 
 ## Extension Rule
 

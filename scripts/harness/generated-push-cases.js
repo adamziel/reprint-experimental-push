@@ -366,6 +366,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'atomic-plugin-stack-ready',
     tag: 'atomic-plugin-install-stack-v2',
   },
+  atomicPluginInstallStackV4: {
+    family: 'atomic-plugin-install-stack-variant4',
+    tag: 'atomic-plugin-install-stack-v4',
+  },
   pluginOwnedOptionChange: {
     family: 'plugin-owned-option-change-ready',
     tag: 'plugin-owned-option-change',
@@ -1885,6 +1889,8 @@ const scenarioFamilyBuilders = {
     tags.add('atomic-plugin-stack-ready-v2');
     tags.add('atomic-plugin-install-stack-v3');
     tags.add('atomic-plugin-stack-ready-v3');
+    tags.add('atomic-plugin-install-stack-v4');
+    tags.add('atomic-plugin-stack-ready-v4');
   },
   'atomic-plugin-missing-dependency': ({ local, tags }) => {
     local.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* generated dependent */';
@@ -1912,6 +1918,8 @@ const scenarioFamilyBuilders = {
     tags.add('atomic-plugin-stack-missing-dependency-v2');
     tags.add('atomic-plugin-install-stack-v3');
     tags.add('atomic-plugin-stack-missing-dependency-v3');
+    tags.add('atomic-plugin-install-stack-v4');
+    tags.add('atomic-plugin-stack-missing-dependency-v4');
   },
   'plugin-file-update': ({ local, allocator, tags }) => {
     local.files['wp-content/plugins/forms/forms.php'] = `<?php /* local forms ${allocator.next()} */`;
