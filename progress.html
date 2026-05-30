@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T17:32:00+02:00">Last updated: May 30, 2026, 17:32 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T17:36:00+02:00">Last updated: May 30, 2026, 17:36 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>489</strong>
+        <strong>490</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>511</strong>
+        <strong>510</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay v2 release-proof carry-through, different-body idempotency conflict v2, process kill before mutation set v2, process kill mid mutation set v2, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay v2 release-proof carry-through, different-body idempotency conflict v2, process kill before mutation set v2, process kill mid mutation set v2, missing commit finalization v2, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,18 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0528</span>
+        <span>RPP-0639</span>
       </div>
-      <p>The latest refresh integrates RPP-0528 short-lived push-session proof: production-shaped preflight rejects caller-supplied sessions, mints a 300-second server-issued token stored by hashed option key, dry-run receipts bind scope, identity, production auth session, push-session issue facts, and canonical plan hash, and apply recomputes the bindings before mutation. Counts are now 489/511; final release remains NO-GO because this is local-loopback Playground evidence with labBacked true, not external production endpoint proof.</p>
+      <p>The latest refresh integrates RPP-0639 missing commit-finalization evidence: a file-backed recovery journal survives a writer exit after every mutation row is durable but before completion, restart inspection remains fully-updated-remote, lease owner identity is visible on the latest mutation row, and reopening the same claim appends only the missing completion row without rewriting mutation rows. Counts are now 490/510; final release remains NO-GO because this is local recovery-journal evidence, not external WordPress crash/restart durability proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0639 focused: 1/1</span>
+        <span class="tag">recovery adjacent: 7/7</span>
+        <span class="tag">recovery journal full: 43/43</span>
+        <span class="tag">file-journal smoke: pass</span>
+        <span class="tag">completion row only</span>
+        <span class="tag">lease owner audit visible</span>
+        <span class="tag">mutation rows unchanged</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0528 focused: 4/4</span>
         <span class="tag">auth/session adjacent: 15/15</span>
         <span class="tag">route smoke: pass</span>
@@ -1172,7 +1180,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 489/1000</span>
+        <span class="tag">checked goals: 490/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
