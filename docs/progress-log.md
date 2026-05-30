@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 10:25 CEST.
+- Last update: 2026-05-30 10:29 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0264 local directory delete versus remote descendant create variant-4
-  merge ending at `b567fccf2`.
+  the RPP-0266 remote-only plugin metadata preservation variant-4 merge ending
+  at `2c0d97af1`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 395
-  items checked and leaves 605 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 396
+  items checked and leaves 604 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 60 merge-invariant items. No release-ops items are checked
+  harness items, and 61 merge-invariant items. No release-ops items are checked
   yet.
+- Remote-only plugin metadata preservation variant-4 refresh: the current lane
+  now contains `RPP-0266` evidence in
+  `docs/evidence/rpp-0266-remote-only-plugin-metadata-preservation-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0266-remote-only-plugin-metadata-preservation-v4.test.js`. `node
+  --check` passed for the focused test, the focused/generated RPP-0266 test
+  passed 2/2, adjacent RPP-0246 variant-3 coverage passed 2/2, the adjacent
+  RPP-0206 planner slice passed 1/1, and the adjacent RPP-0226 coverage passed
+  2/2. Checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 396/604; final release remains
+  `NO-GO`.
 - Local directory delete versus remote descendant create variant-4 refresh: the
   current lane now contains `RPP-0264` evidence in
   `docs/evidence/rpp-0264-local-directory-delete-remote-descendant-v4.md`,

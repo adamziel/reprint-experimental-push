@@ -1,19 +1,30 @@
-# AO Progress Report - 2026-05-30 10:25 CEST
+# AO Progress Report - 2026-05-30 10:29 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0264 local
-directory delete versus remote descendant create variant-4 merge-invariant
-refresh ending at `b567fccf2`.
+`lane/evidence-integration-20260527` through the current RPP-0266 remote-only
+plugin metadata preservation variant-4 merge-invariant refresh ending at
+`2c0d97af1`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 395 are
-  checked from integrated evidence and 605 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 396 are
+  checked from integrated evidence and 604 remain open.
+- `RPP-0266` is now checked with focused remote-only plugin metadata
+  preservation variant-4 merge-invariant evidence in
+  `docs/evidence/rpp-0266-remote-only-plugin-metadata-preservation-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0266-remote-only-plugin-metadata-preservation-v4.test.js`. `node
+  --check` passed for the focused test, the focused/generated RPP-0266 test
+  passed 2/2, adjacent RPP-0246 variant-3 coverage passed 2/2, the adjacent
+  RPP-0206 planner slice passed 1/1, and the adjacent RPP-0226 coverage
+  passed 2/2. Checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks also passed. This remains local planner/apply
+  generated-fixture evidence, not production endpoint proof.
 - `RPP-0264` is now checked with focused local directory delete versus remote
   descendant create variant-4 merge-invariant evidence in
   `docs/evidence/rpp-0264-local-directory-delete-remote-descendant-v4.md`,
