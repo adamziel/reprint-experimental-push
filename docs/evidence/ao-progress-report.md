@@ -1,19 +1,34 @@
-# AO Progress Report - 2026-05-30 11:05 CEST
+# AO Progress Report - 2026-05-30 11:09 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0281 independent
-local file plus remote row release-verifier carry-through ending at
-`d520c33f7`.
+`lane/evidence-integration-20260527` through the current RPP-0282 independent
+local row plus remote file release-verifier carry-through ending at
+`dbb80450d`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 408 are
-  checked from integrated evidence and 592 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 409 are
+  checked from integrated evidence and 591 remain open.
+- `RPP-0282` is now checked with support-only release-verifier carry-through
+  for independent local row plus remote file edit evidence in
+  `docs/evidence/rpp-0282-independent-local-row-remote-file-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0282-independent-local-row-remote-file-release-verifier-v5.test.js`.
+  `node --check` passed for the verifier script and focused test, focused
+  RPP-0282 coverage passed 2/2, adjacent RPP-0242 coverage passed 1/1,
+  the RPP-0202/RPP-0222 planner slice passed 2/2, the RPP-0222
+  generated-harness slice passed 1/1, and the combined release-verifier
+  compatibility suite covering RPP-0281/RPP-0282/RPP-0483/RPP-0484/RPP-0498
+  and RPP-0499 passed 18/18. Checklist lint, scoped artifact redaction scan,
+  checklist/redaction guard tests, and merge diff whitespace checks also
+  passed. This remains local support-only release-verifier evidence, not
+  production endpoint proof.
 - `RPP-0281` is now checked with support-only release-verifier carry-through
   for independent local file plus remote row edit evidence in
   `docs/evidence/rpp-0281-independent-local-file-remote-row-release-verifier-v5.md`,
