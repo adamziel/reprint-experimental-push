@@ -6,20 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 09:54 CEST.
+- Last update: 2026-05-30 09:58 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0251 mutation/precondition one-to-one variant-3 merge ending at
-  `5a854123a`.
+  the RPP-0252 remoteBeforeHash correctness variant-3 merge ending at
+  `6be5bb0be`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 384
-  items checked and leaves 616 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 385
+  items checked and leaves 615 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 49 merge-invariant items. No release-ops items are checked
+  harness items, and 50 merge-invariant items. No release-ops items are checked
   yet.
+- RemoteBeforeHash correctness variant-3 refresh: the current lane now
+  contains `RPP-0252` evidence in
+  `docs/evidence/rpp-0252-remote-before-hash-correctness-v3.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0252-remote-before-hash-correctness-v3.test.js`. `node --check`
+  passed for the focused test, the focused RPP-0252 test passed 3/3, the
+  adjacent RPP-0212 planner slice passed 2/2, and the adjacent RPP-0232
+  remoteBeforeHash variant-2 test passed 3/3. Checklist lint, scoped artifact
+  redaction scan, and merge diff whitespace checks also passed. Counts are now
+  385/615; final release remains `NO-GO`.
 - Mutation/precondition one-to-one variant-3 refresh: the current lane now
   contains `RPP-0251` evidence in
   `docs/evidence/rpp-0251-mutation-precondition-one-to-one-v3.md`,
