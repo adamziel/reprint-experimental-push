@@ -178,6 +178,13 @@ records only resource keys and hashes, verifies the ready directory delete
 applies and rejects stale replay, and verifies the remote descendant conflict
 refuses apply without mutating the remote digest.
 
+RPP-0162 adds `directoryDescendantConflictVariant4` coverage for the same
+directory descendant target with an explicit variant-4 tag. The deterministic
+roster exposes the same 20-case ready/conflict surface with two cases in every
+tier, then the focused proof recounts the variant-4 summary, verifies the ready
+directory delete path applies and rejects stale replay, and verifies the remote
+descendant conflict path refuses apply without mutating the remote digest.
+
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
 only the planned post create, update, and delete while preserving every
