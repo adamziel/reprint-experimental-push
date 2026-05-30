@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 23:08 CEST +02:00.
+- Last update: 2026-05-30 23:10 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0191 wp_terms/wp_termmeta graph release-verifier variant 5 merge
-  ending at `2032aaa`.
+  the RPP-0328 commentmeta comment reference variant 2 merge ending at
+  `f6ba7bc`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 533
-  items checked and leaves 467 open.
-- Checked slices: 100 release-gate foundation items, 76 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 534
+  items checked and leaves 466 open.
+- Checked slices: 100 release-gate foundation items, 77 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 91 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Commentmeta comment reference variant-2 generated-model proof: the current
+  lane now checks `RPP-0328` with focused graph-identity evidence for
+  `wp_commentmeta.comment_id` references. The proof consumes the existing
+  generated comment/commentmeta graph surface, verifies 10 ready and 10 stale
+  cases across tiers 0 through 9, proves ready cases carry the comment reference
+  through apply, and proves stale cases stop before mutation with hash-only
+  reference evidence. Validation passed with Node syntax checks, focused
+  RPP-0328 coverage 3/3, adjacent RPP-0308/RPP-0328/RPP-0388 commentmeta
+  comment coverage 8/8, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 534/466; final release remains `NO-GO` because this is
+  local generated graph evidence, not production-backed release proof.
 - WP terms/termmeta graph release-verifier v5 carry-through: the current lane
   now checks `RPP-0191` with deterministic generated-harness support-only proof
   for `wp_terms` and `wp_termmeta` graph changes. The generator exposes

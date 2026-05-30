@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 533.
-- Remaining open: 467.
+- Verified complete: 534.
+- Remaining open: 466.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -354,7 +354,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [x] RPP-0325 (Mid / graph-identity) Prove comment post reference, variant 2. Success: docs state remaining unmapped WordPress surfaces.
 - [x] RPP-0326 (Mid / graph-identity) Prove comment parent thread reference, variant 2. Success: mapper rewrites or proves stable identity for the target.
 - [x] RPP-0327 (Mid / graph-identity) Prove comment user reference, variant 2. Success: unsupported target fails closed with hash-only evidence.
-- [ ] RPP-0328 (Mid / graph-identity) Prove commentmeta comment reference, variant 2. Success: generated harness includes ready and stale cases.
+- [x] RPP-0328 (Mid / graph-identity) Prove commentmeta comment reference, variant 2. Success: generated harness includes ready and stale cases.
 - [x] RPP-0329 (Mid / graph-identity) Prove category term taxonomy reference, variant 2. Success: local production verifier carries the target through apply.
 - [x] RPP-0330 (Mid / graph-identity) Prove post_tag taxonomy reference, variant 2. Success: docs state remaining unmapped WordPress surfaces.
 - [x] RPP-0331 (Mid / graph-identity) Prove custom taxonomy fail-closed reference, variant 2. Success: mapper rewrites or proves stable identity for the target.
