@@ -15,7 +15,13 @@ import {
 } from '../../src/authenticated-http-push-client.js';
 import { applyPlan, PushPlanError } from '../../src/apply.js';
 import { createPushPlan } from '../../src/planner.js';
-import { resourceHash, getResource, setResource, serializeResourceValue } from '../../src/resources.js';
+import {
+  deserializeResourceValue,
+  resourceHash,
+  getResource,
+  setResource,
+  serializeResourceValue,
+} from '../../src/resources.js';
 import { ABSENT, digest } from '../../src/stable-json.js';
 import {
   describeAuthSessionSourceMetadataDrift,
@@ -534,6 +540,26 @@ export const independentLocalFileRemoteRowReleaseVerifierBoundary = Object.freez
   tag: 'independent-file-remote-row',
   table: 'wp_posts',
   evidenceScope: 'local-production-shaped',
+});
+
+export const crossTableCreateBatchReleaseVerifierBoundary = Object.freeze({
+  family: 'cross-table-create-batch-mapping',
+  tag: 'cross-table-create-batch-release-verifier-v5',
+  evidenceScope: 'local-production-shaped',
+  postId: 39901,
+  termId: 39911,
+  termTaxonomyId: 39921,
+  termMetaId: 39931,
+  metaKey: '_rpp_0399_batch',
+  termMetaKey: '_rpp_0399_term_batch',
+  resources: Object.freeze({
+    post: 'row:["wp_posts","ID:39901"]',
+    postmeta: 'row:["wp_postmeta","post_id:39901:meta_key:_rpp_0399_batch"]',
+    term: 'row:["wp_terms","term_id:39911"]',
+    taxonomy: 'row:["wp_term_taxonomy","term_taxonomy_id:39921"]',
+    relationship: 'row:["wp_term_relationships","object_id:39901|term_taxonomy_id:39921"]',
+    termmeta: 'row:["wp_termmeta","meta_id:39931"]',
+  }),
 });
 
 export function summarizeWpOptionsDriverReleaseVerifierProof({
@@ -3222,6 +3248,503 @@ export function summarizeMergeInvariantReleaseVerifierProofs() {
   };
 }
 
+export function summarizeGraphIdentityReleaseVerifierProofs() {
+  return {
+    crossTableCreateBatch: summarizeCrossTableCreateBatchReleaseVerifierProof(),
+  };
+}
+
+export function summarizeCrossTableCreateBatchReleaseVerifierProof({
+  now = new Date('2026-05-30T16:39:00.000Z'),
+} = {}) {
+  try {
+    return buildCrossTableCreateBatchReleaseVerifierProof({ now });
+  } catch (error) {
+    return {
+      rpp: 'RPP-0399',
+      evidenceSource: 'release-verifier-cross-table-create-batch-v5',
+      status: 'blocked',
+      verdict: 'CROSS_TABLE_CREATE_BATCH_RELEASE_VERIFIER_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      evidenceScope: crossTableCreateBatchReleaseVerifierBoundary.evidenceScope,
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildCrossTableCreateBatchReleaseVerifierProof({ now }) {
+  const boundary = crossTableCreateBatchReleaseVerifierBoundary;
+  const resources = crossTableCreateBatchReleaseVerifierResources();
+  const resourceList = Object.values(resources);
+  const rawFixtures = {
+    postTitle: 'RPP-0399 private cross-table create post',
+    postBody: 'rpp-0399-private-cross-table-create-body',
+    postmetaValue: 'rpp-0399-private-cross-table-postmeta',
+    termName: 'RPP-0399 private cross-table term',
+    termmetaValue: 'rpp-0399-private-cross-table-termmeta',
+    staleRemoteTitle: 'RPP-0399 stale remote private create target',
+  };
+  const base = crossTableCreateBatchReleaseVerifierBaseSnapshot();
+  const local = crossTableCreateBatchReleaseVerifierLocalSnapshot(rawFixtures);
+  const remote = cloneReleaseVerifierJson(base);
+  const plan = createPushPlan({ base, local, remote, now });
+  const mutationsByKey = new Map(plan.mutations.map((entry) => [entry.resourceKey, entry]));
+  const preconditionsByKey = new Map(plan.preconditions.map((entry) => [entry.resourceKey, entry]));
+  const planSummary = {
+    mutations: plan.mutations.length,
+    decisions: plan.decisions.length,
+    conflicts: plan.conflicts.length,
+    blockers: plan.blockers.length,
+    atomicGroups: plan.atomicGroups.length,
+  };
+
+  assert.equal(plan.status, 'ready', 'RPP-0399 cross-table create batch plan must be ready');
+  assert.deepEqual(plan.summary, planSummary, 'RPP-0399 plan summary must match plan arrays');
+  assert.equal(plan.summary.mutations, resourceList.length, 'RPP-0399 must plan every batch resource');
+  assert.equal(plan.summary.conflicts, 0, 'RPP-0399 plan must not conflict');
+  assert.equal(plan.summary.blockers, 0, 'RPP-0399 plan must not block');
+
+  const resourceRows = resourceList.map((resource) => {
+    const mutation = mutationsByKey.get(resource.key) || null;
+    const precondition = preconditionsByKey.get(resource.key) || null;
+
+    assert.ok(mutation, `RPP-0399 missing mutation for ${resource.key}`);
+    assert.ok(precondition, `RPP-0399 missing precondition for ${resource.key}`);
+    assert.equal(mutation.action, 'put', `RPP-0399 mutation action for ${resource.key}`);
+    assert.equal(mutation.changeKind, 'create', `RPP-0399 mutation kind for ${resource.key}`);
+    assert.equal(precondition.mutationId, mutation.id, `RPP-0399 precondition mutation for ${resource.key}`);
+    assert.equal(precondition.expectedHash, mutation.remoteBeforeHash, `RPP-0399 precondition hash for ${resource.key}`);
+    assert.equal(precondition.checkedAgainst, 'live-remote', `RPP-0399 precondition scope for ${resource.key}`);
+
+    return summarizeCrossTableCreateBatchMutation({
+      resource,
+      mutation,
+      precondition,
+      base,
+      local,
+      remote,
+    });
+  });
+
+  const postmetaMutation = mutationsByKey.get(boundary.resources.postmeta) || null;
+  const taxonomyMutation = mutationsByKey.get(boundary.resources.taxonomy) || null;
+  const relationshipMutation = mutationsByKey.get(boundary.resources.relationship) || null;
+  const termmetaMutation = mutationsByKey.get(boundary.resources.termmeta) || null;
+  const postmetaValue = postmetaMutation ? deserializeResourceValue(postmetaMutation.value) : null;
+  const taxonomyValue = taxonomyMutation ? deserializeResourceValue(taxonomyMutation.value) : null;
+  const relationshipValue = relationshipMutation ? deserializeResourceValue(relationshipMutation.value) : null;
+  const termmetaValue = termmetaMutation ? deserializeResourceValue(termmetaMutation.value) : null;
+  const referenceEdges = [
+    {
+      relationshipKey: 'wp_postmeta.post_id',
+      sourceResourceKey: boundary.resources.postmeta,
+      targetResourceKey: boundary.resources.post,
+      plannedTargetId: boundary.postId,
+      finalTargetId: Number(postmetaValue?.post_id),
+      preserved: Number(postmetaValue?.post_id) === boundary.postId,
+    },
+    {
+      relationshipKey: 'wp_term_taxonomy.term_id',
+      sourceResourceKey: boundary.resources.taxonomy,
+      targetResourceKey: boundary.resources.term,
+      plannedTargetId: boundary.termId,
+      finalTargetId: Number(taxonomyValue?.term_id),
+      preserved: Number(taxonomyValue?.term_id) === boundary.termId,
+    },
+    {
+      relationshipKey: 'wp_term_relationships.object_id',
+      sourceResourceKey: boundary.resources.relationship,
+      targetResourceKey: boundary.resources.post,
+      plannedTargetId: boundary.postId,
+      finalTargetId: Number(relationshipValue?.object_id),
+      preserved: Number(relationshipValue?.object_id) === boundary.postId,
+    },
+    {
+      relationshipKey: 'wp_term_relationships.term_taxonomy_id',
+      sourceResourceKey: boundary.resources.relationship,
+      targetResourceKey: boundary.resources.taxonomy,
+      plannedTargetId: boundary.termTaxonomyId,
+      finalTargetId: Number(relationshipValue?.term_taxonomy_id),
+      preserved: Number(relationshipValue?.term_taxonomy_id) === boundary.termTaxonomyId,
+    },
+    {
+      relationshipKey: 'wp_termmeta.term_id',
+      sourceResourceKey: boundary.resources.termmeta,
+      targetResourceKey: boundary.resources.term,
+      plannedTargetId: boundary.termId,
+      finalTargetId: Number(termmetaValue?.term_id),
+      preserved: Number(termmetaValue?.term_id) === boundary.termId,
+    },
+  ];
+  const crossTableReferencesPreserved = referenceEdges.every((entry) => entry.preserved);
+  assert.equal(crossTableReferencesPreserved, true, 'RPP-0399 cross-table references must stay mapped');
+
+  const remoteBeforeHash = digest(remote);
+  const beforeMutationEvents = [];
+  const journalEvents = [];
+  let applyResult = null;
+  let applyError = null;
+  try {
+    applyResult = applyPlan(remote, plan, {
+      mutateRemote: true,
+      durableJournal: crossTableCreateBatchDurableJournal(journalEvents),
+      beforeMutation({ mutation, mutationIndex, remote: liveRemote }) {
+        beforeMutationEvents.push({
+          mutationIndex,
+          resourceKey: mutation.resourceKey,
+          liveHash: resourceHash(liveRemote, mutation.resource),
+        });
+      },
+    });
+  } catch (error) {
+    applyError = error;
+  }
+  const remoteAfterHash = digest(remote);
+  const finalMatchesLocal = JSON.stringify(remote) === JSON.stringify(local);
+  const allRowsCreated = resourceList.every((resource) =>
+    resourceHash(remote, resource) === resourceHash(local, resource));
+  const journalApplied = applyResult?.journal?.entries?.length === plan.mutations.length
+    && applyResult.journal.entries.every((entry) => entry.status === 'applied');
+  const carriedThroughApply = applyError === null
+    && applyResult?.site === remote
+    && applyResult?.appliedMutations === plan.mutations.length
+    && beforeMutationEvents.length === plan.mutations.length
+    && journalApplied
+    && allRowsCreated
+    && finalMatchesLocal
+    && remoteAfterHash !== remoteBeforeHash;
+
+  const staleRemote = cloneReleaseVerifierJson(base);
+  staleRemote.db.wp_posts[`ID:${boundary.postId}`] = {
+    ID: boundary.postId,
+    post_title: rawFixtures.staleRemoteTitle,
+    post_name: 'rpp-0399-stale-remote-target',
+    post_status: 'publish',
+    post_type: 'post',
+    post_parent: 0,
+    post_author: 0,
+  };
+  const staleRemoteHashBefore = digest(staleRemote);
+  let staleError = null;
+  try {
+    applyPlan(staleRemote, plan, { mutateRemote: true });
+  } catch (error) {
+    staleError = error;
+  }
+  const staleRemoteHashAfter = digest(staleRemote);
+  assert.ok(staleError instanceof PushPlanError, 'RPP-0399 stale replay must fail with PushPlanError');
+  assert.equal(staleError.code, 'PRECONDITION_FAILED', 'RPP-0399 stale replay code');
+  assert.equal(staleRemoteHashAfter, staleRemoteHashBefore, 'RPP-0399 stale replay must not mutate remote');
+
+  const invariants = {
+    planReady: plan.status === 'ready',
+    everyMutationCreate: resourceRows.every((entry) => entry.changeKind === 'create'),
+    everyMutationHasLivePrecondition: resourceRows.every((entry) =>
+      entry.precondition.checkedAgainst === 'live-remote'
+      && entry.precondition.expectedHash === entry.remoteBeforeHash),
+    everyPreconditionMatchesAbsentBase: resourceRows.every((entry) =>
+      entry.baseHash === entry.remoteBeforeHash
+      && entry.precondition.expectedHash === entry.baseHash),
+    crossTableReferencesPreserved,
+    applyMutatedRemote: remoteAfterHash !== remoteBeforeHash,
+    allRowsCreated,
+    finalMatchesLocal,
+    journalApplied,
+    staleReplayRejectedBeforeMutation: staleError instanceof PushPlanError
+      && staleError.code === 'PRECONDITION_FAILED'
+      && staleRemoteHashAfter === staleRemoteHashBefore,
+  };
+  const ok = Object.values(invariants).every(Boolean) && carriedThroughApply;
+  const proof = {
+    rpp: 'RPP-0399',
+    evidenceSource: 'release-verifier-cross-table-create-batch-v5',
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'CROSS_TABLE_CREATE_BATCH_APPLIED_SUPPORT_ONLY'
+      : 'CROSS_TABLE_CREATE_BATCH_RELEASE_VERIFIER_REQUIRED',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    evidenceScope: boundary.evidenceScope,
+    releaseVerifier: {
+      checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+      check: 'cross-table-create-batch-mapping',
+      variant: 'v5',
+    },
+    rawValuesIncluded: false,
+    batch: {
+      family: boundary.family,
+      tag: boundary.tag,
+      resourceKeys: resourceList.map((resource) => resource.key),
+      tables: [...new Set(resourceList.map((resource) => resource.table))].sort(),
+      createMutationCount: resourceRows.filter((entry) => entry.changeKind === 'create').length,
+      referenceEdgeCount: referenceEdges.length,
+    },
+    plan: {
+      status: plan.status,
+      summary: planSummary,
+      mutationCount: plan.mutations.length,
+      preconditionCount: plan.preconditions.length,
+      decisionCount: plan.decisions.length,
+      hash: sha256Evidence({
+        status: plan.status,
+        summary: planSummary,
+        mutationKeys: plan.mutations.map((entry) => entry.resourceKey).sort(),
+        preconditionKeys: plan.preconditions.map((entry) => entry.resourceKey).sort(),
+      }),
+    },
+    mutations: resourceRows,
+    referenceEdges,
+    applyCarryThrough: {
+      mutateRemote: applyResult?.site === remote,
+      applyPlanSucceeded: applyError === null,
+      appliedMutations: applyResult?.appliedMutations ?? 0,
+      beforeMutationCount: beforeMutationEvents.length,
+      journalEntries: applyResult?.journal?.entries?.length ?? 0,
+      journalPlannedEvents: journalEvents.filter((event) => event.type === 'target-planned').length,
+      journalObservedEvents: journalEvents.filter((event) => event.type === 'mutation-observed').length,
+      journalApplied,
+      allRowsCreated,
+      finalMatchesLocal,
+      carriedThroughApply,
+      remoteHashBefore: sha256Evidence(remoteBeforeHash),
+      remoteHashAfter: sha256Evidence(remoteAfterHash),
+    },
+    staleReplay: {
+      preMutation: true,
+      code: staleError?.code || null,
+      failedBeforeMutation: staleRemoteHashAfter === staleRemoteHashBefore,
+      remoteUnchanged: staleRemoteHashAfter === staleRemoteHashBefore,
+      staleResourceKey: boundary.resources.post,
+      remoteHashBefore: sha256Evidence(staleRemoteHashBefore),
+      remoteHashAfter: sha256Evidence(staleRemoteHashAfter),
+      detailsHash: staleError ? sha256Evidence(staleError.details || null) : null,
+    },
+    invariants,
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    plan: proof.plan,
+    batch: proof.batch,
+    mutations: proof.mutations.map((entry) => entry.mutationHash),
+    referenceEdges: proof.referenceEdges,
+    applyCarryThrough: proof.applyCarryThrough,
+    staleReplay: {
+      code: proof.staleReplay.code,
+      remoteUnchanged: proof.staleReplay.remoteUnchanged,
+      detailsHash: proof.staleReplay.detailsHash,
+    },
+  });
+
+  if (Object.values(rawFixtures).some((raw) => JSON.stringify(proof).includes(raw))) {
+    return {
+      rpp: proof.rpp,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'CROSS_TABLE_CREATE_BATCH_EVIDENCE_REDACTION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      evidenceScope: proof.evidenceScope,
+      batch: proof.batch,
+      rawValuesIncluded: true,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: true,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'CROSS_TABLE_CREATE_BATCH_EVIDENCE_REDACTION_REQUIRED',
+        batch: proof.batch,
+      }),
+    };
+  }
+
+  return proof;
+}
+
+function crossTableCreateBatchReleaseVerifierResources() {
+  const boundary = crossTableCreateBatchReleaseVerifierBoundary;
+  return {
+    post: {
+      type: 'row',
+      table: 'wp_posts',
+      id: `ID:${boundary.postId}`,
+      key: boundary.resources.post,
+    },
+    postmeta: {
+      type: 'row',
+      table: 'wp_postmeta',
+      id: `post_id:${boundary.postId}:meta_key:${boundary.metaKey}`,
+      key: boundary.resources.postmeta,
+    },
+    term: {
+      type: 'row',
+      table: 'wp_terms',
+      id: `term_id:${boundary.termId}`,
+      key: boundary.resources.term,
+    },
+    taxonomy: {
+      type: 'row',
+      table: 'wp_term_taxonomy',
+      id: `term_taxonomy_id:${boundary.termTaxonomyId}`,
+      key: boundary.resources.taxonomy,
+    },
+    relationship: {
+      type: 'row',
+      table: 'wp_term_relationships',
+      id: `object_id:${boundary.postId}|term_taxonomy_id:${boundary.termTaxonomyId}`,
+      key: boundary.resources.relationship,
+    },
+    termmeta: {
+      type: 'row',
+      table: 'wp_termmeta',
+      id: `meta_id:${boundary.termMetaId}`,
+      key: boundary.resources.termmeta,
+    },
+  };
+}
+
+function crossTableCreateBatchReleaseVerifierBaseSnapshot() {
+  return {
+    files: {},
+    plugins: {},
+    db: {
+      wp_posts: {},
+      wp_postmeta: {},
+      wp_terms: {},
+      wp_term_taxonomy: {},
+      wp_term_relationships: {},
+      wp_termmeta: {},
+    },
+  };
+}
+
+function crossTableCreateBatchReleaseVerifierLocalSnapshot(rawFixtures) {
+  const boundary = crossTableCreateBatchReleaseVerifierBoundary;
+  const snapshot = crossTableCreateBatchReleaseVerifierBaseSnapshot();
+  snapshot.db.wp_posts[`ID:${boundary.postId}`] = {
+    ID: boundary.postId,
+    post_title: rawFixtures.postTitle,
+    post_name: 'rpp-0399-cross-table-create',
+    post_content: rawFixtures.postBody,
+    post_status: 'publish',
+    post_type: 'post',
+    post_parent: 0,
+    post_author: 0,
+  };
+  snapshot.db.wp_postmeta[`post_id:${boundary.postId}:meta_key:${boundary.metaKey}`] = {
+    post_id: boundary.postId,
+    meta_key: boundary.metaKey,
+    meta_value: rawFixtures.postmetaValue,
+  };
+  snapshot.db.wp_terms[`term_id:${boundary.termId}`] = {
+    term_id: boundary.termId,
+    name: rawFixtures.termName,
+    slug: 'rpp-0399-private-cross-table-term',
+    term_group: 0,
+  };
+  snapshot.db.wp_term_taxonomy[`term_taxonomy_id:${boundary.termTaxonomyId}`] = {
+    term_taxonomy_id: boundary.termTaxonomyId,
+    term_id: boundary.termId,
+    taxonomy: 'category',
+    parent: 0,
+    count: 1,
+  };
+  snapshot.db.wp_term_relationships[
+    `object_id:${boundary.postId}|term_taxonomy_id:${boundary.termTaxonomyId}`
+  ] = {
+    object_id: boundary.postId,
+    term_taxonomy_id: boundary.termTaxonomyId,
+    term_order: 0,
+  };
+  snapshot.db.wp_termmeta[`meta_id:${boundary.termMetaId}`] = {
+    meta_id: boundary.termMetaId,
+    term_id: boundary.termId,
+    meta_key: boundary.termMetaKey,
+    meta_value: rawFixtures.termmetaValue,
+  };
+  return snapshot;
+}
+
+function summarizeCrossTableCreateBatchMutation({
+  resource,
+  mutation,
+  precondition,
+  base,
+  local,
+  remote,
+}) {
+  const exactPrecondition = precondition.expectedHash === mutation.remoteBeforeHash
+    && precondition.checkedAgainst === 'live-remote';
+  return {
+    resourceKey: resource.key,
+    table: resource.table,
+    rowId: resource.id,
+    action: mutation.action,
+    changeKind: mutation.changeKind,
+    localChange: mutation.change?.localChange || null,
+    remoteChange: mutation.change?.remoteChange || null,
+    exactMutation: mutation.resource?.type === 'row'
+      && mutation.resource.table === resource.table
+      && mutation.resource.id === resource.id
+      && mutation.action === 'put'
+      && mutation.changeKind === 'create',
+    baseHash: resourceHash(base, resource),
+    localHash: resourceHash(local, resource),
+    remoteBeforeHash: resourceHash(remote, resource),
+    mutationBaseHash: mutation.baseHash,
+    mutationLocalHash: mutation.localHash,
+    mutationRemoteBeforeHash: mutation.remoteBeforeHash,
+    precondition: {
+      mutationId: precondition.mutationId,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+      exactPrecondition,
+      preconditionHash: sha256Evidence({
+        resourceKey: precondition.resourceKey,
+        expectedHash: precondition.expectedHash,
+        checkedAgainst: precondition.checkedAgainst,
+      }),
+    },
+    mutationHash: sha256Evidence({
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+    }),
+  };
+}
+
+function crossTableCreateBatchDurableJournal(events) {
+  return {
+    claimFenced: true,
+    claimHash: '3999'.repeat(16),
+    appendEvent(type, payload = {}) {
+      const record = {
+        sequence: events.length + 1,
+        type,
+        resourceKey: payload?.resourceKey || null,
+        payloadHash: sha256Evidence(payload),
+      };
+      events.push(record);
+      return record;
+    },
+  };
+}
+
 export function summarizeIndependentLocalRowRemoteFileReleaseVerifierProof({
   now = new Date('2026-05-30T14:28:20.000Z'),
   generatedCases = null,
@@ -5285,6 +5808,7 @@ if (retainedSourceSummaryRequested) {
           mutationApplied: 7,
           idempotencyOpened: 1,
         },
+        graphIdentity: summarizeGraphIdentityReleaseVerifierProofs(),
       },
       null,
       2,
@@ -5661,6 +6185,7 @@ try {
           ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
         };
         const mergeInvariantProofs = summarizeMergeInvariantReleaseVerifierProofs();
+        const graphIdentityProofs = summarizeGraphIdentityReleaseVerifierProofs();
         process.stdout.write(
           JSON.stringify(
             {
@@ -5714,6 +6239,7 @@ try {
               latestReadRetryEvidence: proof.latestReadRetryEvidence || null,
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
+              graphIdentity: graphIdentityProofs,
             },
             null,
             2,
@@ -5979,6 +6505,7 @@ try {
         ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
       };
       const mergeInvariantProofs = summarizeMergeInvariantReleaseVerifierProofs();
+      const graphIdentityProofs = summarizeGraphIdentityReleaseVerifierProofs();
       const checkedProductionPluginDriverAccepted = packagedSourceFixture !== null
         ? productionPluginDriverProof.verdict === 'PACKAGED_PLUGIN_DRIVER_BOUNDARY_OK'
         : productionPluginDriverProof.verdict === 'LIVE_PLUGIN_DRIVER_BOUNDARY_OK';
@@ -6032,6 +6559,7 @@ try {
               authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
+              graphIdentity: graphIdentityProofs,
             },
             null,
             2,
@@ -6101,6 +6629,7 @@ try {
               authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
+              graphIdentity: graphIdentityProofs,
             },
             null,
             2,
@@ -6297,6 +6826,7 @@ try {
               },
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
+              graphIdentity: graphIdentityProofs,
             },
             null,
             2,
@@ -6389,6 +6919,7 @@ try {
               },
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
+              graphIdentity: graphIdentityProofs,
             },
             null,
             2,
@@ -6502,6 +7033,7 @@ try {
               replayAndRetry: proof.replayAndRetry || null,
               pluginDriver: pluginDriverProof,
               mergeInvariants: mergeInvariantProofs,
+              graphIdentity: graphIdentityProofs,
             },
             null,
             2,
@@ -6581,6 +7113,7 @@ try {
             },
             pluginDriver: pluginDriverProof,
             mergeInvariants: mergeInvariantProofs,
+            graphIdentity: graphIdentityProofs,
           },
           null,
           2,
