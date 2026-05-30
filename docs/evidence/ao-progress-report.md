@@ -1,18 +1,27 @@
-# AO Progress Report - 2026-05-30 03:09 CEST
+# AO Progress Report - 2026-05-30 03:13 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through the current restored live-team
-and RPP-0231 mutation/precondition refresh ending at `8acb9c80f`. It separates
+and RPP-0149 users/usermeta generated coverage refresh ending at `cdb4217a0`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 302 are
-  checked from integrated evidence and 698 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 303 are
+  checked from integrated evidence and 697 remain open.
+- `RPP-0149` is now checked with generated `wp_users`/`wp_usermeta` graph
+  variant-3 evidence in `docs/generated-push-harness.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --test
+  --test-name-pattern=RPP-0149 test/generated-push-harness.test.js` passed 1/1
+  and `npm run test:generated-push-harness` passed 58/58, proving per-tier
+  ready and stale non-ready coverage, stale replay refusal before mutation,
+  stale apply refusal without remote mutation, and hash-only user/usermeta
+  evidence while final release remains **NO-GO**.
 - `RPP-0231` is now checked with focused and generated mutation/precondition
   mapping evidence in `test/push-planner.test.js`,
   `test/generated-push-harness.test.js`, and

@@ -6,19 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:09 CEST.
+- Last update: 2026-05-30 03:13 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0231 mutation/precondition mapping merge ending at `8acb9c80f`.
+  the RPP-0149 users/usermeta generated coverage merge ending at `cdb4217a0`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 302
-  items checked and leaves 698 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 303
+  items checked and leaves 697 open.
 - Checked slices: 100 release-gate foundation items, 28 graph identity items,
   40 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 50 generated
+  11 storage/performance items, 3 production-topology items, 51 generated
   harness items, and 34 merge-invariant items. No release-ops items are checked
   yet.
+- Generated users/usermeta graph variant-3 refresh: the current lane now
+  contains `RPP-0149` evidence in `docs/generated-push-harness.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --test
+  --test-name-pattern=RPP-0149 test/generated-push-harness.test.js` passed 1/1,
+  and `npm run test:generated-push-harness` passed 58/58, proving 20
+  deterministic variant-3 `wp_users`/`wp_usermeta` graph cases across all
+  tiers, ready stale-replay refusal before mutation, stale non-ready apply
+  refusal without remote mutation, and hash-only evidence for private user and
+  usermeta values. Artifact redaction scan and `git diff --check` also passed.
+  Counts are now 303/697; final release remains `NO-GO`.
 - Focused mutation/precondition mapping refresh: the current lane now contains
   `RPP-0231` evidence in
   `docs/evidence/rpp-0231-mutation-precondition-one-to-one-v2.md`,
