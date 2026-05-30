@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import {
   authenticatedHttpClient,
   dbJournalReadbackLimitForPlan,
@@ -3690,7 +3690,11 @@ test('RPP-0514 authenticated push keeps live-source apply revalidation on the un
   const originalFetch = global.fetch;
   const seen = [];
   const auth = {
-    identity: { userLogin: 'reprint_push_admin' },
+    identity: {
+      userLogin: 'reprint_push_admin',
+      userId: 7,
+      capabilities: { manage_options: true },
+    },
     session: {
       type: 'production-auth-session',
       status: 'active',
@@ -3698,10 +3702,31 @@ test('RPP-0514 authenticated push keeps live-source apply revalidation on the un
       expiresAt: '2030-01-01T00:00:00Z',
     },
   };
+  const identityHash = digest(auth.identity);
+  const pushSessionHash = 'session-rpp-0514';
+  const userLoginHash = createHash('sha256')
+    .update(auth.identity.userLogin, 'utf8')
+    .digest('hex');
   const receipt = {
     receiptHash: 'receipt-unexpired-revalidation-01',
     authBinding: {
       expiresAt: '2030-01-01T00:00:00Z',
+      identity: auth.identity,
+      binding: {
+        identityHash,
+        pushSessionHash,
+      },
+      pushSession: {
+        sessionHash: pushSessionHash,
+        issue: { identityHash },
+      },
+      sessionUser: {
+        identityHash,
+        userId: auth.identity.userId,
+        userLoginHash,
+        pushSessionHash,
+        bindingHash: 'binding-rpp-0514',
+      },
     },
   };
   const storageGuard = {
@@ -3844,7 +3869,7 @@ test('RPP-0514 authenticated push keeps live-source apply revalidation on the un
           signed: true,
           schemaVersion: 1,
           contentHash: 'content-rpp-0514',
-          sessionHash: 'session-rpp-0514',
+          sessionHash: pushSessionHash,
           signingKeyHash: 'signing-key-rpp-0514',
           request: { method: 'POST', path: '/wp-json/reprint/v1/push/apply' },
         },

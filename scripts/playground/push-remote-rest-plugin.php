@@ -4087,6 +4087,7 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
             'dryRunCanonicalHash' => (string) ($signed_request['request']['canonicalHash'] ?? ''),
             'dryRunIdempotencyKeyHash' => (string) ($signed_request['request']['idempotencyKeyHash'] ?? ''),
         ],
+        'sessionUser' => reprint_push_lab_rest_authenticated_user_identity_binding($auth, $signed_request),
         'source' => reprint_push_lab_rest_source_identity($request),
         'request' => [
             'restNamespace' => (string) $profile['restNamespace'],
@@ -4144,6 +4145,30 @@ function reprint_push_lab_rest_authenticated_push_session_issue_binding(
     $issue['issueHash'] = hash('sha256', reprint_push_stable_json($issue));
 
     return $issue;
+}
+
+function reprint_push_lab_rest_authenticated_user_identity_binding(
+    array $auth,
+    array $signed_request
+): array {
+    $identity = isset($auth['identity']) && is_array($auth['identity']) ? $auth['identity'] : [];
+    $session = isset($auth['session']) && is_array($auth['session']) ? $auth['session'] : [];
+    $capabilities = isset($identity['capabilities']) && is_array($identity['capabilities'])
+        ? $identity['capabilities']
+        : [];
+    $binding = [
+        'schemaVersion' => 1,
+        'required' => 'same authenticated user identity for push session, dry-run receipt, and apply',
+        'userId' => (int) ($identity['userId'] ?? 0),
+        'userLoginHash' => hash('sha256', (string) ($identity['userLogin'] ?? '')),
+        'identityHash' => hash('sha256', reprint_push_stable_json($identity)),
+        'authSessionHash' => hash('sha256', reprint_push_stable_json($session)),
+        'pushSessionHash' => (string) ($signed_request['sessionHash'] ?? ''),
+        'manageOptions' => (bool) ($capabilities['manage_options'] ?? false),
+    ];
+    $binding['bindingHash'] = hash('sha256', reprint_push_stable_json($binding));
+
+    return $binding;
 }
 
 function reprint_push_lab_rest_authenticated_receipt_subject_binding(
@@ -4379,6 +4404,19 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
     foreach ($expected_issue_binding as $field => $expected_value) {
         if ((string) ($issue_binding[$field] ?? '') !== (string) $expected_value) {
             reprint_push_lab_rest_auth_receipt_mismatch('Receipt short-lived push session issue binding does not match the current request.', $receipt);
+        }
+    }
+
+    $session_user = isset($binding['sessionUser']) && is_array($binding['sessionUser'])
+        ? $binding['sessionUser']
+        : [];
+    $expected_session_user = reprint_push_lab_rest_authenticated_user_identity_binding(
+        $current,
+        $signed_request
+    );
+    foreach ($expected_session_user as $field => $expected_value) {
+        if ((string) ($session_user[$field] ?? '') !== (string) $expected_value) {
+            reprint_push_lab_rest_auth_receipt_mismatch('Receipt session user identity binding does not match the current authenticated user.', $receipt);
         }
     }
 

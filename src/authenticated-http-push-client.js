@@ -597,6 +597,13 @@ export async function runAuthenticatedHttpPush({
     setReceiptExpiryBoundary(summary);
     return summary;
   }
+  summary.sessionUserIdentityBinding = summarizeSessionUserIdentityBinding({
+    receipt: dryRun.body.receipt,
+    observations: [
+      responseAuthIdentityObservation('preflight', preflight),
+      responseAuthIdentityObservation('dry-run', dryRun),
+    ],
+  });
 
   if (dryRunOnly) {
     let afterDryRun;
@@ -608,7 +615,21 @@ export async function runAuthenticatedHttpPush({
     }
     summary.after = summarizeSnapshot(afterDryRun, local);
     updateRetryAttempts(summary, summary.after);
-    summary.ok = afterDryRun.status === 200 && afterDryRun.body?.ok === true;
+    const dryRunSessionUserBindingAccepted =
+      !requireProductionAuthSession || summary.sessionUserIdentityBinding?.ok === true;
+    summary.ok = afterDryRun.status === 200
+      && afterDryRun.body?.ok === true
+      && dryRunSessionUserBindingAccepted;
+    if (!dryRunSessionUserBindingAccepted) {
+      summary.code = 'SESSION_USER_IDENTITY_BINDING_REQUIRED';
+      summary.authSession = {
+        required: 'session user identity binding',
+        observed: summary.sessionUserIdentityBinding?.observed || 'missing-session-user-identity-binding',
+        verdict: 'SESSION_USER_IDENTITY_BINDING_REQUIRED',
+      };
+      setProductionAuthSessionBoundary(summary);
+      return summary;
+    }
     if (!summary.ok) {
       setDurableJournalBoundary(summary, 'dry-run');
     }
@@ -1673,6 +1694,31 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'journal-inspect');
     return summary;
   }
+  summary.sessionUserIdentityBinding = summarizeSessionUserIdentityBinding({
+    receipt: dryRun.body.receipt,
+    observations: [
+      responseAuthIdentityObservation('preflight', preflight),
+      responseAuthIdentityObservation('dry-run', dryRun),
+      responseAuthIdentityObservation('apply', apply),
+      responseAuthIdentityObservation('recovery-inspect', recoveryInspect),
+      responseAuthIdentityObservation('replay', replay),
+      dbJournalHasAuthEnvelope
+        ? responseAuthIdentityObservation('journal', dbJournal)
+        : null,
+    ],
+  });
+  const sessionUserIdentityBindingAccepted =
+    !requireProductionAuthSession || summary.sessionUserIdentityBinding?.ok === true;
+  if (!sessionUserIdentityBindingAccepted) {
+    summary.code = 'SESSION_USER_IDENTITY_BINDING_REQUIRED';
+    summary.authSession = {
+      required: 'session user identity binding',
+      observed: summary.sessionUserIdentityBinding?.observed || 'missing-session-user-identity-binding',
+      verdict: 'SESSION_USER_IDENTITY_BINDING_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   const dbJournalAccepted = requireProductionAuthSession
     ? dbJournalCheckedBoundaryIsAcceptable(summary.dbJournal, {
       requireStaleClaimRejected: simulateStaleClaimRetry,
@@ -1742,6 +1788,7 @@ export async function runAuthenticatedHttpPush({
     && !applyAuthEnvelopeDrift
     && !recoveryInspectAuthEnvelopeDrift
     && !replayAuthEnvelopeDrift
+    && sessionUserIdentityBindingAccepted
     && dbJournal.status === 200
     && dbJournal.body?.ok === true
     && durableJournalBoundaryAccepted
@@ -1771,6 +1818,8 @@ export async function runAuthenticatedHttpPush({
       );
     summary.code = authEnvelopeDrift
       ? 'AUTH_SESSION_LIFECYCLE_DRIFT'
+      : !sessionUserIdentityBindingAccepted
+      ? 'SESSION_USER_IDENTITY_BINDING_REQUIRED'
       : replayEquivalenceFailed
       ? 'REPLAY_NOT_EQUIVALENT'
       : journalProofFailed
@@ -2064,6 +2113,7 @@ function summarizeResponse(response) {
     receiptHash: body.receipt?.receiptHash,
     responseSchemaVersion: body.responseSchemaVersion,
     authUser: body.auth?.identity?.userLogin,
+    authUserId: normalizeObservedAuthIdentityUserId(body.auth?.identity?.userId) || undefined,
     ...summarizeAuthIdentityCapabilityFields(body.auth?.identity),
     authSessionId: body.auth?.session?.id,
     sessionType: body.auth?.session?.type,
@@ -2098,6 +2148,158 @@ function summarizeResponse(response) {
       retryable: response.request.retryable === true,
     } : undefined,
   };
+}
+
+function summarizeSessionUserIdentityBinding({ receipt, observations = [] } = {}) {
+  const authBinding = receipt?.authBinding && typeof receipt.authBinding === 'object'
+    ? receipt.authBinding
+    : {};
+  const hasAuthBinding = Object.keys(authBinding).length > 0;
+  const receiptIdentity = authBinding.identity && typeof authBinding.identity === 'object'
+    ? authBinding.identity
+    : null;
+  const receiptIdentityHash = receiptIdentity ? digest(receiptIdentity) : '';
+  const receiptSessionUser = authBinding.sessionUser && typeof authBinding.sessionUser === 'object'
+    ? authBinding.sessionUser
+    : {};
+  const hasSessionUserBinding = Object.keys(receiptSessionUser).length > 0;
+  const receiptSubjectBinding = authBinding.binding && typeof authBinding.binding === 'object'
+    ? authBinding.binding
+    : {};
+  const receiptPushIssue = authBinding.pushSession?.issue && typeof authBinding.pushSession.issue === 'object'
+    ? authBinding.pushSession.issue
+    : {};
+  const normalizedObservations = observations
+    .filter(Boolean)
+    .map(normalizeAuthIdentityObservation)
+    .filter(Boolean);
+  const anchor = normalizedObservations.find((observation) =>
+    observation.authUser || observation.authUserId || observation.sessionId || observation.sessionHash) || null;
+  const sameUser = Boolean(anchor)
+    && normalizedObservations.every((observation) =>
+      identityObservationUserMatches(anchor, observation));
+  const sameSession = Boolean(anchor?.sessionId)
+    && normalizedObservations
+      .filter((observation) => observation.sessionId)
+      .every((observation) => observation.sessionId === anchor.sessionId);
+  const capabilityObservations = normalizedObservations.filter((observation) => observation.manageOptions !== null);
+  const manageOptions = capabilityObservations.length === 0
+    || capabilityObservations.every((observation) => observation.manageOptions === true);
+  const receiptIdentityMatches = Boolean(receiptIdentityHash)
+    && receiptSubjectBinding.identityHash === receiptIdentityHash;
+  const issueIdentityMatches = Boolean(receiptIdentityHash)
+    && receiptPushIssue.identityHash === receiptIdentityHash;
+  const sessionUserIdentityMatches = !hasSessionUserBinding
+    ? !hasAuthBinding
+    : Boolean(receiptIdentityHash)
+      && receiptSessionUser.identityHash === receiptIdentityHash
+      && receiptSessionUser.userId === normalizeObservedAuthIdentityUserId(receiptIdentity?.userId)
+      && receiptSessionUser.userLoginHash === sha256Hex(String(receiptIdentity?.userLogin || ''));
+  const sessionUserPushSessionMatches = !hasSessionUserBinding
+    ? !hasAuthBinding
+    : Boolean(receiptSessionUser.pushSessionHash)
+      && receiptSessionUser.pushSessionHash === (authBinding.pushSession?.sessionHash || receiptSubjectBinding.pushSessionHash);
+  const receiptBindingMatches = !hasAuthBinding
+    || (
+      receiptIdentityMatches
+      && issueIdentityMatches
+      && sessionUserIdentityMatches
+      && sessionUserPushSessionMatches
+    );
+  const ok = sameUser
+    && sameSession
+    && manageOptions
+    && receiptBindingMatches;
+
+  return {
+    schemaVersion: 1,
+    ok,
+    required: 'same authenticated user identity for push session, dry-run receipt, apply, replay, and readback',
+    observed: ok ? 'session-user-identity-bound' : 'session-user-identity-drift-or-missing',
+    user: anchor ? {
+      userId: anchor.authUserId,
+      userLoginHash: anchor.authUser ? sha256Hex(anchor.authUser) : '',
+      manageOptions: anchor.manageOptions === true,
+    } : null,
+    checks: {
+      sameUser,
+      sameSession,
+      manageOptions,
+      receiptBindingPresent: hasAuthBinding,
+      sessionUserBindingPresent: hasSessionUserBinding,
+      receiptIdentityMatches,
+      issueIdentityMatches,
+      sessionUserIdentityMatches,
+      sessionUserPushSessionMatches,
+    },
+    receipt: {
+      receiptHash: receipt?.receiptHash || null,
+      identityHash: receiptIdentityHash || null,
+      subjectIdentityHash: receiptSubjectBinding.identityHash || null,
+      issueIdentityHash: receiptPushIssue.identityHash || null,
+      sessionUserIdentityHash: receiptSessionUser.identityHash || null,
+      sessionUserBindingHash: receiptSessionUser.bindingHash || null,
+      pushSessionHash: authBinding.pushSession?.sessionHash || null,
+    },
+    observations: normalizedObservations,
+  };
+}
+
+function responseAuthIdentityObservation(step, response) {
+  const identity = response?.body?.auth?.identity;
+  const session = response?.body?.auth?.session;
+  const signedRequest = response?.body?.signedRequest;
+  if (!identity && !session && !signedRequest) {
+    return null;
+  }
+
+  return {
+    step,
+    status: response?.status ?? null,
+    authUser: typeof identity?.userLogin === 'string' ? identity.userLogin : '',
+    authUserId: normalizeObservedAuthIdentityUserId(identity?.userId),
+    authCapabilities: summarizeAuthIdentityCapabilities(identity),
+    sessionId: typeof session?.id === 'string' ? session.id : '',
+    sessionHash: signedRequest?.sessionHash || signedRequest?.session?.sessionHash || '',
+  };
+}
+
+function normalizeAuthIdentityObservation(observation) {
+  if (!observation || typeof observation !== 'object') {
+    return null;
+  }
+  const authUser = typeof observation.authUser === 'string'
+    ? observation.authUser.trim()
+    : '';
+  const authUserId = normalizeObservedAuthIdentityUserId(observation.authUserId);
+  const capabilities = summarizeAuthIdentityCapabilities({ capabilities: observation.authCapabilities });
+  const sessionId = typeof observation.sessionId === 'string'
+    ? observation.sessionId.trim()
+    : '';
+  const sessionHash = typeof observation.sessionHash === 'string'
+    ? observation.sessionHash.trim()
+    : '';
+
+  return {
+    step: observation.step || null,
+    status: Number.isInteger(observation.status) ? observation.status : null,
+    authUser,
+    authUserId,
+    manageOptions: Object.prototype.hasOwnProperty.call(capabilities, 'manage_options')
+      ? capabilities.manage_options === true
+      : null,
+    sessionId,
+    sessionHash,
+  };
+}
+
+function identityObservationUserMatches(expected, observed) {
+  if (!expected || !observed) {
+    return false;
+  }
+
+  return expected.authUser === observed.authUser
+    && expected.authUserId === observed.authUserId;
 }
 
 function summarizeOldRemoteRecoveryClassification(response, plan) {
