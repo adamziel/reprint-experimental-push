@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T10:14:29+02:00">Last updated: May 30, 2026, 10:14 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T10:17:27+02:00">Last updated: May 30, 2026, 10:17 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>391</strong>
+        <strong>392</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>609</strong>
+        <strong>608</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -340,7 +340,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
-            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, mutation/precondition one-to-one mapping, remoteBeforeHash binding, localHash binding, already-in-sync no-op safety, keep-remote preservation, forged ready plan defense, raw-value redaction, same-content, large plans, remote-only plugin metadata preservation, stale plugin owner-context refusal, unknown plugin-owned resource refusal, conflict hash redaction, independent row/file preservation, and local delete/remote edit refusal.</span>
+            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, mutation/precondition one-to-one mapping, remoteBeforeHash binding, localHash binding, already-in-sync no-op safety, keep-remote preservation, forged ready plan defense, raw-value redaction, same-content, large plans, remote-only plugin metadata preservation, stale plugin owner-context refusal, unknown plugin-owned resource refusal, conflict hash redaction, independent file/row and row/file preservation, and local delete/remote edit refusal.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
@@ -406,10 +406,13 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0259</span>
+        <span>RPP-0261</span>
       </div>
-      <p>The latest refresh integrates RPP-0259 redacted raw value evidence variant-3 proof: focused generated redaction coverage and adjacent RPP-0219/RPP-0239 redaction coverage pass. Counts are now 391/609; final release remains NO-GO because this is local planner/apply evidence, not production endpoint proof.</p>
+      <p>The latest refresh integrates RPP-0261 independent local file plus remote row edit variant-4 proof: focused/generated RPP-0261 coverage, adjacent RPP-0241 coverage, and the RPP-0201/RPP-0221 planner/generated slice pass. Counts are now 392/608; final release remains NO-GO because this is local planner/apply evidence, not production endpoint proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0261 focused/generated: 2/2</span>
+        <span class="tag">RPP-0241 adjacent: 2/2</span>
+        <span class="tag">RPP-0201/0221 slice: 3/3</span>
         <span class="tag">RPP-0259 focused: 1/1</span>
         <span class="tag">RPP-0219/0239 slice: 3/3</span>
         <span class="tag">RPP-0258 focused: 1/1</span>

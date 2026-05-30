@@ -6,20 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 10:14 CEST.
+- Last update: 2026-05-30 10:17 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0259 redacted raw value evidence variant-3 merge ending at
-  `6152417a5`.
+  the RPP-0261 independent local file plus remote row edit variant-4 merge
+  ending at `c541e9f62`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 391
-  items checked and leaves 609 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 392
+  items checked and leaves 608 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 56 merge-invariant items. No release-ops items are checked
+  harness items, and 57 merge-invariant items. No release-ops items are checked
   yet.
+- Independent local file plus remote row edit variant-4 refresh: the current
+  lane now contains `RPP-0261` evidence in
+  `docs/evidence/rpp-0261-independent-local-file-remote-row-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0261-independent-local-file-remote-row-v4.test.js`. `node
+  --check` passed for the focused test, the focused/generated RPP-0261 test
+  passed 2/2, adjacent RPP-0241 variant-3 coverage passed 2/2, and the
+  adjacent RPP-0201/RPP-0221 planner/generated slice passed 3/3. Checklist
+  lint, scoped artifact redaction scan, and merge diff whitespace checks also
+  passed. Counts are now 392/608; final release remains `NO-GO`.
 - Redacted raw value evidence variant-3 refresh: the current lane now contains
   `RPP-0259` evidence in
   `docs/evidence/rpp-0259-redacted-raw-value-evidence-v3.md`,
