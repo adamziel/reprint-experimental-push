@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 16:05 CEST +02:00.
+- Last update: 2026-05-30 16:12 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0714 large post table benchmark merge ending at `6d1ccc68c`.
+  the RPP-0522 production snapshot hashes route v2 merge ending at `c0bf3e1fd`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -19,6 +19,22 @@ linked implementation artifacts.
   18 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Production snapshot hashes route v2 augmented proof: the current lane now
+  carries the represented `RPP-0522` salvage commit into the existing
+  `docs/evidence/rpp-0522-production-snapshot-hashes-route-v2.md`,
+  `scripts/playground/production-snapshot-hashes-route-live-smoke.mjs`, and
+  `test/production-snapshot-hashes-route.test.js` proof. The merged smoke keeps
+  the lane's malformed JSON auth/signature pre-dispatch guard and protocol
+  journal non-mutation checks, while adding the worker's invalid-session,
+  route-surface hash, receipt/session hash-length, and production-shaped route
+  summary assertions. Validation passed with PHP and Node syntax checks,
+  focused route coverage 7/7, live loopback smoke with six malformed cases,
+  unchanged protocol journal fingerprints, no route-surface mutation, adjacent
+  auth/session/route coverage 163/163, checklist lint, scoped artifact
+  redaction scan, and merge diff whitespace checks. Counts remain 474/526
+  because `RPP-0522` was already checked; final release remains `NO-GO` because
+  this is still sandbox-local production-shaped route proof, not external
+  production topology and credential evidence.
 - Large post table benchmark: the current lane now contains `RPP-0714` evidence
   in `docs/evidence/rpp-0714-large-post-table-benchmark.md`,
   `docs/reprint-push-completion-checklist.md`,
