@@ -6,20 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 15:27 CEST +02:00.
+- Last update: 2026-05-30 15:32 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0492 direct active_plugins release-verifier merge ending at
-  `66cbf7c47`.
+  the RPP-0493 owner-context stale plugin-file release-verifier merge ending at
+  `d9ded4d93`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 466
-  items checked and leaves 534 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 467
+  items checked and leaves 533 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  78 plugin-driver boundary items, 27 executor/auth items, 31 recovery items,
+  79 plugin-driver boundary items, 27 executor/auth items, 31 recovery items,
   17 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Owner-context stale plugin-file release-verifier carry-through: the current
+  lane now contains `RPP-0493` evidence in
+  `docs/evidence/rpp-0493-owner-context-stale-plugin-file-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0493-owner-context-stale-plugin-file-release-verifier-v5.test.js`.
+  The verifier emits hash-only `pluginDriver.ownerContext.stalePluginFile`
+  proof; carries a ready `wp_postmeta` plugin-owned mutation through apply with
+  owner context required; records matching local/remote owner plugin-file
+  context that differs from base; blocks stale planner work with
+  `stale-plugin-owner-context` and `STALE_PLUGIN_FILE_OWNER_CONTEXT`; rejects
+  stale replay with `STALE_PLUGIN_OWNER_CONTEXT` before `beforeMutation`; and
+  preserves remote hashes without raw row or plugin-file values. Validation
+  passed with Node syntax checks, focused RPP-0493 coverage 3/3, adjacent
+  owner-context/refusal coverage 21/21, adjacent plugin-driver release-verifier
+  coverage 34/34, checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks. Counts are now 467/533; final release remains `NO-GO`
+  because this is support-only release-verifier evidence, not production-backed
+  owner-context lifecycle proof.
 - Direct active_plugins release-verifier carry-through: the current lane now
   contains `RPP-0492` evidence in
   `docs/evidence/rpp-0492-direct-active-plugins-mutation-refusal-release-verifier-v5.md`,
