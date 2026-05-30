@@ -464,6 +464,20 @@ export const wpOptionsDriverReleaseVerifierBoundary = Object.freeze({
   }),
 });
 
+export const driverDryRunValidationHookReleaseVerifierBoundary = Object.freeze({
+  driver: 'wp-option',
+  owner: 'forms',
+  table: 'wp_options',
+  rowId: 'option_name:rpp_0497_forms_settings',
+  resourceKey: 'row:["wp_options","option_name:rpp_0497_forms_settings"]',
+  supportedHook: 'wp-option:validate-row',
+  unsupportedHook: 'wp-option:unsupported-dry-run',
+  variants: Object.freeze([
+    'supported-dry-run-hook-applies',
+    'unsupported-dry-run-hook-blocked',
+  ]),
+});
+
 const coreWordPressDriverBoundaryTables = new Set([
   'wp_options',
   'wp_postmeta',
@@ -737,6 +751,368 @@ function cloneReleaseVerifierJson(value) {
 
 function sha256Evidence(value) {
   return `sha256:${digest(value)}`;
+}
+
+export function summarizeDriverDryRunValidationHookReleaseVerifierProof({
+  now = new Date('2026-05-30T11:49:07.000Z'),
+} = {}) {
+  try {
+    return buildDriverDryRunValidationHookReleaseVerifierProof(now);
+  } catch (error) {
+    return {
+      rpp: 'RPP-0497',
+      evidenceSource: 'release-verifier-driver-dry-run-validation-hook-v5',
+      evidenceScope: 'local-generated-release-verifier',
+      checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+      status: 'blocked',
+      verdict: 'DRIVER_DRY_RUN_VALIDATION_HOOK_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: driverDryRunValidationHookReleaseGate({
+        checked: false,
+        verdict: 'DRIVER_DRY_RUN_VALIDATION_HOOK_REQUIRED',
+      }),
+      driver: driverDryRunValidationHookReleaseVerifierBoundary.driver,
+      owner: driverDryRunValidationHookReleaseVerifierBoundary.owner,
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildDriverDryRunValidationHookReleaseVerifierProof(now) {
+  const boundary = driverDryRunValidationHookReleaseVerifierBoundary;
+  const rawFixtures = {
+    base: 'rpp-0497-base-dry-run-validation-hook',
+    supportedLocal: 'rpp-0497-local-dry-run-validation-hook',
+    unsupportedLocal: 'rpp-0497-unsupported-dry-run-validation-hook',
+  };
+  const variants = [
+    driverDryRunValidationHookReleaseVerifierCase({
+      now,
+      variant: 'supported-dry-run-hook-applies',
+      localMode: rawFixtures.supportedLocal,
+      hook: boundary.supportedHook,
+      supportedHook: true,
+      rawFixtures,
+    }),
+    driverDryRunValidationHookReleaseVerifierCase({
+      now,
+      variant: 'unsupported-dry-run-hook-blocked',
+      localMode: rawFixtures.unsupportedLocal,
+      hook: boundary.unsupportedHook,
+      supportedHook: false,
+      rawFixtures,
+    }),
+  ];
+  const supportedVariants = variants.filter((entry) => entry.driverDryRunValidation.supported === true);
+  const unsupportedVariants = variants.filter((entry) => entry.driverDryRunValidation.supported === false);
+  const failClosedUnsupportedVariants = unsupportedVariants.filter((entry) =>
+    entry.failClosed?.remoteUnchanged === true
+      && entry.failClosed?.code === 'PLAN_NOT_READY');
+  const outcomes = Object.fromEntries(variants.map((entry) => [entry.variant, entry.outcome]));
+  const checked = variants.length === boundary.variants.length
+    && supportedVariants.length === 1
+    && unsupportedVariants.length === 1
+    && failClosedUnsupportedVariants.length === unsupportedVariants.length
+    && variants.every((entry) => boundary.variants.includes(entry.variant));
+  const verdict = checked
+    ? 'DRIVER_DRY_RUN_VALIDATION_HOOK_SUPPORT_ONLY'
+    : 'DRIVER_DRY_RUN_VALIDATION_HOOK_REQUIRED';
+
+  const proof = {
+    rpp: 'RPP-0497',
+    evidenceSource: 'release-verifier-driver-dry-run-validation-hook-v5',
+    evidenceScope: 'local-generated-release-verifier',
+    checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+    status: checked ? 'support_only' : 'blocked',
+    verdict,
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: driverDryRunValidationHookReleaseGate({ checked, verdict }),
+    driver: boundary.driver,
+    owner: boundary.owner,
+    resource: {
+      resourceKey: boundary.resourceKey,
+      table: boundary.table,
+      rowId: boundary.rowId,
+    },
+    rawValuesIncluded: false,
+    releaseVerifier: {
+      check: 'plugin-driver-dry-run-validation-hook',
+      generatedHarnessCovered: checked,
+      supportedVariants: supportedVariants.length,
+      unsupportedVariants: unsupportedVariants.length,
+      failClosedUnsupportedVariants: failClosedUnsupportedVariants.length,
+      outcomes,
+      outcomeCounts: countValues(variants.map((entry) => entry.outcome)),
+      variantSetHash: sha256Evidence(variants.map((entry) => ({
+        variant: entry.variant,
+        outcome: entry.outcome,
+        status: entry.status,
+        hook: entry.driverDryRunValidation.hook,
+        reasonCode: entry.driverDryRunValidation.reasonCode,
+        supportedHook: entry.driverDryRunValidation.supportedHook,
+        remoteUnchanged: entry.failClosed?.remoteUnchanged ?? null,
+      }))),
+    },
+    variants,
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    releaseVerifier: proof.releaseVerifier,
+    variants: proof.variants.map((entry) => ({
+      variant: entry.variant,
+      outcome: entry.outcome,
+      plan: entry.plan,
+      driverDryRunValidation: entry.driverDryRunValidation,
+      hashes: entry.hashes,
+      failClosed: entry.failClosed
+        ? {
+            code: entry.failClosed.code,
+            remoteUnchanged: entry.failClosed.remoteUnchanged,
+            blockerHash: entry.failClosed.blockerHash,
+            refusalHash: entry.failClosed.refusalHash,
+          }
+        : null,
+    })),
+  });
+
+  const serialized = JSON.stringify(proof);
+  if (Object.values(rawFixtures).some((raw) => serialized.includes(raw)) || serialized.includes('option_value')) {
+    return {
+      rpp: proof.rpp,
+      evidenceSource: proof.evidenceSource,
+      evidenceScope: proof.evidenceScope,
+      checkedBy: proof.checkedBy,
+      status: 'blocked',
+      verdict: 'DRIVER_DRY_RUN_VALIDATION_HOOK_REDACTION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: driverDryRunValidationHookReleaseGate({
+        checked: false,
+        verdict: 'DRIVER_DRY_RUN_VALIDATION_HOOK_REDACTION_REQUIRED',
+      }),
+      driver: boundary.driver,
+      owner: boundary.owner,
+      resource: proof.resource,
+      rawValuesIncluded: true,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: true,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'DRIVER_DRY_RUN_VALIDATION_HOOK_REDACTION_REQUIRED',
+        resource: proof.resource,
+      }),
+    };
+  }
+
+  return proof;
+}
+
+function driverDryRunValidationHookReleaseVerifierCase({
+  now,
+  variant,
+  localMode,
+  hook,
+  supportedHook,
+  rawFixtures,
+}) {
+  const boundary = driverDryRunValidationHookReleaseVerifierBoundary;
+  const base = driverDryRunValidationHookSnapshot(rawFixtures.base);
+  const local = driverDryRunValidationHookSnapshot(rawFixtures.base);
+  local.db[boundary.table][boundary.rowId].option_value.mode = localMode;
+  local.meta = {
+    pushPolicy: {
+      pluginOwnedResources: {
+        allowedResources: [
+          {
+            resourceKey: boundary.resourceKey,
+            pluginOwner: boundary.owner,
+            driver: boundary.driver,
+            dryRunValidation: {
+              hook,
+              status: 'passed',
+            },
+          },
+        ],
+      },
+    },
+  };
+  const remote = driverDryRunValidationHookSnapshot(rawFixtures.base);
+  const plan = createPushPlan({ base, local, remote, now });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const validationEvidence = mutation?.pluginOwnedResource?.dryRunValidationEvidence
+    || blocker?.dryRunValidationEvidence
+    || null;
+  const common = {
+    id: `rpp-0497-${variant}`,
+    variant,
+    family: 'driver-dry-run-validation-hook',
+    status: plan.status,
+    resourceKey: boundary.resourceKey,
+    driver: boundary.driver,
+    owner: boundary.owner,
+    plan: {
+      status: plan.status,
+      mutationCount: plan.summary?.mutations ?? plan.mutations.length,
+      blockerCount: plan.summary?.blockers ?? plan.blockers.length,
+      preconditionCount: plan.preconditions.length,
+      hash: sha256Evidence(plan),
+    },
+    driverDryRunValidation: {
+      supported: supportedHook === true,
+      pluginOwner: validationEvidence?.pluginOwner || null,
+      driver: validationEvidence?.driver || null,
+      policySource: validationEvidence?.policySource || null,
+      hook: validationEvidence?.hook || hook,
+      reasonCode: validationEvidence?.reasonCode || null,
+      operation: validationEvidence?.operation || null,
+      supportedHook: validationEvidence?.supportedHook === true,
+      status: validationEvidence?.status || null,
+      evidenceHash: sha256Evidence(validationEvidence || null),
+    },
+    hashes: {
+      planHash: sha256Evidence(plan),
+      mutationHash: mutation ? sha256Evidence({
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        baseHash: mutation.baseHash,
+        localHash: mutation.localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+        dryRunValidationEvidence: validationEvidence,
+      }) : null,
+      blockerHash: blocker ? sha256Evidence({
+        class: blocker.class,
+        resourceKey: blocker.resourceKey,
+        driver: blocker.driver,
+        pluginOwner: blocker.pluginOwner,
+        dryRunValidationEvidence: validationEvidence,
+        baseHash: blocker.baseHash,
+        localHash: blocker.localHash,
+        remoteHash: blocker.remoteHash,
+      }) : null,
+    },
+  };
+
+  if (supportedHook) {
+    const applied = applyPlan(cloneReleaseVerifierJson(remote), plan);
+    const appliedRowHash = mutation ? `sha256:${resourceHash(applied.site, mutation.resource)}` : null;
+    return {
+      ...common,
+      outcome: 'applied-supported-hook',
+      mutationBoundary: mutation ? {
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        changeKind: mutation.changeKind,
+        pluginOwner: mutation.pluginOwnedResource?.pluginOwner || null,
+        driver: mutation.pluginOwnedResource?.driver || null,
+        policySource: mutation.pluginOwnedResource?.policySource || null,
+        baseHash: mutation.baseHash,
+        localHash: mutation.localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+      } : null,
+      apply: {
+        appliedMutations: applied.appliedMutations,
+        appliedRowHash,
+        journalHash: sha256Evidence(applied.journal),
+      },
+      failClosed: null,
+    };
+  }
+
+  const refusedRemote = cloneReleaseVerifierJson(remote);
+  const remoteBeforeHash = sha256Evidence(refusedRemote);
+  const error = captureDriverDryRunValidationHookApplyError(refusedRemote, plan);
+  const remoteAfterHash = sha256Evidence(refusedRemote);
+  return {
+    ...common,
+    outcome: 'blocked-unsupported-hook',
+    mutationBoundary: null,
+    apply: null,
+    failClosed: {
+      stage: 'planner',
+      code: error?.code || null,
+      remoteUnchanged: remoteAfterHash === remoteBeforeHash,
+      remoteBeforeHash,
+      remoteAfterHash,
+      blockerClass: blocker?.class || null,
+      reasonCode: validationEvidence?.reasonCode || null,
+      blockerHash: common.hashes.blockerHash,
+      refusalHash: sha256Evidence(error?.details || null),
+    },
+  };
+}
+
+function captureDriverDryRunValidationHookApplyError(remote, plan) {
+  try {
+    applyPlan(remote, plan);
+  } catch (error) {
+    return error;
+  }
+  return null;
+}
+
+function driverDryRunValidationHookReleaseGate({
+  checked,
+  verdict,
+}) {
+  return {
+    status: 'NO-GO',
+    verdict: checked ? 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED' : verdict,
+    evidenceScope: 'local-generated-release-verifier',
+    productionBacked: false,
+    acceptedForReleaseGate: false,
+    note: checked
+      ? 'driver dry-run validation hook proof is local/generated release-verifier evidence; production-backed release gate evidence is still required'
+      : 'driver dry-run validation hook proof is incomplete; release gate remains NO-GO',
+  };
+}
+
+function driverDryRunValidationHookSnapshot(mode) {
+  const boundary = driverDryRunValidationHookReleaseVerifierBoundary;
+  return {
+    files: {
+      'wp-content/plugins/forms/forms.php': '<?php /* forms plugin dry-run validation release verifier fixture */',
+    },
+    plugins: {
+      [boundary.owner]: {
+        version: '1.0.0',
+        active: true,
+      },
+    },
+    db: {
+      [boundary.table]: {
+        [boundary.rowId]: {
+          option_name: 'rpp_0497_forms_settings',
+          option_value: {
+            mode,
+            nested: { enabled: true },
+          },
+          autoload: 'no',
+          __pluginOwner: boundary.owner,
+        },
+      },
+    },
+  };
+}
+
+function countValues(values) {
+  const counts = {};
+  for (const value of values) {
+    counts[value] = (counts[value] || 0) + 1;
+  }
+  return counts;
 }
 
 export function summarizeProductionPluginDriverBoundaryProof({
@@ -2551,6 +2927,7 @@ try {
         const pluginDriverProof = {
           productionOwned: productionPluginDriverProof,
           wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
+          dryRunValidationHook: summarizeDriverDryRunValidationHookReleaseVerifierProof(),
           coreSemantics: {
             wpPostmeta: wpPostmetaReleaseVerifierEvidence,
             wpTermmeta: wpTermmetaReleaseVerifierEvidence,
@@ -2852,6 +3229,7 @@ try {
       const pluginDriverProof = {
         productionOwned: productionPluginDriverProof,
         wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
+        dryRunValidationHook: summarizeDriverDryRunValidationHookReleaseVerifierProof(),
         coreSemantics: {
           wpPostmeta: wpPostmetaReleaseVerifierEvidence,
           wpTermmeta: wpTermmetaReleaseVerifierEvidence,
