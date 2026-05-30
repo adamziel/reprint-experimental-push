@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 502.
-- Remaining open: 498.
+- Verified complete: 503.
+- Remaining open: 497.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -419,7 +419,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [x] RPP-0390 (Mid / graph-identity) Carry through the release verifier for post_tag taxonomy reference, variant 5. Success: docs state remaining unmapped WordPress surfaces.
 - [x] RPP-0391 (Mid / graph-identity) Carry through the release verifier for custom taxonomy fail-closed reference, variant 5. Success: mapper rewrites or proves stable identity for the target.
 - [x] RPP-0392 (Mid / graph-identity) Carry through the release verifier for termmeta term reference, variant 5. Success: unsupported target fails closed with hash-only evidence.
-- [ ] RPP-0393 (Mid / graph-identity) Carry through the release verifier for term relationship object reference, variant 5. Success: generated harness includes ready and stale cases.
+- [x] RPP-0393 (Mid / graph-identity) Carry through the release verifier for term relationship object reference, variant 5. Success: generated harness includes ready and stale cases.
 - [ ] RPP-0394 (Mid / graph-identity) Carry through the release verifier for term relationship taxonomy reference, variant 5. Success: local production verifier carries the target through apply.
 - [ ] RPP-0395 (Mid / graph-identity) Carry through the release verifier for nav menu item fail-closed reference, variant 5. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0396 (Mid / graph-identity) Carry through the release verifier for wp_navigation fail-closed reference, variant 5. Success: mapper rewrites or proves stable identity for the target.
