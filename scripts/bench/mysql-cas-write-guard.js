@@ -123,8 +123,8 @@ export function runMysqlCasWriteGuardBenchmark(options = {}) {
   };
 }
 
-export function detectMysqlRuntime(env = process.env) {
-  const mysqlVersion = spawnSync('mysql', ['--version'], {
+export function detectMysqlRuntime(env = process.env, spawn = spawnSync) {
+  const mysqlVersion = spawn('mysql', ['--version'], {
     encoding: 'utf8',
     timeout: 3_000,
   });
@@ -142,13 +142,34 @@ export function detectMysqlRuntime(env = process.env) {
     clientVersion = (mysqlVersion.stdout || mysqlVersion.stderr || '').trim();
   }
 
-  const hasConnectionSettings = Boolean(
-    env.REPRINT_PUSH_MYSQL_CAS_DSN
-      || (env.REPRINT_PUSH_MYSQL_CAS_HOST && env.REPRINT_PUSH_MYSQL_CAS_DATABASE && env.REPRINT_PUSH_MYSQL_CAS_USER),
-  );
-  if (!hasConnectionSettings) {
-    unavailableCapabilities.push('mysql-runtime-connection-settings');
-    details.push('REPRINT_PUSH_MYSQL_CAS_DSN or REPRINT_PUSH_MYSQL_CAS_HOST/REPRINT_PUSH_MYSQL_CAS_DATABASE/REPRINT_PUSH_MYSQL_CAS_USER not set');
+  const connectionConfig = mysqlConnectionConfigFromEnv(env);
+  if (!connectionConfig.ok) {
+    unavailableCapabilities.push(connectionConfig.reasonCode);
+    details.push(connectionConfig.detail);
+  }
+
+  if (unavailableCapabilities.length === 0) {
+    const probe = spawn('mysql', mysqlProbeArgs(connectionConfig.connection), {
+      encoding: 'utf8',
+      timeout: 3_000,
+      env: mysqlProbeEnv(env, connectionConfig.connection),
+    });
+    if (probe.error) {
+      unavailableCapabilities.push('mysql-runtime-connection-probe');
+      details.push(`mysql connection probe failed: ${probe.error.code || probe.error.message}`);
+    } else if (probe.status !== 0) {
+      unavailableCapabilities.push('mysql-runtime-connection-probe');
+      details.push(`mysql connection probe exited ${probe.status}: ${redactMysqlProbeOutput(probe.stderr || probe.stdout || '', connectionConfig.connection)}`);
+    } else {
+      return {
+        status: 'available',
+        unavailableCapabilities: [],
+        detail: 'mysql client connection probe succeeded; benchmark did not run live CAS DML',
+        clientVersion,
+        serverVersion: (probe.stdout || '').trim().split(/\r?\n/)[0] || 'unknown',
+        connection: 'configured-redacted',
+      };
+    }
   }
 
   if (unavailableCapabilities.length > 0) {
@@ -157,16 +178,137 @@ export function detectMysqlRuntime(env = process.env) {
       unavailableCapabilities,
       detail: details.join('; '),
       ...(clientVersion ? { clientVersion } : {}),
+      ...(connectionConfig.ok ? { connection: 'configured-redacted' } : {}),
     };
   }
 
   return {
-    status: 'available',
-    unavailableCapabilities: [],
-    detail: 'mysql client and redacted connection settings were present; deterministic guard coverage still uses fixture rows',
-    clientVersion,
-    connection: 'configured-redacted',
+    status: 'unavailable',
+    unavailableCapabilities: ['mysql-runtime-connection-settings'],
+    detail: 'REPRINT_PUSH_MYSQL_CAS_DSN or REPRINT_PUSH_MYSQL_CAS_HOST/REPRINT_PUSH_MYSQL_CAS_DATABASE/REPRINT_PUSH_MYSQL_CAS_USER not set',
+    ...(clientVersion ? { clientVersion } : {}),
   };
+}
+
+function mysqlConnectionConfigFromEnv(env) {
+  if (env.REPRINT_PUSH_MYSQL_CAS_DSN) {
+    return mysqlConnectionConfigFromDsn(env.REPRINT_PUSH_MYSQL_CAS_DSN);
+  }
+
+  const host = env.REPRINT_PUSH_MYSQL_CAS_HOST || '';
+  const socket = env.REPRINT_PUSH_MYSQL_CAS_SOCKET || '';
+  const database = env.REPRINT_PUSH_MYSQL_CAS_DATABASE || '';
+  const user = env.REPRINT_PUSH_MYSQL_CAS_USER || '';
+  if ((!host && !socket) || !database || !user) {
+    return {
+      ok: false,
+      reasonCode: 'mysql-runtime-connection-settings',
+      detail: 'REPRINT_PUSH_MYSQL_CAS_DSN or (REPRINT_PUSH_MYSQL_CAS_HOST or REPRINT_PUSH_MYSQL_CAS_SOCKET) with REPRINT_PUSH_MYSQL_CAS_DATABASE and REPRINT_PUSH_MYSQL_CAS_USER not set',
+    };
+  }
+
+  return {
+    ok: true,
+    connection: {
+      host,
+      socket,
+      port: env.REPRINT_PUSH_MYSQL_CAS_PORT || '',
+      database,
+      user,
+      password: env.REPRINT_PUSH_MYSQL_CAS_PASSWORD || '',
+    },
+  };
+}
+
+function mysqlConnectionConfigFromDsn(dsn) {
+  let parsed;
+  try {
+    parsed = new URL(dsn);
+  } catch {
+    return {
+      ok: false,
+      reasonCode: 'mysql-runtime-connection-settings',
+      detail: 'REPRINT_PUSH_MYSQL_CAS_DSN is not a valid mysql:// URL',
+    };
+  }
+
+  if (parsed.protocol !== 'mysql:') {
+    return {
+      ok: false,
+      reasonCode: 'mysql-runtime-connection-settings',
+      detail: 'REPRINT_PUSH_MYSQL_CAS_DSN must use the mysql:// scheme',
+    };
+  }
+
+  const database = decodeURIComponent(parsed.pathname.replace(/^\//, ''));
+  const socket = parsed.searchParams.get('socket') || '';
+  if ((!parsed.hostname && !socket) || !parsed.username || !database) {
+    return {
+      ok: false,
+      reasonCode: 'mysql-runtime-connection-settings',
+      detail: 'REPRINT_PUSH_MYSQL_CAS_DSN must include host or socket, database, and user',
+    };
+  }
+
+  return {
+    ok: true,
+    connection: {
+      host: parsed.hostname || '',
+      socket,
+      port: parsed.port || '',
+      database,
+      user: decodeURIComponent(parsed.username),
+      password: parsed.password ? decodeURIComponent(parsed.password) : '',
+    },
+  };
+}
+
+function mysqlProbeArgs(connection) {
+  const args = [
+    '--batch',
+    '--skip-column-names',
+    '--raw',
+    '--connect-timeout=3',
+  ];
+  if (connection.socket) {
+    args.push('--protocol=socket', `--socket=${connection.socket}`);
+  } else {
+    args.push('--protocol=tcp', `--host=${connection.host}`);
+    if (connection.port) {
+      args.push(`--port=${connection.port}`);
+    }
+  }
+  args.push(
+    `--user=${connection.user}`,
+    `--database=${connection.database}`,
+    '--execute=SELECT @@version',
+  );
+  return args;
+}
+
+function mysqlProbeEnv(env, connection) {
+  if (!connection.password) {
+    return env;
+  }
+  return {
+    ...env,
+    MYSQL_PWD: connection.password,
+  };
+}
+
+function redactMysqlProbeOutput(output, connection) {
+  let redacted = String(output).replace(/\s+/g, ' ').trim();
+  const values = [
+    connection.password,
+    connection.user,
+    connection.database,
+    connection.host,
+    connection.socket,
+  ].filter((value) => typeof value === 'string' && value.length > 0);
+  for (const value of values) {
+    redacted = redacted.split(value).join('[redacted]');
+  }
+  return redacted || 'no probe output';
 }
 
 export function buildMysqlCasUpdateShape(surfaceInput) {
