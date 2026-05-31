@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 20:02 CEST +02:00.
+- Last update: 2026-05-31 20:05 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0735 large media library benchmark variant-2 merge ending at
-  `a43436`.
+  the RPP-0736 large plugin file benchmark variant-2 merge ending at `0dfb0e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 727
-  items checked and leaves 273 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 728
+  items checked and leaves 272 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  35 storage/performance items, 3 production-topology items, 100 generated
+  36 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Large plugin file benchmark variant-2 proof: the current lane now checks
+  `RPP-0736` with local storage/performance support evidence. The proof verifies
+  benchmark JSON with runtime, resources, and pass/fail gates, keeps plugin
+  files invisible until atomic group commit, and blocks incomplete receipts,
+  pre-commit visibility, failed fsync evidence, or premature output. Command:
+  `node --test --test-name-pattern RPP-0736 test/rpp-0736-large-plugin-file-benchmark-v2.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0736
+  coverage 2/2, adjacent RPP-0716 coverage 5/5, adjacent RPP-0732 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  728/272; final release remains `NO-GO` because this is support evidence, not
+  production-backed atomic group commit proof.
 - Large media library benchmark variant-2 proof: the current lane now checks
   `RPP-0735` with local storage/performance support evidence. The proof keeps
   fast-path lane output behind a passing correctness gate vector, verifies row
