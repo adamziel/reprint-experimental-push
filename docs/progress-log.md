@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:44 CEST +02:00.
+- Last update: 2026-05-31 13:46 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0540 production audit event schema variant-2 merge ending at
-  `d3ccb4f`.
+  the RPP-0451 plugin uninstall/delete refusal variant-3 merge ending at
+  `8c8c983`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 599
-  items checked and leaves 401 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 600
+  items checked and leaves 400 open.
 - Checked slices: 100 release-gate foundation items, 87 graph identity items,
-  93 plugin-driver boundary items, 40 executor/auth items, 47 recovery items,
+  94 plugin-driver boundary items, 40 executor/auth items, 47 recovery items,
   29 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin uninstall/delete refusal variant-3 proof: the current lane now checks
+  `RPP-0451` with local plugin-driver support evidence. The proof blocks plugin
+  uninstall metadata deletes, plugin package file removals, and plugin-owned row
+  deletes before mutation unless explicit checked row delete support applies to
+  the exact driver, and stale or forged delete evidence fails closed. Command:
+  `node --test --test-name-pattern RPP-0451 test/rpp-0451-plugin-uninstall-delete-refusal-v3.test.js`.
+  Caveat: local plugin-driver support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0451
+  coverage 3/3, adjacent plugin uninstall/delete refusal coverage 6/6, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 600/400;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed plugin-driver proof.
 - Production audit event schema variant-2 proof: the current lane now checks
   `RPP-0540` with local executor/auth support evidence. The proof carries one
   production audit schema route-evidence block into a verify:release-style
