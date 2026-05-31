@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 21:26 CEST +02:00.
+- Last update: 2026-05-31 21:28 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0763 transaction boundary policy variant-4 merge ending at `962ef3`.
+  the RPP-0764 filesystem compare-and-rename write variant-4 merge ending at
+  `6a9b59`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 755
-  items checked and leaves 245 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 756
+  items checked and leaves 244 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  63 storage/performance items, 3 production-topology items, 100 generated
+  64 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Filesystem compare-and-rename write variant-4 proof: the current lane now
+  checks `RPP-0764` with deterministic local storage/performance support
+  evidence. The proof exercises the local filesystem compare/rename boundary
+  across matching update and create writes, same-size content drift, size drift,
+  file-to-directory type drift, and stale create drift. The large-site budget
+  run covers 160 guarded writes, 128 applied writes, 32 stale-at-write
+  rejections, 0 unsafe rename-on-stale writes, 0 temporary file leaks, 262144
+  byte files, and a passing `large-site-runtime-budget` gate inside the 12000 ms
+  and 268435456 byte heap budgets. Command:
+  `node --test --test-name-pattern RPP-0764 test/rpp-0764-filesystem-compare-and-rename-write-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0764
+  coverage 3/3, adjacent RPP-0744 coverage 3/3, RPP-0724 coverage 3/3, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 756/244;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed filesystem durability proof.
 - Transaction boundary policy variant-4 proof: the current lane now checks
   `RPP-0763` with deterministic local storage/performance support evidence. The
   proof carries forward the RPP-0743 lane from the source RPP-0703 policy hash
