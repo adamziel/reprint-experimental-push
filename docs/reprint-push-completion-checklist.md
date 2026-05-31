@@ -319,7 +319,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [x] RPP-0295 (Near-Mid / merge-invariants) Carry through the release verifier for keep-remote decision, variant 5. Success: progress log records the command and caveat.
 - [x] RPP-0296 (Near-Mid / merge-invariants) Carry through the release verifier for blocked plan apply refusal, variant 5. Success: node test proves the invariant over generated and focused fixtures.
 - [x] RPP-0297 (Near-Mid / merge-invariants) Carry through the release verifier for conflict plan apply refusal, variant 5. Success: executor rejects forged or stale mutation attempts.
-- [ ] RPP-0298 (Near-Mid / merge-invariants) Carry through the release verifier for forged ready plan defense, variant 5. Success: no raw private value appears in serialized plan evidence.
+- [x] RPP-0298 (Near-Mid / merge-invariants) Carry through the release verifier for forged ready plan defense, variant 5. Success: no raw private value appears in serialized plan evidence.
 - [ ] RPP-0299 (Near-Mid / merge-invariants) Carry through the release verifier for redacted raw value evidence, variant 5. Success: scenario matrix row names the behavior and command.
 - [ ] RPP-0300 (Near-Mid / merge-invariants) Carry through the release verifier for atomic group blocker propagation, variant 5. Success: progress log records the command and caveat.
 

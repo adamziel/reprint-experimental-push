@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:27 CEST +02:00.
+- Last update: 2026-05-31 11:40 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0200 large-ready-plan-tier release-verifier v5 merge ending at
-  `0341ad18b`.
+  the RPP-0298 forged ready-plan defense release-verifier v5 merge ending at
+  `ba2438691`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 568
-  items checked and leaves 432 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 569
+  items checked and leaves 431 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 100 generated
-  harness items, and 97 merge-invariant items. No release-ops items are checked
+  harness items, and 98 merge-invariant items. No release-ops items are checked
   yet.
+- Forged ready plan defense release-verifier v5 carry-through: the current lane
+  now checks `RPP-0298` with focused support evidence that ready plans cannot be
+  forged by dropping live preconditions, duplicating live preconditions,
+  replacing expected hashes with raw private material, or swapping the planned
+  mutation body. Each forged attempt is rejected with
+  `PLAN_INVARIANT_VIOLATION` before mutation hooks, durable journal writes,
+  reported applied mutations, or remote snapshot changes. Command:
+  `node --test test/rpp-0298-forged-ready-plan-defense-release-verifier-v5.test.js`.
+  Caveat: local release-verifier support evidence only; release remains gated
+  separately. Validation passed with Node syntax checks, focused RPP-0298
+  coverage 2/2, adjacent RPP-0238/RPP-0258/RPP-0278 forged-ready lineage
+  coverage 4/4, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 569/431; final release remains `NO-GO` because this is local
+  merge-invariant support evidence, not production-backed release proof.
 - Large ready plan tier release-verifier v5 generated proof: the current lane
   now checks `RPP-0200` with deterministic generated-harness support evidence
   for the large-ready surface. The proof exposes
