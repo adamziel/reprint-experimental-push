@@ -6,19 +6,45 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 00:04 CEST +02:00.
+- Last update: 2026-06-01 00:07 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0561 production preflight route variant-4 merge ending at `e6ef87`.
+  the RPP-0546 production recovery inspect route variant-3 merge ending at
+  `c86232`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 792
-  items checked and leaves 208 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 793
+  items checked and leaves 207 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 91 executor/auth items, 100 recovery items,
+  100 plugin-driver boundary items, 92 executor/auth items, 100 recovery items,
   98 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production recovery inspect route variant-3 proof: the current lane now
+  checks `RPP-0546` with deterministic local generated executor/auth support
+  evidence. The proof models the production-shaped recovery-inspect route as a
+  signed, session-bound, idempotency-free, read-only `POST` request to
+  `/wp-json/reprint/v1/push/recovery/inspect`, keeps route metadata hash-only,
+  records stable recovery rows/classification state, and blocks release
+  movement for missing, stale, expired-session, or legacy idempotency-bound
+  evidence. Negative auth cases cover missing Basic auth, wrong Basic auth,
+  missing signed headers, missing push session, legacy idempotency key,
+  content-hash mismatch, auth-signature mismatch, invalid push session, and
+  push-signature mismatch before JSON parsing, recovery-inspect reads, recovery
+  write paths, or mutation side effects. The proof records an explicit
+  no-production-proof caveat and support-only `NO-GO` release posture.
+  Command:
+  `node --test --test-name-pattern RPP-0546 test/rpp-0546-production-recovery-inspect-route-v3.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0546
+  coverage 3/3, direct RPP-0546 coverage 3/3, authenticated read-only inspect
+  coverage 4/4, adjacent RPP-0547 coverage 3/3, recovery-inspect release-gate
+  generated coverage 2/2, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 793/207; final release remains `NO-GO` because this is
+  support evidence, not checked production-owned recovery-inspect endpoint
+  proof, production storage receipts, production row batch executor evidence,
+  production atomic group commit evidence, live production service evidence,
+  production throughput, release approval, or a production release gate.
 - Production preflight route variant-4 proof: the current lane now checks
   `RPP-0561` with deterministic local focused regression support evidence. The
   proof pins the production preflight route as a signed `GET` route under
