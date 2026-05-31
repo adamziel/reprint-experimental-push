@@ -1,0 +1,924 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+import { applyPlan } from '../src/apply.js';
+import { assertEvidenceHasNoRawValues } from '../src/evidence-redaction.js';
+import { createPushPlan } from '../src/planner.js';
+import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
+import {
+  assertJournalRecordHasNoRawValues,
+  openProductionRecoveryJournal,
+  productionRecoveryJournalInspectionSurfaceIsPresent,
+  readRecoveryJournal,
+  recoveryClaimHash,
+} from '../src/recovery-journal.js';
+import { deserializeResourceValue, resourceHash, setResource } from '../src/resources.js';
+import { digest } from '../src/stable-json.js';
+import { buildDurableRecoveryJournalReleaseProof } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
+
+const fixedNow = new Date('2026-05-31T14:00:00.000Z');
+const checkedCommand = 'timeout 300s npm run verify:release';
+const checkedRoute = '/wp-json/reprint/v1/push/recovery/inspect';
+const sourceUrl = 'http://127.0.0.1:8080';
+const hashPattern = /^[a-f0-9]{64}$/;
+const sha256EvidencePattern = /^sha256:[a-f0-9]{64}$/;
+const generatedCase = Object.freeze({
+  id: 'rpp-0694-commit-replay-release-verifier-v5',
+  mutationCount: 5,
+});
+
+function tempJournalPath(prefix = 'reprint-rpp-0694-commit-replay-v5-') {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  return path.join(dir, 'recovery.jsonl');
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function generatedSites() {
+  const base = { files: {}, plugins: {}, db: {} };
+  for (let index = 1; index <= generatedCase.mutationCount; index++) {
+    base.files[`${generatedCase.id}-target-${index}.txt`] =
+      `base-raw-rpp-0694-${generatedCase.id}-target-${index}`;
+  }
+
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  for (let index = 1; index <= generatedCase.mutationCount; index++) {
+    local.files[`${generatedCase.id}-target-${index}.txt`] =
+      `local-raw-rpp-0694-${generatedCase.id}-target-${index}`;
+  }
+
+  const plan = createPushPlan({
+    base,
+    local,
+    remote,
+    now: fixedNow,
+  });
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.mutations.length, generatedCase.mutationCount);
+
+  return {
+    plan,
+    remote,
+    expectedCommitted: applyMutations(cloneJson(remote), plan),
+    rawSiteValues: rawSiteValuesFor(base, local, remote),
+  };
+}
+
+function rawSiteValuesFor(...sites) {
+  const values = new Set([
+    'base-raw-rpp-0694',
+    'local-raw-rpp-0694',
+  ]);
+  for (const site of sites) {
+    for (const value of Object.values(site.files || {})) {
+      values.add(value);
+    }
+  }
+  return [...values];
+}
+
+function applyMutations(site, plan) {
+  for (const mutation of plan.mutations) {
+    setResource(site, mutation.resource, deserializeResourceValue(mutation.value));
+  }
+  return site;
+}
+
+function oldRemoteJournalForPlan(remote, plan) {
+  return {
+    schemaVersion: 1,
+    id: `journal-${plan.id}`,
+    planId: plan.id,
+    status: 'opened',
+    createdAt: plan.generatedAt,
+    remoteBeforeHash: digest(remote),
+    entries: plan.mutations.map((mutation) => ({
+      mutationId: mutation.id,
+      resource: cloneJson(mutation.resource),
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      status: 'pending',
+      beforeHash: mutation.remoteBeforeHash || resourceHash(remote, mutation.resource),
+      afterHash: digest(deserializeResourceValue(mutation.value)),
+    })),
+  };
+}
+
+function artifactRefsFor() {
+  return {
+    releaseProof: `artifact://rpp-0694/${generatedCase.id}/release-verifier-same-key-replay-after-commit-v5`,
+    recoverySupport: `artifact://rpp-0694/${generatedCase.id}/same-key-replay-after-commit-v5`,
+    durabilityScope: `artifact://rpp-0694/${generatedCase.id}/sandbox-jsonl-support-only`,
+  };
+}
+
+function claimIdsFor() {
+  return {
+    previousClaimId: `${generatedCase.id}-previous-claim`,
+    releaseVerifierClaimId: `${generatedCase.id}-release-verifier-claim`,
+  };
+}
+
+function recordsOfType(records, type) {
+  return records.filter((record) => record.type === type);
+}
+
+function expectedSequences(totalRecords) {
+  return Array.from({ length: totalRecords }, (_, index) => index + 1);
+}
+
+function assertNoRawSiteValues(value, rawSiteValues, label = 'RPP-0694 evidence') {
+  const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+  for (const rawValue of rawSiteValues) {
+    assert.equal(
+      serialized.includes(rawValue),
+      false,
+      `${label} leaked raw site value: ${rawValue}`,
+    );
+  }
+}
+
+function assertHashOnlyJournalRows(records, rawSiteValues) {
+  for (const record of records) {
+    assert.doesNotThrow(() => assertJournalRecordHasNoRawValues(record));
+    assert.equal(Object.hasOwn(record, 'beforeValue'), false);
+    assert.equal(Object.hasOwn(record, 'afterValue'), false);
+    for (const field of [
+      'observedHash',
+      'beforeHash',
+      'afterHash',
+      'stagedHash',
+      'claimHash',
+      'previousClaimHash',
+      'journalIdentityHash',
+    ]) {
+      if (record[field] !== undefined && record[field] !== null) {
+        assert.match(record[field], hashPattern, `${field} must be SHA-256-shaped`);
+      }
+    }
+  }
+  assertNoRawSiteValues(records, rawSiteValues, 'RPP-0694 journal rows');
+}
+
+function oldRemoteRecoveryFromInspection({ inspection, plan, checkedPath }) {
+  return {
+    source: 'RPP-0694 release-verifier same-key replay old-remote classification',
+    status: 200,
+    state: inspection.status,
+    observedState: inspection.remoteClassification.state,
+    counts: {
+      ...inspection.counts,
+      total: plan.mutations.length,
+    },
+    targetEnvelope: {
+      total: plan.mutations.length,
+      old: plan.mutations.length,
+      new: 0,
+      blockedUnknown: 0,
+      hashOnly: true,
+      rawValuesIncluded: false,
+      checkedPath,
+      allTargetsAccountedFor: true,
+    },
+  };
+}
+
+function manualRecoveryAuditExportFromInspection({ productionInspection, plan }) {
+  const mutationEvents = plan.mutations.length;
+  const claim = productionInspection.journal.claim;
+  const writerLease = productionInspection.journal.writerLease;
+  const leaseFenceWriterLease = productionInspection.journal.leaseFence.writerLease;
+  const activeClaimKeyHash = claim.activeClaimKeyHash || claim.activeClaimHash;
+  const writerLeaseClaimKeyHash = writerLease.claimKeyHash || writerLease.claimHash;
+  const leaseFenceClaimKeyHash = leaseFenceWriterLease.claimKeyHash
+    || leaseFenceWriterLease.claimHash;
+  const leaseOwnerIdentity = {
+    activeClaimId: claim.activeClaimId,
+    activeClaimKeyHash,
+    writerLeaseClaimId: writerLease.claimId,
+    writerLeaseClaimKeyHash,
+    leaseFenceClaimId: leaseFenceWriterLease.claimId,
+    leaseFenceClaimKeyHash,
+    matches: claim.activeClaimId === writerLease.claimId
+      && claim.activeClaimId === leaseFenceWriterLease.claimId
+      && activeClaimKeyHash === writerLeaseClaimKeyHash
+      && activeClaimKeyHash === leaseFenceClaimKeyHash,
+  };
+  const body = {
+    schemaVersion: 1,
+    kind: 'manual-recovery-audit-export',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    sameReleaseBoundary: true,
+    sourceUrl,
+    targetEnvelope: {
+      total: mutationEvents,
+      hashOnly: true,
+      rawValuesIncluded: false,
+    },
+    counts: {
+      old: 0,
+      new: mutationEvents,
+      blockedUnknown: 0,
+      total: mutationEvents,
+    },
+    leaseOwnerIdentity,
+  };
+
+  return {
+    ...body,
+    exportHash: digest(body),
+  };
+}
+
+function buildRecoveryReleaseSummary({
+  productionInspection,
+  plan,
+  oldRemoteRecovery,
+}) {
+  const mutationEvents = plan.mutations.length;
+  const checkedPath = productionInspection.journal.checked[0];
+  const originalRequestHash = '8'.repeat(64);
+  const conflictingRequestHash = '9'.repeat(64);
+  const latestEvents = [
+    { sequence: 1, event: 'idempotency-opened', requestHash: originalRequestHash },
+    { sequence: 2, event: 'apply-started', requestHash: originalRequestHash },
+    ...Array.from({ length: mutationEvents }, (_, index) => ({
+      sequence: 3 + index,
+      event: 'mutation-applied',
+      requestHash: originalRequestHash,
+    })),
+    { sequence: 3 + mutationEvents, event: 'apply-committed', requestHash: originalRequestHash },
+    { sequence: 4 + mutationEvents, event: 'apply-replayed', requestHash: originalRequestHash },
+    {
+      sequence: 5 + mutationEvents,
+      event: 'idempotency-key-conflict',
+      requestHash: conflictingRequestHash,
+    },
+  ];
+
+  return {
+    topology: {
+      sourceUrl,
+    },
+    boundary: {
+      verdict: 'LIVE_RELEASE_BOUNDARY_OK',
+    },
+    manualRecoveryAuditExport: manualRecoveryAuditExportFromInspection({
+      productionInspection,
+      plan,
+    }),
+    durableJournal: {
+      proof: productionInspection,
+    },
+    releaseProof: {
+      plan: {
+        mutations: mutationEvents,
+      },
+      recoveryInspect: {
+        status: 200,
+        recovery: {
+          state: 'fully-updated-remote',
+          journalState: 'ok',
+          checkedPath,
+          counts: {
+            old: 0,
+            new: mutationEvents,
+            blockedUnknown: 0,
+            total: mutationEvents,
+          },
+        },
+      },
+      replay: {
+        idempotency: {
+          replayed: true,
+          freshMutationWork: false,
+        },
+      },
+      idempotencyConflict: {
+        status: 409,
+        code: 'IDEMPOTENCY_KEY_CONFLICT',
+        idempotency: {
+          conflict: true,
+          freshMutationWork: false,
+          requestHash: conflictingRequestHash,
+          originalRequestHash,
+        },
+        targetSnapshotUnchanged: true,
+        recoveryState: {
+          source: 'RPP-0694 different-body conflict recovery state',
+          storage: 'sqlite',
+          state: 'fully-updated-remote',
+          restartReadable: true,
+          counts: {
+            old: 0,
+            new: mutationEvents,
+            blockedUnknown: 0,
+            total: mutationEvents,
+          },
+        },
+      },
+      dbJournal: {
+        mutationApplied: mutationEvents,
+        eventCounts: {
+          'idempotency-key-conflict': 1,
+        },
+        latestEvents,
+      },
+      staleClaimRetry: {
+        oldRemoteRecovery,
+        abandoned: {
+          status: 500,
+          code: 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD',
+          recovery: oldRemoteRecovery,
+        },
+      },
+      replayAndRetry: {
+        required: checkedPath,
+        observed: checkedPath,
+        retryAttempts: 2,
+        verdict: 'PRESERVED_REMOTE_RETRY_PROVEN',
+      },
+    },
+  };
+}
+
+function buildBlockedApplyRevalidation(plan) {
+  return {
+    ok: true,
+    apply: {
+      status: 412,
+      code: 'PRECONDITION_FAILED',
+      applied: 0,
+      applyRevalidation: {
+        phase: 'before-first-mutation',
+        checkedAgainst: 'live-remote',
+      },
+    },
+    replay: {
+      status: 412,
+      code: 'PRECONDITION_FAILED',
+      replayed: true,
+      freshMutationWork: false,
+      preservedRemoteUnchanged: true,
+    },
+    recoveryInspect: {
+      recovery: {
+        state: 'blocked-recovery',
+        counts: {
+          old: plan.mutations.length - 1,
+          new: 0,
+          blockedUnknown: 1,
+          total: plan.mutations.length,
+        },
+      },
+    },
+    dbJournal: {
+      ordering: {
+        ordered: true,
+        applyRejected: 20,
+        applyReplayed: 21,
+        mutationAppliedBeforeFailure: 0,
+        applyCommitted: false,
+      },
+    },
+    durableJournal: {
+      checkedAccepted: true,
+    },
+    boundary: {
+      verdict: 'LIVE_RELEASE_BOUNDARY_OK',
+      durableJournal: {
+        verdict: 'LIVE_RELEASE_BOUNDARY_OK',
+      },
+    },
+  };
+}
+
+function releaseVerifierEvidenceFor({
+  plan,
+  checkedPath,
+  beforeReplay,
+  afterReplay,
+  replayResult,
+  replayRecoveryInspection,
+  releaseProof,
+}) {
+  const mutationRowsBefore = recordsOfType(beforeReplay.records, 'mutation-observed').length;
+  const mutationRowsAfter = recordsOfType(afterReplay.records, 'mutation-observed').length;
+  const targetRowsBefore = recordsOfType(beforeReplay.records, 'target-planned').length;
+  const targetRowsAfter = recordsOfType(afterReplay.records, 'target-planned').length;
+  const completedRowsAfter = recordsOfType(afterReplay.records, 'journal-completed').length;
+  const replayRowsAfter = recordsOfType(afterReplay.records, 'journal-replayed').length;
+  const targetEnvelope = afterReplay.committedState.targetEnvelope;
+  const leaseOwner = afterReplay.committedState.leaseOwner;
+  const auditLeaseOwner = releaseProof.manualRecoveryAuditExport.leaseOwnerIdentity;
+  const payload = {
+    schemaVersion: 1,
+    issue: 'RPP-0694',
+    variant: 5,
+    generatedCase: generatedCase.id,
+    planId: plan.id,
+    evidenceSource: 'release-verifier-same-key-replay-after-commit-v5',
+    evidenceScope: 'local-jsonl-release-verifier-shaped',
+    status: 'support_only',
+    verdict: 'LEASE_OWNER_AUDIT_VISIBLE_SUPPORT_ONLY',
+    observedAt: fixedNow.toISOString(),
+    checkedCommand,
+    checkedRoute,
+    sourceUrl,
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    rawValuesIncluded: false,
+    hashOnly: true,
+    checkedPathHash: digest({ checkedPath }),
+    sameKeyReplayAfterCommit: {
+      replayed: true,
+      freshMutationWork: replayResult.appliedMutations !== 0,
+      appliedMutations: replayResult.appliedMutations,
+      mutationRowsBefore,
+      mutationRowsAfter,
+      targetRowsBefore,
+      targetRowsAfter,
+      duplicateMutationRecords: mutationRowsAfter !== mutationRowsBefore,
+      duplicateTargetPlannedRecords: targetRowsAfter !== targetRowsBefore,
+      completedRows: completedRowsAfter,
+      replayRows: replayRowsAfter,
+      beforeReplayRowsHash: digest(beforeReplay.records),
+      afterReplayRowsHash: digest(afterReplay.records),
+      targetEnvelope: {
+        ...targetEnvelope,
+        hashOnly: true,
+        rawValuesIncluded: false,
+      },
+    },
+    auditEvidence: {
+      hashOnly: true,
+      rawValuesIncluded: false,
+      leaseOwnerIdentity: {
+        visible: leaseOwner.visible === true,
+        claimId: leaseOwner.claimId,
+        claimHash: leaseOwner.claimHash,
+        claimKeyHash: leaseOwner.claimKeyHash,
+        sequence: leaseOwner.sequence,
+        eventType: leaseOwner.eventType,
+      },
+      manualRecoveryAuditLeaseOwnerIdentity: {
+        visible: auditLeaseOwner.matches === true,
+        activeClaimId: auditLeaseOwner.activeClaimId,
+        activeClaimKeyHash: auditLeaseOwner.activeClaimKeyHash,
+        writerLeaseClaimId: auditLeaseOwner.writerLeaseClaimId,
+        writerLeaseClaimKeyHash: auditLeaseOwner.writerLeaseClaimKeyHash,
+        leaseFenceClaimId: auditLeaseOwner.leaseFenceClaimId,
+        leaseFenceClaimKeyHash: auditLeaseOwner.leaseFenceClaimKeyHash,
+        matches: auditLeaseOwner.matches === true,
+      },
+      manualRecoveryAuditExportHash: releaseProof.manualRecoveryAuditExport.exportHash,
+      releaseProofHash: digest({
+        gate: releaseProof.gate,
+        gateStatus: releaseProof.gateStatus,
+        checks: releaseProof.checks,
+        leaseOwnerIdentity: releaseProof.leaseOwnerIdentity,
+        manualRecoveryAuditExport: releaseProof.manualRecoveryAuditExport,
+      }),
+    },
+    releaseVerifier: {
+      gate: releaseProof.gate,
+      durableRecoveryJournalBoundary: releaseProof.durableRecoveryJournalBoundary,
+      ok: releaseProof.ok,
+      gateStatus: releaseProof.gateStatus,
+      sameReleaseBoundary: releaseProof.sameReleaseBoundary,
+      sourceUrl: releaseProof.sourceUrl,
+      checks: {
+        leaseOwnerIdentity: releaseProof.checks.leaseOwnerIdentity,
+        manualRecoveryAuditExport: releaseProof.checks.manualRecoveryAuditExport,
+        sameKeyBodyReplay: releaseProof.checks.sameKeyBodyReplay,
+        sameKeyDifferentBodyConflict: releaseProof.checks.sameKeyDifferentBodyConflict,
+        sameKeyReplayAfterRejection: releaseProof.checks.sameKeyReplayAfterRejection,
+        oldState: releaseProof.checks.oldState,
+        newState: releaseProof.checks.newState,
+        blockedState: releaseProof.checks.blockedState,
+      },
+      leaseOwnerIdentity: releaseProof.leaseOwnerIdentity,
+      manualRecoveryAuditExport: {
+        proved: releaseProof.manualRecoveryAuditExport.proved,
+        kind: releaseProof.manualRecoveryAuditExport.kind,
+        format: releaseProof.manualRecoveryAuditExport.format,
+        rawValuesIncluded: releaseProof.manualRecoveryAuditExport.rawValuesIncluded,
+        sameReleaseBoundary: releaseProof.manualRecoveryAuditExport.sameReleaseBoundary,
+        targetEnvelope: releaseProof.manualRecoveryAuditExport.targetEnvelope,
+        leaseOwnerIdentity: releaseProof.manualRecoveryAuditExport.leaseOwnerIdentity,
+        exportHash: releaseProof.manualRecoveryAuditExport.exportHash,
+      },
+      recoveryState: replayRecoveryInspection.status,
+    },
+    releaseMovement: {
+      allowed: false,
+      gates: '0/4',
+      reason: 'support-only local release-verifier same-key replay proof; production-backed durable journal evidence still required',
+    },
+    plan: {
+      mutationCount: plan.mutations.length,
+      planHash: digest(plan),
+    },
+  };
+
+  return {
+    ...payload,
+    evidenceHash: `sha256:${digest(payload)}`,
+  };
+}
+
+function replayAfterCommitEvidenceProvesLeaseOwnerCarryThrough(evidence, plan) {
+  const replay = evidence?.sameKeyReplayAfterCommit;
+  const targetEnvelope = replay?.targetEnvelope;
+  const leaseOwner = evidence?.auditEvidence?.leaseOwnerIdentity;
+  const auditLeaseOwner = evidence?.auditEvidence?.manualRecoveryAuditLeaseOwnerIdentity;
+  const releaseVerifier = evidence?.releaseVerifier;
+  const verifierLeaseOwner = releaseVerifier?.leaseOwnerIdentity;
+  const auditExportLeaseOwner = releaseVerifier?.manualRecoveryAuditExport?.leaseOwnerIdentity;
+
+  return Boolean(
+    evidence?.status === 'support_only'
+      && evidence?.productionBacked === false
+      && evidence?.releaseEligible === false
+      && evidence?.releaseGate === 'NO-GO'
+      && evidence?.rawValuesIncluded === false
+      && evidence?.hashOnly === true
+      && replay?.replayed === true
+      && replay?.freshMutationWork === false
+      && replay?.appliedMutations === 0
+      && replay?.duplicateMutationRecords === false
+      && replay?.duplicateTargetPlannedRecords === false
+      && replay?.completedRows === 1
+      && replay?.replayRows === 1
+      && Number.isInteger(targetEnvelope?.plannedTargets)
+      && Number.isInteger(targetEnvelope?.committedTargets)
+      && targetEnvelope.plannedTargets === plan.mutations.length
+      && targetEnvelope.committedTargets === plan.mutations.length
+      && targetEnvelope.allCommittedTargetsHaveHashes === true
+      && targetEnvelope.allTargetsCommitted === true
+      && targetEnvelope.hashOnly === true
+      && targetEnvelope.rawValuesIncluded === false
+      && evidence?.auditEvidence?.hashOnly === true
+      && evidence?.auditEvidence?.rawValuesIncluded === false
+      && leaseOwner?.visible === true
+      && typeof leaseOwner?.claimId === 'string'
+      && hashPattern.test(leaseOwner?.claimHash || '')
+      && hashPattern.test(leaseOwner?.claimKeyHash || '')
+      && Number.isInteger(leaseOwner?.sequence)
+      && leaseOwner?.eventType === 'journal-completed'
+      && auditLeaseOwner?.visible === true
+      && auditLeaseOwner?.matches === true
+      && auditLeaseOwner?.activeClaimId === leaseOwner.claimId
+      && auditLeaseOwner?.activeClaimKeyHash === leaseOwner.claimKeyHash
+      && auditLeaseOwner?.writerLeaseClaimId === leaseOwner.claimId
+      && auditLeaseOwner?.writerLeaseClaimKeyHash === leaseOwner.claimKeyHash
+      && auditLeaseOwner?.leaseFenceClaimId === leaseOwner.claimId
+      && auditLeaseOwner?.leaseFenceClaimKeyHash === leaseOwner.claimKeyHash
+      && releaseVerifier?.gate === 'GATE-2'
+      && releaseVerifier?.durableRecoveryJournalBoundary === 'release-verifier'
+      && releaseVerifier?.ok === true
+      && releaseVerifier?.gateStatus === 'proven'
+      && releaseVerifier?.sameReleaseBoundary === true
+      && releaseVerifier?.sourceUrl === sourceUrl
+      && releaseVerifier?.checks?.leaseOwnerIdentity === true
+      && releaseVerifier?.checks?.manualRecoveryAuditExport === true
+      && releaseVerifier?.checks?.sameKeyBodyReplay === true
+      && releaseVerifier?.checks?.sameKeyReplayAfterRejection === true
+      && verifierLeaseOwner?.matches === true
+      && verifierLeaseOwner?.activeClaimId === leaseOwner.claimId
+      && verifierLeaseOwner?.activeClaimKeyHash === leaseOwner.claimKeyHash
+      && auditExportLeaseOwner?.matches === true
+      && auditExportLeaseOwner?.activeClaimId === leaseOwner.claimId
+      && auditExportLeaseOwner?.activeClaimKeyHash === leaseOwner.claimKeyHash
+      && evidence?.releaseMovement?.allowed === false
+      && evidence?.releaseMovement?.gates === '0/4'
+  );
+}
+
+function assertReleaseVerifierEvidenceAccepted(evidence, {
+  plan,
+  claimId,
+  rawSiteValues,
+}) {
+  assert.equal(replayAfterCommitEvidenceProvesLeaseOwnerCarryThrough(evidence, plan), true);
+  assert.equal(evidence.issue, 'RPP-0694');
+  assert.equal(evidence.variant, 5);
+  assert.equal(evidence.generatedCase, generatedCase.id);
+  assert.equal(evidence.evidenceSource, 'release-verifier-same-key-replay-after-commit-v5');
+  assert.equal(evidence.evidenceScope, 'local-jsonl-release-verifier-shaped');
+  assert.equal(evidence.status, 'support_only');
+  assert.equal(evidence.verdict, 'LEASE_OWNER_AUDIT_VISIBLE_SUPPORT_ONLY');
+  assert.equal(evidence.productionBacked, false);
+  assert.equal(evidence.releaseEligible, false);
+  assert.equal(evidence.releaseGate, 'NO-GO');
+  assert.equal(evidence.sameKeyReplayAfterCommit.targetEnvelope.plannedTargets, plan.mutations.length);
+  assert.equal(evidence.sameKeyReplayAfterCommit.targetEnvelope.committedTargets, plan.mutations.length);
+  assert.equal(evidence.auditEvidence.leaseOwnerIdentity.claimId, claimId);
+  assert.equal(evidence.auditEvidence.leaseOwnerIdentity.claimHash, recoveryClaimHash(claimId));
+  assert.equal(evidence.auditEvidence.leaseOwnerIdentity.claimKeyHash, recoveryClaimHash(claimId));
+  assert.equal(evidence.auditEvidence.manualRecoveryAuditLeaseOwnerIdentity.activeClaimId, claimId);
+  assert.equal(
+    evidence.auditEvidence.manualRecoveryAuditLeaseOwnerIdentity.activeClaimKeyHash,
+    recoveryClaimHash(claimId),
+  );
+  assert.equal(evidence.releaseVerifier.leaseOwnerIdentity.activeClaimId, claimId);
+  assert.equal(evidence.releaseVerifier.leaseOwnerIdentity.activeClaimKeyHash, recoveryClaimHash(claimId));
+  assert.equal(evidence.releaseVerifier.manualRecoveryAuditExport.leaseOwnerIdentity.activeClaimId, claimId);
+  assert.equal(evidence.releaseVerifier.manualRecoveryAuditExport.leaseOwnerIdentity.matches, true);
+  assert.match(evidence.auditEvidence.manualRecoveryAuditExportHash, hashPattern);
+  assert.match(evidence.auditEvidence.releaseProofHash, hashPattern);
+  assert.match(evidence.checkedPathHash, hashPattern);
+  assert.match(evidence.evidenceHash, sha256EvidencePattern);
+
+  const { evidenceHash, ...payload } = evidence;
+  assert.equal(evidenceHash, `sha256:${digest(payload)}`);
+  assertNoRawSiteValues(evidence, rawSiteValues, 'RPP-0694 release-verifier evidence');
+  assert.doesNotThrow(() =>
+    assertEvidenceHasNoRawValues(evidence, { label: 'RPP-0694 release-verifier evidence' }));
+}
+
+function assertCommittedJournal(journal, {
+  plan,
+  current,
+  claimId,
+  rawSiteValues,
+}) {
+  const completedRecord = recordsOfType(journal.records, 'journal-completed').at(-1);
+  assert.ok(completedRecord);
+  assert.equal(journal.integrity.status, 'ok');
+  assert.deepEqual(journal.records.map((record) => record.sequence), expectedSequences(journal.records.length));
+  assert.equal(journal.committedState.status, 'completed');
+  assert.equal(journal.committedState.phase, 'completed');
+  assert.equal(journal.committedState.restartReadable, true);
+  assert.equal(journal.committedState.targetRows, plan.mutations.length);
+  assert.equal(journal.committedState.committedTargetRows, plan.mutations.length);
+  assert.equal(journal.committedState.targetEnvelope.plannedTargets, plan.mutations.length);
+  assert.equal(journal.committedState.targetEnvelope.committedTargets, plan.mutations.length);
+  assert.equal(journal.committedState.targetEnvelope.allCommittedTargetsHaveHashes, true);
+  assert.equal(journal.committedState.targetEnvelope.allTargetsCommitted, true);
+  assert.equal(journal.committedState.leaseOwner.visible, true);
+  assert.equal(journal.committedState.leaseOwner.claimId, claimId);
+  assert.equal(journal.committedState.leaseOwner.claimHash, recoveryClaimHash(claimId));
+  assert.equal(journal.committedState.leaseOwner.claimKeyHash, recoveryClaimHash(claimId));
+  assert.equal(journal.committedState.leaseOwner.eventType, 'journal-completed');
+  assert.equal(journal.committedState.observedHash, digest(current));
+  assert.equal(completedRecord.claimId, claimId);
+  assert.equal(completedRecord.claimHash, recoveryClaimHash(claimId));
+  assertHashOnlyJournalRows(journal.records, rawSiteValues);
+  assertNoRawSiteValues(fs.readFileSync(journal.filePath, 'utf8'), rawSiteValues, 'RPP-0694 journal file');
+}
+
+function runCommittedReplayScenario() {
+  const filePath = tempJournalPath();
+  fs.chmodSync(path.dirname(filePath), 0o700);
+  const {
+    plan,
+    remote,
+    expectedCommitted,
+    rawSiteValues,
+  } = generatedSites();
+  const originalRemote = cloneJson(remote);
+  const previousJournal = oldRemoteJournalForPlan(originalRemote, plan);
+  const artifactRefs = artifactRefsFor();
+  const { previousClaimId, releaseVerifierClaimId } = claimIdsFor();
+  const claimStaleThresholdMs = 1_000;
+
+  const previous = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: originalRemote,
+    artifactRefs,
+    now: fixedNow,
+    claimId: previousClaimId,
+    claimStaleThresholdMs,
+  });
+  previous.close();
+
+  const committedWriter = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: originalRemote,
+    artifactRefs,
+    now: new Date(fixedNow.getTime() + 5_000),
+    truncate: false,
+    claimId: releaseVerifierClaimId,
+    claimStaleThresholdMs,
+  });
+  const beforeCommitJournal = readRecoveryJournal(filePath);
+  const oldRemoteInspection = inspectRecoveryJournal({
+    journal: beforeCommitJournal,
+    plan,
+    current: originalRemote,
+  });
+  assert.equal(oldRemoteInspection.status, 'old-remote');
+
+  const commitResult = applyPlan(remote, plan, {
+    durableJournal: committedWriter,
+    journal: previousJournal,
+    mutateRemote: true,
+    artifactRefs,
+  });
+  const commitInspection = committedWriter.inspect();
+  committedWriter.close();
+
+  assert.equal(commitResult.appliedMutations, plan.mutations.length);
+  assert.deepEqual(remote, expectedCommitted);
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(commitInspection), true);
+  assert.equal(commitInspection.claim.status, 'advanced');
+  assert.equal(commitInspection.claim.activeClaimId, releaseVerifierClaimId);
+  assert.equal(commitInspection.claim.previousClaimId, previousClaimId);
+  assert.equal(commitInspection.claim.claimExpiry.expired, true);
+  assert.equal(commitInspection.claim.claimExpiry.previousClaimExpired, true);
+  assertNoRawSiteValues(commitInspection, rawSiteValues, 'RPP-0694 commit inspection');
+
+  const afterCommit = readRecoveryJournal(filePath);
+  assertCommittedJournal(afterCommit, {
+    plan,
+    current: remote,
+    claimId: releaseVerifierClaimId,
+    rawSiteValues,
+  });
+
+  const committedSnapshotHash = digest(remote);
+  const replayWriter = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: new Date(fixedNow.getTime() + 5_500),
+    truncate: false,
+    claimId: releaseVerifierClaimId,
+    claimStaleThresholdMs,
+  });
+  const replayResult = applyPlan(remote, plan, {
+    durableJournal: replayWriter,
+    journal: previousJournal,
+    mutateRemote: true,
+    artifactRefs,
+  });
+  const replayInspection = replayWriter.inspect();
+  replayWriter.close();
+
+  const afterReplay = readRecoveryJournal(filePath);
+  const replayRecoveryInspection = inspectRecoveryJournal({
+    journal: afterReplay,
+    plan,
+    current: remote,
+  });
+  const checkedPath = replayInspection.journal.checked[0];
+  const oldRemoteRecovery = oldRemoteRecoveryFromInspection({
+    inspection: oldRemoteInspection,
+    plan,
+    checkedPath,
+  });
+  const releaseSummary = buildRecoveryReleaseSummary({
+    productionInspection: replayInspection,
+    plan,
+    oldRemoteRecovery,
+  });
+  const releaseProof = buildDurableRecoveryJournalReleaseProof({
+    releaseSummary,
+    applyRevalidation: buildBlockedApplyRevalidation(plan),
+  });
+  const evidence = releaseVerifierEvidenceFor({
+    plan,
+    checkedPath,
+    beforeReplay: afterCommit,
+    afterReplay,
+    replayResult,
+    replayRecoveryInspection,
+    releaseProof,
+  });
+
+  assert.equal(replayResult.appliedMutations, 0);
+  assert.equal(digest(remote), committedSnapshotHash);
+  assert.deepEqual(remote, expectedCommitted);
+  assertCommittedJournal(afterReplay, {
+    plan,
+    current: remote,
+    claimId: releaseVerifierClaimId,
+    rawSiteValues,
+  });
+  assert.equal(afterReplay.records.length, afterCommit.records.length + 2);
+  assert.equal(recordsOfType(afterReplay.records, 'journal-replayed').length, 1);
+  assert.equal(recordsOfType(afterReplay.records, 'target-planned').length, plan.mutations.length);
+  assert.equal(recordsOfType(afterReplay.records, 'mutation-observed').length, plan.mutations.length);
+  assert.equal(recordsOfType(afterReplay.records, 'journal-completed').length, 1);
+  assert.equal(replayRecoveryInspection.status, 'fully-updated-remote');
+  assert.equal(replayRecoveryInspection.journal.committedState.leaseOwner.claimId, releaseVerifierClaimId);
+  assert.equal(
+    replayRecoveryInspection.journal.committedState.leaseOwner.claimKeyHash,
+    recoveryClaimHash(releaseVerifierClaimId),
+  );
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(replayInspection), true);
+  assert.equal(replayInspection.journal.committedState.leaseOwner.visible, true);
+  assert.equal(replayInspection.journal.committedState.leaseOwner.claimId, releaseVerifierClaimId);
+  assertNoRawSiteValues(replayInspection, rawSiteValues, 'RPP-0694 replay writer inspection');
+
+  assert.equal(releaseSummary.releaseProof.recoveryInspect.recovery.checkedPath, checkedPath);
+  assert.equal(releaseSummary.releaseProof.staleClaimRetry.oldRemoteRecovery.targetEnvelope.checkedPath, checkedPath);
+  assert.equal(releaseSummary.releaseProof.replayAndRetry.required, checkedPath);
+  assert.equal(releaseSummary.releaseProof.replayAndRetry.observed, checkedPath);
+  assert.equal(releaseProof.ok, true);
+  assert.equal(releaseProof.gate, 'GATE-2');
+  assert.equal(releaseProof.durableRecoveryJournalBoundary, 'release-verifier');
+  assert.equal(releaseProof.gateStatus, 'proven');
+  assert.equal(releaseProof.sameReleaseBoundary, true);
+  assert.equal(releaseProof.sourceUrl, sourceUrl);
+  assert.equal(releaseProof.checks.sameKeyBodyReplay, true);
+  assert.equal(releaseProof.sameKeyBodyReplay.proved, true);
+  assert.equal(releaseProof.sameKeyBodyReplay.freshMutationWork, false);
+  assert.equal(releaseProof.sameKeyBodyReplay.duplicateMutationEvents, false);
+  assert.equal(releaseProof.checks.leaseOwnerIdentity, true);
+  assert.equal(releaseProof.leaseOwnerIdentity.activeClaimId, releaseVerifierClaimId);
+  assert.equal(releaseProof.leaseOwnerIdentity.activeClaimKeyHash, recoveryClaimHash(releaseVerifierClaimId));
+  assert.equal(releaseProof.leaseOwnerIdentity.matches, true);
+  assert.equal(releaseProof.checks.manualRecoveryAuditExport, true);
+  assert.equal(releaseProof.manualRecoveryAuditExport.kind, 'manual-recovery-audit-export');
+  assert.equal(releaseProof.manualRecoveryAuditExport.format, 'hash-only');
+  assert.equal(releaseProof.manualRecoveryAuditExport.targetEnvelope.hashOnly, true);
+  assert.equal(releaseProof.manualRecoveryAuditExport.targetEnvelope.rawValuesIncluded, false);
+  assert.equal(releaseProof.manualRecoveryAuditExport.leaseOwnerIdentity.matches, true);
+  assert.equal(releaseProof.manualRecoveryAuditExport.leaseOwnerIdentity.activeClaimId, releaseVerifierClaimId);
+  assertNoRawSiteValues(releaseSummary, rawSiteValues, 'RPP-0694 release summary');
+  assertNoRawSiteValues(releaseProof, rawSiteValues, 'RPP-0694 release proof');
+  assert.doesNotThrow(() =>
+    assertEvidenceHasNoRawValues(releaseProof, { label: 'RPP-0694 release proof' }));
+  assertReleaseVerifierEvidenceAccepted(evidence, {
+    plan,
+    claimId: releaseVerifierClaimId,
+    rawSiteValues,
+  });
+
+  return {
+    plan,
+    claimId: releaseVerifierClaimId,
+    rawSiteValues,
+    evidence,
+  };
+}
+
+test('RPP-0694 same-key replay after commit carries lease owner through release verifier variant 5', () => {
+  const {
+    plan,
+    claimId,
+    rawSiteValues,
+    evidence,
+  } = runCommittedReplayScenario();
+
+  const missingLeaseOwnerEvidence = {
+    ...evidence,
+    auditEvidence: {
+      ...evidence.auditEvidence,
+      leaseOwnerIdentity: {
+        ...evidence.auditEvidence.leaseOwnerIdentity,
+        visible: false,
+      },
+      manualRecoveryAuditLeaseOwnerIdentity: {
+        ...evidence.auditEvidence.manualRecoveryAuditLeaseOwnerIdentity,
+        visible: false,
+        matches: false,
+      },
+    },
+    releaseVerifier: {
+      ...evidence.releaseVerifier,
+      checks: {
+        ...evidence.releaseVerifier.checks,
+        leaseOwnerIdentity: false,
+      },
+      leaseOwnerIdentity: {
+        ...evidence.releaseVerifier.leaseOwnerIdentity,
+        matches: false,
+      },
+      manualRecoveryAuditExport: {
+        ...evidence.releaseVerifier.manualRecoveryAuditExport,
+        leaseOwnerIdentity: {
+          ...evidence.releaseVerifier.manualRecoveryAuditExport.leaseOwnerIdentity,
+          matches: false,
+        },
+      },
+    },
+  };
+
+  assert.equal(evidence.auditEvidence.leaseOwnerIdentity.claimId, claimId);
+  assert.equal(evidence.releaseMovement.allowed, false);
+  assert.equal(evidence.releaseGate, 'NO-GO');
+  assert.equal(
+    replayAfterCommitEvidenceProvesLeaseOwnerCarryThrough(missingLeaseOwnerEvidence, plan),
+    false,
+  );
+  assertNoRawSiteValues(missingLeaseOwnerEvidence, rawSiteValues, 'RPP-0694 rejected lease-owner evidence');
+  assert.doesNotThrow(() =>
+    assertEvidenceHasNoRawValues(
+      missingLeaseOwnerEvidence,
+      { label: 'RPP-0694 rejected lease-owner evidence' },
+    ));
+});
