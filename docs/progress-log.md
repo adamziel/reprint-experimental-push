@@ -6,20 +6,48 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:28 CEST +02:00.
+- Last update: 2026-05-31 23:30 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0792 dry-run batch sizing release-verifier variant-5 merge ending at
-  `5ccd16`.
+  the RPP-0793 apply batch sizing release-verifier variant-5 merge ending at
+  `88ee18`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 784
-  items checked and leaves 216 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 785
+  items checked and leaves 215 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  92 storage/performance items, 3 production-topology items, 100 generated
+  93 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Apply batch sizing release-verifier variant-5 proof: the current lane now
+  checks `RPP-0793` with deterministic local release-verifier support evidence.
+  The proof carries the RPP-0773/RPP-0753/RPP-0713 apply batch sizing lineage
+  into a release-verifier envelope that preserves deterministic apply chunk
+  windows, durable local chunk receipts, receipt-prefix resume, completed
+  receipt-set replay, storage-boundary CAS checks before resumed mutations, and
+  generated unsafe regression coverage. The unit shape records 17 mutations,
+  apply batch size 5, max apply batch size 500, four chunks sized 5, 5, 5, and
+  2, two committed chunks from the interrupted first attempt, 10 first-attempt
+  mutations, two resumed chunks, seven resumed mutations, four completed
+  second-resume skipped chunks, four final replay receipt skips, zero duplicate
+  mutation work, zero replay mutation work, zero replay apply-boundary opens,
+  10 generated cases with one safe output and nine blocked unsafe cases, a
+  support-only rollout vector with 9 passed, 3 blocked, and 0 failed gates, and
+  10 release-verifier gates. Negative coverage blocks missing runtime reports,
+  stale generated coverage, duplicate mutation work, completed-resume duplicate
+  work, storage-boundary drift, raw-value leakage, rollout gate drift, and
+  missing recorded gates.
+  Command:
+  `node --test --test-name-pattern RPP-0793 test/rpp-0793-apply-batch-sizing-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0793
+  coverage 2/2, adjacent RPP-0773 coverage 2/2, adjacent RPP-0753 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  785/215; final release remains `NO-GO` because this is support evidence, not
+  production storage receipts, production row batch executor evidence,
+  production atomic group commit evidence, live production service evidence,
+  production throughput, release approval, or a production release gate.
 - Dry-run batch sizing release-verifier variant-5 proof: the current lane now
   checks `RPP-0792` with deterministic local release-verifier support evidence.
   The proof carries the RPP-0772/RPP-0752/RPP-0712 dry-run batch sizing lineage
