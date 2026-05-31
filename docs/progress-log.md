@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 01:20 CEST +02:00.
+- Last update: 2026-06-01 01:22 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0816 plugin update hooks topology merge ending at `ffc554268`.
+  the RPP-0818 TLS/HTTPS source proof merge ending at `aac41567c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 811
-  items checked and leaves 189 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 812
+  items checked and leaves 188 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 11 production-topology items, 100 generated
+  100 storage/performance items, 12 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- TLS/HTTPS source proof URL identity coverage: the current lane now checks
+  `RPP-0818` with deterministic source/local/changed HTTPS URL support evidence.
+  The proof identity-checks all three topology roles, requires HTTPS for each
+  accepted role URL, rejects tunnel URLs and secret-shaped URL parts, and keeps
+  evidence hash/count/surface-only.
+  Command:
+  `node --test --test-name-pattern RPP-0818 test/rpp-0818-tls-https-source-proof-v1.test.js`.
+  Caveat: local support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0818 coverage 5/5,
+  scoped artifact redaction scan with one allowed hash-evidence occurrence, and
+  diff whitespace checks. Counts are now 812/188; final release remains
+  `NO-GO` because this is support evidence, not production-backed TLS
+  reachability, certificate proof, production credentials, route receipts,
+  durable journal evidence, live mutation proof, throughput, release approval,
+  or a production release gate.
 - Plugin update hooks topology unavailable-capability proof: the current lane
   now checks `RPP-0816` with fail-closed topology support evidence. The proof
   records plugin update hook topology candidate requirements, captures exact
