@@ -1002,6 +1002,102 @@ test('RPP-0178 same independent content variant 4 applies ready cases without un
   assert.equal(evidenceText.includes('Remote ready preserve'), false, 'variant 4 evidence leaked remote-only row title');
 });
 
+test('RPP-0198 same independent content release-verifier v5 carries ready preservation proof', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.sameIndependentContentReleaseVerifierVariant5;
+  const variant4Coverage = report.summary.targetCoverage.sameIndependentContentVariant4;
+  const variant3Coverage = report.summary.targetCoverage.sameIndependentContentVariant3;
+  const legacyCoverage = report.summary.targetCoverage.sameIndependentContent;
+
+  assert.ok(coverage, 'missing same independent content release-verifier v5 target coverage');
+  assert.ok(variant4Coverage, 'missing same independent content variant 4 target coverage');
+  assert.ok(variant3Coverage, 'missing same independent content variant 3 target coverage');
+  assert.ok(legacyCoverage, 'missing same independent content legacy target coverage');
+
+  const firstEvidence = generatedSameIndependentContentReleaseVerifierVariant5Evidence(coverage);
+  const replayEvidence = generatedSameIndependentContentReleaseVerifierVariant5Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0198 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.equal(coverage.family, 'same-independent-content-release-verifier-v5');
+  assert.equal(coverage.total, legacyCoverage.total);
+  assert.equal(coverage.total, variant3Coverage.total);
+  assert.equal(coverage.total, variant4Coverage.total);
+  assert.deepEqual(coverage.perTier, legacyCoverage.perTier);
+  assert.deepEqual(coverage.perTier, variant3Coverage.perTier);
+  assert.deepEqual(coverage.perTier, variant4Coverage.perTier);
+  assert.deepEqual(coverage.statuses, legacyCoverage.statuses);
+  assert.deepEqual(coverage.statuses, variant3Coverage.statuses);
+  assert.deepEqual(coverage.statuses, variant4Coverage.statuses);
+  assert.equal(coverage.total, 10);
+  assert.deepEqual(coverage.statuses, { ready: 10 });
+  assert.deepEqual(firstEvidence, replayEvidence, 'release-verifier v5 same independent evidence changed between runs');
+  assert.equal(firstEvidence.target, 'sameIndependentContentReleaseVerifierVariant5');
+  assert.equal(firstEvidence.family, 'same-independent-content-release-verifier-v5');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(firstEvidence.releaseVerifier, {
+    variant: 5,
+    summaryTargetExposed: true,
+    gate: 'same-independent-content',
+    sharedRowSkippedByPlan: true,
+    unplannedRemotePreserved: true,
+  });
+  assert.deepEqual(
+    firstEvidence.cases.map((entry) => entry.tier),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  for (const entry of firstEvidence.cases) {
+    assert.equal(entry.status, 'ready', `${entry.id} should remain ready`);
+    assert.equal(entry.applied, true, `${entry.id} should apply through the harness`);
+    assert.equal(entry.unplannedRemotePreserved, true, `${entry.id} should preserve unplanned remote data`);
+    assert.deepEqual(entry.releaseVerifier, {
+      variant: 5,
+      summaryTargetExposed: true,
+      sharedRowSkippedByPlan: true,
+      noLiveRemotePreconditionForSharedRow: true,
+      unplannedRemotePreserved: true,
+    });
+    assert.equal(entry.sameResource.decision, 'already-in-sync');
+    assert.equal(entry.sameResource.localHash, entry.sameResource.remoteHash);
+    assert.equal(entry.sameResource.appliedHash, entry.sameResource.remoteHash);
+    assert.notEqual(entry.sameResource.baseHash, entry.sameResource.localHash);
+    assert.equal(entry.sameResource.plannedMutation, false);
+    assert.equal(entry.sameResource.plannedPrecondition, false);
+    assert.equal(entry.apply.appliedMutations, entry.planSummary.mutations);
+    assert.equal(entry.apply.sameResourceSkipped, true);
+    assert.equal(entry.releaseCarryThrough.appliedMutations, entry.planSummary.mutations);
+    assert.equal(entry.releaseCarryThrough.sameResourceSkipped, true);
+    assert.equal(entry.releaseCarryThrough.plannedMutation, false);
+    assert.equal(entry.releaseCarryThrough.plannedPrecondition, false);
+    assert.equal(entry.releaseCarryThrough.sameResourceAppliedHash, entry.releaseCarryThrough.sameResourceRemoteHash);
+    assert.equal(entry.unplannedRemote.preserved, true);
+    assert.equal(entry.unplannedRemote.plannedMutationCount, entry.planSummary.mutations);
+    assert.equal(entry.unplannedRemote.changedResourceCount, 0);
+    assert.ok(entry.unplannedRemote.unplannedResourceCount >= 1, `${entry.id} should verify unplanned resources`);
+    assert.match(entry.sameResource.decisionHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.apply.applyProofHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.unplannedRemote.proofHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.releaseCarryThrough.proofHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+  }
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Shared independent'), false, 'RPP-0198 evidence leaked shared row title');
+  assert.equal(evidenceText.includes('Ready same content'), false, 'RPP-0198 evidence leaked ready same-content payload');
+  assert.equal(evidenceText.includes('Remote ready preserve'), false, 'RPP-0198 evidence leaked remote-only row title');
+});
+
 function generatedPluginUsermetaShape(testCase) {
   const entry = Object.entries(testCase.local.db.wp_usermeta)
     .find(([, row]) => row.__pluginOwner === 'forms'
@@ -1408,6 +1504,55 @@ function generatedSameIndependentContentVariant4Evidence(targetCoverage) {
   };
 }
 
+function generatedSameIndependentContentReleaseVerifierVariant5Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const cases = [];
+
+  for (const testCase of generatePushHarnessCases()) {
+    const result = validateGeneratedCase(testCase);
+    if (testCase.family !== 'same-independent-content'
+      || !testCase.tags.has('same-independent-content-target')
+      || result.status !== 'ready'
+      || result.applied !== true
+      || result.unplannedRemotePreserved !== true) {
+      continue;
+    }
+
+    const evidence = generatedSameIndependentContentReleaseVerifierVariant5CaseEvidence(testCase, result);
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, evidence.status);
+    cases.push(evidence);
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+  const totalCases = cases.length;
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'release-verifier v5 target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'release-verifier v5 target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'release-verifier v5 target recount should match summary total');
+
+  return {
+    target: 'sameIndependentContentReleaseVerifierVariant5',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    releaseVerifier: {
+      variant: 5,
+      summaryTargetExposed: true,
+      gate: 'same-independent-content',
+      sharedRowSkippedByPlan: true,
+      unplannedRemotePreserved: true,
+    },
+    totalCases,
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    cases: cases.sort((left, right) => left.tier - right.tier || left.id.localeCompare(right.id)),
+  };
+}
+
 function generatedSameIndependentContentVariant3CaseEvidence(testCase, result) {
   const shape = assertSameIndependentContentShape(testCase);
   const resource = {
@@ -1589,6 +1734,52 @@ function generatedSameIndependentContentVariant4CaseEvidence(testCase, result) {
       appliedMutations: applied.appliedMutations,
       unplannedRemote,
       planSummary: plan.summary,
+    })}`,
+  };
+}
+
+function generatedSameIndependentContentReleaseVerifierVariant5CaseEvidence(testCase, result) {
+  const evidence = generatedSameIndependentContentVariant4CaseEvidence(testCase, result);
+  const releaseVerifier = {
+    variant: 5,
+    summaryTargetExposed: true,
+    sharedRowSkippedByPlan: evidence.apply.sameResourceSkipped,
+    noLiveRemotePreconditionForSharedRow: evidence.sameResource.plannedPrecondition === false,
+    unplannedRemotePreserved: evidence.unplannedRemote.preserved,
+  };
+  const releaseCarryThrough = {
+    appliedMutations: evidence.apply.appliedMutations,
+    sameResourceSkipped: evidence.apply.sameResourceSkipped,
+    sameResourceRemoteHash: evidence.sameResource.remoteHash,
+    sameResourceAppliedHash: evidence.sameResource.appliedHash,
+    plannedMutation: evidence.sameResource.plannedMutation,
+    plannedPrecondition: evidence.sameResource.plannedPrecondition,
+    unplannedRemoteProofHash: evidence.unplannedRemote.proofHash,
+  };
+  const releaseCarryThroughProofHash = `sha256:${digest({
+    id: evidence.id,
+    tier: evidence.tier,
+    resourceKey: evidence.sameResource.resourceKey,
+    releaseVerifier,
+    releaseCarryThrough,
+  })}`;
+
+  assert.equal(releaseVerifier.sharedRowSkippedByPlan, true);
+  assert.equal(releaseVerifier.noLiveRemotePreconditionForSharedRow, true);
+  assert.equal(releaseVerifier.unplannedRemotePreserved, true);
+  assert.equal(releaseCarryThrough.sameResourceAppliedHash, releaseCarryThrough.sameResourceRemoteHash);
+
+  return {
+    ...evidence,
+    releaseVerifier,
+    releaseCarryThrough: {
+      ...releaseCarryThrough,
+      proofHash: releaseCarryThroughProofHash,
+    },
+    modelProofHash: `sha256:${digest({
+      baseModelProofHash: evidence.modelProofHash,
+      releaseVerifier,
+      releaseCarryThrough,
     })}`,
   };
 }
