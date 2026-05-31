@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 541.
-- Remaining open: 459.
+- Verified complete: 608.
+- Remaining open: 392.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -484,7 +484,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [x] RPP-0450 (Mid / plugin-driver) Add generated coverage for plugin update dependency validator, variant 3. Success: release gate notes whether evidence is local or production-backed.
 - [x] RPP-0451 (Mid / plugin-driver) Add generated coverage for plugin uninstall/delete refusal, variant 3. Success: focused test proves exact driver behavior.
 - [x] RPP-0452 (Mid / plugin-driver) Add generated coverage for direct active_plugins mutation refusal, variant 3. Success: generated harness covers supported and unsupported variants.
-- [ ] RPP-0453 (Mid / plugin-driver) Add generated coverage for owner context stale plugin file refusal, variant 3. Success: local production proof carries one real mutation through apply.
+- [x] RPP-0453 (Mid / plugin-driver) Add generated coverage for owner context stale plugin file refusal, variant 3. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0454 (Mid / plugin-driver) Add generated coverage for owner context stale metadata refusal, variant 3. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0455 (Mid / plugin-driver) Add generated coverage for remote plugin removal refusal, variant 3. Success: release gate notes whether evidence is local or production-backed.
 - [x] RPP-0456 (Mid / plugin-driver) Add generated coverage for driver delete support flag, variant 3. Success: focused test proves exact driver behavior.

@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 14:15 CEST +02:00.
+- Last update: 2026-05-31 14:18 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0542 production snapshot hashes route variant-3 merge ending at
-  `eb17adc`.
+  the RPP-0453 owner-context stale plugin-file refusal variant-3 merge ending
+  at `3bb8e10`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 607
-  items checked and leaves 393 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 608
+  items checked and leaves 392 open.
 - Checked slices: 100 release-gate foundation items, 88 graph identity items,
-  95 plugin-driver boundary items, 42 executor/auth items, 48 recovery items,
+  96 plugin-driver boundary items, 42 executor/auth items, 48 recovery items,
   31 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Owner-context stale plugin-file refusal variant-3 proof: the current lane now
+  checks `RPP-0453` with local plugin-driver support evidence. The proof applies
+  one allowed plugin-file mutation when sibling owner plugin-file context is
+  current, blocks plugin-file and checked plugin-driver mutation when owner
+  context is stale before apply, and refuses stale or forged plugin-file
+  owner-context replay before mutation. Command:
+  `node --test --test-name-pattern RPP-0453 test/rpp-0453-owner-context-stale-plugin-file-refusal-v3.test.js`.
+  Caveat: local plugin-driver support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0453
+  coverage 3/3, adjacent RPP-0473 coverage 2/2, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 608/392; final release remains
+  `NO-GO` because this is support evidence, not production-backed arbitrary
+  plugin safety proof.
 - Production snapshot hashes route variant-3 proof: the current lane now checks
   `RPP-0542` with local executor/auth support evidence. The proof accepts a
   production-shaped local snapshot-hashes route summary as support-only
