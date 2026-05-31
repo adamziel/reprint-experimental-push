@@ -6,20 +6,42 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:00 CEST +02:00.
+- Last update: 2026-05-31 23:04 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0783 transaction boundary release-verifier variant-5 merge ending at
-  `9c34e4`.
+  the RPP-0785 filesystem fsync evidence release-verifier variant-5 merge
+  ending at `7cbe83`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 776
-  items checked and leaves 224 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 777
+  items checked and leaves 223 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  84 storage/performance items, 3 production-topology items, 100 generated
+  85 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Filesystem fsync evidence release-verifier variant-5 proof: the current lane
+  now checks `RPP-0785` with deterministic local release-verifier support
+  evidence. The proof carries the RPP-0765/RPP-0745 filesystem-fsync lineage
+  into the release verifier with runtime metadata, resource counts, explicit
+  pass/fail benchmark gates, correctness gate ordering before fast-path lane
+  updates, hash-only focused and benchmark sample digests, and support-only
+  release metadata. The focused profile records 6 guarded writes, 2 fast-path
+  lane updates, 4 fast-path lane blocks, 2 applied fsync-complete writes, 2
+  applied fsync-incomplete writes, 1 stale-at-write rejection, and 1 temp-file
+  fsync failure. The benchmark profile covers 10 expected guarded writes, 6
+  expected fast-path lane updates, 4 expected fast-path lane blocks, 1024 file
+  bytes, and 9 required benchmark gates, while an impossible heap-budget case
+  preserves runtime, resources, counts, and gate vectors for NO-GO diagnosis.
+  Command:
+  `node --test --test-name-pattern RPP-0785 test/rpp-0785-filesystem-fsync-evidence-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0785
+  coverage 2/2, adjacent RPP-0765 coverage 2/2, adjacent RPP-0745 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  777/223; final release remains `NO-GO` because this is support evidence, not
+  production-backed filesystem durability, remote receipt durability, database
+  transaction behavior, generic filesystem locking, or release eligibility.
 - Transaction boundary release-verifier variant-5 proof: the current lane now
   checks `RPP-0783` with deterministic local release-verifier support evidence.
   The proof carries the RPP-0763/RPP-0743 transaction-boundary lineage into a

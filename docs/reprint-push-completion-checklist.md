@@ -831,7 +831,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0782 (Far / storage-performance) Carry through the release verifier for SQLite compare-and-swap write guard, variant 5. Success: guarded writes reject stale storage state.
 - [x] RPP-0783 (Far / storage-performance) Carry through the release verifier for transaction boundary policy, variant 5. Success: chunk transfer resumes without duplicate mutation work.
 - [x] RPP-0784 (Far / storage-performance) Carry through the release verifier for filesystem compare-and-rename write, variant 5. Success: large-site run finishes inside documented budgets.
-- [ ] RPP-0785 (Far / storage-performance) Carry through the release verifier for filesystem fsync evidence, variant 5. Success: fast-path lane updates only after correctness gates hold.
+- [x] RPP-0785 (Far / storage-performance) Carry through the release verifier for filesystem fsync evidence, variant 5. Success: fast-path lane updates only after correctness gates hold.
 - [ ] RPP-0786 (Far / storage-performance) Carry through the release verifier for large upload chunk manifest, variant 5. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [ ] RPP-0787 (Far / storage-performance) Carry through the release verifier for chunk hash verification, variant 5. Success: guarded writes reject stale storage state.
 - [ ] RPP-0788 (Far / storage-performance) Carry through the release verifier for chunk resume after interruption, variant 5. Success: chunk transfer resumes without duplicate mutation work.
