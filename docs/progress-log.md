@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:46 CEST +02:00.
+- Last update: 2026-05-31 13:49 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0451 plugin uninstall/delete refusal variant-3 merge ending at
-  `8c8c983`.
+  the RPP-0730 parallel snapshot hashing variant-2 merge ending at `7c60f96`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 600
-  items checked and leaves 400 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 601
+  items checked and leaves 399 open.
 - Checked slices: 100 release-gate foundation items, 87 graph identity items,
   94 plugin-driver boundary items, 40 executor/auth items, 47 recovery items,
-  29 storage/performance items, 3 production-topology items, 100 generated
+  30 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Parallel snapshot hashing variant-2 proof: the current lane now checks
+  `RPP-0730` with local storage/performance support evidence. The proof shows
+  the fast-path lane is updated only after parallel snapshot hash correctness
+  gates hold, and stale, unsafe, or premature lane attempts fail closed with
+  hash-only evidence. Command:
+  `node --test --test-name-pattern RPP-0730 test/rpp-0730-parallel-snapshot-hashing-v2.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0730
+  coverage 2/2, adjacent RPP-0710 guarded benchmark coverage 1/1, scoped
+  artifact redaction scan, test secret-pattern scan, and diff whitespace checks.
+  Counts are now 601/399; final release remains `NO-GO` because this is support
+  evidence, not production storage receipts or release-verifier carry-through.
 - Plugin uninstall/delete refusal variant-3 proof: the current lane now checks
   `RPP-0451` with local plugin-driver support evidence. The proof blocks plugin
   uninstall metadata deletes, plugin package file removals, and plugin-owned row
