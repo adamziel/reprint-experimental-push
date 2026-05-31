@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 15:21 CEST +02:00.
+- Last update: 2026-05-31 15:24 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0544 production apply route variant-3 merge ending at `85d19d0`.
+  the RPP-0545 production journal route variant-3 merge ending at `312770d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 628
-  items checked and leaves 372 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 629
+  items checked and leaves 371 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 44 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 45 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production journal route variant-3 proof: the current lane now checks
+  `RPP-0545` with local executor-auth support evidence. The proof keeps journal
+  route evidence read-only and hash-only, fails closed when a journal read
+  carries mutating idempotency, and verifies the route evidence is included in
+  one combined release summary. Command:
+  `node --test --test-name-pattern RPP-0545 test/rpp-0545-production-journal-route-v3.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0545
+  coverage 3/3, adjacent journal verifier coverage 3/3, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 629/371; final
+  release remains `NO-GO` because this is support evidence, not production-backed
+  journal route proof.
 - Production apply route variant-3 proof: the current lane now checks
   `RPP-0544` with local executor-auth support evidence. The proof exercises a
   production-shaped apply route harness, requires live-source revalidation after
