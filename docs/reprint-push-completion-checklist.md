@@ -835,7 +835,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0786 (Far / storage-performance) Carry through the release verifier for large upload chunk manifest, variant 5. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [x] RPP-0787 (Far / storage-performance) Carry through the release verifier for chunk hash verification, variant 5. Success: guarded writes reject stale storage state.
 - [x] RPP-0788 (Far / storage-performance) Carry through the release verifier for chunk resume after interruption, variant 5. Success: chunk transfer resumes without duplicate mutation work.
-- [ ] RPP-0789 (Far / storage-performance) Carry through the release verifier for chunk replay idempotency, variant 5. Success: large-site run finishes inside documented budgets.
+- [x] RPP-0789 (Far / storage-performance) Carry through the release verifier for chunk replay idempotency, variant 5. Success: large-site run finishes inside documented budgets.
 - [ ] RPP-0790 (Far / storage-performance) Carry through the release verifier for parallel snapshot hashing, variant 5. Success: fast-path lane updates only after correctness gates hold.
 - [ ] RPP-0791 (Far / storage-performance) Carry through the release verifier for remote hash pagination, variant 5. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [ ] RPP-0792 (Far / storage-performance) Carry through the release verifier for dry-run batch sizing, variant 5. Success: guarded writes reject stale storage state.

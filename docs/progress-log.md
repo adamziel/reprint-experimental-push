@@ -6,20 +6,45 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:16 CEST +02:00.
+- Last update: 2026-05-31 23:20 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0788 chunk resume after interruption release-verifier variant-5 merge
-  ending at `3d830e`.
+  the RPP-0789 chunk replay idempotency release-verifier variant-5 merge ending
+  at `bb9709`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 780
-  items checked and leaves 220 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 781
+  items checked and leaves 219 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  88 storage/performance items, 3 production-topology items, 100 generated
+  89 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Chunk replay idempotency release-verifier variant-5 proof: the current lane
+  now checks `RPP-0789` with deterministic local release-verifier support
+  evidence. The proof carries the RPP-0769/RPP-0749/RPP-0729 chunk replay
+  lineage and the RPP-0709 guarded chunk replay benchmark into a release-verifier
+  projection with runtime metadata, resource counts, explicit benchmark gates,
+  correctness-gated output, deterministic replay decision hashes, failed-budget
+  diagnostics, and support-only release posture. The guardedLarge profile
+  records 402653184 file bytes, 8388608-byte chunks, 48 chunks, 2 replay
+  attempts per chunk, 96 replay attempts, 96 existing receipt returns, 48 exact
+  receipt matches, 0 duplicate receipt records written, 0 bytes rewritten during
+  replay, 0 duplicate mutation work, a 120000 ms duration budget, a 536870912
+  byte heap budget, and a passed budget status. The release-verifier gate vector
+  records 8 gates and blocks missing receipt coverage, duplicate replay work,
+  changed replay decision hashes, exceeded budgets, production claims, missing
+  carry-through claims, or missing recorded correctness gates.
+  Command:
+  `node --test --test-name-pattern RPP-0789 test/rpp-0789-chunk-replay-idempotency-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0789
+  coverage 3/3, adjacent RPP-0769 coverage 2/2, adjacent RPP-0749 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  781/219; final release remains `NO-GO` because this is support evidence, not
+  production-backed chunk receipt storage, production row batch execution,
+  production atomic group commit evidence, live topology, credentials, release
+  approval, or a production release gate.
 - Chunk resume after interruption release-verifier variant-5 proof: the current
   lane now checks `RPP-0788` with deterministic local release-verifier support
   evidence. The proof carries the RPP-0768/RPP-0748 chunk-resume interruption
