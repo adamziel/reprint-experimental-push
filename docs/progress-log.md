@@ -6,20 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 21:20 CEST +02:00.
+- Last update: 2026-05-31 21:22 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0761 MySQL compare-and-swap write guard variant-4 merge ending at
-  `9cd103`.
+  the RPP-0762 SQLite compare-and-swap write guard variant-4 merge ending at
+  `4e096c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 753
-  items checked and leaves 247 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 754
+  items checked and leaves 246 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  61 storage/performance items, 3 production-topology items, 100 generated
+  62 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- SQLite compare-and-swap write guard variant-4 proof: the current lane now
+  checks `RPP-0762` with deterministic local storage/performance support
+  evidence. The proof uses in-memory SQLite only and proves five covered
+  surfaces reject stale snapshots with 0 applied stale writes, 0 stale rows
+  mutated, 5 stale-at-write outcomes, 5 unchanged stale rows, 5 observed stale
+  storage hashes, and 5 SQL shape hashes. The benchmark projection covers 45
+  guarded writes, 15 applied writes, 15 stale-at-write rejections, 15
+  absent-at-write rejections, 0 unsafe multiple-match writes, 45 in-memory
+  database opens, 5 single-statement SQL shapes, and 6 passing benchmark gates.
+  Command:
+  `node --test --test-name-pattern RPP-0762 test/rpp-0762-sqlite-cas-write-guard-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0762
+  coverage 2/2, adjacent RPP-0742 coverage 3/3, RPP-0722 coverage 2/2, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 754/246;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed SQLite durability proof.
 - MySQL compare-and-swap write guard variant-4 proof: the current lane now
   checks `RPP-0761` with local storage/performance support evidence. The proof
   runs the benchmark command with MySQL connection settings unset and records
