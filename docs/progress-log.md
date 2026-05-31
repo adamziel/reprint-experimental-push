@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 17:04 CEST +02:00.
+- Last update: 2026-05-31 17:07 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0588 short-lived push session variant-5 merge ending at `70ab88`.
+  the RPP-0589 session source URL binding variant-5 merge ending at `d284e2`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 663
-  items checked and leaves 337 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 664
+  items checked and leaves 336 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 79 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 80 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Session source URL binding variant-5 proof: the current lane now checks
+  `RPP-0589` with local executor-auth support evidence. The proof revalidates
+  the auth-bound live source URL after apply-started and before
+  mutation-capable work, carries a hash-only source binding summary through the
+  release verifier, and rejects missing, malformed, drifted, or stale source
+  binding evidence before mutation setup. Command:
+  `node --test --test-name-pattern RPP-0589 test/rpp-0589-session-source-url-binding-v5.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0589
+  coverage 5/5, adjacent source binding coverage 7/7, baseline source binding
+  coverage 2/2, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 664/336; final release remains `NO-GO` because this is support
+  evidence, not production-backed live-source binding proof.
 - Short-lived push session variant-5 proof: the current lane now checks
   `RPP-0588` with local executor-auth support evidence. The proof validates
   bound dry-run receipts before mutation-capable work, binds dry-run receipts to
