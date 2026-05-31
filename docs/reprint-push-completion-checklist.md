@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 676.
-- Remaining open: 324.
+- Verified complete: 677.
+- Remaining open: 323.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -693,7 +693,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [x] RPP-0649 (Far / recovery) Add generated coverage for restart-readable committed state, variant 3. Success: lease owner identity is visible in audit evidence.
 - [x] RPP-0650 (Far / recovery) Add generated coverage for old remote recovery classification, variant 3. Success: release verifier reports the recovery gate as proven on the same path.
 - [x] RPP-0651 (Far / recovery) Add generated coverage for new remote recovery classification, variant 3. Success: MySQL or SQLite-backed test proves the recovery state.
-- [ ] RPP-0652 (Far / recovery) Add generated coverage for blocked recovery classification, variant 3. Success: journal rows are durable after process restart.
+- [x] RPP-0652 (Far / recovery) Add generated coverage for blocked recovery classification, variant 3. Success: journal rows are durable after process restart.
 - [ ] RPP-0653 (Far / recovery) Add generated coverage for unknown drift classification, variant 3. Success: retry does not overwrite preserved remote changes.
 - [ ] RPP-0654 (Far / recovery) Add generated coverage for same-key replay after commit, variant 3. Success: lease owner identity is visible in audit evidence.
 - [ ] RPP-0655 (Far / recovery) Add generated coverage for same-key replay after rejection, variant 3. Success: release verifier reports the recovery gate as proven on the same path.
