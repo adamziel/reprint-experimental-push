@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 20:09 CEST +02:00.
+- Last update: 2026-05-31 20:11 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0738 timeout budget proof variant-2 merge ending at `46bad9`.
+  the RPP-0739 long-push progress reporting variant-2 merge ending at
+  `782001`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 730
-  items checked and leaves 270 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 731
+  items checked and leaves 269 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  38 storage/performance items, 3 production-topology items, 100 generated
+  39 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Long-push progress reporting variant-2 proof: the current lane now checks
+  `RPP-0739` with local storage/performance support evidence. The proof carries
+  the RPP-0719 large-site progress stream through documented duration and heap
+  budgets, verifies bounded monotonic operator progress events and hash-only
+  durable cursors, and blocks over-budget, missing-event, stale-cursor, or
+  premature evidence. Command:
+  `node --test --test-name-pattern RPP-0739 test/rpp-0739-long-push-progress-reporting-v2.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0739
+  coverage 2/2, adjacent RPP-0719 coverage 3/3, adjacent RPP-0732 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  731/269; final release remains `NO-GO` because this is support evidence, not
+  production-backed storage receipt proof.
 - Timeout budget proof variant-2 proof: the current lane now checks `RPP-0738`
   with local storage/performance support evidence. The proof interrupts chunk
   transfer under a documented timeout budget, resumes only exact receipt-backed
