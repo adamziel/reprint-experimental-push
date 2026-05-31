@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-06-01T00:41:00+02:00">Last updated: June 1, 2026, 00:41 CEST</time>
+        <time class="update-stamp" datetime="2026-06-01T00:49:00+02:00">Last updated: June 1, 2026, 00:49 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>800</strong>
+        <strong>801</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>200</strong>
+        <strong>199</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof including variant-3 support proof, credential rotation including variant-2 live-source revalidation, variant-3 support proof, variant-4 support proof, and variant-5 support proof, manage_options, capability downgrade rejection including variant-2 dry-run receipt binding, variant-3 support proof, and variant-4 support proof, short-lived push-session receipt binding including variant-3 generated support proof, variant-4 support proof, and variant-5 support proof, session source URL binding including variant-3 support proof and variant-4 support proof, session user identity binding including variant-3 support proof and variant-4 support proof, request signature canonicalization including variant-3 support proof and variant-4 support proof, nonce replay store including variant-3 support proof and variant-4 support proof, receipt expiry validation including variant-3 support proof and variant-4 support proof, idempotency key requirement including variant-3 support proof and variant-4 support proof, same-key same-body replay including variant-3 support proof, variant-4 live loopback support proof, and release-verifier variant-5 support proof, same-key different-body conflict including variant-3 support proof and variant-4 support proof, production-shaped preflight including variant-3 support proof, variant-4 support proof, and release-verifier variant-5 support proof, snapshot-hashes including variant-3 negative-auth support proof, variant-4 support proof, and variant-5 support proof, dry-run including variant-3 receipt-binding support proof, variant-4 support proof, and variant-5 support proof, apply including variant-3 live-source revalidation support proof, variant-4 support proof, and variant-5 support proof, journal route including variant-3 release-summary support proof, variant-4 release-summary support proof, and variant-5 support proof, recovery inspect including variant-3 support proof and variant-4 live loopback support proof, recovery mutate negative-auth including variant-3 support proof, variant-4 support proof, and variant-5 support proof, audit-event schema route proof including variant-2 verify:release summary carry-through, variant-3 support proof, variant-4 support proof, and variant-5 support proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof including variant-3 support proof and variant-4 live loopback support proof, credential rotation including variant-2 live-source revalidation, variant-3 support proof, variant-4 support proof, and variant-5 support proof, manage_options, capability downgrade rejection including variant-2 dry-run receipt binding, variant-3 support proof, and variant-4 support proof, short-lived push-session receipt binding including variant-3 generated support proof, variant-4 support proof, and variant-5 support proof, session source URL binding including variant-3 support proof and variant-4 support proof, session user identity binding including variant-3 support proof and variant-4 support proof, request signature canonicalization including variant-3 support proof and variant-4 support proof, nonce replay store including variant-3 support proof and variant-4 support proof, receipt expiry validation including variant-3 support proof and variant-4 support proof, idempotency key requirement including variant-3 support proof and variant-4 support proof, same-key same-body replay including variant-3 support proof, variant-4 live loopback support proof, and release-verifier variant-5 support proof, same-key different-body conflict including variant-3 support proof and variant-4 support proof, production-shaped preflight including variant-3 support proof, variant-4 support proof, and release-verifier variant-5 support proof, snapshot-hashes including variant-3 negative-auth support proof, variant-4 support proof, and variant-5 support proof, dry-run including variant-3 receipt-binding support proof, variant-4 support proof, and variant-5 support proof, apply including variant-3 live-source revalidation support proof, variant-4 support proof, and variant-5 support proof, journal route including variant-3 release-summary support proof, variant-4 release-summary support proof, and variant-5 support proof, recovery inspect including variant-3 support proof and variant-4 live loopback support proof, recovery mutate negative-auth including variant-3 support proof, variant-4 support proof, and variant-5 support proof, audit-event schema route proof including variant-2 verify:release summary carry-through, variant-3 support proof, variant-4 support proof, and variant-5 support proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,18 +406,18 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0596</span>
+        <span>RPP-0571</span>
       </div>
-      <p>The latest refresh checks RPP-0596 with same-key same-body replay release-verifier variant-5 support proof. The proof carries the RPP-0576 live replay behavior into a release-verifier envelope, drives a loopback-only live HTTP endpoint through the production-shaped authenticated client, records hash-only request, response, recovery, journal, and credential evidence, and keeps release movement blocked while proving accepted replays avoid duplicate mutation work and rejected replays preserve the original rejection. Counts are now 800/200; final release remains NO-GO because this is loopback support evidence, not checked production-owned replay verifier proof, production storage receipts, row batch execution, atomic group commit evidence, live production service behavior, throughput, release approval, or a production release gate.</p>
+      <p>The latest refresh checks RPP-0571 with Application Password integration variant-4 support proof. The proof drives a sandbox-local WordPress Playground endpoint with real HTTP traffic, proves the scoped Application Password credential reaches the signed snapshot-hashes route, keeps unscoped, limited, and rotated credentials fail-closed before mutation, and records only hash/status evidence for credential and session material. Counts are now 801/199; final release remains NO-GO because this is loopback support evidence, not checked production-owned credential proof, production storage receipts, row batch execution, atomic group commit evidence, live production service behavior, throughput, release approval, or a production release gate.</p>
       <div class="tag-row" aria-label="Latest validation">
-        <span class="tag">RPP-0596 focused: 1/1</span>
-        <span class="tag">RPP-0576 adjacent: 1/1</span>
-        <span class="tag">RPP-0556 adjacent: 3/3</span>
-        <span class="tag">RPP-0615 adjacent: 2/2</span>
-        <span class="tag">RPP-0654 adjacent: 2/2</span>
-        <span class="tag">release movement blocked</span>
-        <span class="tag">hash-only replay evidence</span>
-        <span class="tag">duplicate mutation refused</span>
+        <span class="tag">RPP-0571 focused: 1/1</span>
+        <span class="tag">RPP-0551 adjacent: 4/4</span>
+        <span class="tag">RPP-0599 adjacent: 2/2</span>
+        <span class="tag">RPP-0511 live: 1/1</span>
+        <span class="tag">RPP-0531 live: 1/1</span>
+        <span class="tag">Application Password scoped</span>
+        <span class="tag">rotated credential refused</span>
+        <span class="tag">hash-only credential evidence</span>
         <span class="tag">loopback live endpoint</span>
         <span class="tag">support-only NO-GO</span>
         <span class="tag">hash/count-only evidence</span>
