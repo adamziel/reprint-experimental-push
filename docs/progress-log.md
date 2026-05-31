@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:06 CEST +02:00.
+- Last update: 2026-05-31 13:08 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0538 capability downgrade rejection variant-2 merge ending at
-  `87f4907`.
+  the RPP-0725 filesystem fsync evidence variant-2 merge ending at `492ee25`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 589
-  items checked and leaves 411 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 590
+  items checked and leaves 410 open.
 - Checked slices: 100 release-gate foundation items, 85 graph identity items,
   91 plugin-driver boundary items, 38 executor/auth items, 45 recovery items,
-  27 storage/performance items, 3 production-topology items, 100 generated
+  28 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Filesystem fsync evidence variant-2 proof: the current lane now checks
+  `RPP-0725` with local storage/performance support evidence. The proof records
+  temp-file fsync before live comparison, target-directory fsync after rename,
+  post-rename storage checks before fast-path lane updates, stale/unsafe cases
+  withheld from the fast path, and hash-only support projections. Command:
+  `node --test --test-name-pattern RPP-0725 test/rpp-0725-filesystem-fsync-evidence-v2.test.js`.
+  Caveat: local filesystem support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0725
+  coverage 3/3, adjacent filesystem fsync coverage 8/8, a bounded fsync
+  benchmark with `"ok": true`, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 590/410; final release remains `NO-GO`
+  because this is support evidence, not production storage receipts, external
+  durability proof, or release-verifier carry-through.
 - Capability downgrade rejection variant-2 proof: the current lane now checks
   `RPP-0538` with local executor/auth support evidence. The proof verifies that
   a signed session that loses capability after dry-run is rejected before
