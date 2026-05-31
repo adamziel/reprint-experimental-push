@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 12:03 CEST +02:00.
+- Last update: 2026-05-31 12:06 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0341 post_parent page hierarchy variant-3 generated coverage merge
-  ending at `2bdecd24b`.
+  the RPP-0641 journal table schema migration variant-3 merge ending at
+  `9a938ead3`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 573
-  items checked and leaves 427 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 574
+  items checked and leaves 426 open.
 - Checked slices: 100 release-gate foundation items, 83 graph identity items,
-  88 plugin-driver boundary items, 35 executor/auth items, 41 recovery items,
+  88 plugin-driver boundary items, 35 executor/auth items, 42 recovery items,
   23 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Journal table schema migration variant-3 proof: the current lane now checks
+  `RPP-0641` with generated-style SQLite recovery evidence. The test migrates
+  open, staged, and committed partial recovery rows from legacy journal table
+  shapes, verifies strict pre-migration reads fail closed, migrates schema
+  metadata, closes and reopens the SQLite databases, and proves restart-readable
+  recovery summaries after migration. Command:
+  `node --test test/rpp-0641-journal-table-schema-migration-v3.test.js`.
+  Caveat: local SQLite recovery support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0641 coverage
+  1/1, adjacent journal schema migration coverage 3/3, broader recovery
+  schema/restart-readable coverage 10/10, scoped artifact redaction scan, and
+  diff whitespace checks. Counts are now 574/426; final release remains
+  `NO-GO` because this is local recovery support evidence, not external
+  durability or production-backed release proof.
 - Generated post_parent page hierarchy variant-3 coverage: the current lane now
   checks `RPP-0341` with generated-harness graph identity evidence for
   `post_parent` page hierarchy rewrites and stale parent drift refusals. The
