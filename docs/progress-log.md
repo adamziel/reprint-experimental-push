@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:08 CEST +02:00.
+- Last update: 2026-05-31 13:16 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0725 filesystem fsync evidence variant-2 merge ending at `492ee25`.
+  the RPP-0345 comment post reference variant-3 merge ending at `94824fe`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 590
-  items checked and leaves 410 open.
-- Checked slices: 100 release-gate foundation items, 85 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 591
+  items checked and leaves 409 open.
+- Checked slices: 100 release-gate foundation items, 86 graph identity items,
   91 plugin-driver boundary items, 38 executor/auth items, 45 recovery items,
   28 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Comment post reference variant-3 generated coverage: the current lane now
+  checks `RPP-0345` with local generated-harness graph identity evidence. The
+  new target emits 20 deterministic support-only cases: 10 ready cases rewrite
+  `wp_comments.comment_post_ID` through explicit post identity-map evidence and
+  10 stale cases fail closed as `stale-wordpress-graph-identity` before
+  mutation. Command:
+  `node --test --test-name-pattern=RPP-0345 test/generated-push-harness.test.js`.
+  Caveat: local generated-harness support evidence only; final release remains
+  `NO-GO`. Validation passed with Node syntax checks, focused RPP-0345 coverage
+  1/1, adjacent RPP-0341/RPP-0343/RPP-0344/RPP-0345/RPP-0347 generated coverage
+  5/5, adjacent comment-post lineage coverage 7/7, full generated harness
+  coverage 98/98 across the current 620-case roster, scoped artifact redaction
+  scan, and diff whitespace checks. Counts are now 591/409; final release
+  remains `NO-GO` because this is local graph identity support evidence, not
+  production-backed release proof.
 - Filesystem fsync evidence variant-2 proof: the current lane now checks
   `RPP-0725` with local storage/performance support evidence. The proof records
   temp-file fsync before live comparison, target-directory fsync after rename,
