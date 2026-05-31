@@ -6,20 +6,45 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:20 CEST +02:00.
+- Last update: 2026-05-31 23:24 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0789 chunk replay idempotency release-verifier variant-5 merge ending
-  at `bb9709`.
+  the RPP-0790 parallel snapshot hashing release-verifier variant-5 merge ending
+  at `68caa8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 781
-  items checked and leaves 219 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 782
+  items checked and leaves 218 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  89 storage/performance items, 3 production-topology items, 100 generated
+  90 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Parallel snapshot hashing release-verifier variant-5 proof: the current lane
+  now checks `RPP-0790` with deterministic local release-verifier support
+  evidence. The proof carries the RPP-0770/RPP-0750/RPP-0710 parallel snapshot
+  hashing lineage into the guarded executor benchmark shape with runtime
+  metadata, resource counts, explicit pass/fail support gates, deterministic
+  hash-only projection, failed-runtime diagnostics, and support-only release
+  posture. The fixed unit workload records 1048576 file bytes, 262144-byte
+  chunks, 8 row records, 64 row payload bytes, 3 snapshots, 22 resources, 66
+  snapshot hash jobs, bounded concurrency of 2, and exactly 1 fast-path lane
+  update from 10 decision cases. Negative coverage blocks stale parallel
+  digests, incomplete hash sets, unbounded schedulers, nondeterministic second
+  runs, unsafe apply authority, raw snapshot value leaks, missing correctness
+  gate vectors, failed gate statuses, and object-order regressions where lane
+  output appears before correctness gates.
+  Command:
+  `node --test --test-name-pattern RPP-0790 test/rpp-0790-parallel-snapshot-hashing-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0790
+  coverage 2/2, adjacent RPP-0770 coverage 2/2, adjacent RPP-0750 coverage 2/2,
+  scoped artifact redaction scan, diff whitespace checks, and a representative
+  storage/performance release-verifier batch covering RPP-0783 through RPP-0790
+  at 18/18. Counts are now 782/218; final release remains `NO-GO` because this
+  is support evidence, not production storage durability, production row batch
+  execution, production atomic group commit evidence, live topology, throughput,
+  release approval, or a production release gate.
 - Chunk replay idempotency release-verifier variant-5 proof: the current lane
   now checks `RPP-0789` with deterministic local release-verifier support
   evidence. The proof carries the RPP-0769/RPP-0749/RPP-0729 chunk replay
