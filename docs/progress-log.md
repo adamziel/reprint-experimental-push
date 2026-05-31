@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 01:27 CEST +02:00.
+- Last update: 2026-06-01 01:29 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0823 external WordPress topology proof merge ending at `89c26e44e`.
+  the RPP-0825 WooCommerce product catalog proof merge ending at `40e4329bf`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 814
-  items checked and leaves 186 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 815
+  items checked and leaves 185 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 14 production-topology items, 100 generated
+  100 storage/performance items, 15 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- WooCommerce product catalog variant-2 candidate-scope proof: the current lane
+  now checks `RPP-0825` with deterministic candidate-versus-release-ready
+  catalog support evidence. The proof records WooCommerce product, variation,
+  media, taxonomy, lookup, and stock surface counts while keeping release-ready
+  gaps explicit for production-bound import/export, auth/session lifecycle,
+  durable journal, HPOS/order safety, and redacted release artifacts.
+  Command:
+  `node --test test/rpp-0825-woocommerce-product-catalog-v2.test.js`.
+  Caveat: candidate-scope support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0825
+  coverage 4/4, scoped artifact redaction scan with seven allowed hash-evidence
+  occurrences, and diff whitespace checks. Counts are now 815/185; final release
+  remains `NO-GO` because this is support evidence, not production-backed
+  WooCommerce import/export proof, production storage receipts, production row
+  batch executor evidence, production atomic group commit evidence, live
+  production service evidence, production throughput, release approval, or a
+  production release gate.
 - External WordPress topology variant-2 URL identity proof: the current lane now
   checks `RPP-0823` with deterministic source/local/changed URL identity
   coverage. The proof captures the external topology role URLs, verifies
