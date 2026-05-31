@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:12 CEST +02:00.
+- Last update: 2026-05-31 11:16 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0199 remote-only preservation release-verifier v5 merge ending at
-  `8c017d171`.
+  the RPP-0294 already-in-sync release-verifier v5 merge ending at `f0c17bb7c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 563
-  items checked and leaves 437 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 564
+  items checked and leaves 436 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 99 generated
-  harness items, and 93 merge-invariant items. No release-ops items are checked
+  harness items, and 94 merge-invariant items. No release-ops items are checked
   yet.
+- Already-in-sync decision release-verifier v5 carry-through: the current lane
+  now checks `RPP-0294` with focused and generated support evidence for
+  decision-only already-in-sync plans. The proof verifies focused create,
+  update, and delete no-op decisions stay decision-only, generated already-in-sync
+  coverage has no mutation/precondition overlap, forged overlapping mutations
+  are refused before mutation, and `docs/scenario-matrix.md` names the
+  release-verifier behavior and command. Command:
+  `node --test --test-name-pattern=RPP-0294 test/rpp-0294-already-in-sync-decision-release-verifier-v5.test.js`.
+  Caveat: local release-verifier support evidence only; release remains gated
+  separately. Validation passed with a Node syntax check, focused RPP-0294
+  coverage 2/2, adjacent RPP-0254/RPP-0274/RPP-0294 already-in-sync coverage
+  4/4, scoped artifact redaction scan, and diff whitespace checks. Counts are
+  now 564/436; final release remains `NO-GO` because this is local
+  merge-invariant support evidence, not production-backed release proof.
 - Remote-only preservation release-verifier v5 generated proof: the current lane
   now checks `RPP-0199` with deterministic generated-harness support evidence
   for remote-only preservation under stale replay. The proof adds the
