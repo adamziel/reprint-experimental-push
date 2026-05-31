@@ -167,6 +167,8 @@ const requiredFamilies = [
   'large-ready-plan-target',
   'large-ready-plan-v3',
   'large-ready-plan-v3-ready',
+  'large-ready-plan-release-verifier-v5',
+  'large-ready-plan-release-verifier-v5-ready',
   'supported-plugin-option',
   'unsupported-plugin-owned-row',
   'plugin-owner-context-drift',
@@ -2184,6 +2186,37 @@ test('RPP-0160 large ready plan tier variant 3 records generated coverage surfac
   assert.equal(evidenceText.includes('generated large ready file'), false, 'variant 3 evidence leaked file payload');
   assert.equal(evidenceText.includes('remote large ready preserved file'), false, 'variant 3 evidence leaked remote file payload');
   assert.equal(evidenceText.includes('stale-private-rpp0140'), false, 'variant 3 evidence leaked stale replay payload');
+});
+
+test('RPP-0200 large ready plan tier release-verifier v5 summary carries ready surface', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.largeReadyPlanTierReleaseVerifierVariant5;
+  const variant4Coverage = report.summary.targetCoverage.largeReadyPlanTierVariant4;
+  const variant3Coverage = report.summary.targetCoverage.largeReadyPlanTierVariant3;
+  const legacyCoverage = report.summary.targetCoverage.largeReadyPlanTier;
+
+  assert.ok(coverage, 'missing large ready plan tier release-verifier v5 target coverage');
+  assert.ok(variant4Coverage, 'missing large ready plan tier variant 4 target coverage');
+  assert.ok(variant3Coverage, 'missing large ready plan tier variant 3 target coverage');
+  assert.ok(legacyCoverage, 'missing legacy large ready plan tier target coverage');
+  assert.equal(coverage.family, 'large-ready-plan-tier-release-verifier-v5');
+  assert.equal(coverage.total, report.summary.featureFamilies['large-ready-plan-release-verifier-v5']);
+  assert.equal(coverage.total, report.summary.featureFamilies['large-ready-plan-release-verifier-v5-ready']);
+  assert.equal(coverage.total, legacyCoverage.total);
+  assert.equal(coverage.total, variant3Coverage.total);
+  assert.equal(coverage.total, variant4Coverage.total);
+  assert.deepEqual(coverage.perTier, legacyCoverage.perTier);
+  assert.deepEqual(coverage.perTier, variant3Coverage.perTier);
+  assert.deepEqual(coverage.perTier, variant4Coverage.perTier);
+  assert.deepEqual(coverage.statuses, legacyCoverage.statuses);
+  assert.deepEqual(coverage.statuses, variant3Coverage.statuses);
+  assert.deepEqual(coverage.statuses, variant4Coverage.statuses);
+  assert.equal(coverage.total, 10);
+  assert.deepEqual(coverage.statuses, { ready: 10 });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
 });
 
 function assertLargeReadyPlanShape(testCase) {

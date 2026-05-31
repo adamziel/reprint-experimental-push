@@ -48,8 +48,9 @@ The default generated run covers:
   remote-only preservation with explicit release-verifier variant-5
   carry-through,
   independent local-file/remote-row and local-row/remote-file targets,
-  large ready plan tiers with one ready case per tier, deletes, delete/edit
-  conflicts, file topology conflicts, file create/update/
+  large ready plan tiers with one ready case per tier, explicit variant-3,
+  variant-4, and release-verifier variant-5 carry-through, deletes,
+  delete/edit conflicts, file topology conflicts, file create/update/
   delete mixes with ready and conflicting outcomes plus per-tier target counts,
   directory descendant deletes with ready and conflicting outcomes plus
   per-tier target counts, file type-swap cases with ready/conflict outcomes
@@ -868,6 +869,19 @@ post/file/taxonomy/comment graph resources, preserves the remote-only row/file
 drift, and rejects stale replay before mutation. Evidence remains hash-only for
 resource-key sets, preconditions, keep-remote decisions, planned values, and
 refusal details.
+
+RPP-0200 adds `largeReadyPlanTierReleaseVerifierVariant5` coverage for the same
+deterministic large-ready surface with explicit release-verifier-v5 target and
+ready tags. The deterministic summary exposes 10 ready cases across tiers 0
+through 9 and cross-checks exactly against `largeReadyPlanTierVariant4`,
+`largeReadyPlanTierVariant3`, and legacy `largeReadyPlanTier`. The focused
+carry-through proof applies every ready plan, verifies planned mutation and
+live-remote precondition key sets match the generated row/file/taxonomy/comment
+surface, preserves the remote-only row/file drift, and rejects stale replay
+with `PRECONDITION_FAILED` before the mutation callback. Evidence remains
+local generated-model proof only and hash-only for resource-key sets,
+preconditions, keep-remote decisions, planned values, refusal details, and
+release-verifier carry-through proof hashes.
 
 The `postAuthorGraph` target coverage records per-tier counts for generated
 `wp_posts.post_author` references to `wp_users` rows. Ready cases create the

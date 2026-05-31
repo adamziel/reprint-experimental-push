@@ -178,6 +178,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'large-ready-plan-tier-variant4',
     tag: 'large-ready-plan-v4',
   },
+  largeReadyPlanTierReleaseVerifierVariant5: {
+    family: 'large-ready-plan-tier-release-verifier-v5',
+    tag: 'large-ready-plan-release-verifier-v5',
+  },
   sameIndependentContent: {
     family: 'same-independent-content',
     tag: 'same-independent-content-target',
@@ -4833,6 +4837,8 @@ function addLargeReadyPlanTier(tier, base, local, remote, allocator, tags) {
   tags.add('large-ready-plan-v3-ready');
   tags.add('large-ready-plan-v4');
   tags.add('large-ready-plan-v4-ready');
+  tags.add('large-ready-plan-release-verifier-v5');
+  tags.add('large-ready-plan-release-verifier-v5-ready');
   tags.add('ready-candidate');
   tags.add('row-create');
   tags.add('row-update');
