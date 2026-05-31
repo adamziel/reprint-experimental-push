@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 15:17 CEST +02:00.
+- Last update: 2026-05-31 15:19 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0460 arbitrary plugin fixture package variant-3 merge ending at
-  `0f857d8`.
+  the RPP-0543 production dry-run route variant-3 merge ending at `b4389d8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 626
-  items checked and leaves 374 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 627
+  items checked and leaves 373 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 42 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 43 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production dry-run route variant-3 proof: the current lane now checks
+  `RPP-0543` with local executor-auth support evidence. The proof exercises a
+  production-shaped dry-run route harness, verifies negative auth fails before
+  JSON parsing or receipt minting, and keeps dry-run receipt binding hash-only
+  across session, identity, scope, auth session, and canonical plan hash.
+  Command:
+  `node --test --test-name-pattern RPP-0543 test/rpp-0543-production-dry-run-route-v3.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0543
+  coverage 3/3, adjacent production dry-run route coverage 8/8, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 627/373; final
+  release remains `NO-GO` because this is support evidence, not production-backed
+  dry-run route proof.
 - Arbitrary plugin fixture package variant-3 proof: the current lane now checks
   `RPP-0460` with local plugin-driver support evidence. The proof adds
   deterministic generated arbitrary-table fixture cases, keeps plugin fixture

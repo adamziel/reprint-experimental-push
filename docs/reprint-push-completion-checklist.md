@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 626.
-- Remaining open: 374.
+- Verified complete: 627.
+- Remaining open: 373.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -579,7 +579,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [x] RPP-0540 (Mid-Far / executor-auth) Prove production audit event schema, variant 2. Success: verify:release includes the route evidence in one summary.
 - [x] RPP-0541 (Mid-Far / executor-auth) Add generated coverage for production preflight route, variant 3. Success: real endpoint test runs against a live URL.
 - [x] RPP-0542 (Mid-Far / executor-auth) Add generated coverage for production snapshot hashes route, variant 3. Success: negative auth cases fail before JSON parsing and mutation.
-- [ ] RPP-0543 (Mid-Far / executor-auth) Add generated coverage for production dry-run route, variant 3. Success: dry-run receipts bind session, identity, scope, and plan hash.
+- [x] RPP-0543 (Mid-Far / executor-auth) Add generated coverage for production dry-run route, variant 3. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0544 (Mid-Far / executor-auth) Add generated coverage for production apply route, variant 3. Success: apply revalidates the live source before mutation.
 - [ ] RPP-0545 (Mid-Far / executor-auth) Add generated coverage for production journal route, variant 3. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0546 (Mid-Far / executor-auth) Add generated coverage for production recovery inspect route, variant 3. Success: real endpoint test runs against a live URL.
