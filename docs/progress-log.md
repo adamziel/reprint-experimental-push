@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 20:20 CEST +02:00.
+- Last update: 2026-05-31 20:22 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0743 transaction boundary policy variant-3 merge ending at `57a503`.
+  the RPP-0744 filesystem compare-and-rename write variant-3 merge ending at
+  `e248bb`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 735
-  items checked and leaves 265 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 736
+  items checked and leaves 264 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  43 storage/performance items, 3 production-topology items, 100 generated
+  44 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Filesystem compare-and-rename write variant-3 proof: the current lane now
+  checks `RPP-0744` with local storage/performance support evidence. The proof
+  exercises generated matching update/create cases through the local filesystem
+  compare-before-rename boundary, rejects generated stale storage drift before
+  rename, keeps the drifted bytes intact, removes temporary files, and runs the
+  large-site profile inside documented duration and heap budgets. Command:
+  `node --test --test-name-pattern RPP-0744 test/rpp-0744-filesystem-compare-and-rename-write-v3.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0744
+  coverage 3/3, adjacent RPP-0724 coverage 3/3, filesystem compare-and-rename
+  benchmark coverage 3/3, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 736/264; final release remains `NO-GO` because this
+  is support evidence, not production-backed external durability proof.
 - Transaction boundary policy variant-3 proof: the current lane now checks
   `RPP-0743` with local storage/performance support evidence. The proof carries
   the RPP-0723 receipt-only transaction boundary policy forward, requires
