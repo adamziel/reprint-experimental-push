@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 17:51 CEST +02:00.
+- Last update: 2026-05-31 17:53 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0652 blocked recovery classification variant-3 merge ending at
-  `925023`.
+  the RPP-0653 unknown drift classification variant-3 merge ending at
+  `e46aa3`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 677
-  items checked and leaves 323 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 678
+  items checked and leaves 322 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 53 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 54 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Unknown drift classification variant-3 proof: the current lane now checks
+  `RPP-0653` with local recovery support evidence. The proof shows retry
+  preserves remote changes when recovery classification is unknown-drift, keeps
+  the evidence hash-only, and rejects missing, malformed, stale, or drifted
+  unknown-drift evidence before recovery proof movement. Command:
+  `node --test --test-name-pattern RPP-0653 test/rpp-0653-unknown-drift-classification-v3.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0653 coverage 2/2,
+  adjacent recovery classification coverage 3/3, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 678/322; final release remains
+  `NO-GO` because this is support evidence, not production-backed recovery
+  proof.
 - Blocked recovery classification variant-3 proof: the current lane now checks
   `RPP-0652` with local recovery support evidence. The proof shows blocked
   recovery classification survives production journal restart-style readback
