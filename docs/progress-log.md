@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 16:19 CEST +02:00.
+- Last update: 2026-05-31 16:21 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0569 session source URL binding variant-4 merge ending at `02915d`.
+  the RPP-0570 session user identity binding variant-4 merge ending at
+  `7ae42b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 648
-  items checked and leaves 352 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 649
+  items checked and leaves 351 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 64 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 65 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Session user identity binding variant-4 proof: the current lane now checks
+  `RPP-0570` with local executor-auth support evidence. The proof carries
+  exactly one session-user-identity route-evidence summary through
+  `verify:release`-shaped output, binds the route evidence to the dry-run
+  receipt, and blocks release movement on identity drift or missing hash route
+  evidence. Command:
+  `node --test --test-name-pattern RPP-0570 test/rpp-0570-session-user-identity-binding-v4.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0570
+  coverage 4/4, adjacent session-user identity coverage 10/10, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 649/351; final
+  release remains `NO-GO` because this is support evidence, not
+  production-backed user-identity proof.
 - Session source URL binding variant-4 proof: the current lane now checks
   `RPP-0569` with local executor-auth support evidence. The proof revalidates
   live source binding before apply mutation setup, rejects drifted source
