@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:40 CEST +02:00.
+- Last update: 2026-05-31 13:42 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0346 comment parent thread reference variant-3 merge ending at
-  `2d0449b`.
+  the RPP-0646 journal pagination variant-3 merge ending at `fda35a7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 597
-  items checked and leaves 403 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 598
+  items checked and leaves 402 open.
 - Checked slices: 100 release-gate foundation items, 87 graph identity items,
-  93 plugin-driver boundary items, 39 executor/auth items, 46 recovery items,
+  93 plugin-driver boundary items, 39 executor/auth items, 47 recovery items,
   29 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Journal pagination variant-3 proof: the current lane now checks `RPP-0646`
+  with local recovery support evidence. The proof covers file-backed and
+  SQLite-backed paged restart readback, ordered page windows, restart-readable
+  cursors, hash-only page contents, fail-closed invalid/stale cursor requests,
+  and unchanged recovery state on the same checked journal path. Command:
+  `node --test test/rpp-0646-journal-pagination-v3.test.js`. Caveat: local
+  recovery support evidence only; final release remains `NO-GO`. Validation
+  passed with a Node syntax check, focused RPP-0646 coverage 2/2, recovery
+  journal subset coverage 3/3, adjacent RPP-0642/RPP-0645 recovery coverage
+  3/3, scoped artifact redaction scan, and diff whitespace checks. Counts are
+  now 598/402; final release remains `NO-GO` because this is support evidence,
+  not production-backed durable journal proof.
 - Comment parent thread reference variant-3 generated coverage: the current lane
   now checks `RPP-0346` with local generated graph-identity support evidence. The
   generated target proves stable parent references, identity-map rewrites, and
