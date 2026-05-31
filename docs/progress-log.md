@@ -6,20 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 01:08 CEST +02:00.
+- Last update: 2026-06-01 01:10 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0591 Application Password release-verifier merge ending at
-  `5e66357a6`.
+  the RPP-0810 multisite subdomain topology merge ending at `6024397df`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 806
-  items checked and leaves 194 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 807
+  items checked and leaves 193 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 6 production-topology items, 100 generated
+  100 storage/performance items, 7 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Multisite subdomain topology candidate-scope proof: the current lane now
+  checks `RPP-0810` with deterministic support evidence for multisite subdomain
+  candidate scope versus release-ready gaps. The proof records source, local,
+  and changed-role hostnames, network/site counts, plugin/theme surfaces,
+  import/export blockers, and release-ready requirements as hash/count/surface
+  evidence only.
+  Command:
+  `node --test --test-name-pattern RPP-0810 test/rpp-0810-multisite-subdomain-topology-v1.test.js`.
+  Caveat: candidate-scope support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0810
+  coverage 3/3, scoped artifact redaction scan with one allowed hash-evidence
+  occurrence, and diff whitespace checks. Counts are now 807/193; final release
+  remains `NO-GO` because this is support evidence, not production-backed
+  multisite import/export proof, production storage receipts, production row
+  batch executor evidence, production atomic group commit evidence, live
+  production service evidence, production throughput, release approval, or a
+  production release gate.
 - Application Password integration release-verifier variant-5 proof: the
   current lane now checks `RPP-0591` with release-verifier live-endpoint support
   coverage. The proof carries scoped Application Password success and fail-closed
