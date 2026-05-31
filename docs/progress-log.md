@@ -6,20 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 12:06 CEST +02:00.
+- Last update: 2026-05-31 12:08 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0641 journal table schema migration variant-3 merge ending at
-  `9a938ead3`.
+  the RPP-0721 MySQL CAS write guard variant-2 merge ending at `f195aad54`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 574
-  items checked and leaves 426 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 575
+  items checked and leaves 425 open.
 - Checked slices: 100 release-gate foundation items, 83 graph identity items,
   88 plugin-driver boundary items, 35 executor/auth items, 42 recovery items,
-  23 storage/performance items, 3 production-topology items, 100 generated
+  24 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- MySQL CAS write guard variant-2 proof: the current lane now checks `RPP-0721`
+  with deterministic support evidence for the MySQL compare-and-swap write
+  guard report contract. The focused test exercises the RPP-0701 benchmark in
+  deterministic no-MySQL-runtime mode, verifies runtime/resource/gate metadata,
+  stale-write refusal, duplicate-key refusal, single-statement CAS SQL shapes,
+  and hash-only evidence, then proves the runtime-resource gate can fail under
+  an intentionally impossible heap budget without weakening guard behavior.
+  Command:
+  `node --test --test-name-pattern=RPP-0721 test/rpp-0721-mysql-cas-write-guard-v2.test.js`.
+  Caveat: deterministic support evidence only; final release remains `NO-GO`.
+  Validation passed with Node syntax checks, focused RPP-0721 coverage 2/2,
+  adjacent MySQL CAS benchmark coverage 7/7, bounded
+  `npm run bench:mysql-cas-write-guard -- --iterations 5`, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 575/425; final
+  release remains `NO-GO` because this is support evidence, not live production
+  MySQL durability or external database rollback proof.
 - Journal table schema migration variant-3 proof: the current lane now checks
   `RPP-0641` with generated-style SQLite recovery evidence. The test migrates
   open, staged, and committed partial recovery rows from legacy journal table

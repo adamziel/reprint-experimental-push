@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T12:06:00+02:00">Last updated: May 31, 2026, 12:06 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T12:08:00+02:00">Last updated: May 31, 2026, 12:08 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>574</strong>
+        <strong>575</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>426</strong>
+        <strong>425</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -393,7 +393,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production chunking not checked">
-            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, a large post table planner/apply benchmark, a large media library storage/row-precondition benchmark, a large plugin file atomic-group benchmark, a filesystem memory-ceiling proof, timeout-budget resume proof, and long-push progress reporting, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
+            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, MySQL CAS write guard variant-2 support proof, a large post table planner/apply benchmark, a large media library storage/row-precondition benchmark, a large plugin file atomic-group benchmark, a filesystem memory-ceiling proof, timeout-budget resume proof, and long-push progress reporting, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Release CI not checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0641</span>
+        <span>RPP-0721</span>
       </div>
-      <p>The latest refresh checks RPP-0641 with generated-style SQLite recovery evidence for journal table schema migration variant 3. Open, staged, and committed partial recovery rows migrate from legacy shapes, strict pre-migration reads fail closed, and reopened SQLite journals remain restart-readable after migration. Counts are now 574/426; final release remains NO-GO because this is local recovery support evidence, not external durability or production-backed release proof.</p>
+      <p>The latest refresh checks RPP-0721 with deterministic MySQL CAS write guard variant-2 support evidence. The proof validates benchmark runtime/resource/gate metadata, stale-write refusal, duplicate-key refusal, single-statement CAS SQL shapes, hash-only evidence, and an intentionally failing resource-budget gate without requiring live MySQL credentials. Counts are now 575/425; final release remains NO-GO because this is support evidence, not live production MySQL durability or external database rollback proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0721 focused: 2/2</span>
+        <span class="tag">MySQL CAS adjacent: 7/7</span>
+        <span class="tag">benchmark: pass</span>
+        <span class="tag">deterministic no-MySQL mode</span>
+        <span class="tag">hash-only CAS evidence</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0641 focused: 1/1</span>
         <span class="tag">schema adjacent: 3/3</span>
         <span class="tag">recovery schema: 10/10</span>
