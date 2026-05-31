@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 20:29 CEST +02:00.
+- Last update: 2026-05-31 20:34 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0747 chunk hash verification variant-3 merge ending at `d51c20`.
+  the RPP-0748 chunk resume after interruption variant-3 merge ending at
+  `2ddc0c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 739
-  items checked and leaves 261 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 740
+  items checked and leaves 260 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  47 storage/performance items, 3 production-topology items, 100 generated
+  48 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Chunk resume after interruption variant-3 proof: the current lane now checks
+  `RPP-0748` with local storage/performance support evidence. The proof carries
+  the RPP-0738 timeout-budget resume evidence forward, generates interruption
+  cases after 1, 2, 3, and 4 durable local receipts, resumes only exact
+  receipt-backed chunks, uploads unacknowledged chunks after resume, and proves
+  duplicate chunk bytes plus duplicate mutation work stay at `0`. Command:
+  `node --test --test-name-pattern RPP-0748 test/rpp-0748-chunk-resume-after-interruption-v3.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0748
+  coverage 2/2, adjacent RPP-0738 coverage 2/2, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 740/260; final release remains
+  `NO-GO` because this is support evidence, not production-backed external
+  durability proof.
 - Chunk hash verification variant-3 proof: the current lane now checks
   `RPP-0747` with local storage/performance support evidence. The proof carries
   chunk hash verification forward from the guarded executor unit profile,

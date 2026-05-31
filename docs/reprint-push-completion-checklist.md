@@ -794,7 +794,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0745 (Far / storage-performance) Add generated coverage for filesystem fsync evidence, variant 3. Success: fast-path lane updates only after correctness gates hold.
 - [x] RPP-0746 (Far / storage-performance) Add generated coverage for large upload chunk manifest, variant 3. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [x] RPP-0747 (Far / storage-performance) Add generated coverage for chunk hash verification, variant 3. Success: guarded writes reject stale storage state.
-- [ ] RPP-0748 (Far / storage-performance) Add generated coverage for chunk resume after interruption, variant 3. Success: chunk transfer resumes without duplicate mutation work.
+- [x] RPP-0748 (Far / storage-performance) Add generated coverage for chunk resume after interruption, variant 3. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0749 (Far / storage-performance) Add generated coverage for chunk replay idempotency, variant 3. Success: large-site run finishes inside documented budgets.
 - [ ] RPP-0750 (Far / storage-performance) Add generated coverage for parallel snapshot hashing, variant 3. Success: fast-path lane updates only after correctness gates hold.
 - [ ] RPP-0751 (Far / storage-performance) Add generated coverage for remote hash pagination, variant 3. Success: benchmark command reports runtime, resources, and pass/fail gates.
