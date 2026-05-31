@@ -6,20 +6,44 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:04 CEST +02:00.
+- Last update: 2026-05-31 23:09 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0785 filesystem fsync evidence release-verifier variant-5 merge
-  ending at `7cbe83`.
+  the RPP-0786 large upload chunk manifest release-verifier variant-5 merge
+  ending at `7f2ab0`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 777
-  items checked and leaves 223 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 778
+  items checked and leaves 222 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  85 storage/performance items, 3 production-topology items, 100 generated
+  86 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Large upload chunk manifest release-verifier variant-5 proof: the current
+  lane now checks `RPP-0786` with deterministic local release-verifier support
+  evidence. The proof carries the RPP-0766/RPP-0746 large-upload chunk manifest
+  lineage into a guarded executor benchmark profile for a 1048576-byte staged
+  upload split into four 262144-byte chunks. The release-verifier projection
+  records runtime and resource metadata, 12 rollout gates with 9 passed, 3
+  blocked, and 0 failed, a finalized manifest covering all 4 chunks, durable
+  chunk receipts covering the manifest exactly once, chunk hashes, the assembled
+  finalized hash, duplicate-free receipt-only resume and replay, runtime and
+  heap budgets, 6 required release-verifier gates, and support-only release
+  metadata. Negative coverage blocks missing manifest evidence, incomplete
+  receipts, non-contiguous byte ranges, failed chunk hash verification,
+  duplicate replay work, over-budget runtime evidence, attempted production
+  `GO` claims, and premature pass evidence before the gate vector is recorded.
+  Command:
+  `node --test --test-name-pattern RPP-0786 test/rpp-0786-large-upload-chunk-manifest-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0786
+  coverage 2/2, adjacent RPP-0766 coverage 2/2, adjacent RPP-0746 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  778/222; final release remains `NO-GO` because this is support evidence, not
+  production storage receipts, production remote throughput, production row
+  batch execution, production atomic group commit evidence, live service
+  credentials, or external release approval.
 - Filesystem fsync evidence release-verifier variant-5 proof: the current lane
   now checks `RPP-0785` with deterministic local release-verifier support
   evidence. The proof carries the RPP-0765/RPP-0745 filesystem-fsync lineage
