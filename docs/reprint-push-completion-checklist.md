@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 633.
-- Remaining open: 367.
+- Verified complete: 634.
+- Remaining open: 366.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -588,7 +588,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [x] RPP-0549 (Mid-Far / executor-auth) Add generated coverage for session source URL binding, variant 3. Success: apply revalidates the live source before mutation.
 - [x] RPP-0550 (Mid-Far / executor-auth) Add generated coverage for session user identity binding, variant 3. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0551 (Mid-Far / executor-auth) Add generated coverage for Application Password integration, variant 3. Success: real endpoint test runs against a live URL.
-- [ ] RPP-0552 (Mid-Far / executor-auth) Add generated coverage for request signature canonicalization, variant 3. Success: negative auth cases fail before JSON parsing and mutation.
+- [x] RPP-0552 (Mid-Far / executor-auth) Add generated coverage for request signature canonicalization, variant 3. Success: negative auth cases fail before JSON parsing and mutation.
 - [ ] RPP-0553 (Mid-Far / executor-auth) Add generated coverage for nonce replay store, variant 3. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0554 (Mid-Far / executor-auth) Add generated coverage for receipt expiry validation, variant 3. Success: apply revalidates the live source before mutation.
 - [ ] RPP-0555 (Mid-Far / executor-auth) Add generated coverage for idempotency key requirement, variant 3. Success: verify:release includes the route evidence in one summary.
