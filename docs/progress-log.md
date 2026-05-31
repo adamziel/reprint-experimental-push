@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 17:00 CEST +02:00.
+- Last update: 2026-05-31 17:04 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0587 production recovery mutate route variant-5 merge ending at
-  `7dd1ed`.
+  the RPP-0588 short-lived push session variant-5 merge ending at `70ab88`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 662
-  items checked and leaves 338 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 663
+  items checked and leaves 337 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 78 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 79 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Short-lived push session variant-5 proof: the current lane now checks
+  `RPP-0588` with local executor-auth support evidence. The proof validates
+  bound dry-run receipts before mutation-capable work, binds dry-run receipts to
+  session, identity, scope, auth session, and plan hash, and rejects expired,
+  missing, malformed, drifted, or stale receipt evidence. Command:
+  `node --test --test-name-pattern RPP-0588 test/rpp-0588-short-lived-push-session-v5.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0588
+  coverage 3/3, adjacent short-lived session coverage 12/12, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 663/337; final
+  release remains `NO-GO` because this is support evidence, not
+  production-backed short-lived session proof.
 - Production recovery mutate route variant-5 proof: the current lane now checks
   `RPP-0587` with local executor-auth support evidence. The proof carries one
   recovery mutate route evidence summary through the verifier, rejects negative
