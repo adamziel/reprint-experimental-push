@@ -593,7 +593,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [x] RPP-0554 (Mid-Far / executor-auth) Add generated coverage for receipt expiry validation, variant 3. Success: apply revalidates the live source before mutation.
 - [x] RPP-0555 (Mid-Far / executor-auth) Add generated coverage for idempotency key requirement, variant 3. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0556 (Mid-Far / executor-auth) Add generated coverage for same-key same-body replay, variant 3. Success: real endpoint test runs against a live URL.
-- [ ] RPP-0557 (Mid-Far / executor-auth) Add generated coverage for same-key different-body conflict, variant 3. Success: negative auth cases fail before JSON parsing and mutation.
+- [x] RPP-0557 (Mid-Far / executor-auth) Add generated coverage for same-key different-body conflict, variant 3. Success: negative auth cases fail before JSON parsing and mutation.
 - [ ] RPP-0558 (Mid-Far / executor-auth) Add generated coverage for capability downgrade rejection, variant 3. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0559 (Mid-Far / executor-auth) Add generated coverage for credential rotation behavior, variant 3. Success: apply revalidates the live source before mutation.
 - [ ] RPP-0560 (Mid-Far / executor-auth) Add generated coverage for production audit event schema, variant 3. Success: verify:release includes the route evidence in one summary.

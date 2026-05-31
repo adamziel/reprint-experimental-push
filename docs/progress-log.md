@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 15:47 CEST +02:00.
+- Last update: 2026-05-31 15:51 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0555 idempotency key requirement variant-3 merge ending at `638c99`.
+  the RPP-0557 same-key different-body conflict variant-3 merge ending at
+  `288dc5`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 637
-  items checked and leaves 363 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 638
+  items checked and leaves 362 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 53 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 54 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key different-body conflict variant-3 proof: the current lane now checks
+  `RPP-0557` with local executor-auth support evidence. The proof shows the
+  same idempotency key with a different canonical request body is rejected as a
+  hash-only conflict before any fresh mutation setup, and negative auth/order
+  coverage fails before JSON parsing or mutation setup. Command:
+  `node --test --test-name-pattern RPP-0557 test/rpp-0557-same-key-different-body-conflict-v3.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0557
+  coverage 3/3, adjacent RPP-0537 coverage 2/2, authenticated-client
+  conflict/idempotency coverage 8/8, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 638/362; final release remains `NO-GO`
+  because this is support evidence, not production-backed same-key
+  different-body conflict proof.
 - Idempotency key requirement variant-3 proof: the current lane now checks
   `RPP-0555` with local executor-auth support evidence. The proof carries one
   hash-only route-evidence block into a `verify:release`-shaped summary, proves
