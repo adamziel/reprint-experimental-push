@@ -541,6 +541,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'same-plan-post-author-graph',
     tag: 'post-author-graph',
   },
+  postParentPageHierarchyVariant3: {
+    family: 'post-parent-page-hierarchy-variant3',
+    tag: 'post-parent-page-hierarchy-v3',
+  },
   commentUserGraph: {
     family: 'comment-user-graph-ready',
     tag: 'comment-user-graph',
@@ -2198,6 +2202,15 @@ function buildGeneratedCase({ index, tier, rng }) {
     tags,
   });
 
+  addPostParentPageHierarchyVariant3Target({
+    family,
+    base,
+    local,
+    remote,
+    allocator,
+    tags,
+  });
+
   addPluginOwnedResourceRefusalVariant3Target({
     family,
     tier,
@@ -2368,6 +2381,24 @@ function addPostGuidSlugCollisionTarget({
     },
   ));
   tags.add('expected-blocked');
+}
+
+function addPostParentPageHierarchyVariant3Target({
+  family,
+  base,
+  local,
+  remote,
+  allocator,
+  tags,
+}) {
+  const readyTarget = family === 'same-plan-post-parent-graph';
+  const staleTarget = family === 'stale-post-author-graph';
+  if (!readyTarget && !staleTarget) {
+    return;
+  }
+
+  addPostParentPageHierarchyVariant3(base, local, remote, allocator, tags, { staleTarget });
+  tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
 }
 
 const scenarioFamilyBuilders = {
@@ -3762,12 +3793,15 @@ function assertMutationPreconditionOneToOne(testCase, plan) {
 }
 
 function assertMergedResultPreservesRemoteUnlessPlanned(testCase, plan, resultSite, mutationKeys) {
+  const plannedHashByResourceKey = new Map(
+    plan.mutations.map((mutation) => [mutation.resourceKey, mutation.localHash]),
+  );
   for (const resource of enumerateResources(testCase.base, testCase.local, testCase.remote, resultSite)) {
     const resultHash = resourceHash(resultSite, resource);
     if (mutationKeys.has(resource.key)) {
       assert.equal(
         resultHash,
-        resourceHash(testCase.local, resource),
+        plannedHashByResourceKey.get(resource.key),
         `${testCase.id} did not apply planned local value for ${resource.key}`,
       );
     } else {
@@ -4869,6 +4903,79 @@ function addCommentGraph(local, allocator) {
   }));
 }
 
+function addPostParentPageHierarchyVariant3(base, local, remote, allocator, tags, { staleTarget }) {
+  const sourceParentId = allocator.graphId();
+  const childId = allocator.graphId();
+  const sourceParentRowId = `ID:${sourceParentId}`;
+  const childRowId = `ID:${childId}`;
+
+  if (staleTarget) {
+    const parent = makePost(sourceParentId, `RPP-0341 generated stale base parent ${sourceParentId}`, {
+      post_type: 'page',
+      post_name: `rpp-0341-stale-parent-${sourceParentId}`,
+      post_content: `rpp0341-stale-base-parent-private-${sourceParentId}`,
+    });
+    setRow(base, 'wp_posts', sourceParentRowId, parent);
+    setRow(local, 'wp_posts', sourceParentRowId, parent);
+    setRow(remote, 'wp_posts', sourceParentRowId, {
+      ...parent,
+      post_title: `RPP-0341 generated stale remote parent drift ${sourceParentId}`,
+      post_content: `rpp0341-stale-remote-parent-private-${sourceParentId}`,
+    });
+    setRow(local, 'wp_posts', childRowId, makePost(childId, `RPP-0341 generated page hierarchy child stale ${childId}`, {
+      post_type: 'page',
+      post_name: `rpp-0341-stale-child-${childId}`,
+      post_content: `rpp0341-stale-local-child-private-${childId}`,
+      post_parent: sourceParentId,
+    }));
+  } else {
+    const targetParentId = allocator.graphId();
+    const targetParentRowId = `ID:${targetParentId}`;
+    const parentTitle = `RPP-0341 generated mapped parent ${sourceParentId}`;
+    const parentSlug = `rpp-0341-mapped-parent-${sourceParentId}`;
+    const parentContent = `rpp0341-ready-parent-private-${sourceParentId}`;
+    const sourceParent = makePost(sourceParentId, parentTitle, {
+      post_type: 'page',
+      post_name: parentSlug,
+      post_content: parentContent,
+    });
+    const targetParent = makePost(targetParentId, parentTitle, {
+      post_type: 'page',
+      post_name: parentSlug,
+      post_content: parentContent,
+    });
+
+    setRow(local, 'wp_posts', sourceParentRowId, sourceParent);
+    setRow(remote, 'wp_posts', targetParentRowId, targetParent);
+    addWordPressGraphIdentityMapRow(local, {
+      table: 'wp_posts',
+      localId: sourceParentRowId,
+      remoteId: targetParentRowId,
+    });
+    setRow(local, 'wp_posts', childRowId, makePost(childId, `RPP-0341 generated page hierarchy child ready ${childId}`, {
+      post_type: 'page',
+      post_name: `rpp-0341-ready-child-${childId}`,
+      post_content: `rpp0341-ready-local-child-private-${childId}`,
+      post_parent: sourceParentId,
+    }));
+
+    tags.add('post-parent-page-hierarchy-v3-identity-map');
+    tags.add('post-parent-page-hierarchy-v3-ready');
+  }
+
+  tags.add('post-parent-page-hierarchy-v3');
+  tags.add('post-parent-page-hierarchy-v3-hash-only');
+  tags.add('post-parent-graph');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('post-parent-page-hierarchy-v3-stale');
+    tags.add('post-parent-page-hierarchy-v3-stale-target');
+    tags.add('post-parent-page-hierarchy-v3-non-ready');
+  }
+}
+
 function addPostAuthorGraph(base, local, remote, allocator, tags, { staleTarget }) {
   const userId = allocator.graphId();
   const postId = allocator.graphId();
@@ -4908,6 +5015,13 @@ function addPostAuthorGraph(base, local, remote, allocator, tags, { staleTarget 
   } else {
     tags.add('post-author-ready');
   }
+}
+
+function addWordPressGraphIdentityMapRow(site, entry) {
+  site.meta ||= {};
+  site.meta.wordpressGraphIdentityMap ||= {};
+  site.meta.wordpressGraphIdentityMap.rows ||= [];
+  site.meta.wordpressGraphIdentityMap.rows.push(entry);
 }
 
 function addCommentUserGraph(base, local, remote, allocator, tags, { staleTarget }) {
