@@ -349,6 +349,16 @@ type swaps. Ready cases replace an empty directory with the planned file value
 and preserve unplanned remote resources; conflict cases add a remote descendant
 under the directory and refuse apply.
 
+RPP-0245 adds `fileTypeSwapConflictVariant3` coverage for the same file
+topology type-swap surface with an explicit variant-3 target tag. The
+deterministic roster emits 20 target cases: 10 ready directory-to-file swaps
+and 10 non-ready remote-descendant conflicts, with two cases in every tier. The
+focused proof records command/caveat evidence, verifies ready mutation and
+stale replay behavior, then verifies the remote-descendant conflict path
+suppresses the target mutation/precondition and refuses apply without mutating
+the remote digest. Evidence remains hash-only and omits generated file
+payloads.
+
 RPP-0163 adds `fileTypeSwapConflictVariant4` coverage for the same file
 topology type-swap surface with an explicit variant-4 target tag. The
 deterministic roster emits 20 variant-4 target cases: 10 ready directory-to-file

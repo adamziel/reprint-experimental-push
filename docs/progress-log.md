@@ -15,6 +15,20 @@ linked implementation artifacts.
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
   goals, but it is no longer a static all-unchecked inventory. It now marks 551
   items checked and leaves 449 open.
+- Local file type-swap versus remote descendant variant-3 generated proof: the
+  current lane now checks `RPP-0245` with deterministic generated-harness
+  coverage for ready directory-to-file swaps and non-ready remote-descendant
+  conflicts. The generator exposes `fileTypeSwapConflictVariant3` target
+  coverage with 20 cases across tiers 0 through 9, including 10 ready cases and
+  10 non-ready conflicts. The focused proof verifies ready mutation,
+  live-remote precondition, unplanned remote preservation, and stale replay
+  refusal, then verifies the remote-descendant conflict emits no target
+  mutation/precondition, keeps the descendant as `keep-remote`, and refuses
+  apply with `PLAN_NOT_READY` before remote mutation. Command:
+  `node --test test/rpp-0245-local-file-type-swap-remote-descendant-v3.test.js`.
+  Caveat: Generated local/model evidence only; release remains gated separately.
+  Checklist count updates are left for the integrator-owned checklist pass;
+  final release remains `NO-GO`.
 - Checked slices: 100 release-gate foundation items, 81 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 96 generated
