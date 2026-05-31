@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 18:50 CEST +02:00.
+- Last update: 2026-05-31 18:52 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0678 process kill mid mutation set variant-4 merge ending at
-  `ce34a1`.
+  the RPP-0679 missing commit finalization variant-4 merge ending at
+  `118a3a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 702
-  items checked and leaves 298 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 703
+  items checked and leaves 297 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 78 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 79 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Missing commit finalization variant-4 proof: the current lane now checks
+  `RPP-0679` with local recovery support evidence. The proof verifies missing
+  commit finalization preserves mutation rows, exposes lease owner identity in
+  hash-only audit evidence, and keeps restart-readable writer and lease-fence
+  identities aligned with the same claim. Command:
+  `node --test --test-name-pattern RPP-0679 test/rpp-0679-missing-commit-finalization-v4.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0679 coverage 1/1,
+  adjacent RPP-0659 missing-finalization coverage 1/1, adjacent recovery-journal
+  RPP-0639 coverage 1/1, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 703/297; final release remains `NO-GO` because this is
+  support evidence, not production-backed recovery proof.
 - Process kill mid mutation set variant-4 proof: the current lane now checks
   `RPP-0678` with local recovery support evidence. The proof verifies a
   mid-mutation crash/retry path preserves remote-only changes before and after
