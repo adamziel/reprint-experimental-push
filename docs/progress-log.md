@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:49 CEST +02:00.
+- Last update: 2026-05-31 14:00 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0730 parallel snapshot hashing variant-2 merge ending at `7c60f96`.
+  the RPP-0348 commentmeta comment reference variant-3 merge ending at
+  `ac8a59a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 601
-  items checked and leaves 399 open.
-- Checked slices: 100 release-gate foundation items, 87 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 602
+  items checked and leaves 398 open.
+- Checked slices: 100 release-gate foundation items, 88 graph identity items,
   94 plugin-driver boundary items, 40 executor/auth items, 47 recovery items,
   30 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Commentmeta comment reference variant-3 generated coverage: the current lane
+  now checks `RPP-0348` with local generated graph-identity support evidence.
+  The generated target proves stable `wp_commentmeta.comment_id` references,
+  identity-map rewrites, and stale comment drift refusal while keeping evidence
+  hash-only. Command:
+  `node --test --test-name-pattern=RPP-0348 test/generated-push-harness.test.js`.
+  Caveat: local generated-harness support evidence only; final release remains
+  `NO-GO`. Validation passed with Node syntax checks, focused RPP-0348 coverage
+  1/1, adjacent RPP-0345/RPP-0346/RPP-0347/RPP-0348 generated graph coverage
+  4/4, adjacent commentmeta comment proof coverage 2/2, full generated harness
+  coverage 100/100 across the current 620-case roster, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 602/398; final
+  release remains `NO-GO` because this is support evidence, not
+  production-backed graph identity proof.
 - Parallel snapshot hashing variant-2 proof: the current lane now checks
   `RPP-0730` with local storage/performance support evidence. The proof shows
   the fast-path lane is updated only after parallel snapshot hash correctness
