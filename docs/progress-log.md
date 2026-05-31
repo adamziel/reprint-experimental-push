@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 10:13 CEST +02:00.
+- Last update: 2026-05-31 10:22 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0338 GUID and slug collision variant-2 proof merge ending at
-  `e4b8aa485`.
+  the RPP-0197 stale remote after dry-run release-verifier v5 merge ending at
+  `cf34ce315`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 552
-  items checked and leaves 448 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 553
+  items checked and leaves 447 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 96 generated
+  23 storage/performance items, 3 production-topology items, 97 generated
   harness items, and 86 merge-invariant items. No release-ops items are checked
   yet.
+- Stale remote after dry-run release-verifier v5 carry-through: the current lane
+  now checks `RPP-0197` with generated-harness support evidence for ready plans
+  whose live-remote preconditions reject stale replay after dry-run and before
+  mutation. The generator exposes
+  `staleRemoteAfterDryRunReleaseVerifierVariant5` target coverage with 344 ready
+  replay-refusal cases across tiers 0 through 9, selects one high-mutation ready
+  case per tier for midpoint drift, and verifies each replay fails with
+  `PRECONDITION_FAILED` while the remote digest stays unchanged. Validation
+  passed with Node syntax checks, focused RPP-0197 coverage 1/1, adjacent
+  RPP-0117/RPP-0137/RPP-0157/RPP-0177/RPP-0197 stale-replay coverage 5/5, the
+  full generated harness suite 91/91, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 553/447; final release remains `NO-GO`
+  because this is local generated release-verifier support evidence, not
+  production-backed release proof.
 - GUID and slug collision handling variant-2 proof: the current lane now checks
   `RPP-0338` with item-specific graph-identity evidence over the existing
   generated `postGuidSlugCollision` target. The proof verifies 20 generated
