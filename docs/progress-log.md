@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 01:10 CEST +02:00.
+- Last update: 2026-06-01 01:14 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0810 multisite subdomain topology merge ending at `6024397df`.
+  the RPP-0811 object cache topology merge ending at `f4c0be38c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 807
-  items checked and leaves 193 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 808
+  items checked and leaves 192 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 7 production-topology items, 100 generated
+  100 storage/performance items, 8 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Object cache enabled topology unavailable-capability proof: the current lane
+  now checks `RPP-0811` with fail-closed topology evidence. The proof records the
+  object-cache topology requirements, rejects non-started topology reports that
+  omit an exact capability code, and runs the Docker local-production topology
+  command in this sandbox to record exact blocker `DOCKER_CLI_MISSING` with
+  `acceptedForReleaseGate: false` and `failClosed: true`.
+  Commands:
+  `node --test test/rpp-0811-object-cache-enabled-topology-v1.test.js` and
+  `npm run verify:release:docker-local-production`.
+  Caveat: unavailable-capability support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0811
+  coverage 2/2, Docker topology command exit 2 with `DOCKER_CLI_MISSING`,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  808/192; final release remains `NO-GO` because this is support evidence, not
+  production-backed object-cache topology proof, production storage receipts,
+  production row batch executor evidence, production atomic group commit
+  evidence, live production service evidence, production throughput, release
+  approval, or a production release gate.
 - Multisite subdomain topology candidate-scope proof: the current lane now
   checks `RPP-0810` with deterministic support evidence for multisite subdomain
   candidate scope versus release-ready gaps. The proof records source, local,
