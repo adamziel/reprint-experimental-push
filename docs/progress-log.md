@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 14:00 CEST +02:00.
+- Last update: 2026-05-31 14:02 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0348 commentmeta comment reference variant-3 merge ending at
-  `ac8a59a`.
+  the RPP-0452 direct active_plugins mutation refusal variant-3 merge ending at
+  `aa7ecde`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 602
-  items checked and leaves 398 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 603
+  items checked and leaves 397 open.
 - Checked slices: 100 release-gate foundation items, 88 graph identity items,
-  94 plugin-driver boundary items, 40 executor/auth items, 47 recovery items,
+  95 plugin-driver boundary items, 40 executor/auth items, 47 recovery items,
   30 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Direct active_plugins mutation refusal variant-3 proof: the current lane now
+  checks `RPP-0452` with local plugin-driver support evidence. The proof refuses
+  direct writes and deletes to the `active_plugins` option before mutation,
+  keeps explicit checked plugin-driver mutations allowed when `active_plugins`
+  is unchanged, and fails stale or forged plugin-driver evidence closed while
+  preserving remote plugin-owned data. Command:
+  `node --test --test-name-pattern RPP-0452 test/rpp-0452-direct-active-plugins-mutation-refusal-v3.test.js`.
+  Caveat: local plugin-driver support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0452 coverage
+  3/3, adjacent RPP-0472 direct active_plugins refusal coverage 3/3, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 603/397;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed plugin-driver proof.
 - Commentmeta comment reference variant-3 generated coverage: the current lane
   now checks `RPP-0348` with local generated graph-identity support evidence.
   The generated target proves stable `wp_commentmeta.comment_id` references,

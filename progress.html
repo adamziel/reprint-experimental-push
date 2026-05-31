@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T14:00:00+02:00">Last updated: May 31, 2026, 14:00 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T14:02:00+02:00">Last updated: May 31, 2026, 14:02 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>602</strong>
+        <strong>603</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>398</strong>
+        <strong>397</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -352,7 +352,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
-            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through and variant-3 local apply proof, exact custom-table allowlist proof with release-verifier carry-through, wp_postmeta, wp_termmeta, and wp_usermeta release-verifier carry-through, plugin activation dependency release-verifier carry-through and variant-3 generated-style proof, plugin update dependency release-verifier carry-through, plugin uninstall/delete release-verifier carry-through and variant-3 local proof, direct active_plugins mutation refusal release-verifier carry-through, owner-context stale plugin-file and stale metadata release-verifier carry-through, remote plugin removal refusal release-verifier carry-through, driver delete-support, dry-run-validation, apply-validation, and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, generated wp_options, wp_postmeta, wp_termmeta, and wp_usermeta driver semantics variant-3 coverage, generated driver apply-validation variant-3 coverage, supported/unsupported wp_usermeta, dry-run validation hook, owner identity binding variant-3 and variant-4 coverage, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
+            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through and variant-3 local apply proof, exact custom-table allowlist proof with release-verifier carry-through, wp_postmeta, wp_termmeta, and wp_usermeta release-verifier carry-through, plugin activation dependency release-verifier carry-through and variant-3 generated-style proof, plugin update dependency release-verifier carry-through, plugin uninstall/delete release-verifier carry-through and variant-3 local proof, direct active_plugins mutation refusal release-verifier carry-through and variant-3 local proof, owner-context stale plugin-file and stale metadata release-verifier carry-through, remote plugin removal refusal release-verifier carry-through, driver delete-support, dry-run-validation, apply-validation, and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, generated wp_options, wp_postmeta, wp_termmeta, and wp_usermeta driver semantics variant-3 coverage, generated driver apply-validation variant-3 coverage, supported/unsupported wp_usermeta, dry-run validation hook, owner identity binding variant-3 and variant-4 coverage, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Local production candidate checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0348</span>
+        <span>RPP-0452</span>
       </div>
-      <p>The latest refresh checks RPP-0348 with generated commentmeta comment reference variant-3 graph evidence. The proof keeps `wp_commentmeta.comment_id` references stable through identity-map rewrites and refuses stale comment drift before mutation with hash-only evidence. Counts are now 602/398; final release remains NO-GO because this is local generated graph support evidence, not production-backed graph identity proof.</p>
+      <p>The latest refresh checks RPP-0452 with direct active_plugins mutation refusal variant-3 plugin-driver evidence. The proof refuses direct writes and deletes to `active_plugins` before mutation, keeps explicit checked plugin-driver mutations allowed when `active_plugins` is unchanged, and fails stale or forged evidence closed while preserving remote plugin-owned data. Counts are now 603/397; final release remains NO-GO because this is local plugin-driver support evidence, not production-backed plugin-driver proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0452 focused: 3/3</span>
+        <span class="tag">RPP-0472 adjacent: 3/3</span>
+        <span class="tag">active_plugins refused</span>
+        <span class="tag">checked driver allowed</span>
+        <span class="tag">stale/forged fail closed</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0348 focused: 1/1</span>
         <span class="tag">generated adjacent: 4/4</span>
         <span class="tag">commentmeta adjacent: 2/2</span>
