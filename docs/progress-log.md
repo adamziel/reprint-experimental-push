@@ -6,20 +6,48 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:43 CEST +02:00.
+- Last update: 2026-05-31 23:46 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0796 large plugin file benchmark release-verifier variant-5 merge
-  ending at `7d3cc8`.
+  the RPP-0794 large post table benchmark release-verifier variant-5 merge
+  ending at `79d44f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 787
-  items checked and leaves 213 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 788
+  items checked and leaves 212 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  95 storage/performance items, 3 production-topology items, 100 generated
+  96 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Large post table benchmark release-verifier variant-5 proof: the current lane
+  now checks `RPP-0794` with deterministic local release-verifier support
+  evidence. The proof carries the RPP-0774/RPP-0754/RPP-0714 large `wp_posts`
+  table lineage into a release-verifier envelope that preserves runtime/resource
+  reporting, pass/fail benchmark gates, large-site duration and heap budgets,
+  live remote preconditions for each planned row mutation, ordered primary-key
+  batch windows, generated hash-only coverage, deterministic repeat evidence,
+  and RPP-0774 fail-closed cases. The unit shape records 20000 table rows,
+  10000 changed rows, 10000 unchanged rows, 10000 planned row mutations, 10000
+  live remote preconditions, batch size 500, 20 batch windows, max observed
+  batch rows 500, five changed hash-only samples, three unchanged hash-only
+  samples, 10000 applied mutations, 10000 changed rows verified after apply,
+  three unchanged sample rows verified after apply, zero verification failures,
+  six passing benchmark gates, one safe generated output, six blocked unsafe
+  cases, zero unsafe outputs, and 10 release-verifier gates. Negative coverage
+  blocks missing runtime reports, stale batch-window evidence, stale generated
+  coverage, deterministic repeat drift, missing carry-through, raw-value
+  leakage, production release claims, and missing recorded gates.
+  Command:
+  `node --test --test-name-pattern RPP-0794 test/rpp-0794-large-post-table-benchmark-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0794
+  coverage 2/2, adjacent RPP-0774 coverage 2/2, adjacent RPP-0754 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  788/212; final release remains `NO-GO` because this is support evidence, not
+  production storage receipts, production row batch executor evidence,
+  production atomic group commit evidence, live production service evidence,
+  production throughput, release approval, or a production release gate.
 - Large plugin file benchmark release-verifier variant-5 proof: the current
   lane now checks `RPP-0796` with deterministic local release-verifier support
   evidence. The proof carries the RPP-0776/RPP-0756/RPP-0716 large plugin file

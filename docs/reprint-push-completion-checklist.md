@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 787.
-- Remaining open: 213.
+- Verified complete: 788.
+- Remaining open: 212.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -840,7 +840,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0791 (Far / storage-performance) Carry through the release verifier for remote hash pagination, variant 5. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [x] RPP-0792 (Far / storage-performance) Carry through the release verifier for dry-run batch sizing, variant 5. Success: guarded writes reject stale storage state.
 - [x] RPP-0793 (Far / storage-performance) Carry through the release verifier for apply batch sizing, variant 5. Success: chunk transfer resumes without duplicate mutation work.
-- [ ] RPP-0794 (Far / storage-performance) Carry through the release verifier for large post table benchmark, variant 5. Success: large-site run finishes inside documented budgets.
+- [x] RPP-0794 (Far / storage-performance) Carry through the release verifier for large post table benchmark, variant 5. Success: large-site run finishes inside documented budgets.
 - [x] RPP-0795 (Far / storage-performance) Carry through the release verifier for large media library benchmark, variant 5. Success: fast-path lane updates only after correctness gates hold.
 - [x] RPP-0796 (Far / storage-performance) Carry through the release verifier for large plugin file benchmark, variant 5. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [ ] RPP-0797 (Far / storage-performance) Carry through the release verifier for memory ceiling proof, variant 5. Success: guarded writes reject stale storage state.
