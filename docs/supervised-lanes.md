@@ -37,15 +37,15 @@ Start a fresh supervised cycle from current `origin/main`:
 scripts/supervision/start-cycle.sh cycle-YYYYMMDD-label
 ```
 
-Lane launchers use Codex fast mode by default:
+Lane launchers use GPT-5.5 with high-reasoning defaults:
 
 ```bash
-CODEX_FAST_MODEL=gpt-5.4-mini
-CODEX_FAST_REASONING_EFFORT=low
+CODEX_FAST_MODEL=gpt-5.5
+CODEX_FAST_REASONING_EFFORT=xhigh
 ```
 
 Override those environment variables only when a lane genuinely needs a
-stronger model. The supervisor should keep feature work in lanes; if
+different model. The supervisor should keep feature work in lanes; if
 `accountability.sh` reports non-supervision drift in `main`, stop local
 development and delegate that change to a worker lane.
 
