@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T12:03:00+02:00">Last updated: May 31, 2026, 12:03 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T12:06:00+02:00">Last updated: May 31, 2026, 12:06 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>573</strong>
+        <strong>574</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>427</strong>
+        <strong>426</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay v2 release-proof carry-through, different-body idempotency conflict v2, process kill before mutation set v2, process kill mid mutation set v2, missing commit finalization v2, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay v2 release-proof carry-through, different-body idempotency conflict v2, process kill before mutation set v2, process kill mid mutation set v2, missing commit finalization v2, before-mutation process-kill readback, manual recovery audit export, journal schema migration through variant 3, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0341</span>
+        <span>RPP-0641</span>
       </div>
-      <p>The latest refresh checks RPP-0341 with generated-harness graph identity evidence for post_parent page hierarchy variant 3. The target emits ready identity-map rewrites and stale parent-drift blockers across all tiers, with stale cases refusing as stale-wordpress-graph-identity before mutation. Counts are now 573/427; final release remains NO-GO because this is local generated graph identity support evidence, not production-backed release proof.</p>
+      <p>The latest refresh checks RPP-0641 with generated-style SQLite recovery evidence for journal table schema migration variant 3. Open, staged, and committed partial recovery rows migrate from legacy shapes, strict pre-migration reads fail closed, and reopened SQLite journals remain restart-readable after migration. Counts are now 574/426; final release remains NO-GO because this is local recovery support evidence, not external durability or production-backed release proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0641 focused: 1/1</span>
+        <span class="tag">schema adjacent: 3/3</span>
+        <span class="tag">recovery schema: 10/10</span>
+        <span class="tag">SQLite reopen proof</span>
+        <span class="tag">legacy reads fail closed</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0341 focused: 1/1</span>
         <span class="tag">generated adjacent: 4/4</span>
         <span class="tag">post_parent adjacent: 6/6</span>
