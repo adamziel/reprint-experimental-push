@@ -406,13 +406,13 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0676</span>
+        <span>RPP-0677</span>
       </div>
-      <p>The latest refresh checks RPP-0676 with different-body idempotency conflict variant-4 evidence. The proof records a hash-only different-body conflict in SQLite-backed recovery state, proves the rejected request performs no post-conflict mutation or replay movement, and rejects missing, malformed, stale, duplicated, or drifted conflict fixtures. Counts are now 700/300; final release remains NO-GO because this is local recovery support evidence, not production-backed recovery proof.</p>
+      <p>The latest refresh checks RPP-0677 with process kill before first mutation variant-4 evidence. The proof records a crash boundary after apply-started and before the first mutation, verifies journal rows remain durable after restarted readback, and keeps recovery evidence hash-only while refusing malformed or drifted fixtures. Counts are now 701/299; final release remains NO-GO because this is local recovery support evidence, not production-backed recovery proof.</p>
       <div class="tag-row" aria-label="Latest validation">
-        <span class="tag">RPP-0676 focused: 2/2</span>
-        <span class="tag">RPP-0656 adjacent: 2/2</span>
-        <span class="tag">RPP-0616/0597/0636: 5/5</span>
+        <span class="tag">RPP-0677 focused: 1/1</span>
+        <span class="tag">RPP-0657 adjacent: 2/2</span>
+        <span class="tag">RPP-0617/0637: 2/2</span>
         <span class="tag">local support-only</span>
         <span class="tag">ownership record</span>
         <span class="tag">release-gate scoped</span>
