@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 19:34 CEST +02:00.
+- Last update: 2026-05-31 19:40 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0695 same-key replay after rejection variant-5 merge ending at
-  `266ce6`.
+  the RPP-0698 process kill mid mutation set variant-5 merge ending at
+  `7ba07c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 718
-  items checked and leaves 282 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 719
+  items checked and leaves 281 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 94 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 95 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Process kill mid mutation set variant-5 proof: the current lane now checks
+  `RPP-0698` with local recovery support evidence. The proof carries a
+  process-kill mid-mutation retry scenario through the release verifier,
+  verifies preserved remote changes are not overwritten after retry, and keeps
+  mutating retry evidence fail-closed. Command:
+  `node --test --test-name-pattern RPP-0698 test/rpp-0698-process-kill-mid-mutation-set-v5.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0698 coverage 1/1,
+  adjacent RPP-0678 coverage 1/1, adjacent RPP-0658 coverage 1/1, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 719/281;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed recovery proof.
 - Same-key replay after rejection variant-5 proof: the current lane now checks
   `RPP-0695` with local recovery support evidence. The proof carries rejected
   same-key replay evidence through the release-verifier-shaped durable recovery
