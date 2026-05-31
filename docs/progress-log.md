@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 18:43 CEST +02:00.
+- Last update: 2026-05-31 18:45 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0674 same-key replay after commit variant-4 merge ending at
-  `aac7e7`.
+  the RPP-0676 different-body idempotency conflict variant-4 merge ending at
+  `e2370d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 699
-  items checked and leaves 301 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 700
+  items checked and leaves 300 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 75 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 76 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Different-body idempotency conflict variant-4 proof: the current lane now
+  checks `RPP-0676` with local recovery support evidence. The proof records a
+  hash-only different-body idempotency conflict in SQLite-backed recovery state,
+  proves the rejected request performs no post-conflict mutation or replay
+  movement, and rejects missing, malformed, stale, duplicated, or drifted
+  conflict fixtures before proof movement. Command:
+  `node --test --test-name-pattern RPP-0676 test/rpp-0676-different-body-idempotency-conflict-v4.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0676 coverage 2/2,
+  adjacent RPP-0656 conflict coverage 2/2, adjacent RPP-0616 coverage 1/1,
+  adjacent RPP-0597 route/conflict coverage 3/3, adjacent recovery-journal
+  RPP-0636 coverage 1/1, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 700/300; final release remains `NO-GO` because this is
+  support evidence, not production-backed recovery proof.
 - Same-key replay after commit variant-4 proof: the current lane now checks
   `RPP-0674` with local recovery support evidence. The proof verifies
   same-key replay after a committed journal row remains idempotent while keeping
