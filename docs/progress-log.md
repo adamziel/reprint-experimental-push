@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 17:09 CEST +02:00.
+- Last update: 2026-05-31 17:13 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0590 session user identity binding variant-5 merge ending at `fc268c`.
+  the RPP-0592 request signature canonicalization variant-5 merge ending at
+  `0fc2a0`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 665
-  items checked and leaves 335 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 666
+  items checked and leaves 334 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 81 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 82 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Request signature canonicalization variant-5 proof: the current lane now
+  checks `RPP-0592` with local executor-auth support evidence. The proof accepts
+  normalized equivalent signed request shapes only after canonical signature
+  proof, carries one hash-only canonicalization summary through the release
+  verifier, and rejects malformed, tampered, stale, or drifted signature
+  evidence before JSON parsing, receipt work, mutation-capable work, or release
+  movement. Command:
+  `node --test --test-name-pattern RPP-0592 test/rpp-0592-request-signature-canonicalization-v5.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0592
+  coverage 5/5, adjacent canonicalization coverage 7/7, authenticated HTTP push
+  client coverage 135/135, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 666/334; final release remains `NO-GO` because this is
+  support evidence, not production-backed request signature proof.
 - Session user identity binding variant-5 proof: the current lane now checks
   `RPP-0590` with local executor-auth support evidence. The proof carries
   exactly one hash-only session-user identity route-evidence summary through the
