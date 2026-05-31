@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T00:24:00+02:00">Last updated: May 31, 2026, 00:24 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T09:48:00+02:00">Last updated: May 31, 2026, 09:48 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>547</strong>
+        <strong>548</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>453</strong>
+        <strong>452</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0285</span>
+        <span>RPP-0288</span>
       </div>
-      <p>The latest refresh checks RPP-0285 with focused release-verifier evidence for a local directory-to-file type swap while the live remote created a descendant: the unsafe type swap emits no mutation or precondition, the remote descendant is preserved as keep-remote, an unrelated local mutation remains live-preconditioned, and apply refuses before durable journal writes or mutation callbacks. Counts are now 547/453; final release remains NO-GO because this is local focused evidence, not production-backed release proof.</p>
+      <p>The latest refresh checks RPP-0288 with focused release-verifier evidence for unknown plugin-owned resource refusal: a plugin-owned custom-table row without supported driver policy is refused before mutation or live preconditions, blocked and forged-ready apply attempts fail before mutation, remote snapshot hashes stay stable, and the proof envelope remains hash-only. Counts are now 548/452; final release remains NO-GO because this is local support evidence, not production-backed release proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0288 focused: 2/2</span>
+        <span class="tag">RPP-0248/0268/0288: 4/4</span>
+        <span class="tag">unknown plugin-owned refused</span>
+        <span class="tag">no mutation/precondition</span>
+        <span class="tag">remote hash stable</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0285 focused: 2/2</span>
         <span class="tag">RPP-0205/0225/0265/0285: 5/5</span>
         <span class="tag">push-planner: 148/148</span>
