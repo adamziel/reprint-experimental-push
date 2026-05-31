@@ -72,7 +72,7 @@ Observed local results after implementation:
 - `node --check test/rpp-0782-sqlite-cas-write-guard-release-verifier-v5.test.js`: exit 0
 - RPP-0782 proof test: 2 pass, 0 fail
 - RPP-0762 proof test: 2 pass, 0 fail
-- RPP-0742 proof test: 2 pass, 0 fail
+- RPP-0742 proof test: 3 pass, 0 fail
 - Evidence redaction scan: `ok: true`, 0 rejected files
 - Diff whitespace check: clean
 
