@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 22:27 CEST +02:00.
+- Last update: 2026-05-31 22:30 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0776 large plugin file benchmark variant-4 merge ending at `714407`.
+  the RPP-0778 timeout budget proof variant-4 merge ending at `9e9fef`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 769
-  items checked and leaves 231 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 770
+  items checked and leaves 230 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  77 storage/performance items, 3 production-topology items, 100 generated
+  78 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Timeout budget proof variant-4 proof: the current lane now checks `RPP-0778`
+  with deterministic local storage/performance support evidence. The proof
+  carries forward the RPP-0758/RPP-0738/RPP-0718 timeout-budget lineage and
+  covers replay-resume cases that time out after 1, 2, 3, and 4 durable local
+  chunk receipts. The unit profile records a 1048576-byte guarded executor
+  file, 262144-byte chunks, 4 base chunks, 4 replay cases, replay manifests of
+  4, 5, 6, and 7 chunks, 22 total chunks replayed on resume, 10 chunks skipped
+  by exact receipt match, 12 chunks uploaded after resume, 0 duplicate chunk
+  bytes, 0 duplicate mutation work, 0 mutation work before timeout, and apply
+  opening only after transfer finalization. Command:
+  `node --test --test-name-pattern RPP-0778 test/rpp-0778-timeout-budget-proof-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0778
+  coverage 2/2, adjacent RPP-0758 coverage 2/2, adjacent RPP-0738 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  770/230; final release remains `NO-GO` because this is support evidence, not
+  production-backed storage receipt, row batch executor, atomic commit, live
+  topology, or credential proof.
 - Large plugin file benchmark variant-4 proof: the current lane now checks
   `RPP-0776` with deterministic local storage/performance support evidence. The
   proof carries forward the RPP-0756/RPP-0736/RPP-0716 large plugin file
