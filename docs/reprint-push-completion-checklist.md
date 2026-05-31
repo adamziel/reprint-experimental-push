@@ -729,7 +729,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [x] RPP-0685 (Far / recovery) Carry through the release verifier for claim expiry policy, variant 5. Success: release verifier reports the recovery gate as proven on the same path.
 - [x] RPP-0686 (Far / recovery) Carry through the release verifier for journal pagination, variant 5. Success: MySQL or SQLite-backed test proves the recovery state.
 - [x] RPP-0687 (Far / recovery) Carry through the release verifier for restart-readable open state, variant 5. Success: journal rows are durable after process restart.
-- [ ] RPP-0688 (Far / recovery) Carry through the release verifier for restart-readable staged state, variant 5. Success: retry does not overwrite preserved remote changes.
+- [x] RPP-0688 (Far / recovery) Carry through the release verifier for restart-readable staged state, variant 5. Success: retry does not overwrite preserved remote changes.
 - [ ] RPP-0689 (Far / recovery) Carry through the release verifier for restart-readable committed state, variant 5. Success: lease owner identity is visible in audit evidence.
 - [ ] RPP-0690 (Far / recovery) Carry through the release verifier for old remote recovery classification, variant 5. Success: release verifier reports the recovery gate as proven on the same path.
 - [ ] RPP-0691 (Far / recovery) Carry through the release verifier for new remote recovery classification, variant 5. Success: MySQL or SQLite-backed test proves the recovery state.
