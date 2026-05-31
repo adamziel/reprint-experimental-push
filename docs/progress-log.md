@@ -6,20 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:43 CEST +02:00.
+- Last update: 2026-05-31 11:45 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0299 redacted raw-value evidence release-verifier v5 merge ending at
-  `c497a0905`.
+  the RPP-0300 atomic group blocker propagation release-verifier v5 merge
+  ending at `200b2067e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 570
-  items checked and leaves 430 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 571
+  items checked and leaves 429 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 100 generated
-  harness items, and 99 merge-invariant items. No release-ops items are checked
+  harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Atomic group blocker propagation release-verifier v5 carry-through: the
+  current lane now checks `RPP-0300` with focused and generated support evidence
+  that atomic group source blockers propagate to every grouped mutation and
+  non-ready plans refuse before partial mutation. The proof covers one focused
+  mixed blocker fixture and the ten generated
+  `atomic-plugin-install-stack-release-verifier-v5` missing-dependency cases
+  across tiers 0 through 9. Command:
+  `node --test test/rpp-0300-atomic-group-blocker-propagation-release-verifier-v5.test.js`.
+  Caveat: local deterministic release-verifier support proof only; final release
+  remains `NO-GO`. Validation passed with Node syntax checks, focused RPP-0300
+  coverage 1/1, adjacent RPP-0260/RPP-0280 atomic blocker coverage 2/2,
+  planner/generated atomic lineage coverage 5/5, scoped artifact redaction
+  scan, and diff whitespace checks. Counts are now 571/429; final release
+  remains `NO-GO` because this is local merge-invariant support evidence, not
+  production-backed release proof.
 - Redacted raw-value evidence release-verifier v5 carry-through: the current
   lane now checks `RPP-0299` with focused support evidence and a scenario-matrix
   row naming the behavior and command. The proof carries planner mutation
