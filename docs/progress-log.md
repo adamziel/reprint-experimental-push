@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 17:25 CEST +02:00.
+- Last update: 2026-05-31 17:34 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0598 capability downgrade rejection variant-5 merge ending at
-  `b6f189`.
+  the RPP-0650 old remote recovery classification variant-3 merge ending at
+  `ce4f1e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 671
-  items checked and leaves 329 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 672
+  items checked and leaves 328 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 87 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 87 executor/auth items, 50 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Old remote recovery classification variant-3 proof: the current lane now
+  checks `RPP-0650` with local recovery support evidence. The proof carries
+  old-remote recovery classification through the same release-gate summary,
+  rejects missing, malformed, stale, or drifted classification evidence, and
+  keeps release movement blocked without production proof. Command:
+  `node --test --test-name-pattern RPP-0650 test/rpp-0650-old-remote-recovery-classification-v3.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0650 coverage 2/2,
+  adjacent recovery classification coverage 3/3, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 672/328; final release remains
+  `NO-GO` because this is support evidence, not production-backed recovery
+  proof.
 - Capability downgrade rejection variant-5 proof: the current lane now checks
   `RPP-0598` with local executor-auth support evidence. The proof checks
   capability before parsing, receipt movement, mutation-capable work, and
