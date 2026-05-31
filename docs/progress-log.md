@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:26 CEST +02:00.
+- Last update: 2026-05-31 13:29 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0539 credential rotation behavior variant-2 merge ending at
-  `1452289`.
+  the RPP-0729 chunk replay idempotency variant-2 merge ending at `1bc16d2`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 594
-  items checked and leaves 406 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 595
+  items checked and leaves 405 open.
 - Checked slices: 100 release-gate foundation items, 86 graph identity items,
   92 plugin-driver boundary items, 39 executor/auth items, 46 recovery items,
-  28 storage/performance items, 3 production-topology items, 100 generated
+  29 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Chunk replay idempotency variant-2 proof: the current lane now checks
+  `RPP-0729` with local storage/performance support evidence. The proof shows
+  guardedLarge replay attempts return existing receipts, create zero duplicate
+  receipt records, write zero duplicate bytes, do zero duplicate mutation work,
+  stay within documented runtime and heap budgets, and fail stale or mismatched
+  replay attempts closed with hash-only evidence. Command:
+  `node --test --test-name-pattern RPP-0729 test/rpp-0729-chunk-replay-idempotency-v2.test.js`.
+  Caveat: local benchmark support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0729
+  coverage 2/2, adjacent chunk replay coverage 4/4, guarded/performance
+  adjacent coverage 19/19, guardedLarge chunk replay benchmark with
+  `"ok": true`, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 595/405; final release remains `NO-GO` because this is support
+  evidence, not production storage receipts, row batching, atomic-group commit
+  receipts, or release-verifier carry-through.
 - Credential rotation behavior variant-2 proof: the current lane now checks
   `RPP-0539` with local executor/auth support evidence. The proof rejects old
   credentials, binds the rotated credential to the authenticated session and
