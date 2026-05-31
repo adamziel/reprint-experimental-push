@@ -6,20 +6,49 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:30 CEST +02:00.
+- Last update: 2026-05-31 23:42 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0793 apply batch sizing release-verifier variant-5 merge ending at
-  `88ee18`.
+  the RPP-0795 large media library benchmark release-verifier variant-5 merge
+  ending at `9e83cb`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 785
-  items checked and leaves 215 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 786
+  items checked and leaves 214 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  93 storage/performance items, 3 production-topology items, 100 generated
+  94 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Large media library benchmark release-verifier variant-5 proof: the current
+  lane now checks `RPP-0795` with deterministic local release-verifier support
+  evidence. The proof carries the RPP-0775/RPP-0755/RPP-0715 large media
+  library lineage into a release-verifier envelope that accepts fast-path lane
+  output only after runtime/resource reporting, large media benchmark gates,
+  media storage counts, row preconditions, database batch limits, stale-write
+  refusals, and fsync failure refusals are recorded and passing. The unit shape
+  records 13 media write attempts, seven fully applied and fsynced fast-path
+  lane updates, six blocked fast-path lane updates, two stale-at-write
+  rejections, two temp-file fsync failures before rename, two target-directory
+  fsync incomplete applies withheld from the lane, 78 row preconditions, 42 row
+  preconditions attached to lane updates, 12 database batches, max batch size 7,
+  one safe generated output, 13 blocked unsafe cases, zero unsafe outputs, and
+  12 release-verifier gates. Negative coverage blocks missing runtime reports,
+  missing benchmark gate carry-through, media count drift, unsafe fast-path lane
+  updates, missing row preconditions, over-limit database batches, stale/fsync
+  lane drift, stale generated coverage, deterministic projection drift,
+  raw-value evidence, production release claims, premature passed status, and
+  failed recorded gates.
+  Command:
+  `node --test --test-name-pattern RPP-0795 test/rpp-0795-large-media-library-benchmark-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0795
+  coverage 2/2, adjacent RPP-0775 coverage 2/2, adjacent RPP-0755 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  786/214; final release remains `NO-GO` because this is support evidence, not
+  production storage receipts, production row batch executor evidence,
+  production atomic group commit evidence, live production service evidence,
+  production throughput, release approval, or a production release gate.
 - Apply batch sizing release-verifier variant-5 proof: the current lane now
   checks `RPP-0793` with deterministic local release-verifier support evidence.
   The proof carries the RPP-0773/RPP-0753/RPP-0713 apply batch sizing lineage
