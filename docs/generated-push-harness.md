@@ -955,6 +955,20 @@ child reply to fail closed as `stale-wordpress-graph-identity` with hash-only
 target evidence. This remains local generated support evidence only; final
 release remains `NO-GO`.
 
+RPP-0348 adds `commentmetaCommentReferenceVariant3` coverage for generated
+`wp_commentmeta.comment_id` references to `wp_comments.comment_ID`. The
+deterministic roster emits 30 support-only variant-3 target cases: 10 stable
+comment identity proofs, 10 ready comment identity-map rewrite cases, and 10
+stale comment drift cases, with three cases in every tier. Stable cases keep
+the target comment identical across base, local, and remote and plan only the
+dependent commentmeta row. Ready identity-map cases map a local comment row to
+an equivalent remote comment row, preserve that remote comment, rewrite the
+dependent commentmeta row's `comment_id` to the proven remote ID, and reject
+stale replay before mutation. Stale cases drift the base comment remotely and
+require the commentmeta row to fail closed as
+`stale-wordpress-graph-identity` with hash-only target evidence. This remains
+local generated support evidence only; final release remains `NO-GO`.
+
 The remaining unmapped WordPress graph surfaces continue to fail closed or stay
 intentionally unsupported until an explicit owner/driver, parser-aware rewrite,
 or equivalent remote identity-map proof exists:
