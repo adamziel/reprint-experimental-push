@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 22:04 CEST +02:00.
+- Last update: 2026-05-31 22:07 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0772 dry-run batch sizing variant-4 merge ending at `d4fed4`.
+  the RPP-0773 apply batch sizing variant-4 merge ending at `5a3046`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 764
-  items checked and leaves 236 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 765
+  items checked and leaves 235 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  72 storage/performance items, 3 production-topology items, 100 generated
+  73 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Apply batch sizing variant-4 proof: the current lane now checks `RPP-0773`
+  with deterministic local storage/performance support evidence. The proof
+  carries forward the RPP-0753/RPP-0733/RPP-0713 apply batch-sizing lineage and
+  models 17 mutations as 4 resumable transfer chunks under configured apply
+  batch size 5. It records a first attempt that commits 2 chunks and 10
+  mutations, a resume that skips those exact durable receipts with 0 duplicate
+  mutation work and applies only the 2 missing chunks for 7 mutations, a
+  completed second resume that skips all 4 chunks with 0 mutation writes, a
+  completed replay that skips all 4 receipts, and 9 fail-closed generated
+  unsafe cases. Command:
+  `node --test --test-name-pattern RPP-0773 test/rpp-0773-apply-batch-sizing-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0773
+  coverage 2/2, adjacent RPP-0753 coverage 2/2, adjacent RPP-0733 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  765/235; final release remains `NO-GO` because this is support evidence, not
+  production-backed apply batching, storage receipt, row batch executor, or
+  atomic commit proof.
 - Dry-run batch sizing variant-4 proof: the current lane now checks `RPP-0772`
   with deterministic local storage/performance support evidence. The proof
   carries forward the RPP-0752/RPP-0732/RPP-0712 dry-run batch-sizing lineage
