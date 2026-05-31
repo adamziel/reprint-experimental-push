@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 18:24 CEST +02:00.
+- Last update: 2026-05-31 18:25 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0666 journal pagination variant-4 merge ending at
-  `8aa52e`.
+  the RPP-0667 restart-readable open state variant-4 merge ending at
+  `a8c7c9`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 691
-  items checked and leaves 309 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 692
+  items checked and leaves 308 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 67 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 68 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Restart-readable open state variant-4 proof: the current lane now checks
+  `RPP-0667` with local recovery support evidence. The proof verifies
+  production-shaped file-backed open-state rows survive a child-process writer
+  boundary, preserve prior rows byte-for-byte, append one same-claim retry row,
+  and keep restart inspection hash-only. Command:
+  `node --test --test-name-pattern RPP-0667 test/rpp-0667-restart-readable-open-state-v4.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0667 coverage 1/1,
+  adjacent RPP-0647 open-state coverage 3/3, adjacent recovery-journal open
+  state/RPP-0627 coverage 2/2, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 692/308; final release remains `NO-GO`
+  because this is support evidence, not production-backed recovery proof.
 - Journal pagination variant-4 proof: the current lane now checks `RPP-0666`
   with local recovery support evidence. The proof verifies file-backed and
   SQLite-backed paged journal readback keeps cursor windows, path-bound cursor
