@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 16:01 CEST +02:00.
+- Last update: 2026-05-31 16:03 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0562 production snapshot hashes route variant-4 merge ending at
-  `95e032`.
+  the RPP-0563 production dry-run route variant-4 merge ending at `a6f677`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 642
-  items checked and leaves 358 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 643
+  items checked and leaves 357 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 58 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 59 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production dry-run route variant-4 proof: the current lane now checks
+  `RPP-0563` with local executor-auth support evidence. The proof keeps dry-run
+  receipt validation ahead of apply-capable work, proves accepted receipts bind
+  session, identity, scope, auth session, receipt hash, and canonical plan hash,
+  and blocks session, identity, scope, and plan-hash drift before mutation-capable
+  counters advance. Command:
+  `node --test --test-name-pattern RPP-0563 test/rpp-0563-production-dry-run-route-v4.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0563
+  coverage 3/3, adjacent RPP-0543 coverage 3/3, production dry-run route
+  coverage 6/6, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 643/357; final release remains `NO-GO` because this is support
+  evidence, not production-backed dry-run receipt proof.
 - Production snapshot hashes route variant-4 proof: the current lane now checks
   `RPP-0562` with local executor-auth support evidence. The proof rejects
   negative auth, signature, and session cases before JSON parsing, snapshot-hash
