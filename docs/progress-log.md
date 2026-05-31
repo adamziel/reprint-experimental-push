@@ -6,19 +6,40 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 22:32 CEST +02:00.
+- Last update: 2026-05-31 22:45 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0779 long-push progress reporting variant-4 merge ending at `17c865`.
+  the RPP-0780 rollout threshold configuration variant-4 merge ending at
+  `766e60`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 771
-  items checked and leaves 229 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 772
+  items checked and leaves 228 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  79 storage/performance items, 3 production-topology items, 100 generated
+  80 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Rollout threshold configuration variant-4 proof: the current lane now checks
+  `RPP-0780` with deterministic local storage/performance support evidence. The
+  proof carries forward the RPP-0760/RPP-0740 rollout threshold lineage and
+  normalizes rollout thresholds at 250, 500, 1000, 2500, 5000, 7500, 9000, and
+  10000 basis points. The local profile records 24 storage checks, 24 matched
+  checks, 0 drifted checks, 0 storage drift basis points, 24 performance
+  samples, 5.0 ms p95 decision time against a 5.1 ms budget, 5.4 ms max
+  decision time against a 7.5 ms budget, 8 fast-path lane updates, 0 lane
+  blocks, 0 unsafe updates before gates, and 0 updates with failed gates. It
+  also proves unknown thresholds, storage drift, performance-budget violation,
+  mismatched configuration hash, unsafe pre-gate lane update, and premature
+  passed-status evidence all fail closed. Command:
+  `node --test --test-name-pattern RPP-0780 test/rpp-0780-rollout-threshold-configuration-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0780
+  coverage 2/2, adjacent RPP-0760 coverage 2/2, adjacent RPP-0740 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  772/228; final release remains `NO-GO` because this is support evidence, not
+  production-backed rollout safety, storage receipt, row batch executor, atomic
+  commit, or release-verifier proof.
 - Long-push progress reporting variant-4 proof: the current lane now checks
   `RPP-0779` with deterministic local storage/performance support evidence. The
   proof carries forward the RPP-0759/RPP-0739/RPP-0719 long-push progress
