@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 00:56 CEST +02:00.
+- Last update: 2026-06-01 01:08 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0808 classic theme files URL identity merge ending at `629820d65`.
+  the RPP-0591 Application Password release-verifier merge ending at
+  `5e66357a6`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 805
-  items checked and leaves 195 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 806
+  items checked and leaves 194 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 99 executor/auth items, 100 recovery items,
+  100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 6 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Application Password integration release-verifier variant-5 proof: the
+  current lane now checks `RPP-0591` with release-verifier live-endpoint support
+  coverage. The proof carries scoped Application Password success and fail-closed
+  wrong-source, wrong-user, missing-scope, and missing-live-evidence cases into a
+  release-verifier-shaped envelope while keeping credential and endpoint
+  material hash/count/status-only. Command:
+  `node --test --test-name-pattern RPP-0591 test/rpp-0591-application-password-integration-release-verifier-v5.test.js`.
+  Caveat: loopback support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0591 coverage 3/3,
+  adjacent RPP-0551 coverage 4/4, adjacent live RPP-0571 coverage 1/1, adjacent
+  live RPP-0531 coverage 1/1, adjacent live RPP-0511 coverage 1/1, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 806/194;
+  final release remains `NO-GO` because this is support evidence, not checked
+  production-owned Application Password credential proof, production storage
+  receipts, production row batch executor evidence, production atomic group
+  commit evidence, live production service evidence, production throughput,
+  release approval, or a production release gate.
 - Classic theme files URL identity proof: the current lane now checks
   `RPP-0808` with deterministic local topology support coverage. The proof
   captures source, local edited, and changed-remote role URLs, identity-checks
