@@ -6,19 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 01:42 CEST +02:00.
+- Last update: 2026-06-01 01:44 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0836 plugin update hooks topology proof merge ending at `c054a1b79`.
+  the RPP-0835 plugin activation hooks topology proof merge ending at `e5ad8f332`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 821
-  items checked and leaves 179 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 822
+  items checked and leaves 178 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 21 production-topology items, 100 generated
+  100 storage/performance items, 22 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin activation hooks topology variant-2 candidate-scope proof: the current
+  lane now checks `RPP-0835` with deterministic candidate-versus-release-ready
+  activation-hook support evidence. The proof records seven activation-hook
+  surfaces, dependency and direct `active_plugins` guardrails, unproven and
+  driver-proofed side-effect boundaries, and release-ready gaps for production
+  activation runs, entrypoint audits, side-effect inventory, durable journal
+  behavior, and recovery evidence.
+  Commands:
+  `node --test test/rpp-0835-plugin-activation-hooks-topology-v2.test.js` and
+  `node --test --test-name-pattern "activation hook" test/production-shaped-proof.test.js`.
+  Caveat: candidate-scope support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0835
+  coverage 5/5, adjacent activation-hook coverage 2/2, scoped artifact
+  redaction scan with five allowed hash-evidence occurrences, and diff
+  whitespace checks. Counts are now 822/178; final release remains `NO-GO`
+  because this is support evidence, not production-backed plugin activation
+  execution, entrypoint audit, activation side-effect inventory, production
+  credentials, route receipts, durable journal evidence, live mutation proof,
+  throughput, release approval, or a production release gate.
 - Plugin update hooks topology variant-2 unavailable-capability proof: the
   current lane now checks `RPP-0836` with deterministic plugin update hook
   topology support evidence. The proof records updater transient, pre-install,
