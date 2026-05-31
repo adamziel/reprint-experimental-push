@@ -91,7 +91,8 @@ The default generated run covers:
   `wp_posts.post_author` cases with per-tier ready/stale target counts and
   hash-only stale-user blockers, `wp_posts.post_parent` page hierarchy
   variant-3 cases with ready identity-map rewrites and stale parent drift
-  blockers, `wp_comments.user_id` author cases with
+  blockers, `wp_postmeta.post_id` variant-3 cases with ready identity-map row
+  rewrites and stale post drift blockers, `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
   featured-image attachment references with ready postmeta/attachment closure
   and stale attachment blockers,
@@ -913,6 +914,17 @@ rewrite the child page `post_parent` to the proven remote ID, and reject stale
 replay before mutation. Stale cases drift the base parent remotely and require
 the child page reference to fail closed as `stale-wordpress-graph-identity` with
 hash-only target evidence.
+
+RPP-0344 adds `postmetaPostIdReferenceVariant3` coverage for generated
+`wp_postmeta.post_id` references. The deterministic roster emits 20 support-only
+variant-3 target cases: 10 ready post identity-map rewrite cases and 10 stale
+post drift cases, with two cases in every tier. Ready cases map a local
+`wp_posts` source row to an equivalent remote post row, preserve that remote
+post, rewrite the dependent `wp_postmeta` row key and row `post_id` to the
+proven remote ID, and reject stale replay before mutation. Stale cases drift the
+base post remotely and require the dependent postmeta row to fail closed as
+`stale-wordpress-graph-identity` with hash-only target evidence. This remains
+local generated support evidence only; final release remains `NO-GO`.
 
 The `staleRemoteAfterDryRun` target coverage records per-tier counts for ready
 plans whose live-remote preconditions reject a stale remote replay before any

@@ -549,6 +549,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'post-parent-page-hierarchy-variant3',
     tag: 'post-parent-page-hierarchy-v3',
   },
+  postmetaPostIdReferenceVariant3: {
+    family: 'postmeta-post-id-reference-variant3',
+    tag: 'postmeta-post-id-reference-v3',
+  },
   commentUserGraph: {
     family: 'comment-user-graph-ready',
     tag: 'comment-user-graph',
@@ -2215,6 +2219,15 @@ function buildGeneratedCase({ index, tier, rng }) {
     tags,
   });
 
+  addPostmetaPostIdReferenceVariant3Target({
+    family,
+    base,
+    local,
+    remote,
+    allocator,
+    tags,
+  });
+
   addPostAuthorGraphVariant3Target({
     family,
     base,
@@ -2411,6 +2424,24 @@ function addPostParentPageHierarchyVariant3Target({
   }
 
   addPostParentPageHierarchyVariant3(base, local, remote, allocator, tags, { staleTarget });
+  tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
+}
+
+function addPostmetaPostIdReferenceVariant3Target({
+  family,
+  base,
+  local,
+  remote,
+  allocator,
+  tags,
+}) {
+  const readyTarget = family === 'same-plan-post-parent-graph';
+  const staleTarget = family === 'stale-post-author-graph';
+  if (!readyTarget && !staleTarget) {
+    return;
+  }
+
+  addPostmetaPostIdReferenceVariant3(base, local, remote, allocator, tags, { staleTarget });
   tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
 }
 
@@ -5004,6 +5035,73 @@ function addPostParentPageHierarchyVariant3(base, local, remote, allocator, tags
     tags.add('post-parent-page-hierarchy-v3-stale');
     tags.add('post-parent-page-hierarchy-v3-stale-target');
     tags.add('post-parent-page-hierarchy-v3-non-ready');
+  }
+}
+
+function addPostmetaPostIdReferenceVariant3(base, local, remote, allocator, tags, { staleTarget }) {
+  const sourcePostId = allocator.graphId();
+  const metaId = allocator.graphId();
+  const sourcePostRowId = `ID:${sourcePostId}`;
+  const metaKey = `_rpp0344_post_id_reference_v3_${metaId}`;
+  const sourcePostmetaRowId = `post_id:${sourcePostId}:meta_key:${metaKey}`;
+  const postmetaRow = {
+    post_id: sourcePostId,
+    meta_key: metaKey,
+    meta_value: `rpp0344-${staleTarget ? 'stale' : 'ready'}-local-postmeta-private-${metaId}`,
+  };
+
+  if (staleTarget) {
+    const sourcePost = makePost(sourcePostId, `RPP-0344 generated stale source post ${sourcePostId}`, {
+      post_name: `rpp-0344-stale-source-post-${sourcePostId}`,
+      post_content: `rpp0344-stale-source-post-private-${sourcePostId}`,
+    });
+
+    setRow(base, 'wp_posts', sourcePostRowId, sourcePost);
+    setRow(local, 'wp_posts', sourcePostRowId, sourcePost);
+    setRow(remote, 'wp_posts', sourcePostRowId, {
+      ...sourcePost,
+      post_title: `RPP-0344 generated remote stale source post ${sourcePostId}`,
+      post_content: `rpp0344-remote-stale-source-post-private-${sourcePostId}`,
+    });
+    setRow(local, 'wp_postmeta', sourcePostmetaRowId, postmetaRow);
+  } else {
+    const targetPostId = allocator.graphId();
+    const targetPostRowId = `ID:${targetPostId}`;
+    const postTitle = `RPP-0344 generated mapped post ${sourcePostId}`;
+    const postSlug = `rpp-0344-mapped-post-${sourcePostId}`;
+    const postContent = `rpp0344-ready-source-post-private-${sourcePostId}`;
+    const sourcePost = makePost(sourcePostId, postTitle, {
+      post_name: postSlug,
+      post_content: postContent,
+    });
+    const targetPost = makePost(targetPostId, postTitle, {
+      post_name: postSlug,
+      post_content: postContent,
+    });
+
+    setRow(local, 'wp_posts', sourcePostRowId, sourcePost);
+    setRow(remote, 'wp_posts', targetPostRowId, targetPost);
+    addWordPressGraphIdentityMapRow(local, {
+      table: 'wp_posts',
+      localId: sourcePostRowId,
+      remoteId: targetPostRowId,
+    });
+    setRow(local, 'wp_postmeta', sourcePostmetaRowId, postmetaRow);
+
+    tags.add('postmeta-post-id-reference-v3-identity-map');
+    tags.add('postmeta-post-id-reference-v3-ready');
+  }
+
+  tags.add('postmeta-post-id-reference-v3');
+  tags.add('postmeta-post-id-reference-v3-hash-only');
+  tags.add('postmeta-post');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('postmeta-post-id-reference-v3-stale');
+    tags.add('postmeta-post-id-reference-v3-stale-target');
+    tags.add('postmeta-post-id-reference-v3-non-ready');
   }
 }
 
