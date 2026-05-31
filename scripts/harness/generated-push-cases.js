@@ -226,6 +226,17 @@ const targetCoverageDefinitions = Object.freeze({
       && result.staleReplayRejectionCode === 'PRECONDITION_FAILED'
       && result.staleReplayRemoteUnchanged === true,
   },
+  remoteOnlyPreservationReleaseVerifierVariant5: {
+    family: 'remote-only-preservation-release-verifier-v5',
+    matches: (testCase, result) => testCase.family === 'remote-only-post-update'
+      && testCase.tags.has('remote-preserve')
+      && result.status === 'ready'
+      && result.applied === true
+      && result.unplannedRemotePreserved === true
+      && result.staleReplayRejected === true
+      && result.staleReplayRejectionCode === 'PRECONDITION_FAILED'
+      && result.staleReplayRemoteUnchanged === true,
+  },
   fileTypeSwap: {
     family: 'file-type-swap-ready',
     tag: 'file-type-swap',
