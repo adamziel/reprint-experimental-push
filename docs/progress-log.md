@@ -6,20 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 21:28 CEST +02:00.
+- Last update: 2026-05-31 21:38 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0764 filesystem compare-and-rename write variant-4 merge ending at
-  `6a9b59`.
+  the RPP-0767 chunk hash verification variant-4 merge ending at `eb960e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 756
-  items checked and leaves 244 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 757
+  items checked and leaves 243 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  64 storage/performance items, 3 production-topology items, 100 generated
+  65 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Chunk hash verification variant-4 proof: the current lane now checks
+  `RPP-0767` with deterministic local storage/performance support evidence. The
+  proof verifies every manifest chunk in the unit transfer, records a matching
+  assembled/finalized hash, covers four generated stale-storage cases and four
+  hash-mismatch cases, rejects all eight unsafe generated writes, writes 0 bytes
+  for rejected writes, performs 0 mutation work on rejected writes, and proves
+  two fixed-shape local support runs produce the same hash/count projection
+  while leaving volatile duration and process resources outside the determinism
+  hash. Command:
+  `node --test --test-name-pattern RPP-0767 test/rpp-0767-chunk-hash-verification-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0767
+  coverage 3/3, adjacent RPP-0747 coverage 3/3, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 757/243; final release remains
+  `NO-GO` because this is support evidence, not production-backed storage
+  receipt or row batch executor proof.
 - Filesystem compare-and-rename write variant-4 proof: the current lane now
   checks `RPP-0764` with deterministic local storage/performance support
   evidence. The proof exercises the local filesystem compare/rename boundary
