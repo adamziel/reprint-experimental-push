@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 16:26 CEST +02:00.
+- Last update: 2026-05-31 16:29 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0573 nonce replay store variant-4 merge ending at `6b58c1`.
+  the RPP-0574 receipt expiry validation variant-4 merge ending at `04914c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 651
-  items checked and leaves 349 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 652
+  items checked and leaves 348 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 67 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 68 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Receipt expiry validation variant-4 proof: the current lane now checks
+  `RPP-0574` with local executor-auth support evidence. The proof refuses
+  expired, stale, missing, or live-source drift receipt evidence before
+  mutation-capable apply work, and accepts support evidence only when apply
+  revalidates the live source before mutation. Command:
+  `node --test --test-name-pattern RPP-0574 test/rpp-0574-receipt-expiry-validation-v4.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0574
+  coverage 4/4, adjacent receipt/source coverage 9/9, scoped artifact redaction
+  scan, and diff whitespace checks. Counts are now 652/348; final release
+  remains `NO-GO` because this is support evidence, not production-backed
+  receipt-expiry proof.
 - Nonce replay store variant-4 proof: the current lane now checks `RPP-0573`
   with local executor-auth support evidence. The proof rejects replayed nonce
   cases before dry-run JSON parsing, receipt movement, or mutation-capable work,
