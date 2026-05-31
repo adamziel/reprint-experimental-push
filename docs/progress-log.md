@@ -6,19 +6,19 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 10:22 CEST +02:00.
+- Last update: 2026-05-31 10:31 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0197 stale remote after dry-run release-verifier v5 merge ending at
-  `cf34ce315`.
+  the RPP-0245 local file type-swap versus remote descendant variant-3 merge
+  ending at `8a06ab49e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 553
-  items checked and leaves 447 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 554
+  items checked and leaves 446 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 97 generated
-  harness items, and 86 merge-invariant items. No release-ops items are checked
+  harness items, and 87 merge-invariant items. No release-ops items are checked
   yet.
 - Local file type-swap versus remote descendant variant-3 generated proof: the
   current lane now checks `RPP-0245` with deterministic generated-harness
@@ -32,8 +32,13 @@ linked implementation artifacts.
   apply with `PLAN_NOT_READY` before remote mutation. Command:
   `node --test test/rpp-0245-local-file-type-swap-remote-descendant-v3.test.js`.
   Caveat: Generated local/model evidence only; release remains gated separately.
-  Checklist count updates are left for the integrator-owned checklist pass;
-  final release remains `NO-GO`.
+  Validation passed with Node syntax checks, focused RPP-0245 coverage 3/3,
+  adjacent RPP-0103/RPP-0123/RPP-0163 generated file type-swap coverage 3/3,
+  related RPP-0183/RPP-0244/RPP-0265 type-swap and descendant coverage 4/4,
+  the full generated harness suite 91/91, scoped artifact redaction scan, and
+  diff whitespace checks. Counts are now 554/446; final release remains
+  `NO-GO` because this is local generated merge-invariant support evidence,
+  not production-backed release proof.
 - Stale remote after dry-run release-verifier v5 carry-through: the current lane
   now checks `RPP-0197` with generated-harness support evidence for ready plans
   whose live-remote preconditions reject stale replay after dry-run and before
