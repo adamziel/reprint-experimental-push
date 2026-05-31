@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 12:10 CEST +02:00.
+- Last update: 2026-05-31 12:18 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0722 SQLite CAS write guard variant-2 merge ending at `0cb306eeb`.
+  the RPP-0642 journal ownership record variant-3 merge ending at `3812fd17`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 576
-  items checked and leaves 424 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 577
+  items checked and leaves 423 open.
 - Checked slices: 100 release-gate foundation items, 83 graph identity items,
-  88 plugin-driver boundary items, 35 executor/auth items, 42 recovery items,
+  88 plugin-driver boundary items, 35 executor/auth items, 43 recovery items,
   25 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Journal ownership record variant-3 proof: the current lane now checks
+  `RPP-0642` with generated-style recovery evidence for file-backed and SQLite
+  ownership record readback. The proof writes an ownership record with claim,
+  lease, storage guard, artifact references, and owner identity metadata, closes
+  and reopens the journal storage, verifies the restarted ownership record is
+  byte-for-byte stable, and proves recovery inspection exposes only claim hashes
+  and scoped metadata without raw site payloads. Command:
+  `node --test test/rpp-0642-journal-ownership-record-v3.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0642 coverage 2/2,
+  adjacent RPP-0602/RPP-0622 ownership coverage 2/2, scoped artifact redaction
+  scan, and diff whitespace checks. Counts are now 577/423; final release
+  remains `NO-GO` because this is local recovery support evidence, not external
+  durability or production-backed release proof.
 - SQLite CAS write guard variant-2 proof: the current lane now checks
   `RPP-0722` with local SQLite compare-and-swap support evidence. The focused
   proof validates matching writes, stale replay refusal after a successful
