@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 00:24 CEST +02:00.
+- Last update: 2026-05-31 09:48 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0285 local file type swap versus remote descendant release-verifier
-  v5 merge ending at `fd60bea7b`.
+  the RPP-0288 unknown plugin-owned resource refusal release-verifier v5 merge
+  ending at `360eaa3a5`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 547
-  items checked and leaves 453 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 548
+  items checked and leaves 452 open.
 - Checked slices: 100 release-gate foundation items, 81 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 95 generated
-  harness items, and 83 merge-invariant items. No release-ops items are checked
+  harness items, and 84 merge-invariant items. No release-ops items are checked
   yet.
+- Unknown plugin-owned resource refusal release-verifier v5 carry-through: the
+  current lane now checks `RPP-0288` with focused support evidence for a
+  plugin-owned custom-table row that has no explicit supported driver policy.
+  The proof verifies the planner refuses the target as
+  `unsupported-plugin-owned-resource`, emits no mutation or live precondition,
+  carries hash-only blocker and unknown-plugin refusal evidence, rejects blocked
+  and forged-ready apply attempts before mutation, and preserves the remote
+  snapshot hash. Validation passed with a Node syntax check, focused RPP-0288
+  coverage 2/2, adjacent RPP-0248/RPP-0268/RPP-0288 unknown-plugin refusal
+  coverage 4/4, checklist lint, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 548/452; final release remains `NO-GO`
+  because this is local release-verifier support evidence, not
+  production-backed release proof.
 - Local file type-swap versus remote descendant release-verifier v5
   carry-through: the current lane now checks `RPP-0285` with focused
   planner/apply release-verifier evidence for a local directory-to-file type
