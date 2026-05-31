@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 16:39 CEST +02:00.
+- Last update: 2026-05-31 16:43 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0578 capability downgrade rejection variant-4 merge ending at
-  `a49777`.
+  the RPP-0579 credential rotation behavior variant-4 merge ending at
+  `ba069c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 655
-  items checked and leaves 345 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 656
+  items checked and leaves 344 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 71 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 72 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Credential rotation behavior variant-4 proof: the current lane now checks
+  `RPP-0579` with local executor-auth support evidence. The proof keeps
+  credential checks and live-source revalidation before mutation, rejects
+  rotated or invalidated apply credentials before accepted revalidation
+  mutation, and records only hash-only support evidence. Command:
+  `node --test --test-name-pattern RPP-0579 test/rpp-0579-credential-rotation-behavior-v4.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0579
+  coverage 2/2, adjacent credential-rotation coverage 6/6, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 656/344; final
+  release remains `NO-GO` because this is support evidence, not
+  production-backed credential-rotation proof.
 - Capability downgrade rejection variant-4 proof: the current lane now checks
   `RPP-0578` with local executor-auth support evidence. The proof rejects
   downgraded capability claims before receipt movement or mutation authority,
