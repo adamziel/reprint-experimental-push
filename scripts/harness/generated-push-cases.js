@@ -266,6 +266,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'file-type-swap-ready',
     tag: 'file-type-swap',
   },
+  fileTypeSwapConflictVariant3: {
+    family: 'file-type-swap-conflict-variant3',
+    tag: 'file-type-swap-conflict-v3',
+  },
   fileTypeSwapConflictVariant4: {
     family: 'file-type-swap-conflict-variant4',
     tag: 'file-type-swap-conflict-v4',
@@ -3954,6 +3958,7 @@ function addFileTypeSwap(base, local, remote, allocator, tags, { conflict, prefi
   remote.files[path] = { type: 'directory' };
 
   tags.add('file-type-swap');
+  tags.add('file-type-swap-conflict-v3');
   tags.add('file-type-swap-conflict-v4');
   tags.add('file-type-swap-conflict-release-verifier-v5');
   tags.add('file-topology');
@@ -3962,10 +3967,12 @@ function addFileTypeSwap(base, local, remote, allocator, tags, { conflict, prefi
   if (conflict) {
     remote.files[`${path}/remote-descendant.txt`] = `remote descendant for type swap ${allocator.next()}`;
     tags.add('type-swap-conflict');
+    tags.add('file-type-swap-conflict-v3-non-ready');
     tags.add('file-type-swap-conflict-v4-non-ready');
     tags.add('file-type-swap-conflict-release-verifier-v5-non-ready');
   } else {
     tags.add('type-swap-ready');
+    tags.add('file-type-swap-conflict-v3-ready');
     tags.add('file-type-swap-conflict-v4-ready');
     tags.add('file-type-swap-conflict-release-verifier-v5-ready');
   }

@@ -20,6 +20,20 @@ linked implementation artifacts.
   23 storage/performance items, 3 production-topology items, 97 generated
   harness items, and 86 merge-invariant items. No release-ops items are checked
   yet.
+- Local file type-swap versus remote descendant variant-3 generated proof: the
+  current lane now checks `RPP-0245` with deterministic generated-harness
+  coverage for ready directory-to-file swaps and non-ready remote-descendant
+  conflicts. The generator exposes `fileTypeSwapConflictVariant3` target
+  coverage with 20 cases across tiers 0 through 9, including 10 ready cases and
+  10 non-ready conflicts. The focused proof verifies ready mutation,
+  live-remote precondition, unplanned remote preservation, and stale replay
+  refusal, then verifies the remote-descendant conflict emits no target
+  mutation/precondition, keeps the descendant as `keep-remote`, and refuses
+  apply with `PLAN_NOT_READY` before remote mutation. Command:
+  `node --test test/rpp-0245-local-file-type-swap-remote-descendant-v3.test.js`.
+  Caveat: Generated local/model evidence only; release remains gated separately.
+  Checklist count updates are left for the integrator-owned checklist pass;
+  final release remains `NO-GO`.
 - Stale remote after dry-run release-verifier v5 carry-through: the current lane
   now checks `RPP-0197` with generated-harness support evidence for ready plans
   whose live-remote preconditions reject stale replay after dry-run and before
