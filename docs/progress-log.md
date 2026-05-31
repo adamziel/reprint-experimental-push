@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 18:03 CEST +02:00.
+- Last update: 2026-05-31 18:06 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0656 different-body idempotency conflict variant-3 merge ending at
-  `764920`.
+  the RPP-0657 process kill before first mutation variant-3 merge ending at
+  `0fc916`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 681
-  items checked and leaves 319 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 682
+  items checked and leaves 318 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 57 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 58 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Process kill before first mutation variant-3 proof: the current lane now
+  checks `RPP-0657` with local recovery support evidence. The proof writes
+  durable pre-mutation journal rows, kills the child process before the first
+  mutation, proves restart-visible rows afterward, and rejects missing,
+  malformed, stale, drifted, or corrupt crash-boundary evidence before recovery
+  proof movement. Command:
+  `node --test --test-name-pattern RPP-0657 test/rpp-0657-process-kill-before-first-mutation-v3.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0657 coverage 2/2,
+  adjacent RPP-0617 process-kill coverage 1/1, adjacent RPP-0647 open-state
+  readback coverage 3/3, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 682/318; final release remains `NO-GO` because this is
+  support evidence, not production-backed recovery proof.
 - Different-body idempotency conflict variant-3 proof: the current lane now
   checks `RPP-0656` with local recovery support evidence. The proof records a
   SQLite-backed, hash-only different-body conflict and blocks rejected-body
