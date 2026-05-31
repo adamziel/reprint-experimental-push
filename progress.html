@@ -406,13 +406,13 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0672</span>
+        <span>RPP-0674</span>
       </div>
-      <p>The latest refresh checks RPP-0672 with blocked recovery classification variant-4 evidence. The proof writes production-shaped blocked recovery rows through a child-process boundary, verifies restart-readable durable rows, and keeps hash-only classification evidence fail-closed for malformed, stale, or drifted fixtures. Counts are now 698/302; final release remains NO-GO because this is local recovery support evidence, not production-backed recovery proof.</p>
+      <p>The latest refresh checks RPP-0674 with same-key replay after commit variant-4 evidence. The proof verifies committed replay remains idempotent while keeping lease owner identity visible in hash-only audit evidence and refusing invalid committed target envelopes before proof movement. Counts are now 699/301; final release remains NO-GO because this is local recovery support evidence, not production-backed recovery proof.</p>
       <div class="tag-row" aria-label="Latest validation">
-        <span class="tag">RPP-0672 focused: 1/1</span>
-        <span class="tag">RPP-0652 adjacent: 2/2</span>
-        <span class="tag">RPP-0632 adjacent: 3/3</span>
+        <span class="tag">RPP-0674 focused: 1/1</span>
+        <span class="tag">RPP-0654 adjacent: 2/2</span>
+        <span class="tag">lease-owner adjacent: 4/4</span>
         <span class="tag">local support-only</span>
         <span class="tag">ownership record</span>
         <span class="tag">release-gate scoped</span>
