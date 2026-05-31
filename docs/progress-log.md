@@ -6,20 +6,43 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 00:10 CEST +02:00.
+- Last update: 2026-06-01 00:14 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0551 Application Password integration variant-3 merge ending at
-  `2270c8`.
+  the RPP-0799 long-push progress reporting release-verifier variant-5 merge
+  ending at `dbafd49b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 794
-  items checked and leaves 206 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 795
+  items checked and leaves 205 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 93 executor/auth items, 100 recovery items,
-  98 storage/performance items, 3 production-topology items, 100 generated
+  99 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Long-push progress reporting release-verifier variant-5 proof: the current
+  lane now checks `RPP-0799` with deterministic local release-verifier support
+  evidence. The proof carries forward the RPP-0779/RPP-0759/RPP-0719 long-push
+  progress lineage and verifies large-site progress budgets, runtime/resource
+  reporting, pass/fail gate reporting, ordered operator progress events,
+  receipt and resume-cursor visibility, no false completion before the final
+  durable atomic group commit event, generated unsafe progress cases that fail
+  closed, and hash/count-only release-verifier output. The gate vector records
+  all ten required gates before accepting output, including support-only
+  `NO-GO`, and rejects stale event ordering, missing receipt visibility,
+  premature completion, stale generated coverage, raw-value leakage, production
+  release claims, and over-budget runtime evidence.
+  Command:
+  `node --test --test-name-pattern RPP-0799 test/rpp-0799-long-push-progress-reporting-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0799
+  coverage 2/2, adjacent RPP-0779 coverage 3/3, adjacent RPP-0759 coverage
+  3/3, scoped artifact redaction scan, and diff whitespace checks. Counts are
+  now 795/205; final release remains `NO-GO` because this is support evidence,
+  not checked production storage receipts, production row batch executor
+  evidence, production atomic group commit evidence, live production service
+  evidence, production throughput, release approval, or a production release
+  gate.
 - Application Password integration variant-3 proof: the current lane now checks
   `RPP-0551` with deterministic local generated support evidence. The proof
   covers a positive scoped Application Password binding/readback case, binding
