@@ -6,19 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 01:17 CEST +02:00.
+- Last update: 2026-06-01 01:20 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0815 plugin activation hooks topology merge ending at `e1788e233`.
+  the RPP-0816 plugin update hooks topology merge ending at `ffc554268`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 810
-  items checked and leaves 190 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 811
+  items checked and leaves 189 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 10 production-topology items, 100 generated
+  100 storage/performance items, 11 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin update hooks topology unavailable-capability proof: the current lane
+  now checks `RPP-0816` with fail-closed topology support evidence. The proof
+  records plugin update hook topology candidate requirements, captures exact
+  Docker topology blocker `DOCKER_CLI_MISSING`, and keeps release movement
+  blocked until the sites start and live update-hook proof can pass without a
+  packaged fallback.
+  Commands:
+  `node --test test/rpp-0816-plugin-update-hooks-topology-v1.test.js` and
+  `npm run verify:release:docker-local-production`.
+  Caveat: unavailable-capability support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0816
+  coverage 3/3, Docker topology command exit 2 with `DOCKER_CLI_MISSING`,
+  scoped artifact redaction scan with two allowed hash-evidence occurrences, and
+  diff whitespace checks. Counts are now 811/189; final release remains
+  `NO-GO` because this is support evidence, not production-backed plugin update
+  hook proof, production storage receipts, production row batch executor
+  evidence, production atomic group commit evidence, live production service
+  evidence, production throughput, release approval, or a production release
+  gate.
 - Plugin activation hooks topology candidate-scope proof: the current lane now
   checks `RPP-0815` with deterministic candidate-versus-release-ready support
   evidence. The proof records activation-hook surfaces, dependency and side-effect
