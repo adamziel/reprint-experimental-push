@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 01:38 CEST +02:00.
+- Last update: 2026-06-01 01:41 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0831 object cache enabled topology proof merge ending at `eaf0709de`.
+  the RPP-0833 maintenance mode interaction proof merge ending at `566f2b381`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 819
-  items checked and leaves 181 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 820
+  items checked and leaves 180 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 19 production-topology items, 100 generated
+  100 storage/performance items, 20 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Maintenance mode interaction variant-2 URL identity proof: the current lane
+  now checks `RPP-0833` with deterministic source/local/changed URL identity and
+  maintenance-mode support evidence. The proof reuses the external topology
+  identity gates, binds source, local, and changed maintenance role states to
+  URL identity hashes, records maintenance file, option, and route health
+  surfaces, rejects tunnel and secret-shaped URLs before scope acceptance, and
+  keeps the evidence hash/count/surface-only.
+  Command:
+  `node --test --test-name-pattern RPP-0833 test/rpp-0833-maintenance-mode-interaction-v2.test.js`.
+  Caveat: local support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0833 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  820/180; final release remains `NO-GO` because this is support evidence, not
+  production-backed maintenance-mode interaction proof, production credentials,
+  route receipts, durable journal evidence, live mutation proof, throughput,
+  release approval, or a production release gate.
 - Object cache enabled topology variant-2 unavailable-capability proof: the
   current lane now checks `RPP-0831` with deterministic object-cache topology
   support evidence. The proof records private object-cache backend requirements,
