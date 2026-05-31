@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 18:08 CEST +02:00.
+- Last update: 2026-05-31 18:10 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0658 process kill mid mutation set variant-3 merge ending at
-  `f08021`.
+  the RPP-0659 missing commit finalization variant-3 merge ending at
+  `3e3800`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 683
-  items checked and leaves 317 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 684
+  items checked and leaves 316 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 59 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 60 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Missing commit finalization variant-3 proof: the current lane now checks
+  `RPP-0659` with local recovery support evidence. The proof preserves mutation
+  rows when commit finalization is missing, exposes lease owner identity through
+  hash-only audit evidence, and refuses to treat incomplete commit evidence as a
+  finalized recovery state. Command:
+  `node --test --test-name-pattern RPP-0659 test/rpp-0659-missing-commit-finalization-v3.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0659 coverage 1/1,
+  adjacent RPP-0639 finalization coverage 1/1, adjacent RPP-0649 committed-state
+  readback coverage 3/3, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 684/316; final release remains `NO-GO` because this is
+  support evidence, not production-backed recovery proof.
 - Process kill mid mutation set variant-3 proof: the current lane now checks
   `RPP-0658` with local recovery support evidence. The proof simulates a crash
   after part of the mutation set is staged, shows retry preserves remote changes
