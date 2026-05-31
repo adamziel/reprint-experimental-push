@@ -14022,6 +14022,544 @@ function assertPostAuthorGraphVariant3RawValuesAbsent(testCase, shape, evidenceT
   }
 }
 
+test('RPP-0344 generated harness records postmeta post_id reference variant 3 coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.postmetaPostIdReferenceVariant3;
+  const expectedPerTier = Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2]));
+
+  assert.ok(coverage, 'missing postmeta post_id reference variant 3 target coverage');
+  assert.equal(coverage.family, 'postmeta-post-id-reference-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['postmeta-post-id-reference-v3']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { blocked: 10, ready: 10 });
+  assert.deepEqual(coverage.perTier, expectedPerTier);
+  assert.equal(report.summary.featureFamilies['postmeta-post-id-reference-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['postmeta-post-id-reference-v3-stale'], 10);
+  assert.equal(report.summary.featureFamilies['postmeta-post-id-reference-v3-non-ready'], 10);
+
+  const firstEvidence = generatedPostmetaPostIdReferenceVariant3Evidence(coverage);
+  const replayEvidence = generatedPostmetaPostIdReferenceVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0344 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; final release remains NO-GO.',
+    evidenceScope: 'local-generated-support-only',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'postmeta post_id variant 3 evidence changed between runs');
+  assert.equal(firstEvidence.target, 'postmetaPostIdReferenceVariant3');
+  assert.equal(firstEvidence.family, 'postmeta-post-id-reference-variant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.variant),
+    ['ready-identity-map', 'stale-fail-closed'],
+  );
+
+  const [readyCase, staleCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.status, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.identityMap.sourceDecision, 'map-local-identity-to-remote');
+  assert.equal(readyCase.identityMap.targetDecision, 'keep-remote');
+  assert.equal(readyCase.postmetaMutation.action, 'put');
+  assert.equal(readyCase.postmetaMutation.changeKind, 'create');
+  assert.equal(readyCase.postmetaMutation.resourceKey, readyCase.surface.targetPostmeta.resourceKey);
+  assert.equal(readyCase.postmetaMutation.plannedPostId, readyCase.surface.targetPost.id);
+  assert.equal(readyCase.postmetaMutation.rewrite.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(readyCase.postmetaMutation.rewrite.relationshipType, 'postmeta-post');
+  assert.equal(readyCase.postmetaMutation.rewrite.sourceResourceKey, readyCase.surface.sourcePostmeta.resourceKey);
+  assert.equal(readyCase.postmetaMutation.rewrite.rewrittenResourceKey, readyCase.surface.targetPostmeta.resourceKey);
+  assert.equal(readyCase.postmetaMutation.rewrite.sourceTargetResourceKey, readyCase.surface.sourcePost.resourceKey);
+  assert.equal(readyCase.postmetaMutation.rewrite.targetResourceKey, readyCase.surface.targetPost.resourceKey);
+  assert.equal(readyCase.postmetaMutation.sourcePostMutationPlanned, false);
+  assert.equal(readyCase.postmetaMutation.targetPostMutationPlanned, false);
+  assert.equal(readyCase.postmetaMutation.sourcePostmetaMutationPlanned, false);
+  assert.equal(readyCase.postmetaMutation.preconditionExpectedHash, readyCase.postmetaMutation.remoteBeforeHash);
+  assert.equal(readyCase.postmetaMutation.appliedHash, readyCase.postmetaMutation.plannedLocalHash);
+  assert.match(readyCase.postmetaMutation.rewrite.rewriteHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(staleCase.status, 'blocked');
+  assert.equal(staleCase.applied, false);
+  assert.equal(staleCase.blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(staleCase.blocker.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(staleCase.blocker.relationshipType, 'postmeta-post');
+  assert.equal(staleCase.blocker.targetResourceKey, staleCase.surface.sourcePost.resourceKey);
+  assert.equal(staleCase.blocker.targetRemoteChange, 'update');
+  assert.equal(staleCase.blocker.plannedMutation, false);
+  assert.equal(staleCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(staleCase.refusal.remoteBeforeHash, staleCase.refusal.remoteAfterHash);
+  assert.match(staleCase.blocker.referenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(staleCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('RPP-0344 generated mapped post'), false, 'variant 3 evidence leaked post title');
+  assert.equal(evidenceText.includes('RPP-0344 generated stale source post'), false, 'variant 3 evidence leaked stale title');
+  assert.equal(evidenceText.includes('rpp-0344-mapped-post'), false, 'variant 3 evidence leaked post slug');
+  assert.equal(evidenceText.includes('rpp0344-ready-source-post-private'), false, 'variant 3 evidence leaked ready post body');
+  assert.equal(evidenceText.includes('rpp0344-remote-stale-source-post-private'), false, 'variant 3 evidence leaked remote post body');
+  assert.equal(evidenceText.includes('rpp0344-ready-local-postmeta-private'), false, 'variant 3 evidence leaked ready postmeta payload');
+  assert.equal(evidenceText.includes('rpp0344-stale-local-postmeta-private'), false, 'variant 3 evidence leaked stale postmeta payload');
+});
+
+function generatedPostmetaPostIdReferenceVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('postmeta-post-id-reference-v3')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedPostmetaPostIdReferenceVariant3CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'stale';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'postmeta post_id variant 3 target recount should match tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'postmeta post_id variant 3 target recount should match statuses');
+  assert.equal(totalCases, targetCoverage.total, 'postmeta post_id variant 3 target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready postmeta post_id case');
+  assert.ok(selectedCases.has('stale'), 'variant 3 target should select one stale postmeta post_id case');
+
+  return {
+    target: 'postmetaPostIdReferenceVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-support-only',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('stale'),
+    ],
+  };
+}
+
+function generatedPostmetaPostIdReferenceVariant3CaseEvidence(testCase, result) {
+  const staleTarget = testCase.tags.has('postmeta-post-id-reference-v3-stale');
+  assert.equal(
+    testCase.tags.has('postmeta-post-id-reference-v3-ready'),
+    !staleTarget,
+    `${testCase.id} should carry exactly one postmeta post_id variant 3 ready/stale tag`,
+  );
+  assert.equal(
+    testCase.tags.has('postmeta-post-id-reference-v3-non-ready'),
+    staleTarget,
+    `${testCase.id} should tag stale postmeta post_id variant 3 cases as non-ready`,
+  );
+
+  const shape = postmetaPostIdReferenceVariant3Shape(testCase, { staleTarget });
+  const plan = createGeneratedPlan(testCase);
+  const surface = postmetaPostIdReferenceVariant3Surface(testCase, shape);
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant: result.status === 'ready' ? 'ready-identity-map' : 'stale-fail-closed',
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    surface,
+  };
+
+  if (result.status === 'ready') {
+    assert.equal(staleTarget, false, `${testCase.id} ready evidence should use the identity-map target`);
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(result.applied, true, `${testCase.id} should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const identityMap = postmetaPostIdReferenceVariant3IdentityMapEvidence({ plan, shape });
+    const postmetaMutation = postmetaPostIdReferenceVariant3ReadyMutationEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+    const evidence = {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      staleReplayRejected: result.staleReplayRejected,
+      staleReplayRejectionCode: result.staleReplayRejectionCode,
+      staleReplayRemoteUnchanged: result.staleReplayRemoteUnchanged,
+      identityMap,
+      postmetaMutation,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        identityMap,
+        postmetaMutation,
+      })}`,
+    };
+    assertPostmetaPostIdReferenceVariant3RawValuesAbsent(testCase, shape, JSON.stringify(evidence));
+    return evidence;
+  }
+
+  assert.equal(staleTarget, true, `${testCase.id} non-ready evidence should use the stale postmeta post_id target`);
+  assert.equal(result.status, 'blocked', `${testCase.id} should validate as blocked`);
+  assert.equal(plan.status, 'blocked', `${testCase.id} should plan as blocked`);
+  assert.equal(result.applied, false, `${testCase.id} stale postmeta post_id graph should not apply`);
+  assert.equal(result.nonReadyRemoteUnchanged, true, `${testCase.id} stale postmeta post_id graph should leave remote unchanged`);
+
+  const blocker = postmetaPostIdReferenceVariant3StaleBlockerEvidence({ testCase, plan, shape });
+  const refusal = postmetaPostIdReferenceVariant3RefusalEvidence(testCase, plan);
+  const evidence = {
+    ...commonEvidence,
+    applied: result.applied,
+    blocker,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      blocker,
+      refusal,
+    })}`,
+  };
+  assertPostmetaPostIdReferenceVariant3RawValuesAbsent(testCase, shape, JSON.stringify(evidence));
+  return evidence;
+}
+
+function postmetaPostIdReferenceVariant3Shape(testCase, { staleTarget }) {
+  const postmetaRows = Object.entries(testCase.local.db.wp_postmeta)
+    .filter(([, row]) => String(row.meta_key || '').startsWith('_rpp0344_post_id_reference_v3_'));
+
+  assert.equal(postmetaRows.length, 1, `${testCase.id} should include one generated postmeta post_id row`);
+
+  const [sourcePostmetaRowId, postmetaRow] = postmetaRows[0];
+  const sourcePostId = Number(postmetaRow.post_id);
+  const sourcePostRowId = `ID:${sourcePostId}`;
+  const sourcePost = testCase.local.db.wp_posts[sourcePostRowId];
+  const mapEntry = (testCase.local.meta?.wordpressGraphIdentityMap?.rows || [])
+    .find((entry) => entry.table === 'wp_posts' && entry.localId === sourcePostRowId);
+  const targetPostRowId = staleTarget ? sourcePostRowId : mapEntry?.remoteId;
+  const targetPostId = postmetaPostIdReferenceVariant3PostIdFromRowId(targetPostRowId);
+  const targetPost = targetPostRowId ? testCase.remote.db.wp_posts[targetPostRowId] : null;
+  const targetPostmetaRowId = `post_id:${targetPostId}:meta_key:${postmetaRow.meta_key}`;
+
+  assert.equal(sourcePostmetaRowId, `post_id:${sourcePostId}:meta_key:${postmetaRow.meta_key}`);
+  assert.ok(Number.isSafeInteger(sourcePostId), `${testCase.id} postmeta post_id should be numeric`);
+  assert.ok(sourcePost, `${testCase.id} missing local source post ${sourcePostRowId}`);
+  assert.equal(sourcePost.ID, sourcePostId);
+  assert.ok(targetPost, `${testCase.id} missing remote target post ${targetPostRowId}`);
+  assert.equal(targetPost.ID, targetPostId);
+
+  if (staleTarget) {
+    assert.equal(mapEntry, undefined, `${testCase.id} stale target should not use an identity map`);
+    assert.ok(testCase.base.db.wp_posts[sourcePostRowId], `${testCase.id} stale source post should exist in base`);
+    assert.deepEqual(
+      testCase.local.db.wp_posts[sourcePostRowId],
+      testCase.base.db.wp_posts[sourcePostRowId],
+      `${testCase.id} stale local source post should match base`,
+    );
+    assert.notDeepEqual(
+      testCase.remote.db.wp_posts[sourcePostRowId],
+      testCase.base.db.wp_posts[sourcePostRowId],
+      `${testCase.id} stale post target should drift remotely`,
+    );
+  } else {
+    assert.ok(mapEntry, `${testCase.id} ready target should carry a wp_posts identity map`);
+    assert.equal(testCase.remote.db.wp_posts[sourcePostRowId], undefined);
+    assert.equal(testCase.base.db.wp_posts[sourcePostRowId], undefined);
+    assert.equal(testCase.base.db.wp_posts[targetPostRowId], undefined);
+    assert.equal(sourcePost.post_title, targetPost.post_title);
+    assert.equal(sourcePost.post_name, targetPost.post_name);
+    assert.equal(sourcePost.post_content, targetPost.post_content);
+  }
+
+  return {
+    metaKey: postmetaRow.meta_key,
+    sourcePostId,
+    sourcePostRowId,
+    sourcePostResource: postmetaPostIdReferenceVariant3RowResource('wp_posts', sourcePostRowId),
+    sourcePostResourceKey: rowResourceKey('wp_posts', sourcePostRowId),
+    targetPostId,
+    targetPostRowId,
+    targetPostResource: postmetaPostIdReferenceVariant3RowResource('wp_posts', targetPostRowId),
+    targetPostResourceKey: rowResourceKey('wp_posts', targetPostRowId),
+    sourcePostmetaRowId,
+    sourcePostmetaResource: postmetaPostIdReferenceVariant3RowResource('wp_postmeta', sourcePostmetaRowId),
+    sourcePostmetaResourceKey: rowResourceKey('wp_postmeta', sourcePostmetaRowId),
+    targetPostmetaRowId,
+    targetPostmetaResource: postmetaPostIdReferenceVariant3RowResource('wp_postmeta', targetPostmetaRowId),
+    targetPostmetaResourceKey: rowResourceKey('wp_postmeta', targetPostmetaRowId),
+    privateValues: [
+      sourcePost.post_title,
+      sourcePost.post_name,
+      sourcePost.post_content,
+      targetPost.post_title,
+      targetPost.post_name,
+      targetPost.post_content,
+      postmetaRow.meta_value,
+    ].filter(Boolean),
+  };
+}
+
+function postmetaPostIdReferenceVariant3Surface(testCase, shape) {
+  return {
+    relationship: {
+      relationshipKey: 'wp_postmeta.post_id',
+      relationshipType: 'postmeta-post',
+    },
+    sourcePost: {
+      id: shape.sourcePostId,
+      resourceKey: shape.sourcePostResourceKey,
+      baseHash: resourceHash(testCase.base, shape.sourcePostResource),
+      localHash: resourceHash(testCase.local, shape.sourcePostResource),
+      remoteHash: resourceHash(testCase.remote, shape.sourcePostResource),
+    },
+    targetPost: {
+      id: shape.targetPostId,
+      resourceKey: shape.targetPostResourceKey,
+      baseHash: resourceHash(testCase.base, shape.targetPostResource),
+      localHash: resourceHash(testCase.local, shape.targetPostResource),
+      remoteHash: resourceHash(testCase.remote, shape.targetPostResource),
+    },
+    sourcePostmeta: {
+      resourceKey: shape.sourcePostmetaResourceKey,
+      baseHash: resourceHash(testCase.base, shape.sourcePostmetaResource),
+      localHash: resourceHash(testCase.local, shape.sourcePostmetaResource),
+      remoteHash: resourceHash(testCase.remote, shape.sourcePostmetaResource),
+    },
+    targetPostmeta: {
+      resourceKey: shape.targetPostmetaResourceKey,
+      baseHash: resourceHash(testCase.base, shape.targetPostmetaResource),
+      localHash: resourceHash(testCase.local, shape.targetPostmetaResource),
+      remoteHash: resourceHash(testCase.remote, shape.targetPostmetaResource),
+    },
+  };
+}
+
+function postmetaPostIdReferenceVariant3IdentityMapEvidence({ plan, shape }) {
+  const sourceDecision = plan.decisions.find((decision) =>
+    decision.resourceKey === shape.sourcePostResourceKey);
+  const targetDecision = plan.decisions.find((decision) =>
+    decision.resourceKey === shape.targetPostResourceKey);
+
+  assert.equal(sourceDecision?.decision, 'map-local-identity-to-remote');
+  assert.equal(targetDecision?.decision, 'keep-remote');
+
+  return {
+    sourceResourceKey: shape.sourcePostResourceKey,
+    targetResourceKey: shape.targetPostResourceKey,
+    sourceDecision: sourceDecision.decision,
+    targetDecision: targetDecision.decision,
+    identityMapSource: sourceDecision.identityMapSource,
+    sourceDecisionHash: `sha256:${digest(sourceDecision)}`,
+    targetDecisionHash: `sha256:${digest(targetDecision)}`,
+  };
+}
+
+function postmetaPostIdReferenceVariant3ReadyMutationEvidence({ testCase, plan, applied, shape }) {
+  const postmetaMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === shape.targetPostmetaResourceKey);
+  const postmetaPrecondition = plan.preconditions.find((precondition) =>
+    precondition.resourceKey === shape.targetPostmetaResourceKey);
+
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.sourcePostResourceKey),
+    false,
+    `${testCase.id} should not create the mapped local source post`,
+  );
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.targetPostResourceKey),
+    false,
+    `${testCase.id} should preserve the remote target post`,
+  );
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.sourcePostmetaResourceKey),
+    false,
+    `${testCase.id} should not plan the source postmeta row after rewrite`,
+  );
+  assert.ok(postmetaMutation, `${testCase.id} should plan the rewritten postmeta row`);
+  assert.ok(postmetaPrecondition, `${testCase.id} should precondition the rewritten postmeta row`);
+
+  const plannedPostmeta = deserializeResourceValue(postmetaMutation.value);
+  const rewrite = postmetaMutation.wordpressGraphIdentity?.rewrites.find((entry) =>
+    entry.relationshipType === 'postmeta-post');
+  const appliedHash = resourceHash(applied.site, shape.targetPostmetaResource);
+
+  assert.ok(rewrite, `${testCase.id} should carry postmeta-post rewrite evidence`);
+  assert.equal(plannedPostmeta.post_id, shape.targetPostId);
+  assert.equal(plannedPostmeta.meta_key, shape.metaKey);
+  assert.equal(rewrite.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(rewrite.relationshipType, 'postmeta-post');
+  assert.equal(rewrite.field, 'post_id');
+  assert.equal(rewrite.sourceResourceKey, shape.sourcePostmetaResourceKey);
+  assert.equal(rewrite.rewrittenResourceKey, shape.targetPostmetaResourceKey);
+  assert.equal(rewrite.sourceTargetResourceKey, shape.sourcePostResourceKey);
+  assert.equal(rewrite.targetResourceKey, shape.targetPostResourceKey);
+  assert.match(rewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(rewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.equal(postmetaPrecondition.mutationId, postmetaMutation.id);
+  assert.equal(postmetaPrecondition.expectedHash, postmetaMutation.remoteBeforeHash);
+  assert.equal(appliedHash, postmetaMutation.localHash, `${testCase.id} did not apply the rewritten postmeta hash`);
+  assert.equal(applied.site.db.wp_posts[shape.sourcePostRowId], undefined);
+  assert.equal(applied.site.db.wp_posts[shape.targetPostRowId].ID, shape.targetPostId);
+  assert.equal(applied.site.db.wp_postmeta[shape.sourcePostmetaRowId], undefined);
+  assert.equal(applied.site.db.wp_postmeta[shape.targetPostmetaRowId].post_id, shape.targetPostId);
+
+  return {
+    resourceKey: shape.targetPostmetaResourceKey,
+    action: postmetaMutation.action,
+    changeKind: postmetaMutation.changeKind,
+    plannedPostId: plannedPostmeta.post_id,
+    plannedLocalHash: postmetaMutation.localHash,
+    rawLocalHash: resourceHash(testCase.local, shape.sourcePostmetaResource),
+    remoteBeforeHash: postmetaMutation.remoteBeforeHash,
+    preconditionExpectedHash: postmetaPrecondition.expectedHash,
+    appliedHash,
+    sourcePostMutationPlanned: false,
+    targetPostMutationPlanned: false,
+    sourcePostmetaMutationPlanned: false,
+    plannedPrecondition: true,
+    rewrite: {
+      relationshipKey: rewrite.relationshipKey,
+      relationshipType: rewrite.relationshipType,
+      field: rewrite.field,
+      sourceResourceKey: rewrite.sourceResourceKey,
+      rewrittenResourceKey: rewrite.rewrittenResourceKey,
+      sourceTargetResourceKey: rewrite.sourceTargetResourceKey,
+      targetResourceKey: rewrite.targetResourceKey,
+      identityMapSource: rewrite.identityMapSource,
+      sourceTargetLocalHash: rewrite.sourceTargetLocalHash,
+      targetRemoteHash: rewrite.targetRemoteHash,
+      rewriteHash: `sha256:${digest(rewrite)}`,
+    },
+    mutationHash: `sha256:${digest({
+      resourceKey: postmetaMutation.resourceKey,
+      action: postmetaMutation.action,
+      changeKind: postmetaMutation.changeKind,
+      plannedPostId: plannedPostmeta.post_id,
+      localHash: postmetaMutation.localHash,
+      remoteBeforeHash: postmetaMutation.remoteBeforeHash,
+    })}`,
+  };
+}
+
+function postmetaPostIdReferenceVariant3StaleBlockerEvidence({ testCase, plan, shape }) {
+  const postmetaMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === shape.sourcePostmetaResourceKey
+    || mutation.resourceKey === shape.targetPostmetaResourceKey);
+  const blocker = plan.blockers.find((entry) =>
+    entry.resourceKey === shape.sourcePostmetaResourceKey
+    && entry.references?.some((reference) => reference.relationshipType === 'postmeta-post'));
+  const reference = blocker?.references.find((entry) => entry.relationshipType === 'postmeta-post');
+
+  assert.equal(postmetaMutation, undefined, `${testCase.id} should not plan the stale postmeta post_id row`);
+  assert.ok(blocker, `${testCase.id} should expose a postmeta post_id graph blocker`);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.ok(reference, `${testCase.id} should include postmeta post_id target evidence`);
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.sourceResourceKey, shape.sourcePostmetaResourceKey);
+  assert.equal(reference.targetResourceKey, shape.sourcePostResourceKey);
+  assert.equal(reference.targetChange.localChange, 'unchanged');
+  assert.equal(reference.targetChange.remoteChange, 'update');
+  assert.match(reference.targetBaseHash, /^[a-f0-9]{64}$/);
+  assert.match(reference.targetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(reference.targetRemoteHash, /^[a-f0-9]{64}$/);
+
+  return {
+    resourceKey: blocker.resourceKey,
+    class: blocker.class,
+    resolutionPolicy: blocker.resolutionPolicy,
+    relationshipKey: reference.relationshipKey,
+    relationshipType: reference.relationshipType,
+    targetResourceKey: reference.targetResourceKey,
+    targetLocalChange: reference.targetChange.localChange,
+    targetRemoteChange: reference.targetChange.remoteChange,
+    targetBaseHash: reference.targetBaseHash,
+    targetLocalHash: reference.targetLocalHash,
+    targetRemoteHash: reference.targetRemoteHash,
+    plannedMutation: false,
+    blockerHash: `sha256:${digest({
+      resourceKey: blocker.resourceKey,
+      class: blocker.class,
+      resolutionPolicy: blocker.resolutionPolicy,
+      change: blocker.change,
+    })}`,
+    referenceHash: `sha256:${digest(reference)}`,
+  };
+}
+
+function postmetaPostIdReferenceVariant3RefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} stale postmeta post_id plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} stale postmeta post_id refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
+}
+
+function postmetaPostIdReferenceVariant3PostIdFromRowId(rowId) {
+  const match = /^ID:(\d+)$/.exec(String(rowId || ''));
+  assert.ok(match, `invalid wp_posts row id ${rowId}`);
+  return Number(match[1]);
+}
+
+function postmetaPostIdReferenceVariant3RowResource(table, id) {
+  return {
+    type: 'row',
+    table,
+    id,
+    key: rowResourceKey(table, id),
+  };
+}
+
+function assertPostmetaPostIdReferenceVariant3RawValuesAbsent(testCase, shape, evidenceText) {
+  for (const value of shape.privateValues) {
+    assert.equal(
+      evidenceText.includes(String(value)),
+      false,
+      `${testCase.id} postmeta post_id variant 3 evidence leaked ${value}`,
+    );
+  }
+}
+
 test('RPP-0347 generated harness emits comment user ready and stale graph cases', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.commentUserGraph;
