@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T14:07:00+02:00">Last updated: May 31, 2026, 14:07 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T14:15:00+02:00">Last updated: May 31, 2026, 14:15 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>606</strong>
+        <strong>607</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>394</strong>
+        <strong>393</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof, credential rotation including variant-2 live-source revalidation, manage_options, capability downgrade rejection including variant-2 dry-run receipt binding, short-lived push-session receipt binding, same-key same-body replay, same-key different-body conflict, production-shaped preflight including variant-3 support proof, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, audit-event schema route proof including variant-2 verify:release summary carry-through, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof, credential rotation including variant-2 live-source revalidation, manage_options, capability downgrade rejection including variant-2 dry-run receipt binding, short-lived push-session receipt binding, same-key same-body replay, same-key different-body conflict, production-shaped preflight including variant-3 support proof, snapshot-hashes including variant-3 negative-auth support proof, dry-run, apply, recovery inspect, recovery mutate negative-auth, audit-event schema route proof including variant-2 verify:release summary carry-through, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0731</span>
+        <span>RPP-0542</span>
       </div>
-      <p>The latest refresh checks RPP-0731 with remote hash pagination variant-2 storage/performance evidence. The proof reports runtime, resource usage, page count, page size, and pass/fail gates for paged remote hash collection, and refuses stale cursors, missing pages, mismatched page hashes, and premature pass claims with hash-only evidence. Counts are now 606/394; final release remains NO-GO because this is local storage/performance support evidence, not production storage receipts.</p>
+      <p>The latest refresh checks RPP-0542 with production snapshot hashes route variant-3 executor/auth evidence. The proof accepts production-shaped local snapshot-hashes route summaries as support-only evidence, confirms negative auth cases fail before JSON parsing or mutation-capable work, and refuses missing or stale route evidence before release movement. Counts are now 607/393; final release remains NO-GO because this is local executor/auth support evidence, not checked production endpoint proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0542 focused: 3/3</span>
+        <span class="tag">snapshot route: 7/7</span>
+        <span class="tag">negative auth blocked</span>
+        <span class="tag">pre-JSON refusal</span>
+        <span class="tag">stale route refused</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0731 focused: 2/2</span>
         <span class="tag">pagination benchmark: 1/1</span>
         <span class="tag">runtime/resources</span>
