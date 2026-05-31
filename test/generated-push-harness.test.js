@@ -374,6 +374,15 @@ const requiredFamilies = [
   'comment-parent-thread-reference-v3-stale-target',
   'comment-parent-thread-reference-v3-non-ready',
   'comment-parent-thread-reference-v3-hash-only',
+  'commentmeta-comment-reference-v3',
+  'commentmeta-comment-reference-v3-stable',
+  'commentmeta-comment-reference-v3-stable-ready',
+  'commentmeta-comment-reference-v3-identity-map',
+  'commentmeta-comment-reference-v3-identity-map-ready',
+  'commentmeta-comment-reference-v3-stale',
+  'commentmeta-comment-reference-v3-stale-target',
+  'commentmeta-comment-reference-v3-non-ready',
+  'commentmeta-comment-reference-v3-hash-only',
   'wp-comments-create',
   'wp-users-create',
   'wp-users-remote-drift',
@@ -15677,6 +15686,621 @@ function assertCommentParentThreadReferenceVariant3RawValuesAbsent(testCase, sha
       evidenceText.includes(String(value)),
       false,
       `${testCase.id} comment_parent variant 3 evidence leaked ${value}`,
+    );
+  }
+}
+
+test('RPP-0348 generated harness records commentmeta comment reference variant 3 coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.commentmetaCommentReferenceVariant3;
+  const expectedPerTier = Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 3]));
+
+  assert.ok(coverage, 'missing commentmeta comment reference variant 3 target coverage');
+  assert.equal(coverage.family, 'commentmeta-comment-reference-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['commentmeta-comment-reference-v3']);
+  assert.equal(coverage.total, 30);
+  assert.deepEqual(coverage.statuses, { blocked: 10, ready: 20 });
+  assert.deepEqual(coverage.perTier, expectedPerTier);
+  assert.equal(report.summary.featureFamilies['commentmeta-comment-reference-v3-stable'], 10);
+  assert.equal(report.summary.featureFamilies['commentmeta-comment-reference-v3-stable-ready'], 10);
+  assert.equal(report.summary.featureFamilies['commentmeta-comment-reference-v3-identity-map'], 10);
+  assert.equal(report.summary.featureFamilies['commentmeta-comment-reference-v3-identity-map-ready'], 10);
+  assert.equal(report.summary.featureFamilies['commentmeta-comment-reference-v3-stale'], 10);
+  assert.equal(report.summary.featureFamilies['commentmeta-comment-reference-v3-non-ready'], 10);
+
+  const firstEvidence = generatedCommentmetaCommentReferenceVariant3Evidence(coverage);
+  const replayEvidence = generatedCommentmetaCommentReferenceVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0348 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; final release remains NO-GO.',
+    evidenceScope: 'local-generated-support-only',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'commentmeta comment variant 3 evidence changed between runs');
+  assert.equal(firstEvidence.target, 'commentmetaCommentReferenceVariant3');
+  assert.equal(firstEvidence.family, 'commentmeta-comment-reference-variant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.variant),
+    ['stable-identity-proof', 'ready-identity-map', 'stale-fail-closed'],
+  );
+
+  const [stableCase, mappedCase, staleCase] = firstEvidence.selectedCases;
+  assert.equal(stableCase.status, 'ready');
+  assert.equal(stableCase.applied, true);
+  assert.equal(stableCase.stableComment.stableRemoteIdentity, true);
+  assert.equal(stableCase.stableComment.stableLocalIdentity, true);
+  assert.equal(stableCase.stableComment.commentDecisionPlanned, false);
+  assert.equal(stableCase.commentmetaMutation.changeKind, 'create');
+  assert.equal(stableCase.commentmetaMutation.plannedCommentId, stableCase.surface.sourceComment.id);
+  assert.equal(stableCase.commentmetaMutation.appliedCommentId, stableCase.surface.sourceComment.id);
+  assert.equal(stableCase.commentmetaMutation.rewriteCount, 0);
+  assert.equal(stableCase.commentmetaMutation.commentMutationPlanned, false);
+  assert.equal(stableCase.commentmetaMutation.preconditionExpectedHash, stableCase.commentmetaMutation.remoteBeforeHash);
+  assert.equal(stableCase.commentmetaMutation.appliedHash, stableCase.commentmetaMutation.plannedLocalHash);
+
+  assert.equal(mappedCase.status, 'ready');
+  assert.equal(mappedCase.applied, true);
+  assert.equal(mappedCase.identityMap.sourceDecision, 'map-local-identity-to-remote');
+  assert.equal(mappedCase.identityMap.targetDecision, 'keep-remote');
+  assert.equal(mappedCase.commentmetaMutation.plannedCommentId, mappedCase.surface.targetComment.id);
+  assert.equal(mappedCase.commentmetaMutation.appliedCommentId, mappedCase.surface.targetComment.id);
+  assert.equal(mappedCase.commentmetaMutation.rewrite.relationshipKey, 'wp_commentmeta.comment_id');
+  assert.equal(mappedCase.commentmetaMutation.rewrite.relationshipType, 'commentmeta-comment');
+  assert.equal(mappedCase.commentmetaMutation.rewrite.field, 'comment_id');
+  assert.equal(
+    mappedCase.commentmetaMutation.rewrite.sourceTargetResourceKey,
+    mappedCase.surface.sourceComment.resourceKey,
+  );
+  assert.equal(mappedCase.commentmetaMutation.rewrite.targetResourceKey, mappedCase.surface.targetComment.resourceKey);
+  assert.equal(mappedCase.commentmetaMutation.sourceCommentMutationPlanned, false);
+  assert.equal(mappedCase.commentmetaMutation.targetCommentMutationPlanned, false);
+  assert.equal(mappedCase.commentmetaMutation.preconditionExpectedHash, mappedCase.commentmetaMutation.remoteBeforeHash);
+  assert.equal(mappedCase.commentmetaMutation.appliedHash, mappedCase.commentmetaMutation.plannedLocalHash);
+  assert.match(mappedCase.commentmetaMutation.rewrite.rewriteHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(staleCase.status, 'blocked');
+  assert.equal(staleCase.applied, false);
+  assert.equal(staleCase.blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(staleCase.blocker.relationshipKey, 'wp_commentmeta.comment_id');
+  assert.equal(staleCase.blocker.relationshipType, 'commentmeta-comment');
+  assert.equal(staleCase.blocker.targetResourceKey, staleCase.surface.sourceComment.resourceKey);
+  assert.equal(staleCase.blocker.targetRemoteChange, 'update');
+  assert.equal(staleCase.blocker.plannedMutation, false);
+  assert.equal(staleCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(staleCase.refusal.beforeMutationCalls, 0);
+  assert.equal(staleCase.refusal.remoteBeforeHash, staleCase.refusal.remoteAfterHash);
+  assert.match(staleCase.blocker.referenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(staleCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('RPP-0348 generated commentmeta comment'), false, 'variant 3 evidence leaked commentmeta payload');
+  assert.equal(evidenceText.includes('_rpp_0348_commentmeta_comment_'), false, 'variant 3 evidence leaked commentmeta key');
+  assert.equal(evidenceText.includes('generated commentmeta comment stale remote private'), false, 'variant 3 evidence leaked stale remote comment');
+});
+
+function generatedCommentmetaCommentReferenceVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('commentmeta-comment-reference-v3')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedCommentmetaCommentReferenceVariant3CaseEvidence(testCase, result);
+    const selectedKey = commentmetaCommentReferenceVariant3Kind(testCase);
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'commentmeta comment variant 3 target recount should match tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'commentmeta comment variant 3 target recount should match statuses');
+  assert.equal(totalCases, targetCoverage.total, 'commentmeta comment variant 3 target recount should match summary total');
+  assert.ok(selectedCases.has('stable'), 'variant 3 target should select one stable commentmeta comment case');
+  assert.ok(selectedCases.has('identity-map'), 'variant 3 target should select one identity-map commentmeta comment case');
+  assert.ok(selectedCases.has('stale'), 'variant 3 target should select one stale commentmeta comment case');
+
+  return {
+    target: 'commentmetaCommentReferenceVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-support-only',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('stable'),
+      selectedCases.get('identity-map'),
+      selectedCases.get('stale'),
+    ],
+  };
+}
+
+function generatedCommentmetaCommentReferenceVariant3CaseEvidence(testCase, result) {
+  const variant = commentmetaCommentReferenceVariant3Kind(testCase);
+  const staleTarget = variant === 'stale';
+  const shape = commentmetaCommentReferenceVariant3Shape(testCase, { variant });
+  const plan = createGeneratedPlan(testCase);
+  const surface = commentmetaCommentReferenceVariant3Surface(testCase, shape);
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant: variant === 'stable'
+      ? 'stable-identity-proof'
+      : variant === 'identity-map'
+        ? 'ready-identity-map'
+        : 'stale-fail-closed',
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    surface,
+  };
+
+  if (!staleTarget) {
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(result.status, 'ready', `${testCase.id} should validate as ready`);
+    assert.equal(result.applied, true, `${testCase.id} should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const commentmetaMutation = variant === 'stable'
+      ? commentmetaCommentReferenceVariant3StableMutationEvidence({ testCase, plan, applied, shape })
+      : commentmetaCommentReferenceVariant3MappedMutationEvidence({ testCase, plan, applied, shape });
+    const evidence = {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      staleReplayRejected: result.staleReplayRejected,
+      staleReplayRejectionCode: result.staleReplayRejectionCode,
+      staleReplayRemoteUnchanged: result.staleReplayRemoteUnchanged,
+      ...(variant === 'stable'
+        ? { stableComment: commentmetaCommentReferenceVariant3StableCommentEvidence({ testCase, plan, shape }) }
+        : { identityMap: commentmetaCommentReferenceVariant3IdentityMapEvidence({ plan, shape }) }),
+      commentmetaMutation,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        commentmetaMutation,
+      })}`,
+    };
+    assertCommentmetaCommentReferenceVariant3RawValuesAbsent(testCase, shape, JSON.stringify(evidence));
+    return evidence;
+  }
+
+  assert.equal(result.status, 'blocked', `${testCase.id} should validate as blocked`);
+  assert.equal(plan.status, 'blocked', `${testCase.id} should plan as blocked`);
+  assert.equal(result.applied, false, `${testCase.id} stale commentmeta comment graph should not apply`);
+  assert.equal(result.nonReadyRemoteUnchanged, true, `${testCase.id} stale commentmeta comment graph should leave remote unchanged`);
+
+  const blocker = commentmetaCommentReferenceVariant3StaleBlockerEvidence({ testCase, plan, shape });
+  const refusal = commentmetaCommentReferenceVariant3RefusalEvidence(testCase, plan);
+  const evidence = {
+    ...commonEvidence,
+    applied: result.applied,
+    blocker,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      blocker,
+      refusal,
+    })}`,
+  };
+  assertCommentmetaCommentReferenceVariant3RawValuesAbsent(testCase, shape, JSON.stringify(evidence));
+  return evidence;
+}
+
+function commentmetaCommentReferenceVariant3Kind(testCase) {
+  const variants = [
+    ['stable', testCase.tags.has('commentmeta-comment-reference-v3-stable')],
+    ['identity-map', testCase.tags.has('commentmeta-comment-reference-v3-identity-map')],
+    ['stale', testCase.tags.has('commentmeta-comment-reference-v3-stale')],
+  ].filter(([, present]) => present);
+
+  assert.equal(variants.length, 1, `${testCase.id} should carry exactly one commentmeta comment variant 3 kind`);
+  return variants[0][0];
+}
+
+function commentmetaCommentReferenceVariant3Shape(testCase, { variant }) {
+  const commentmetaRows = Object.entries(testCase.local.db.wp_commentmeta)
+    .filter(([, row]) => String(row.meta_key || '').startsWith(
+      `_rpp_0348_commentmeta_comment_${variant}_`,
+    ));
+
+  assert.equal(commentmetaRows.length, 1, `${testCase.id} should include one generated commentmeta comment row`);
+
+  const [commentmetaRowId, commentmetaRow] = commentmetaRows[0];
+  const sourceCommentId = Number(commentmetaRow.comment_id);
+  const sourceCommentRowId = `comment_ID:${sourceCommentId}`;
+  const sourceComment = testCase.local.db.wp_comments[sourceCommentRowId];
+  const mapEntry = (testCase.local.meta?.wordpressGraphIdentityMap?.rows || [])
+    .find((entry) => entry.table === 'wp_comments' && entry.localId === sourceCommentRowId);
+  const targetCommentRowId = variant === 'identity-map' ? mapEntry?.remoteId : sourceCommentRowId;
+  const targetCommentId = commentmetaCommentReferenceVariant3CommentIdFromRowId(targetCommentRowId);
+  const targetComment = targetCommentRowId ? testCase.remote.db.wp_comments[targetCommentRowId] : null;
+
+  assert.equal(commentmetaRowId, `meta_id:${commentmetaRow.meta_id}`);
+  assert.ok(Number.isSafeInteger(sourceCommentId), `${testCase.id} comment_id should be numeric`);
+  assert.ok(sourceComment, `${testCase.id} missing local source comment ${sourceCommentRowId}`);
+  assert.equal(sourceComment.comment_ID, sourceCommentId);
+  assert.ok(targetComment, `${testCase.id} missing remote target comment ${targetCommentRowId}`);
+  assert.equal(targetComment.comment_ID, targetCommentId);
+
+  if (variant === 'stable') {
+    assert.equal(mapEntry, undefined, `${testCase.id} stable comment should not use an identity map`);
+    assert.deepEqual(
+      testCase.base.db.wp_comments[sourceCommentRowId],
+      testCase.remote.db.wp_comments[sourceCommentRowId],
+      `${testCase.id} stable comment should match base remotely`,
+    );
+    assert.deepEqual(
+      testCase.local.db.wp_comments[sourceCommentRowId],
+      testCase.remote.db.wp_comments[sourceCommentRowId],
+      `${testCase.id} stable comment should match local remotely`,
+    );
+  } else if (variant === 'identity-map') {
+    assert.ok(mapEntry, `${testCase.id} ready target should carry a wp_comments identity map`);
+    assert.equal(testCase.remote.db.wp_comments[sourceCommentRowId], undefined);
+    assert.equal(testCase.base.db.wp_comments[sourceCommentRowId], undefined);
+    assert.equal(testCase.base.db.wp_comments[targetCommentRowId], undefined);
+    assert.equal(sourceComment.comment_content, targetComment.comment_content);
+  } else {
+    assert.equal(variant, 'stale');
+    assert.equal(mapEntry, undefined, `${testCase.id} stale comment should not use an identity map`);
+    assert.ok(testCase.base.db.wp_comments[sourceCommentRowId], `${testCase.id} stale source comment should exist in base`);
+    assert.deepEqual(
+      testCase.local.db.wp_comments[sourceCommentRowId],
+      testCase.base.db.wp_comments[sourceCommentRowId],
+      `${testCase.id} stale local source comment should match base`,
+    );
+    assert.notDeepEqual(
+      testCase.remote.db.wp_comments[sourceCommentRowId],
+      testCase.base.db.wp_comments[sourceCommentRowId],
+      `${testCase.id} stale comment target should drift remotely`,
+    );
+  }
+
+  return {
+    sourceCommentId,
+    sourceCommentRowId,
+    sourceCommentResource: rowResource('wp_comments', sourceCommentRowId),
+    sourceCommentResourceKey: rowResourceKey('wp_comments', sourceCommentRowId),
+    targetCommentId,
+    targetCommentRowId,
+    targetCommentResource: rowResource('wp_comments', targetCommentRowId),
+    targetCommentResourceKey: rowResourceKey('wp_comments', targetCommentRowId),
+    commentmetaRowId,
+    commentmetaResource: rowResource('wp_commentmeta', commentmetaRowId),
+    commentmetaResourceKey: rowResourceKey('wp_commentmeta', commentmetaRowId),
+    commentmetaRow,
+    privateValues: [
+      sourceComment.comment_content,
+      targetComment.comment_content,
+      commentmetaRow.meta_key,
+      commentmetaRow.meta_value,
+    ].filter(Boolean),
+  };
+}
+
+function commentmetaCommentReferenceVariant3Surface(testCase, shape) {
+  return {
+    relationship: {
+      relationshipKey: 'wp_commentmeta.comment_id',
+      relationshipType: 'commentmeta-comment',
+    },
+    sourceComment: {
+      id: shape.sourceCommentId,
+      resourceKey: shape.sourceCommentResourceKey,
+      baseHash: resourceHash(testCase.base, shape.sourceCommentResource),
+      localHash: resourceHash(testCase.local, shape.sourceCommentResource),
+      remoteHash: resourceHash(testCase.remote, shape.sourceCommentResource),
+    },
+    targetComment: {
+      id: shape.targetCommentId,
+      resourceKey: shape.targetCommentResourceKey,
+      baseHash: resourceHash(testCase.base, shape.targetCommentResource),
+      localHash: resourceHash(testCase.local, shape.targetCommentResource),
+      remoteHash: resourceHash(testCase.remote, shape.targetCommentResource),
+    },
+    commentmeta: {
+      id: shape.commentmetaRowId,
+      resourceKey: shape.commentmetaResourceKey,
+      baseHash: resourceHash(testCase.base, shape.commentmetaResource),
+      localHash: resourceHash(testCase.local, shape.commentmetaResource),
+      remoteHash: resourceHash(testCase.remote, shape.commentmetaResource),
+      metaKeyHash: `sha256:${digest(shape.commentmetaRow.meta_key)}`,
+    },
+  };
+}
+
+function commentmetaCommentReferenceVariant3StableCommentEvidence({ testCase, plan, shape }) {
+  const commentDecision = plan.decisions.find((decision) =>
+    decision.resourceKey === shape.sourceCommentResourceKey);
+  const hashes = {
+    baseHash: resourceHash(testCase.base, shape.sourceCommentResource),
+    localHash: resourceHash(testCase.local, shape.sourceCommentResource),
+    remoteHash: resourceHash(testCase.remote, shape.sourceCommentResource),
+  };
+
+  assert.equal(commentDecision, undefined, 'stable commentmeta comment target should not need a planner decision');
+  assert.equal(hashes.baseHash, hashes.remoteHash);
+  assert.equal(hashes.localHash, hashes.remoteHash);
+
+  return {
+    resourceKey: shape.sourceCommentResourceKey,
+    relationshipKey: 'wp_commentmeta.comment_id',
+    relationshipType: 'commentmeta-comment',
+    ...hashes,
+    stableRemoteIdentity: true,
+    stableLocalIdentity: true,
+    commentDecisionPlanned: false,
+  };
+}
+
+function commentmetaCommentReferenceVariant3StableMutationEvidence({ testCase, plan, applied, shape }) {
+  const commentmetaMutation = plan.mutations.find((mutation) => mutation.resourceKey === shape.commentmetaResourceKey);
+  const commentmetaPrecondition = plan.preconditions.find((precondition) =>
+    precondition.resourceKey === shape.commentmetaResourceKey);
+
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.sourceCommentResourceKey),
+    false,
+    `${testCase.id} should not mutate the stable comment target`,
+  );
+  assert.ok(commentmetaMutation, `${testCase.id} should plan the stable commentmeta row`);
+  assert.ok(commentmetaPrecondition, `${testCase.id} should precondition the stable commentmeta row`);
+
+  const plannedCommentmeta = deserializeResourceValue(commentmetaMutation.value);
+  const rewriteCount = commentmetaMutation.wordpressGraphIdentity?.rewrites?.length || 0;
+  const appliedHash = resourceHash(applied.site, shape.commentmetaResource);
+  const appliedCommentId = applied.site.db.wp_commentmeta[shape.commentmetaRowId].comment_id;
+
+  assert.equal(plannedCommentmeta.comment_id, shape.sourceCommentId);
+  assert.equal(rewriteCount, 0, `${testCase.id} stable commentmeta comment should not rewrite`);
+  assert.equal(commentmetaPrecondition.mutationId, commentmetaMutation.id);
+  assert.equal(commentmetaPrecondition.expectedHash, commentmetaMutation.remoteBeforeHash);
+  assert.equal(appliedHash, commentmetaMutation.localHash, `${testCase.id} did not apply the stable commentmeta hash`);
+  assert.equal(appliedCommentId, shape.sourceCommentId);
+
+  return {
+    resourceKey: shape.commentmetaResourceKey,
+    action: commentmetaMutation.action,
+    changeKind: commentmetaMutation.changeKind,
+    plannedCommentId: plannedCommentmeta.comment_id,
+    appliedCommentId,
+    plannedLocalHash: commentmetaMutation.localHash,
+    rawLocalHash: resourceHash(testCase.local, shape.commentmetaResource),
+    remoteBeforeHash: commentmetaMutation.remoteBeforeHash,
+    preconditionExpectedHash: commentmetaPrecondition.expectedHash,
+    appliedHash,
+    commentMutationPlanned: false,
+    plannedPrecondition: true,
+    rewriteCount,
+    mutationHash: `sha256:${digest({
+      resourceKey: commentmetaMutation.resourceKey,
+      action: commentmetaMutation.action,
+      changeKind: commentmetaMutation.changeKind,
+      plannedCommentId: plannedCommentmeta.comment_id,
+      localHash: commentmetaMutation.localHash,
+      remoteBeforeHash: commentmetaMutation.remoteBeforeHash,
+    })}`,
+  };
+}
+
+function commentmetaCommentReferenceVariant3IdentityMapEvidence({ plan, shape }) {
+  const sourceDecision = plan.decisions.find((decision) =>
+    decision.resourceKey === shape.sourceCommentResourceKey);
+  const targetDecision = plan.decisions.find((decision) =>
+    decision.resourceKey === shape.targetCommentResourceKey);
+
+  assert.equal(sourceDecision?.decision, 'map-local-identity-to-remote');
+  assert.equal(targetDecision?.decision, 'keep-remote');
+
+  return {
+    sourceResourceKey: shape.sourceCommentResourceKey,
+    targetResourceKey: shape.targetCommentResourceKey,
+    sourceDecision: sourceDecision.decision,
+    targetDecision: targetDecision.decision,
+    identityMapSource: sourceDecision.identityMapSource,
+    sourceDecisionHash: `sha256:${digest(sourceDecision)}`,
+    targetDecisionHash: `sha256:${digest(targetDecision)}`,
+  };
+}
+
+function commentmetaCommentReferenceVariant3MappedMutationEvidence({ testCase, plan, applied, shape }) {
+  const commentmetaMutation = plan.mutations.find((mutation) => mutation.resourceKey === shape.commentmetaResourceKey);
+  const commentmetaPrecondition = plan.preconditions.find((precondition) =>
+    precondition.resourceKey === shape.commentmetaResourceKey);
+
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.sourceCommentResourceKey),
+    false,
+    `${testCase.id} should not create the mapped local source comment`,
+  );
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.targetCommentResourceKey),
+    false,
+    `${testCase.id} should preserve the remote target comment`,
+  );
+  assert.ok(commentmetaMutation, `${testCase.id} should plan the mapped commentmeta row`);
+  assert.ok(commentmetaPrecondition, `${testCase.id} should precondition the mapped commentmeta row`);
+
+  const plannedCommentmeta = deserializeResourceValue(commentmetaMutation.value);
+  const rewrite = commentmetaMutation.wordpressGraphIdentity?.rewrites.find((entry) =>
+    entry.relationshipType === 'commentmeta-comment');
+  const appliedHash = resourceHash(applied.site, shape.commentmetaResource);
+  const appliedCommentId = applied.site.db.wp_commentmeta[shape.commentmetaRowId].comment_id;
+
+  assert.ok(rewrite, `${testCase.id} should carry commentmeta comment rewrite evidence`);
+  assert.equal(plannedCommentmeta.comment_id, shape.targetCommentId);
+  assert.equal(rewrite.relationshipKey, 'wp_commentmeta.comment_id');
+  assert.equal(rewrite.relationshipType, 'commentmeta-comment');
+  assert.equal(rewrite.field, 'comment_id');
+  assert.equal(rewrite.sourceResourceKey, shape.commentmetaResourceKey);
+  assert.equal(rewrite.rewrittenResourceKey, shape.commentmetaResourceKey);
+  assert.equal(rewrite.sourceTargetResourceKey, shape.sourceCommentResourceKey);
+  assert.equal(rewrite.targetResourceKey, shape.targetCommentResourceKey);
+  assert.match(rewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(rewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.equal(commentmetaPrecondition.mutationId, commentmetaMutation.id);
+  assert.equal(commentmetaPrecondition.expectedHash, commentmetaMutation.remoteBeforeHash);
+  assert.equal(appliedHash, commentmetaMutation.localHash, `${testCase.id} did not apply the rewritten commentmeta hash`);
+  assert.equal(applied.site.db.wp_comments[shape.sourceCommentRowId], undefined);
+  assert.equal(applied.site.db.wp_comments[shape.targetCommentRowId].comment_ID, shape.targetCommentId);
+  assert.equal(appliedCommentId, shape.targetCommentId);
+
+  return {
+    resourceKey: shape.commentmetaResourceKey,
+    action: commentmetaMutation.action,
+    changeKind: commentmetaMutation.changeKind,
+    plannedCommentId: plannedCommentmeta.comment_id,
+    appliedCommentId,
+    plannedLocalHash: commentmetaMutation.localHash,
+    rawLocalHash: resourceHash(testCase.local, shape.commentmetaResource),
+    remoteBeforeHash: commentmetaMutation.remoteBeforeHash,
+    preconditionExpectedHash: commentmetaPrecondition.expectedHash,
+    appliedHash,
+    sourceCommentMutationPlanned: false,
+    targetCommentMutationPlanned: false,
+    plannedPrecondition: true,
+    rewrite: {
+      relationshipKey: rewrite.relationshipKey,
+      relationshipType: rewrite.relationshipType,
+      field: rewrite.field,
+      sourceResourceKey: rewrite.sourceResourceKey,
+      rewrittenResourceKey: rewrite.rewrittenResourceKey,
+      sourceTargetResourceKey: rewrite.sourceTargetResourceKey,
+      targetResourceKey: rewrite.targetResourceKey,
+      identityMapSource: rewrite.identityMapSource,
+      sourceTargetLocalHash: rewrite.sourceTargetLocalHash,
+      targetRemoteHash: rewrite.targetRemoteHash,
+      rewriteHash: `sha256:${digest(rewrite)}`,
+    },
+    mutationHash: `sha256:${digest({
+      resourceKey: commentmetaMutation.resourceKey,
+      action: commentmetaMutation.action,
+      changeKind: commentmetaMutation.changeKind,
+      plannedCommentId: plannedCommentmeta.comment_id,
+      localHash: commentmetaMutation.localHash,
+      remoteBeforeHash: commentmetaMutation.remoteBeforeHash,
+    })}`,
+  };
+}
+
+function commentmetaCommentReferenceVariant3StaleBlockerEvidence({ testCase, plan, shape }) {
+  const commentmetaMutation = plan.mutations.find((mutation) => mutation.resourceKey === shape.commentmetaResourceKey);
+  const blocker = plan.blockers.find((entry) =>
+    entry.resourceKey === shape.commentmetaResourceKey
+    && entry.references?.some((reference) => reference.relationshipType === 'commentmeta-comment'));
+  const reference = blocker?.references.find((entry) => entry.relationshipType === 'commentmeta-comment');
+
+  assert.equal(commentmetaMutation, undefined, `${testCase.id} should not plan the stale commentmeta row`);
+  assert.ok(blocker, `${testCase.id} should expose a commentmeta comment graph blocker`);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.ok(reference, `${testCase.id} should include commentmeta comment target evidence`);
+  assert.equal(reference.relationshipKey, 'wp_commentmeta.comment_id');
+  assert.equal(reference.relationshipType, 'commentmeta-comment');
+  assert.equal(reference.sourceResourceKey, shape.commentmetaResourceKey);
+  assert.equal(reference.targetResourceKey, shape.sourceCommentResourceKey);
+  assert.equal(reference.targetChange.localChange, 'unchanged');
+  assert.equal(reference.targetChange.remoteChange, 'update');
+  assert.match(reference.targetBaseHash, /^[a-f0-9]{64}$/);
+  assert.match(reference.targetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(reference.targetRemoteHash, /^[a-f0-9]{64}$/);
+
+  return {
+    resourceKey: blocker.resourceKey,
+    class: blocker.class,
+    resolutionPolicy: blocker.resolutionPolicy,
+    relationshipKey: reference.relationshipKey,
+    relationshipType: reference.relationshipType,
+    targetResourceKey: reference.targetResourceKey,
+    targetLocalChange: reference.targetChange.localChange,
+    targetRemoteChange: reference.targetChange.remoteChange,
+    targetBaseHash: reference.targetBaseHash,
+    targetLocalHash: reference.targetLocalHash,
+    targetRemoteHash: reference.targetRemoteHash,
+    plannedMutation: false,
+    blockerHash: `sha256:${digest({
+      resourceKey: blocker.resourceKey,
+      class: blocker.class,
+      resolutionPolicy: blocker.resolutionPolicy,
+      change: blocker.change,
+    })}`,
+    referenceHash: `sha256:${digest(reference)}`,
+  };
+}
+
+function commentmetaCommentReferenceVariant3RefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  let beforeMutationCalls = 0;
+  const error = captureError(() => applyPlan(remoteBefore, plan, {
+    beforeMutation() {
+      beforeMutationCalls += 1;
+    },
+  }));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} stale commentmeta comment plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(beforeMutationCalls, 0, `${testCase.id} stale commentmeta comment refusal should happen before mutation`);
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} stale commentmeta comment refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    beforeMutationCalls,
+    preMutationRefusal: true,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
+}
+
+function commentmetaCommentReferenceVariant3CommentIdFromRowId(rowId) {
+  const match = /^comment_ID:(\d+)$/.exec(String(rowId || ''));
+  assert.ok(match, `invalid wp_comments row id ${rowId}`);
+  return Number(match[1]);
+}
+
+function assertCommentmetaCommentReferenceVariant3RawValuesAbsent(testCase, shape, evidenceText) {
+  for (const value of shape.privateValues) {
+    assert.equal(
+      evidenceText.includes(String(value)),
+      false,
+      `${testCase.id} commentmeta comment variant 3 evidence leaked ${value}`,
     );
   }
 }
