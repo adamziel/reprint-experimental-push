@@ -10539,6 +10539,89 @@ test('RPP-0177 stale remote after dry-run variant 4 exposes per-tier midpoint re
   assert.equal(evidenceText.includes('remote-private'), false, 'variant 4 evidence leaked generated remote payload');
 });
 
+test('RPP-0197 stale remote after dry-run release-verifier v5 exposes per-tier replay refusals', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.staleRemoteAfterDryRunReleaseVerifierVariant5;
+  const legacyCoverage = report.summary.targetCoverage.staleRemoteAfterDryRun;
+  const variant3Coverage = report.summary.targetCoverage.staleRemoteAfterDryRunVariant3;
+  const variant4Coverage = report.summary.targetCoverage.staleRemoteAfterDryRunVariant4;
+
+  assert.ok(coverage, 'missing stale remote after dry-run release-verifier v5 target coverage');
+  assert.ok(legacyCoverage, 'missing stale remote after dry-run legacy target coverage');
+  assert.ok(variant3Coverage, 'missing stale remote after dry-run variant 3 target coverage');
+  assert.ok(variant4Coverage, 'missing stale remote after dry-run variant 4 target coverage');
+
+  const firstEvidence = generatedStaleRemoteAfterDryRunReleaseVerifierVariant5Evidence(coverage);
+  const replayEvidence = generatedStaleRemoteAfterDryRunReleaseVerifierVariant5Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0197 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.equal(coverage.family, 'ready-plan-stale-remote-after-dry-run-release-verifier-v5');
+  assert.equal(coverage.total, legacyCoverage.total);
+  assert.equal(coverage.total, variant3Coverage.total);
+  assert.equal(coverage.total, variant4Coverage.total);
+  assert.deepEqual(coverage.perTier, legacyCoverage.perTier);
+  assert.deepEqual(coverage.perTier, variant3Coverage.perTier);
+  assert.deepEqual(coverage.perTier, variant4Coverage.perTier);
+  assert.deepEqual(coverage.statuses, legacyCoverage.statuses);
+  assert.deepEqual(coverage.statuses, variant3Coverage.statuses);
+  assert.deepEqual(coverage.statuses, variant4Coverage.statuses);
+  assert.deepEqual(firstEvidence, replayEvidence, 'release-verifier v5 stale replay evidence changed between runs');
+  assert.equal(firstEvidence.target, 'staleRemoteAfterDryRunReleaseVerifierVariant5');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.equal(firstEvidence.releaseVerifier.variant, 5);
+  assert.equal(firstEvidence.releaseVerifier.summaryTargetExposed, true);
+  assert.deepEqual(
+    Object.keys(firstEvidence.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.tier),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(firstEvidence.selectedCases.length, 10, 'release-verifier v5 evidence should select one replay refusal per tier');
+  assert.equal(
+    Object.values(firstEvidence.perTier).reduce((sum, count) => sum + count, 0),
+    firstEvidence.totalCases,
+  );
+
+  for (const entry of firstEvidence.selectedCases) {
+    assert.equal(entry.status, 'ready', `${entry.id} should be a ready stale replay target`);
+    assert.ok(entry.staleReplay.mutationCount > 2, `${entry.id} should prove a multi-mutation precondition`);
+    assert.ok(entry.staleReplay.mutationIndex > 0, `${entry.id} selected mutation should not be first`);
+    assert.ok(
+      entry.staleReplay.mutationIndex < entry.staleReplay.mutationCount - 1,
+      `${entry.id} selected mutation should not be last`,
+    );
+    assert.equal(entry.staleReplay.preconditionCount, entry.staleReplay.mutationCount);
+    assert.equal(entry.staleReplay.code, 'PRECONDITION_FAILED');
+    assert.equal(entry.staleReplay.remoteBeforeHash, entry.staleReplay.remoteAfterHash);
+    assert.equal(entry.staleReplay.expectedHash, entry.staleReplay.mutationRemoteBeforeHash);
+    assert.notEqual(entry.staleReplay.actualHash, entry.staleReplay.expectedHash);
+    assert.equal(entry.releaseVerifier.variant, 5);
+    assert.equal(entry.releaseVerifier.preMutationSafe, true);
+    assert.match(entry.staleReplay.detailsHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.staleReplay.plannedValueHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.staleReplay.preconditionHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+  }
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('stale-private-rpp0197'), false, 'release-verifier v5 evidence leaked stale replay payload');
+  assert.equal(evidenceText.includes('local-private'), false, 'release-verifier v5 evidence leaked generated local payload');
+  assert.equal(evidenceText.includes('remote-private'), false, 'release-verifier v5 evidence leaked generated remote payload');
+});
+
 
 test('RPP-0114/RPP-0134 plugin-owned option target exposes ready, conflict, and redacted coverage', () => {
   const report = runGeneratedPushHarness();
@@ -14472,6 +14555,195 @@ function generatedStaleRemoteAfterDryRunVariant4CaseEvidence(testCase, result) {
       remoteAfterHash,
     },
     modelProofHash: `sha256:${digest(proof)}`,
+  };
+}
+
+function generatedStaleRemoteAfterDryRunReleaseVerifierVariant5Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedByTier = new Map();
+
+  for (const testCase of generatePushHarnessCases()) {
+    const result = validateGeneratedCase(testCase);
+    const targetMatch = result.status === 'ready'
+      && result.staleReplayRejected === true
+      && result.staleReplayRejectionCode === 'PRECONDITION_FAILED'
+      && result.staleReplayRemoteUnchanged === true;
+
+    if (!targetMatch) {
+      continue;
+    }
+
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+
+    const selected = selectedByTier.get(testCase.tier);
+    if (!selected
+      || result.mutations > selected.result.mutations
+      || (result.mutations === selected.result.mutations && testCase.id.localeCompare(selected.testCase.id) < 0)) {
+      selectedByTier.set(testCase.tier, { testCase, result });
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+  const totalCases = Object.values(sortedPerTier).reduce((sum, count) => sum + count, 0);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'release-verifier v5 target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'release-verifier v5 target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'release-verifier v5 target recount should match summary total');
+
+  return {
+    target: 'staleRemoteAfterDryRunReleaseVerifierVariant5',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    releaseVerifier: {
+      variant: 5,
+      summaryTargetExposed: true,
+      gate: 'stale-remote-after-dry-run',
+    },
+    totalCases,
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [...selectedByTier.values()]
+      .map(({ testCase, result }) =>
+        generatedStaleRemoteAfterDryRunReleaseVerifierVariant5CaseEvidence(testCase, result))
+      .sort((left, right) => left.tier - right.tier),
+  };
+}
+
+function generatedStaleRemoteAfterDryRunReleaseVerifierVariant5CaseEvidence(testCase, result) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const mutationIndex = Math.floor((plan.mutations.length - 1) / 2);
+  const mutation = plan.mutations[mutationIndex];
+  const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation?.id);
+  const staleRemote = cloneJson(testCase.remote);
+  const stalePayload = `stale-private-rpp0197-${testCase.tier}-${mutation.id}`;
+  const plannedValue = deserializeResourceValue(mutation.value);
+
+  assert.equal(plan.status, 'ready', `${testCase.id} should be ready for release-verifier v5 stale replay evidence`);
+  assert.ok(plan.mutations.length > 2, `${testCase.id} should prove multi-mutation precondition refusal`);
+  assert.ok(mutationIndex > 0, `${testCase.id} release-verifier stale replay mutation should not be first`);
+  assert.ok(
+    mutationIndex < plan.mutations.length - 1,
+    `${testCase.id} release-verifier stale replay mutation should not be last`,
+  );
+  assert.equal(plan.preconditions.length, plan.mutations.length);
+  assert.ok(mutation, `${testCase.id} should have a planned mutation to drift after dry-run`);
+  assert.ok(precondition, `${testCase.id} should have a live-remote precondition for ${mutation.resourceKey}`);
+  assert.equal(precondition.resourceKey, mutation.resourceKey);
+  assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+  assert.equal(resourceHash(staleRemote, mutation.resource), precondition.expectedHash);
+
+  setResource(
+    staleRemote,
+    mutation.resource,
+    rpp0197StaleRemoteValue(mutation.resource, getResource(staleRemote, mutation.resource), stalePayload),
+  );
+  const staleResourceHash = resourceHash(staleRemote, mutation.resource);
+  const remoteBeforeHash = digest(staleRemote);
+  const error = captureError(() => applyPlan(staleRemote, plan));
+  const remoteAfterHash = digest(staleRemote);
+  const proof = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    status: result.status,
+    mutationIndex,
+    mutationCount: plan.mutations.length,
+    preconditionCount: plan.preconditions.length,
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    changeKind: mutation.changeKind,
+    expectedHash: error.details.expectedHash,
+    actualHash: error.details.actualHash,
+    mutationRemoteBeforeHash: mutation.remoteBeforeHash,
+    plannedValueHash: digest(plannedValue),
+    preconditionHash: digest(precondition),
+    detailsHash: digest(error.details),
+    remoteBeforeHash,
+    remoteAfterHash,
+    releaseVerifier: {
+      variant: 5,
+      preMutationSafe: true,
+    },
+  };
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(error.details.resourceKey, mutation.resourceKey);
+  assert.equal(error.details.expectedHash, precondition.expectedHash);
+  assert.equal(error.details.actualHash, staleResourceHash);
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} release-verifier v5 stale replay mutated remote before refusal`);
+  assert.equal(result.status, 'ready');
+  assert.equal(result.staleReplayRejected, true);
+  assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(result.staleReplayRemoteUnchanged, true);
+
+  return {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    selection: 'release-verifier-highest-mutation-count-ready-case-per-tier',
+    releaseVerifier: {
+      variant: 5,
+      preMutationSafe: true,
+      summaryTargetExposed: true,
+    },
+    summary: plan.summary,
+    staleReplay: {
+      mutationId: mutation.id,
+      mutationIndex,
+      mutationCount: plan.mutations.length,
+      preconditionCount: plan.preconditions.length,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      code: error.code,
+      expectedHash: error.details.expectedHash,
+      actualHash: error.details.actualHash,
+      mutationRemoteBeforeHash: mutation.remoteBeforeHash,
+      plannedValueHash: `sha256:${digest(plannedValue)}`,
+      preconditionHash: `sha256:${digest(precondition)}`,
+      detailsHash: `sha256:${digest(error.details)}`,
+      remoteBeforeHash,
+      remoteAfterHash,
+    },
+    modelProofHash: `sha256:${digest(proof)}`,
+  };
+}
+
+function rpp0197StaleRemoteValue(resource, currentValue, stalePayload) {
+  if (resource.type === 'file') {
+    return { type: 'file', content: stalePayload };
+  }
+
+  if (resource.type === 'plugin') {
+    return {
+      ...(currentValue === ABSENT ? {} : currentValue),
+      version: stalePayload,
+    };
+  }
+
+  if (currentValue && currentValue !== ABSENT && typeof currentValue === 'object' && !Array.isArray(currentValue)) {
+    return {
+      ...currentValue,
+      __rpp0197StaleRemoteAfterDryRun: stalePayload,
+    };
+  }
+
+  return {
+    value: currentValue === ABSENT ? 'absent-before-dry-run-release-verifier-v5' : currentValue,
+    __rpp0197StaleRemoteAfterDryRun: stalePayload,
   };
 }
 
