@@ -30,11 +30,11 @@ linked implementation artifacts.
   `node --test test/rpp-0450-plugin-update-dependency-validator-v3.test.js`.
   Caveat: local generated-style plugin-driver evidence only; final release
   remains `NO-GO`. Validation passed with a Node syntax check, focused
-  RPP-0450 coverage 3/3, adjacent RPP-0450/RPP-0470/RPP-0490 update dependency
-  coverage 5/5, related RPP-0449/RPP-0469/RPP-0489 activation dependency
-  coverage 6/6, scoped artifact redaction scan, and diff whitespace checks.
-  Counts are now 596/404; final release remains `NO-GO` because this is support
-  evidence, not production-backed plugin-driver proof.
+  RPP-0450 coverage 3/3, adjacent activation dependency coverage 5/5 across
+  the existing RPP-0449/RPP-0489 tests, adjacent RPP-0490 update dependency
+  release-verifier coverage 3/3, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 596/404; final release remains `NO-GO`
+  because this is support evidence, not production-backed plugin-driver proof.
 - Chunk replay idempotency variant-2 proof: the current lane now checks
   `RPP-0729` with local storage/performance support evidence. The proof shows
   guardedLarge replay attempts return existing receipts, create zero duplicate
