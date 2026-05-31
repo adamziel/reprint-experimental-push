@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 01:53 CEST +02:00.
+- Last update: 2026-06-01 01:55 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0846 WooCommerce order safety refusal proof merge ending at `dac2370cd`.
+  the RPP-0841 three-site local production topology proof merge ending at `edc0c9608`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 824
-  items checked and leaves 176 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 825
+  items checked and leaves 175 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 24 production-topology items, 100 generated
+  100 storage/performance items, 25 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Three-site local production topology variant-3 unavailable-capability proof:
+  the current lane now checks `RPP-0841` with generated three-site topology
+  support evidence. The proof records source, remote-changed, and local-edited
+  as the three primary site roles, keeps apply-revalidation as a support-only
+  role, rejects incomplete/non-started topology reports without an exact
+  unavailable capability, records exact blocker `DOCKER_CLI_MISSING`, and keeps
+  packaged fallback disabled.
+  Commands:
+  `node --test test/rpp-0841-three-site-local-production-topology-v3.test.js`
+  and `npm run verify:release:docker-local-production`.
+  Caveat: unavailable-capability support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0841
+  coverage 4/4, Docker topology command exit 2 with `DOCKER_CLI_MISSING`,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  825/175; final release remains `NO-GO` because this is support evidence, not
+  production-backed three-site topology startup proof, topology readback,
+  production storage receipts, live production service evidence, production
+  throughput, release approval, or a production release gate.
 - WooCommerce order safety refusal variant-3 unavailable-capability proof: the
   current lane now checks `RPP-0846` with generated WooCommerce order refusal
   and fail-closed topology evidence. The proof keeps four legacy and four HPOS
