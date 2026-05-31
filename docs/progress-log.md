@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:16 CEST +02:00.
+- Last update: 2026-05-31 13:19 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0345 comment post reference variant-3 merge ending at `94824fe`.
+  the RPP-0645 claim expiry policy variant-3 merge ending at `c641848`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 591
-  items checked and leaves 409 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 592
+  items checked and leaves 408 open.
 - Checked slices: 100 release-gate foundation items, 86 graph identity items,
-  91 plugin-driver boundary items, 38 executor/auth items, 45 recovery items,
+  91 plugin-driver boundary items, 38 executor/auth items, 46 recovery items,
   28 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Claim expiry policy variant-3 proof: the current lane now checks `RPP-0645`
+  with local recovery support evidence. The proof keeps a non-expired active
+  claim fenced, advances one expired claim exactly once after restart, rejects a
+  stale prior writer before mutation-preparation rows are written, and carries
+  the release-verifier recovery gate as proven on the same checked recovery
+  path. Command:
+  `node --test test/rpp-0645-claim-expiry-policy-v3.test.js`. Caveat: local
+  recovery support evidence only; final release remains `NO-GO`. Validation
+  passed with a Node syntax check, focused RPP-0645 coverage 1/1, adjacent
+  recovery claim-expiry/stale-claim/ownership/lease coverage 7/7, adjacent
+  RPP-0642/RPP-0643/RPP-0644 variant-3 coverage 5/5, scoped artifact redaction
+  scan, and diff whitespace checks. Counts are now 592/408; final release
+  remains `NO-GO` because this is support evidence, not production-backed
+  durable storage or release-boundary proof.
 - Comment post reference variant-3 generated coverage: the current lane now
   checks `RPP-0345` with local generated-harness graph identity evidence. The
   new target emits 20 deterministic support-only cases: 10 ready cases rewrite
