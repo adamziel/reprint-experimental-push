@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:06 CEST +02:00.
+- Last update: 2026-05-31 11:08 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0292 remoteBeforeHash release-verifier v5 merge ending at
-  `5a99b2c8f`.
+  the RPP-0293 localHash release-verifier v5 merge ending at `36aa1b4c5`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 561
-  items checked and leaves 439 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 562
+  items checked and leaves 438 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 98 generated
-  harness items, and 92 merge-invariant items. No release-ops items are checked
+  harness items, and 93 merge-invariant items. No release-ops items are checked
   yet.
+- Local hash correctness release-verifier v5 carry-through: the current lane now
+  checks `RPP-0293` with focused release-verifier support evidence for
+  hash-only local snapshot binding. The proof covers ready create/update/delete
+  cases, absent-local delete evidence, stale local-hash rejection, forged
+  local-hash aliases, missing local-hash metadata, and serialized plan evidence
+  that excludes raw private values. Command:
+  `node --test --test-name-pattern=RPP-0293 test/rpp-0293-local-hash-correctness-release-verifier-v5.test.js`.
+  Caveat: local release-verifier support evidence only; release remains gated
+  separately. Validation passed with a Node syntax check, focused RPP-0293
+  coverage 1/1, adjacent RPP-0253/RPP-0273/RPP-0293 localHash coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  562/438; final release remains `NO-GO` because this is local merge-invariant
+  support evidence, not production-backed release proof.
 - Remote-before hash correctness release-verifier v5 carry-through: the current
   lane now checks `RPP-0292` with focused release-verifier support evidence for
   binding each mutation to its live remote precondition. The proof covers valid
