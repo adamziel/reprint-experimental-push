@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>585</strong>
+        <strong>586</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>415</strong>
+        <strong>414</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof, credential rotation, manage_options, capability downgrade rejection, short-lived push-session receipt binding, same-key same-body replay, production-shaped preflight, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof, credential rotation, manage_options, capability downgrade rejection, short-lived push-session receipt binding, same-key same-body replay, same-key different-body conflict, production-shaped preflight, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0344</span>
+        <span>RPP-0537</span>
       </div>
-      <p>The latest refresh checks RPP-0344 with generated postmeta post_id reference variant-3 graph evidence. The proof validates 20 deterministic cases across all tiers: 10 ready postmeta rewrites through explicit post identity-map evidence and 10 stale post drift refusals before mutation. Counts are now 585/415; final release remains NO-GO because this is local generated graph evidence, not production-backed release proof.</p>
+      <p>The latest refresh checks RPP-0537 with same-key different-body conflict variant-2 authenticated-client evidence. The proof rejects a repeated idempotency key with a different body before fresh mutation setup, records hash-only conflict evidence, and documents the full RPP-0517 live listener check as blocked by the sandbox loopback bind limit. Counts are now 586/414; final release remains NO-GO because this is local authenticated endpoint support evidence, not production-backed release proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0537 focused: 2/2</span>
+        <span class="tag">RPP-0517 static: 1/1</span>
+        <span class="tag">RPP-0536 adjacent: 1/1</span>
+        <span class="tag">RPP-0615/0616: 3/3</span>
+        <span class="tag">auth replay subset: 26/26</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0344 focused: 1/1</span>
         <span class="tag">generated adjacent: 3/3</span>
         <span class="tag">postmeta lineage: 8/8</span>
