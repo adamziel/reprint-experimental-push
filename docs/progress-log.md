@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 15:24 CEST +02:00.
+- Last update: 2026-05-31 15:26 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0545 production journal route variant-3 merge ending at `312770d`.
+  the RPP-0547 production recovery mutate route variant-3 merge ending at
+  `9198f67`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 629
-  items checked and leaves 371 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 630
+  items checked and leaves 370 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 45 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 46 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production recovery mutate route variant-3 proof: the current lane now checks
+  `RPP-0547` with local executor-auth support evidence. The proof exercises a
+  production-shaped recovery mutate route harness, verifies malformed negative
+  auth requests fail before JSON parsing or mutation side effects, and refuses
+  missing or stale route evidence before release movement. Command:
+  `node --test --test-name-pattern RPP-0547 test/rpp-0547-production-recovery-mutate-route-v3.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0547
+  coverage 3/3, adjacent recovery/snapshot route coverage 8/8, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 630/370; final
+  release remains `NO-GO` because this is support evidence, not production-backed
+  recovery mutate route proof.
 - Production journal route variant-3 proof: the current lane now checks
   `RPP-0545` with local executor-auth support evidence. The proof keeps journal
   route evidence read-only and hash-only, fails closed when a journal read
