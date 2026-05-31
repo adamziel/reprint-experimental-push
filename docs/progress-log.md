@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 01:24 CEST +02:00.
+- Last update: 2026-06-01 01:27 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0821 three-site topology proof merge ending at `7dcb46f82`.
+  the RPP-0823 external WordPress topology proof merge ending at `89c26e44e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 813
-  items checked and leaves 187 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 814
+  items checked and leaves 186 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 13 production-topology items, 100 generated
+  100 storage/performance items, 14 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- External WordPress topology variant-2 URL identity proof: the current lane now
+  checks `RPP-0823` with deterministic source/local/changed URL identity
+  coverage. The proof captures the external topology role URLs, verifies
+  distinct source/local/changed identities plus same-source route identity,
+  rejects tunnel and secret-shaped URLs, limits loopback ingress to sandbox
+  `8080`, and keeps evidence hash/count/surface-only.
+  Command:
+  `node --test --test-name-pattern RPP-0823 test/rpp-0823-external-wordpress-topology-v2.test.js`.
+  Caveat: local support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0823 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  814/186; final release remains `NO-GO` because this is support evidence, not
+  production-backed external WordPress reachability, production credentials,
+  route receipts, durable journal evidence, live mutation proof, throughput,
+  release approval, or a production release gate.
 - Three-site local production topology variant-2 unavailable-capability proof:
   the current lane now checks `RPP-0821` with fail-closed topology evidence. The
   proof records the three primary WordPress site contract, refuses to count
