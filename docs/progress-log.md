@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 19:58 CEST +02:00.
+- Last update: 2026-05-31 20:02 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0733 apply batch sizing variant-2 integration ending at `f430fc`.
+  the RPP-0735 large media library benchmark variant-2 merge ending at
+  `a43436`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 726
-  items checked and leaves 274 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 727
+  items checked and leaves 273 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  34 storage/performance items, 3 production-topology items, 100 generated
+  35 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Large media library benchmark variant-2 proof: the current lane now checks
+  `RPP-0735` with local storage/performance support evidence. The proof keeps
+  fast-path lane output behind a passing correctness gate vector, verifies row
+  preconditions and media database batches, and blocks unsafe lane updates,
+  missing row preconditions, mismatched lane evidence, or premature output.
+  Command:
+  `node --test --test-name-pattern RPP-0735 test/rpp-0735-large-media-library-benchmark-v2.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0735
+  coverage 2/2, adjacent RPP-0715 coverage 3/3, adjacent RPP-0732 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  727/273; final release remains `NO-GO` because this is support evidence, not
+  production-backed storage receipt proof.
 - Apply batch sizing variant-2 proof: the current lane now checks `RPP-0733`
   with local storage/performance support evidence. The proof models apply
   batches as resumable mutation chunks, skips exact durable receipts for already
