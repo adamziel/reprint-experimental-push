@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 14:42 CEST +02:00.
+- Last update: 2026-05-31 14:47 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0353 term relationship object reference variant-3 merge ending at
-  `71f36eb`.
+  the RPP-0357 serialized block reference detection variant-3 merge ending at
+  `9ff059f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 616
-  items checked and leaves 384 open.
-- Checked slices: 100 release-gate foundation items, 94 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 617
+  items checked and leaves 383 open.
+- Checked slices: 100 release-gate foundation items, 95 graph identity items,
   96 plugin-driver boundary items, 42 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Serialized block reference detection variant-3 proof: the current lane now
+  checks `RPP-0357` with local graph-identity support evidence. The proof detects
+  an unsupported serialized `core/cover` block attachment target, emits hash-only
+  target evidence, and refuses apply before mutation. Command:
+  `node --test --test-name-pattern RPP-0357 test/rpp-0357-serialized-block-reference-detection-v3.test.js`.
+  Caveat: local graph-identity support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0357
+  coverage 1/1, adjacent RPP-0377 coverage 1/1, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 617/383; final release remains
+  `NO-GO` because this is support evidence, not production-backed graph identity
+  proof.
 - Term relationship object reference variant-3 proof: the current lane now
   checks `RPP-0353` with local graph-identity support evidence. The proof covers
   generated ready and stale `wp_term_relationships.object_id` support, carries
