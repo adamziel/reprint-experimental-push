@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 12:23 CEST +02:00.
+- Last update: 2026-05-31 12:30 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0723 transaction boundary policy variant-2 merge ending at `920d57a6`.
+  the RPP-0343 post_author generated graph variant-3 merge ending at `66d5f181`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 580
-  items checked and leaves 420 open.
-- Checked slices: 100 release-gate foundation items, 83 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 581
+  items checked and leaves 419 open.
+- Checked slices: 100 release-gate foundation items, 84 graph identity items,
   89 plugin-driver boundary items, 36 executor/auth items, 43 recovery items,
   26 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Generated post_author identity-map variant-3 coverage: the current lane now
+  checks `RPP-0343` with generated-harness graph identity evidence. The new
+  target emits 20 deterministic support-only cases across tiers 0 through 9:
+  10 ready cases map a local `wp_users` author row to an equivalent remote user
+  row and rewrite the authored post `post_author`, while 10 stale cases fail
+  closed as `stale-wordpress-graph-identity` before mutation. Command:
+  `node --test --test-name-pattern=RPP-0343 test/generated-push-harness.test.js`.
+  Caveat: local generated-harness support evidence only; final release remains
+  `NO-GO`. Validation passed with Node syntax checks, focused RPP-0343 coverage
+  1/1, adjacent RPP-0303/RPP-0343 generated coverage 2/2, adjacent
+  RPP-0323/RPP-0363/RPP-0383 post-author lineage coverage 6/6, post-author
+  planner coverage 1/1, full generated harness coverage 96/96, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 581/419; final
+  release remains `NO-GO` because this is local graph identity support
+  evidence, not production-backed release proof.
 - Transaction boundary policy variant-2 proof: the current lane now checks
   `RPP-0723` with guarded-executor support evidence. The proof projects the
   RPP-0703 policy into a variant-2 receipt-only resume report, verifies
