@@ -6,20 +6,45 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:46 CEST +02:00.
+- Last update: 2026-05-31 23:47 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0794 large post table benchmark release-verifier variant-5 merge
-  ending at `79d44f`.
+  the RPP-0797 memory ceiling proof release-verifier variant-5 merge ending at
+  `d9fe53`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 788
-  items checked and leaves 212 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 789
+  items checked and leaves 211 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  96 storage/performance items, 3 production-topology items, 100 generated
+  97 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Memory ceiling proof release-verifier variant-5 proof: the current lane now
+  checks `RPP-0797` with deterministic local release-verifier support evidence.
+  The proof carries the RPP-0777/RPP-0757/RPP-0717 filesystem memory-ceiling
+  lineage into a release-verifier envelope that preserves runtime/resource
+  reporting, pass/fail benchmark gates, streamed same-directory temp writes,
+  live descriptor comparisons before rename, stale storage refusal, bounded
+  memory counters, temp cleanup, and support-only release posture. The unit
+  profile records 3 update files, 3 create files, 4 stale files, 65536 byte file
+  size, 4096 byte chunk size, 4096 maximum buffered planned payload, 10 guarded
+  writes attempted, 6 applied writes, 4 stale-at-write rejections, 0 unsafe
+  rename-on-stale writes, 262144 preserved stale drift bytes, 8 passing
+  benchmark gates, and 11 release-verifier gates. Negative coverage blocks
+  stale-write count drift, unsafe rename on stale storage, memory ceiling
+  breach, missing runtime reporting, missing release-verifier carry-through,
+  production release claims, and missing recorded gates.
+  Command:
+  `node --test --test-name-pattern RPP-0797 test/rpp-0797-memory-ceiling-proof-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0797
+  coverage 3/3, adjacent RPP-0777 coverage 3/3, adjacent RPP-0757 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  789/211; final release remains `NO-GO` because this is support evidence, not
+  production storage receipts, production row batch executor evidence,
+  production atomic group commit evidence, live production service evidence,
+  production throughput, release approval, or a production release gate.
 - Large post table benchmark release-verifier variant-5 proof: the current lane
   now checks `RPP-0794` with deterministic local release-verifier support
   evidence. The proof carries the RPP-0774/RPP-0754/RPP-0714 large `wp_posts`
