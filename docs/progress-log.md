@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 15:26 CEST +02:00.
+- Last update: 2026-05-31 15:29 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0547 production recovery mutate route variant-3 merge ending at
-  `9198f67`.
+  the RPP-0548 short-lived push session variant-3 merge ending at `d6caf53`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 630
-  items checked and leaves 370 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 631
+  items checked and leaves 369 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 46 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 47 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Short-lived push session variant-3 proof: the current lane now checks
+  `RPP-0548` with local executor-auth support evidence. The proof exercises
+  generated dry-run receipt binding cases, keeps session, identity, scope, auth
+  session, and canonical plan hash evidence hash-only, and proves apply
+  admission recomputes those bindings before mutation. Command:
+  `node --test --test-name-pattern RPP-0548 test/rpp-0548-short-lived-push-session-v3.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0548
+  coverage 2/2, adjacent RPP-0528 coverage 4/4, base short-lived push session
+  coverage 3/3, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 631/369; final release remains `NO-GO` because this is support
+  evidence, not production-backed push-session proof.
 - Production recovery mutate route variant-3 proof: the current lane now checks
   `RPP-0547` with local executor-auth support evidence. The proof exercises a
   production-shaped recovery mutate route harness, verifies malformed negative
