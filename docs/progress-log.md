@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 10:53 CEST +02:00.
+- Last update: 2026-05-31 11:00 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0255 keep-remote decision variant-3 merge ending at `13bcd9bb4`.
+  the RPP-0198 same independent content release-verifier v5 merge ending at
+  `1b9db79d3`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 558
-  items checked and leaves 442 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 559
+  items checked and leaves 441 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 97 generated
+  23 storage/performance items, 3 production-topology items, 98 generated
   harness items, and 90 merge-invariant items. No release-ops items are checked
   yet.
+- Same independent content release-verifier v5 generated proof: the current lane
+  now checks `RPP-0198` with deterministic generated-harness support evidence
+  over the existing same-independent-content target family. The proof carries
+  the variant-5 release verifier through ready same-content plans, verifies the
+  ready cases apply without unplanned remote overwrite, keeps the older
+  same-content variants present as lineage evidence, and redacts fixture labels
+  and payload details from the published artifact. Command:
+  `node --test --test-name-pattern=RPP-0198 test/generated-push-harness.test.js`.
+  Caveat: deterministic local Node generated-fixture evidence only; release
+  remains gated by broader integration evidence. Validation passed with Node
+  syntax checks, focused RPP-0198 coverage 1/1, adjacent
+  RPP-0118/RPP-0138/RPP-0158/RPP-0178/RPP-0198 same-content generated harness
+  coverage 5/5, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 559/441; final release remains `NO-GO` because this is local
+  generated harness support evidence, not production-backed release proof.
 - Keep-remote decision variant-3 generated proof: the current lane now checks
   `RPP-0255` with deterministic generated-harness support evidence over the
   existing `remoteOnlyPreservationVariant3` target. The proof scans all 620
