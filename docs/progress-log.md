@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 17:57 CEST +02:00.
+- Last update: 2026-05-31 18:01 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0654 same-key replay after commit variant-3 merge ending at
-  `f162e6`.
+  the RPP-0655 same-key replay after rejection variant-3 merge ending at
+  `5f1995`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 679
-  items checked and leaves 321 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 680
+  items checked and leaves 320 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 55 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 56 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key replay after rejection variant-3 proof: the current lane now checks
+  `RPP-0655` with local recovery support evidence. The proof carries same-key
+  replay-after-rejection evidence through the same recovery gate path, keeps the
+  route evidence hash-only, and rejects missing, malformed, stale, duplicated,
+  or drifted replay evidence before release proof movement. Command:
+  `node --test --test-name-pattern RPP-0655 test/rpp-0655-same-key-replay-after-rejection-v3.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0655 coverage 2/2,
+  adjacent RPP-0615 replay coverage 2/2, adjacent RPP-0597 conflict coverage
+  3/3, scoped artifact redaction scan, and diff whitespace checks. Counts are
+  now 680/320; final release remains `NO-GO` because this is support evidence,
+  not production-backed recovery proof.
 - Same-key replay after commit variant-3 proof: the current lane now checks
   `RPP-0654` with local recovery support evidence. The proof shows same-key
   replay after commit remains idempotent, exposes lease owner identity through
