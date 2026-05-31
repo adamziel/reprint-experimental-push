@@ -575,7 +575,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [x] RPP-0536 (Mid-Far / executor-auth) Prove same-key same-body replay, variant 2. Success: real endpoint test runs against a live URL.
 - [x] RPP-0537 (Mid-Far / executor-auth) Prove same-key different-body conflict, variant 2. Success: negative auth cases fail before JSON parsing and mutation.
 - [x] RPP-0538 (Mid-Far / executor-auth) Prove capability downgrade rejection, variant 2. Success: dry-run receipts bind session, identity, scope, and plan hash.
-- [ ] RPP-0539 (Mid-Far / executor-auth) Prove credential rotation behavior, variant 2. Success: apply revalidates the live source before mutation.
+- [x] RPP-0539 (Mid-Far / executor-auth) Prove credential rotation behavior, variant 2. Success: apply revalidates the live source before mutation.
 - [ ] RPP-0540 (Mid-Far / executor-auth) Prove production audit event schema, variant 2. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0541 (Mid-Far / executor-auth) Add generated coverage for production preflight route, variant 3. Success: real endpoint test runs against a live URL.
 - [ ] RPP-0542 (Mid-Far / executor-auth) Add generated coverage for production snapshot hashes route, variant 3. Success: negative auth cases fail before JSON parsing and mutation.

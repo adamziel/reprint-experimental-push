@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:22 CEST +02:00.
+- Last update: 2026-05-31 13:26 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0449 plugin activation dependency validator variant-3 merge ending at
-  `44c52ae`.
+  the RPP-0539 credential rotation behavior variant-2 merge ending at
+  `1452289`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 593
-  items checked and leaves 407 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 594
+  items checked and leaves 406 open.
 - Checked slices: 100 release-gate foundation items, 86 graph identity items,
-  92 plugin-driver boundary items, 38 executor/auth items, 46 recovery items,
+  92 plugin-driver boundary items, 39 executor/auth items, 46 recovery items,
   28 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Credential rotation behavior variant-2 proof: the current lane now checks
+  `RPP-0539` with local executor/auth support evidence. The proof rejects old
+  credentials, binds the rotated credential to the authenticated session and
+  dry-run receipt, revalidates the live source before mutation, stops stale
+  live-source evidence as `PRECONDITION_FAILED`, and records only hash evidence
+  for sensitive auth/session/source values. Command:
+  `node --test test/rpp-0539-credential-rotation-behavior-v2.test.js`.
+  Caveat: local mocked HTTP executor evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0539
+  coverage 2/2, adjacent RPP-0519 credential-rotation coverage 2/2,
+  authenticated-client auth/session/idempotency subset coverage 6/6, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 594/406;
+  final release remains `NO-GO` because this is support evidence, not checked
+  production endpoint proof.
 - Plugin activation dependency validator variant-3 proof: the current lane now
   checks `RPP-0449` with local plugin-driver support evidence. The proof carries
   explicit hash-only dependency metadata through local apply, refuses missing or

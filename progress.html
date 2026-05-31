@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T13:22:00+02:00">Last updated: May 31, 2026, 13:22 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T13:26:00+02:00">Last updated: May 31, 2026, 13:26 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>593</strong>
+        <strong>594</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>407</strong>
+        <strong>406</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof, credential rotation, manage_options, capability downgrade rejection including variant-2 dry-run receipt binding, short-lived push-session receipt binding, same-key same-body replay, same-key different-body conflict, production-shaped preflight, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof, credential rotation including variant-2 live-source revalidation, manage_options, capability downgrade rejection including variant-2 dry-run receipt binding, short-lived push-session receipt binding, same-key same-body replay, same-key different-body conflict, production-shaped preflight, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0449</span>
+        <span>RPP-0539</span>
       </div>
-      <p>The latest refresh checks RPP-0449 with plugin activation dependency validator variant-3 evidence. The proof carries explicit hash-only dependency metadata through local apply, refuses missing or stale dependency evidence before mutation while preserving plugin-owned remote data, and rejects invalid or forged activation dependency evidence fail-closed. Counts are now 593/407; final release remains NO-GO because this is local plugin-driver support evidence, not production-backed plugin-driver proof.</p>
+      <p>The latest refresh checks RPP-0539 with credential rotation behavior variant-2 executor/auth evidence. The proof rejects old credentials, binds the rotated credential to the authenticated session and dry-run receipt, revalidates the live source before mutation, stops stale live-source evidence as PRECONDITION_FAILED, and records only hash evidence for sensitive auth/session/source values. Counts are now 594/406; final release remains NO-GO because this is local mocked HTTP support evidence, not checked production endpoint proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0539 focused: 2/2</span>
+        <span class="tag">RPP-0519 adjacent: 2/2</span>
+        <span class="tag">auth subset: 6/6</span>
+        <span class="tag">rotated receipt bound</span>
+        <span class="tag">live source revalidated</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0449 focused: 3/3</span>
         <span class="tag">activation adjacent: 3/3</span>
         <span class="tag">update adjacent: 5/5</span>
