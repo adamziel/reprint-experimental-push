@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 696.
-- Remaining open: 304.
+- Verified complete: 697.
+- Remaining open: 303.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -712,7 +712,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [x] RPP-0668 (Far / recovery) Add focused regression coverage for restart-readable staged state, variant 4. Success: retry does not overwrite preserved remote changes.
 - [x] RPP-0669 (Far / recovery) Add focused regression coverage for restart-readable committed state, variant 4. Success: lease owner identity is visible in audit evidence.
 - [x] RPP-0670 (Far / recovery) Add focused regression coverage for old remote recovery classification, variant 4. Success: release verifier reports the recovery gate as proven on the same path.
-- [ ] RPP-0671 (Far / recovery) Add focused regression coverage for new remote recovery classification, variant 4. Success: MySQL or SQLite-backed test proves the recovery state.
+- [x] RPP-0671 (Far / recovery) Add focused regression coverage for new remote recovery classification, variant 4. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0672 (Far / recovery) Add focused regression coverage for blocked recovery classification, variant 4. Success: journal rows are durable after process restart.
 - [x] RPP-0673 (Far / recovery) Add focused regression coverage for unknown drift classification, variant 4. Success: retry does not overwrite preserved remote changes.
 - [ ] RPP-0674 (Far / recovery) Add focused regression coverage for same-key replay after commit, variant 4. Success: lease owner identity is visible in audit evidence.
