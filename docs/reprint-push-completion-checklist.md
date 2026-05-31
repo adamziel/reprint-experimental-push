@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 816.
-- Remaining open: 184.
+- Verified complete: 817.
+- Remaining open: 183.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -879,7 +879,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0825 (Far / production-topology) Prove WooCommerce product catalog, variant 2. Success: progress report records candidate versus release-ready scope.
 - [x] RPP-0826 (Far / production-topology) Prove WooCommerce order safety refusal, variant 2. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0827 (Far / production-topology) Prove block theme templates, variant 2. Success: verify:release passes without packaged fallback on the topology.
-- [ ] RPP-0828 (Far / production-topology) Prove classic theme files, variant 2. Success: source/local/changed URLs are captured and identity-checked.
+- [x] RPP-0828 (Far / production-topology) Prove classic theme files, variant 2. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0829 (Far / production-topology) Prove multisite subdirectory topology, variant 2. Success: plugin and graph evidence survive real WordPress import/export.
 - [ ] RPP-0830 (Far / production-topology) Prove multisite subdomain topology, variant 2. Success: progress report records candidate versus release-ready scope.
 - [ ] RPP-0831 (Far / production-topology) Prove object cache enabled topology, variant 2. Success: topology command starts the sites or records exact unavailable capability.
