@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 19:47 CEST +02:00.
+- Last update: 2026-05-31 19:49 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0696 different-body idempotency conflict variant-5 merge ending at
-  `99d5d7`.
+  the RPP-0699 missing commit finalization variant-5 merge ending at `88f41c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 722
-  items checked and leaves 278 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 723
+  items checked and leaves 277 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 98 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 99 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Missing commit finalization variant-5 proof: the current lane now checks
+  `RPP-0699` with local recovery support evidence. The proof carries an expired
+  retry claim through missing `journal-completed` finalization, preserves the
+  original mutation row sequence hash, and keeps lease owner identity visible in
+  release-verifier audit evidence. Command:
+  `node --test --test-name-pattern RPP-0699 test/rpp-0699-missing-commit-finalization-v5.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0699 coverage 1/1,
+  adjacent RPP-0679 coverage 1/1, adjacent RPP-0659 coverage 1/1, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 723/277;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed recovery proof.
 - Different-body idempotency conflict variant-5 proof: the current lane now
   checks `RPP-0696` with local recovery support evidence. The proof carries a
   SQLite-backed different-body conflict through the release verifier, proves the
