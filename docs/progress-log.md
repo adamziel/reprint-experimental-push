@@ -6,20 +6,48 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:26 CEST +02:00.
+- Last update: 2026-05-31 23:28 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0791 remote hash pagination release-verifier variant-5 merge ending
-  at `87b9d4`.
+  the RPP-0792 dry-run batch sizing release-verifier variant-5 merge ending at
+  `5ccd16`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 783
-  items checked and leaves 217 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 784
+  items checked and leaves 216 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  91 storage/performance items, 3 production-topology items, 100 generated
+  92 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Dry-run batch sizing release-verifier variant-5 proof: the current lane now
+  checks `RPP-0792` with deterministic local release-verifier support evidence.
+  The proof carries the RPP-0772/RPP-0752/RPP-0712 dry-run batch sizing lineage
+  into a release-verifier projection that preserves bounded dry-run batch
+  windows, read-only dry-run receipts, complete hash-only resource coverage, and
+  stale-storage refusal before mutation-capable work starts. The unit profile
+  records 8 file resources, 14 post rows, 17 postmeta rows, 7 option rows, 4
+  plugin metadata resources, 50 total resources, 50 total preconditions, six
+  deterministic batch windows `[0..8]`, `[9..17]`, `[18..26]`, `[27..35]`,
+  `[36..44]`, and `[45..49]`, resource/precondition limits of 9 per batch, a
+  28672 byte estimated-batch limit, 11 benchmark gates passing, six guarded
+  write attempts, six stale-storage rejections, zero mutation-capable starts,
+  zero mutations applied, zero storage-state updates, zero dry-run receipts
+  authorizing mutation, 11 release-verifier gates, and hash/count-only output
+  after recorded correctness gates. Negative coverage blocks stale guard
+  acceptance, storage mutation, missing guarded writes, missing runtime reports,
+  missing carry-through claims, production release claims, and missing recorded
+  gates.
+  Command:
+  `node --test --test-name-pattern RPP-0792 test/rpp-0792-dry-run-batch-sizing-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0792
+  coverage 2/2, adjacent RPP-0772 coverage 2/2, adjacent RPP-0752 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  784/216; final release remains `NO-GO` because this is support evidence, not
+  production storage receipts, production row batch executor evidence,
+  production atomic group commit evidence, live production service evidence,
+  production throughput, release approval, or a production release gate.
 - Remote hash pagination release-verifier variant-5 proof: the current lane now
   checks `RPP-0791` with deterministic local release-verifier support evidence.
   The proof carries the RPP-0771/RPP-0751/RPP-0711 remote hash pagination
