@@ -6,19 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 22:07 CEST +02:00.
+- Last update: 2026-05-31 22:12 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0773 apply batch sizing variant-4 merge ending at `5a3046`.
+  the RPP-0774 large post table benchmark variant-4 merge ending at `39822e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 765
-  items checked and leaves 235 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 766
+  items checked and leaves 234 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  73 storage/performance items, 3 production-topology items, 100 generated
+  74 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Large post table benchmark variant-4 proof: the current lane now checks
+  `RPP-0774` with deterministic local storage/performance support evidence. The
+  proof carries forward the RPP-0754/RPP-0734/RPP-0714 large `wp_posts` table
+  lineage and runs the large-site benchmark over 20000 rows with 10000 changed
+  rows, 10000 planned row mutations, 10000 live remote preconditions, 20
+  primary-key batch windows, max 500 rows per window, 0 duplicate post ids,
+  10000 changed rows verified after apply, 3 unchanged sample rows verified,
+  0 verification failures, and 0 raw value evidence leaks. It also proves a
+  repeat large-site run has the same runtime-free count/hash projection while
+  volatile duration, CPU, RSS, and heap stay outside deterministic evidence.
+  Command:
+  `node --test --test-name-pattern RPP-0774 test/rpp-0774-large-post-table-benchmark-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0774
+  coverage 2/2, adjacent RPP-0754 coverage 2/2, adjacent RPP-0734 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  766/234; final release remains `NO-GO` because this is support evidence, not
+  production-backed large-table throughput, storage receipt, row batch executor,
+  or atomic commit proof.
 - Apply batch sizing variant-4 proof: the current lane now checks `RPP-0773`
   with deterministic local storage/performance support evidence. The proof
   carries forward the RPP-0753/RPP-0733/RPP-0713 apply batch-sizing lineage and
