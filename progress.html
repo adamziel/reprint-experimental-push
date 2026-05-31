@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T13:42:00+02:00">Last updated: May 31, 2026, 13:42 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T13:44:00+02:00">Last updated: May 31, 2026, 13:44 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>598</strong>
+        <strong>599</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>402</strong>
+        <strong>401</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof, credential rotation including variant-2 live-source revalidation, manage_options, capability downgrade rejection including variant-2 dry-run receipt binding, short-lived push-session receipt binding, same-key same-body replay, same-key different-body conflict, production-shaped preflight, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof, credential rotation including variant-2 live-source revalidation, manage_options, capability downgrade rejection including variant-2 dry-run receipt binding, short-lived push-session receipt binding, same-key same-body replay, same-key different-body conflict, production-shaped preflight, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, audit-event schema route proof including variant-2 verify:release summary carry-through, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0646</span>
+        <span>RPP-0540</span>
       </div>
-      <p>The latest refresh checks RPP-0646 with journal pagination variant-3 recovery evidence. The proof covers file-backed and SQLite-backed paged restart readback, ordered page windows, restart-readable cursors, hash-only page contents, fail-closed invalid or stale cursor requests, and unchanged recovery state on the same checked journal path. Counts are now 598/402; final release remains NO-GO because this is local recovery support evidence, not production-backed durable journal proof.</p>
+      <p>The latest refresh checks RPP-0540 with production audit event schema variant-2 executor/auth evidence. The proof carries one audit schema route-evidence block into a verify:release-style summary, keeps auth failure evidence hash-only, and confirms the combined verifier source preserves the <code>dbJournal.auditEventSchema</code> path. Counts are now 599/401; final release remains NO-GO because this is local production-shaped support evidence, not checked production endpoint proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0540 focused: 3/3</span>
+        <span class="tag">audit route: 3/3</span>
+        <span class="tag">RPP-0520 adjacent: 1/1</span>
+        <span class="tag">hash-only auth failure</span>
+        <span class="tag">verifier summary path</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0646 focused: 2/2</span>
         <span class="tag">journal subset: 3/3</span>
         <span class="tag">RPP-0642/0645: 3/3</span>

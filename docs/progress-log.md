@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:42 CEST +02:00.
+- Last update: 2026-05-31 13:44 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0646 journal pagination variant-3 merge ending at `fda35a7`.
+  the RPP-0540 production audit event schema variant-2 merge ending at
+  `d3ccb4f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 598
-  items checked and leaves 402 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 599
+  items checked and leaves 401 open.
 - Checked slices: 100 release-gate foundation items, 87 graph identity items,
-  93 plugin-driver boundary items, 39 executor/auth items, 47 recovery items,
+  93 plugin-driver boundary items, 40 executor/auth items, 47 recovery items,
   29 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production audit event schema variant-2 proof: the current lane now checks
+  `RPP-0540` with local executor/auth support evidence. The proof carries one
+  production audit schema route-evidence block into a verify:release-style
+  summary, keeps auth failure evidence hash-only, and confirms the combined
+  verifier source preserves the `dbJournal.auditEventSchema` summary path.
+  Command:
+  `node --test test/rpp-0540-production-audit-event-schema-v2.test.js`.
+  Caveat: local production-shaped executor/auth evidence only; final release
+  remains `NO-GO`. Validation passed with a Node syntax check, focused RPP-0540
+  coverage 3/3, production audit schema route coverage 3/3, adjacent RPP-0520
+  authenticated client coverage 1/1, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 599/401; final release remains `NO-GO`
+  because this is support evidence, not checked production endpoint proof.
 - Journal pagination variant-3 proof: the current lane now checks `RPP-0646`
   with local recovery support evidence. The proof covers file-backed and
   SQLite-backed paged restart readback, ordered page windows, restart-readable
