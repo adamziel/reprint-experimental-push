@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 19:07 CEST +02:00.
+- Last update: 2026-05-31 19:09 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0687 restart-readable open state variant-5 merge ending at `830d4a`.
+  the RPP-0684 stale claim rejection variant-5 merge ending at `974df6`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 709
-  items checked and leaves 291 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 710
+  items checked and leaves 290 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 85 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 86 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Stale claim rejection variant-5 proof: the current lane now checks
+  `RPP-0684` with local recovery support evidence. The proof carries stale claim
+  rejection through the release verifier audit-evidence path, exposes the active
+  lease-owner identity without raw payloads, and keeps claim-expiry movement out
+  of the non-expired rejection proof. Command:
+  `node --test --test-name-pattern RPP-0684 test/rpp-0684-stale-claim-rejection-v5.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0684 coverage 1/1,
+  adjacent RPP-0664 stale-claim coverage 1/1, adjacent RPP-0644 coverage 1/1,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  710/290; final release remains `NO-GO` because this is support evidence, not
+  production-backed recovery proof.
 - Restart-readable open state variant-5 proof: the current lane now checks
   `RPP-0687` with local recovery support evidence. The proof carries durable
   open-state rows after process restart through the release verifier path,
