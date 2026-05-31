@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:16 CEST +02:00.
+- Last update: 2026-05-31 11:18 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0294 already-in-sync release-verifier v5 merge ending at `f0c17bb7c`.
+  the RPP-0295 keep-remote release-verifier v5 merge ending at `4a8320615`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 564
-  items checked and leaves 436 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 565
+  items checked and leaves 435 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 99 generated
-  harness items, and 94 merge-invariant items. No release-ops items are checked
+  harness items, and 95 merge-invariant items. No release-ops items are checked
   yet.
+- Keep-remote decision release-verifier v5 carry-through: the current lane now
+  checks `RPP-0295` with focused and generated support evidence for decision-only
+  keep-remote plans. The proof verifies focused create, update, and delete
+  keep-remote decisions remain mutation-free and precondition-free, generated
+  keep-remote decisions have no mutation/precondition overlap, forged overlapping
+  mutations are refused before mutation, and the evidence note records the
+  progress-log command and caveat. Command:
+  `node --test --test-name-pattern=RPP-0295 test/rpp-0295-keep-remote-decision-release-verifier-v5.test.js`.
+  Caveat: local release-verifier support evidence only; release remains gated
+  separately. Validation passed with a Node syntax check, focused RPP-0295
+  coverage 2/2, adjacent RPP-0255/RPP-0275/RPP-0295 keep-remote coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  565/435; final release remains `NO-GO` because this is local merge-invariant
+  support evidence, not production-backed release proof.
 - Already-in-sync decision release-verifier v5 carry-through: the current lane
   now checks `RPP-0294` with focused and generated support evidence for
   decision-only already-in-sync plans. The proof verifies focused create,
