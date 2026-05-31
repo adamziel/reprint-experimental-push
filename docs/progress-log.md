@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 18:12 CEST +02:00.
+- Last update: 2026-05-31 18:14 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0660 manual recovery audit export variant-3 merge ending at
-  `2d4f09`.
+  the RPP-0661 journal table schema migration variant-4 merge ending at
+  `c5fe50`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 685
-  items checked and leaves 315 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 686
+  items checked and leaves 314 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 61 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 62 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Journal table schema migration variant-4 proof: the current lane now checks
+  `RPP-0661` with local recovery support evidence. The proof uses SQLite-backed
+  regression coverage to preserve completed recovery state across journal table
+  schema migration and keeps migration evidence restart-readable. Command:
+  `node --test --test-name-pattern RPP-0661 test/rpp-0661-journal-table-schema-migration-v4.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0661 coverage 1/1,
+  adjacent RPP-0641 migration coverage 1/1, adjacent RPP-0621 SQLite migration
+  coverage 1/1, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 686/314; final release remains `NO-GO` because this is support
+  evidence, not production-backed recovery proof.
 - Manual recovery audit export variant-3 proof: the current lane now checks
   `RPP-0660` with local recovery support evidence. The proof carries the manual
   recovery audit export through the same release verifier recovery gate path and

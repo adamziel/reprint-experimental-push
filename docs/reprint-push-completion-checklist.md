@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 685.
-- Remaining open: 315.
+- Verified complete: 686.
+- Remaining open: 314.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -702,7 +702,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [x] RPP-0658 (Far / recovery) Add generated coverage for process kill mid mutation set, variant 3. Success: retry does not overwrite preserved remote changes.
 - [x] RPP-0659 (Far / recovery) Add generated coverage for missing commit finalization, variant 3. Success: lease owner identity is visible in audit evidence.
 - [x] RPP-0660 (Far / recovery) Add generated coverage for manual recovery audit export, variant 3. Success: release verifier reports the recovery gate as proven on the same path.
-- [ ] RPP-0661 (Far / recovery) Add focused regression coverage for journal table schema migration, variant 4. Success: MySQL or SQLite-backed test proves the recovery state.
+- [x] RPP-0661 (Far / recovery) Add focused regression coverage for journal table schema migration, variant 4. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0662 (Far / recovery) Add focused regression coverage for journal ownership record, variant 4. Success: journal rows are durable after process restart.
 - [ ] RPP-0663 (Far / recovery) Add focused regression coverage for single-writer lease claim, variant 4. Success: retry does not overwrite preserved remote changes.
 - [ ] RPP-0664 (Far / recovery) Add focused regression coverage for stale claim rejection, variant 4. Success: lease owner identity is visible in audit evidence.
