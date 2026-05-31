@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 20:07 CEST +02:00.
+- Last update: 2026-05-31 20:09 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0737 memory ceiling proof variant-2 merge ending at `5c6c7b`.
+  the RPP-0738 timeout budget proof variant-2 merge ending at `46bad9`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 729
-  items checked and leaves 271 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 730
+  items checked and leaves 270 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  37 storage/performance items, 3 production-topology items, 100 generated
+  38 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Timeout budget proof variant-2 proof: the current lane now checks `RPP-0738`
+  with local storage/performance support evidence. The proof interrupts chunk
+  transfer under a documented timeout budget, resumes only exact receipt-backed
+  chunks, uploads the unacknowledged remainder, and blocks missing receipt,
+  duplicate mutation work, over-budget, or premature evidence. Command:
+  `node --test --test-name-pattern RPP-0738 test/rpp-0738-timeout-budget-proof-v2.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0738
+  coverage 2/2, adjacent RPP-0718 coverage 1/1, adjacent RPP-0732 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  730/270; final release remains `NO-GO` because this is support evidence, not
+  production-backed storage receipt proof.
 - Memory ceiling proof variant-2 proof: the current lane now checks `RPP-0737`
   with local storage/performance support evidence. The proof streams planned
   bytes to same-directory temp files inside a bounded memory ceiling, compares
