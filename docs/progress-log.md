@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 20:58 CEST +02:00.
+- Last update: 2026-05-31 21:01 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0753 apply batch sizing variant-3 merge ending at `cd1475`.
+  the RPP-0754 large post table benchmark variant-3 merge ending at `f9580e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 746
-  items checked and leaves 254 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 747
+  items checked and leaves 253 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  54 storage/performance items, 3 production-topology items, 100 generated
+  55 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Large post table benchmark variant-3 proof: the current lane now checks
+  `RPP-0754` with local storage/performance support evidence. The proof carries
+  the RPP-0714 large-site `wp_posts` benchmark forward with 20 ordered primary
+  key batch windows, 10,000 planned row mutations, 10,000 live remote storage
+  preconditions, complete apply verification, documented duration and heap
+  budget gates, and hash/count-only generated coverage evidence. It blocks raw
+  value markers, stale row-window hashes, missing primary-key windows,
+  over-budget evidence, and premature pass status before emitting output.
+  Command:
+  `node --test --test-name-pattern RPP-0754 test/rpp-0754-large-post-table-benchmark-v3.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0754
+  coverage 2/2, adjacent RPP-0734 coverage 2/2, RPP-0714 large post table
+  benchmark coverage 4/4, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 747/253; final release remains `NO-GO` because this is
+  support evidence, not production-backed external durability proof.
 - Apply batch sizing variant-3 proof: the current lane now checks `RPP-0753`
   with local storage/performance support evidence. The proof models apply
   batches as four resumable transfer chunks for thirteen mutations, commits the
