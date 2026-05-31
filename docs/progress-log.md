@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 19:23 CEST +02:00.
+- Last update: 2026-05-31 19:25 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0691 new remote recovery classification variant-5 merge ending at
-  `ff6190`.
+  the RPP-0693 unknown drift classification variant-5 merge ending at
+  `9933e3`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 716
-  items checked and leaves 284 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 717
+  items checked and leaves 283 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 92 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 93 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Unknown drift classification variant-5 proof: the current lane now checks
+  `RPP-0693` with local recovery support evidence. The proof carries preserved
+  remote retry evidence through the release verifier shape, proves unknown-drift
+  retry does not overwrite remote changes, and rejects missing, malformed,
+  stale, or drifted release evidence. Command:
+  `node --test --test-name-pattern RPP-0693 test/rpp-0693-unknown-drift-classification-v5.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0693 coverage 2/2,
+  adjacent RPP-0653 coverage 2/2, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 717/283; final release remains `NO-GO`
+  because this is support evidence, not production-backed recovery proof.
 - New remote recovery classification variant-5 proof: the current lane now
   checks `RPP-0691` with local recovery support evidence. The proof carries a
   SQLite-backed new-remote recovery classification through the release verifier,
