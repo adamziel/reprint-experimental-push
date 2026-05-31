@@ -6,20 +6,43 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:49 CEST +02:00.
+- Last update: 2026-06-01 00:02 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0798 timeout budget proof release-verifier variant-5 merge ending at
-  `befb8a`.
+  the RPP-0556 same-key same-body replay variant-3 merge ending at `7af16e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 790
-  items checked and leaves 210 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 791
+  items checked and leaves 209 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
+  100 plugin-driver boundary items, 90 executor/auth items, 100 recovery items,
   98 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key same-body replay variant-3 proof: the current lane now checks
+  `RPP-0556` with deterministic local generated support evidence. The proof
+  carries the same-key same-canonical-body replay contract forward with
+  hash/count-only public output: same idempotency key plus the same canonical
+  request body returns the committed receipt, starts zero fresh mutation work,
+  applies zero mutations, writes zero duplicate receipt rows, and keeps
+  different-body, missing committed receipt, and stale replay-scope cases
+  fail-closed. The generated profile records 2 generated cases, 2 committed
+  receipt replays, 2 different-body blocks, 2 missing committed receipt blocks,
+  2 stale scope blocks, 0 duplicate mutation work, 0 duplicate receipt rows, 0
+  mutation boundaries opened during replay, 0 public request bodies, 0 public
+  raw values, and 7 local gates.
+  Command:
+  `node --test --test-name-pattern RPP-0556 test/rpp-0556-same-key-same-body-replay-v3.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0556
+  coverage 3/3 on the lane, adjacent RPP-0536 coverage 1/1, adjacent RPP-0557
+  coverage 3/3, adjacent RPP-0615 coverage 2/2, adjacent RPP-0654 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  791/209; final release remains `NO-GO` because this is support evidence, not
+  checked production endpoint replay proof, production storage receipts,
+  production row batch executor evidence, production atomic group commit
+  evidence, live production service evidence, production throughput, release
+  approval, or a production release gate.
 - Timeout budget proof release-verifier variant-5 proof: the current lane now
   checks `RPP-0798` with deterministic local release-verifier support evidence.
   The proof carries the RPP-0778/RPP-0758/RPP-0738/RPP-0718 timeout-budget
