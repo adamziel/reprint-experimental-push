@@ -6,20 +6,45 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:42 CEST +02:00.
+- Last update: 2026-05-31 23:43 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0795 large media library benchmark release-verifier variant-5 merge
-  ending at `9e83cb`.
+  the RPP-0796 large plugin file benchmark release-verifier variant-5 merge
+  ending at `7d3cc8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 786
-  items checked and leaves 214 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 787
+  items checked and leaves 213 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  94 storage/performance items, 3 production-topology items, 100 generated
+  95 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Large plugin file benchmark release-verifier variant-5 proof: the current
+  lane now checks `RPP-0796` with deterministic local release-verifier support
+  evidence. The proof carries the RPP-0776/RPP-0756/RPP-0716 large plugin file
+  benchmark lineage into a release-verifier envelope that accepts output only
+  after the benchmark command reports runtime metadata, resource counters, and
+  pass/fail gate statuses. The unit shape records 4 plugin files, 229376
+  plugin-file bytes, 8 chunk receipts, 8 guarded writes, 4 staged writes, 4
+  committed writes, no live-visible bytes before commit, all bytes visible after
+  commit, fsync-backed fast-path lane updates only after gates pass, 10 passing
+  benchmark gates in the support run, an impossible-heap fail-gate projection
+  where only `runtime-resource-budget` fails, and 8 release-verifier gates.
+  Negative coverage blocks missing runtime reporting, missing resources,
+  missing pass/fail gate reporting, non-pass/fail gate statuses, failed runtime
+  resource gates, stale built-on metadata, raw-value leakage, production `GO`
+  claims, and premature passed status without recorded gates.
+  Command:
+  `node --test --test-name-pattern RPP-0796 test/rpp-0796-large-plugin-file-benchmark-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0796
+  coverage 3/3, adjacent RPP-0776 coverage 2/2, adjacent RPP-0756 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  787/213; final release remains `NO-GO` because this is support evidence, not
+  production storage receipts, production row batch executor evidence,
+  production atomic group commit evidence, live production service evidence,
+  production throughput, release approval, or a production release gate.
 - Large media library benchmark release-verifier variant-5 proof: the current
   lane now checks `RPP-0795` with deterministic local release-verifier support
   evidence. The proof carries the RPP-0775/RPP-0755/RPP-0715 large media
