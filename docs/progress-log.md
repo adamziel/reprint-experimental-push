@@ -6,20 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:22 CEST +02:00.
+- Last update: 2026-05-31 11:24 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0296 blocked-plan apply-refusal release-verifier v5 merge ending at
-  `0eb0d38ed`.
+  the RPP-0297 conflict-plan apply-refusal release-verifier v5 merge ending at
+  `fa01f33e7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 566
-  items checked and leaves 434 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 567
+  items checked and leaves 433 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 99 generated
-  harness items, and 96 merge-invariant items. No release-ops items are checked
+  harness items, and 97 merge-invariant items. No release-ops items are checked
   yet.
+- Conflict plan apply-refusal release-verifier v5 carry-through: the current
+  lane now checks `RPP-0297` with focused and generated support evidence that
+  conflict plans refuse before mutation and that forged ready-plan paths fail
+  closed. The proof covers an independent safe file mutation beside a remote-only
+  keep-remote decision and divergent `wp_posts` row conflict, rejects retained
+  conflict evidence with `READY_PLAN_HAS_CONFLICTS`, rejects forged conflicted
+  row mutations with `MUTATION_REMOTE_CHANGE_NOT_UNCHANGED`, rejects stale safe
+  mutation replay with `PRECONDITION_FAILED`, and scans all generated conflict
+  harness cases with hash-only evidence. Command:
+  `node --test test/rpp-0297-conflict-plan-apply-refusal-release-verifier-v5.test.js`.
+  Caveat: local release-verifier support evidence only; release remains gated
+  separately. Validation passed with Node syntax checks, focused RPP-0297
+  coverage 1/1, adjacent RPP-0257/RPP-0277 conflict-plan refusal coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  567/433; final release remains `NO-GO` because this is local merge-invariant
+  support evidence, not production-backed release proof.
 - Blocked plan apply-refusal release-verifier v5 carry-through: the current lane
   now checks `RPP-0296` with focused and generated support evidence that blocked
   plans refuse with `PLAN_NOT_READY` before mutation callbacks, durable journal
