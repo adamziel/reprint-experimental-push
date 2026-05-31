@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 21:46 CEST +02:00.
+- Last update: 2026-05-31 21:48 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0768 chunk resume after interruption variant-4 merge ending at
-  `bbbd7a`.
+  the RPP-0769 chunk replay idempotency variant-4 merge ending at `560d39`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 760
-  items checked and leaves 240 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 761
+  items checked and leaves 239 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  68 storage/performance items, 3 production-topology items, 100 generated
+  69 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Chunk replay idempotency variant-4 proof: the current lane now checks
+  `RPP-0769` with deterministic local storage/performance support evidence. The
+  proof carries forward the RPP-0749/RPP-0729/RPP-0709 replay lineage and runs
+  the guardedLarge replay benchmark over a 402653184 byte file split into 48
+  chunks. It records 96 replay attempts, 96 existing receipt returns, 48 exact
+  receipt matches, 0 duplicate receipt records, 0 bytes rewritten during replay,
+  0 duplicate mutation work, and a guardedLarge runtime/heap budget result
+  inside the documented 120000 ms and 536870912 byte ceilings. Command:
+  `node --test --test-name-pattern RPP-0769 test/rpp-0769-chunk-replay-idempotency-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0769
+  coverage 2/2, adjacent RPP-0749 coverage 2/2, adjacent RPP-0729 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  761/239; final release remains `NO-GO` because this is support evidence, not
+  production-backed storage receipt, row batch executor, or atomic commit proof.
 - Chunk resume after interruption variant-4 proof: the current lane now checks
   `RPP-0768` with deterministic local storage/performance support evidence. The
   proof carries forward the RPP-0738 timeout-budget variant-2 lane and generates
