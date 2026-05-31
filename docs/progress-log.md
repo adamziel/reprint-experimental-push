@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 18:26 CEST +02:00.
+- Last update: 2026-05-31 18:28 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0668 restart-readable staged state variant-4 merge ending at
-  `b0e2ab`.
+  the RPP-0669 restart-readable committed state variant-4 merge ending at
+  `202247`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 693
-  items checked and leaves 307 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 694
+  items checked and leaves 306 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 69 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 70 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Restart-readable committed state variant-4 proof: the current lane now checks
+  `RPP-0669` with local recovery support evidence. The proof verifies
+  file-backed and SQLite-mirrored committed rows survive restart, expose
+  hash-bound lease owner identity after the `journal-completed` row, and fail
+  closed for stale or invalid restart state. Command:
+  `node --test --test-name-pattern RPP-0669 test/rpp-0669-restart-readable-committed-state-v4.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0669 coverage 3/3,
+  adjacent RPP-0649 committed-state coverage 3/3, adjacent recovery-journal
+  committed-state/RPP-0629 coverage 2/2, scoped artifact redaction scan, and
+  diff whitespace checks. Counts are now 694/306; final release remains
+  `NO-GO` because this is support evidence, not production-backed recovery
+  proof.
 - Restart-readable staged state variant-4 proof: the current lane now checks
   `RPP-0668` with local recovery support evidence. The proof verifies
   production-shaped staged rows survive a process boundary, same-claim retry
