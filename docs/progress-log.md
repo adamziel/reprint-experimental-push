@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 20:39 CEST +02:00.
+- Last update: 2026-05-31 20:42 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0751 remote hash pagination variant-3 merge ending at `3920ce`.
+  the RPP-0752 dry-run batch sizing variant-3 merge ending at `2870f1`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 743
-  items checked and leaves 257 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 744
+  items checked and leaves 256 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  51 storage/performance items, 3 production-topology items, 100 generated
+  52 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Dry-run batch sizing variant-3 proof: the current lane now checks `RPP-0752`
+  with local storage/performance support evidence. The proof executes a
+  42-resource dry-run fixture, verifies six bounded batch windows, confirms
+  dry-run receipts remain read-only and do not authorize apply, then rejects
+  stale storage before mutation-capable work starts while preserving the
+  pre-decision storage hash. Command:
+  `node --test --test-name-pattern RPP-0752 test/rpp-0752-dry-run-batch-sizing-v3.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0752
+  coverage 2/2, adjacent RPP-0732 coverage 2/2, dry-run batch sizing benchmark
+  coverage 5/5, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 744/256; final release remains `NO-GO` because this is support
+  evidence, not production-backed external durability proof.
 - Remote hash pagination variant-3 proof: the current lane now checks
   `RPP-0751` with local storage/performance support evidence. The proof executes
   the remote hash pagination benchmark command, verifies runtime metadata,
