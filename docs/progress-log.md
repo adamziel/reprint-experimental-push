@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 15:31 CEST +02:00.
+- Last update: 2026-05-31 15:36 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0549 session source URL binding variant-3 merge ending at `021da90`.
+  the RPP-0550 session user identity binding variant-3 merge ending at `adf364`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 632
-  items checked and leaves 368 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 633
+  items checked and leaves 367 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 48 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 49 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Session user identity binding variant-3 proof: the current lane now checks
+  `RPP-0550` with local executor-auth support evidence. The proof verifies that
+  `verify:release` carries one `authSessionUserIdentity` route-evidence summary
+  block for the same authenticated user identity bound to the push session and
+  dry-run receipt, while generated drift and missing-hash cases stay blocked
+  before release movement. Command:
+  `node --test --test-name-pattern RPP-0550 test/rpp-0550-session-user-identity-binding-v3.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0550
+  coverage 3/3, adjacent RPP-0530 coverage 4/4, base session-user identity
+  coverage 3/3, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 633/367; final release remains `NO-GO` because this is support
+  evidence, not production-backed session user identity proof.
 - Session source URL binding variant-3 proof: the current lane now checks
   `RPP-0549` with local executor-auth support evidence. The proof verifies the
   short-lived push session and dry-run receipt source binding is checked before
