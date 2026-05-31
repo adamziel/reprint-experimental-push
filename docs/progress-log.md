@@ -6,20 +6,44 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:09 CEST +02:00.
+- Last update: 2026-05-31 23:13 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0786 large upload chunk manifest release-verifier variant-5 merge
-  ending at `7f2ab0`.
+  the RPP-0787 chunk hash verification release-verifier variant-5 merge ending
+  at `e118d0`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 778
-  items checked and leaves 222 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 779
+  items checked and leaves 221 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  86 storage/performance items, 3 production-topology items, 100 generated
+  87 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Chunk hash verification release-verifier variant-5 proof: the current lane
+  now checks `RPP-0787` with deterministic local release-verifier support
+  evidence. The proof carries the RPP-0767/RPP-0747 chunk-hash verification
+  lineage through a guarded executor unit profile and release-verifier-shaped
+  benchmark command. The support profile records a 1048576-byte file split into
+  4 chunks of 262144 bytes, 4 verified chunks, 1048576 verified bytes, 4
+  generated stale-storage cases, 4 generated hash-mismatch cases, 4 stale
+  storage rejections, 4 hash-mismatch rejections, 0 unsafe writes applied, 0
+  bytes written by rejected writes, 0 mutation work on rejected writes, 12
+  release-verifier gates, support-only carry-through, final release status
+  `NO-GO`, and integration recommendation `NO-GO`. The resolver blocks missing
+  command reports, stale writes, hash mismatches, incomplete generated coverage,
+  mutation work on rejected writes, runtime budget failure, missing recorded
+  correctness gates, and missing release-verifier carry-through claims.
+  Command:
+  `node --test --test-name-pattern RPP-0787 test/rpp-0787-chunk-hash-verification-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0787
+  coverage 3/3, adjacent RPP-0767 coverage 3/3, adjacent RPP-0747 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  779/221; final release remains `NO-GO` because this is support evidence, not
+  production storage durability, production row batch execution, production
+  atomic group commit behavior, a live production service, release approval, or
+  final release readiness.
 - Large upload chunk manifest release-verifier variant-5 proof: the current
   lane now checks `RPP-0786` with deterministic local release-verifier support
   evidence. The proof carries the RPP-0766/RPP-0746 large-upload chunk manifest
