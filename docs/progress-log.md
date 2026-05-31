@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 17:43 CEST +02:00.
+- Last update: 2026-05-31 17:46 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0600 production audit event schema variant-5 merge ending at
-  `5cd17f`.
+  the RPP-0649 restart-readable committed state variant-3 merge ending at
+  `6d6df7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 674
-  items checked and leaves 326 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 675
+  items checked and leaves 325 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 50 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 51 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Restart-readable committed state variant-3 proof: the current lane now checks
+  `RPP-0649` with local recovery support evidence. The proof shows file-backed
+  committed recovery rows survive restart-style readback, expose lease owner
+  identity in hash-only audit evidence, mirror the committed state through
+  SQLite readback, and fail closed for stale or corrupt committed state. Command:
+  `node --test --test-name-pattern RPP-0649 test/rpp-0649-restart-readable-committed-state-v3.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0649 coverage 3/3,
+  adjacent restart-readable open/staged coverage 6/6, scoped artifact redaction
+  scan, and diff whitespace checks. Counts are now 675/325; final release
+  remains `NO-GO` because this is support evidence, not production-backed
+  durable journal proof.
 - Production audit event schema variant-5 proof: the current lane now checks
   `RPP-0600` with local executor-auth support evidence. The proof carries
   exactly one hash-only production audit event schema route-evidence summary
