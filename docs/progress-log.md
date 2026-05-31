@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 22:01 CEST +02:00.
+- Last update: 2026-05-31 22:04 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0770 parallel snapshot hashing variant-4 merge ending at `c26dee`.
+  the RPP-0772 dry-run batch sizing variant-4 merge ending at `d4fed4`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 763
-  items checked and leaves 237 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 764
+  items checked and leaves 236 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  71 storage/performance items, 3 production-topology items, 100 generated
+  72 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Dry-run batch sizing variant-4 proof: the current lane now checks `RPP-0772`
+  with deterministic local storage/performance support evidence. The proof
+  carries forward the RPP-0752/RPP-0732/RPP-0712 dry-run batch-sizing lineage
+  and exercises a 50-resource deterministic dry-run fixture split into 6 batch
+  windows under limits of 9 resources, 28672 estimated bytes, and 9
+  preconditions per batch. It records 6 guarded write attempts, 6 stale-at-write
+  rejections, 6 preserved post-decision storage-state hashes, 0 live matches to
+  dry-run preconditions, 0 mutation-capable work starts, 0 mutations applied,
+  and 0 dry-run receipts authorizing mutation. Command:
+  `node --test --test-name-pattern RPP-0772 test/rpp-0772-dry-run-batch-sizing-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0772
+  coverage 2/2, adjacent RPP-0752 coverage 2/2, adjacent RPP-0732 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  764/236; final release remains `NO-GO` because this is support evidence, not
+  production-backed dry-run execution, storage receipt, row batch executor, or
+  atomic commit proof.
 - Parallel snapshot hashing variant-4 proof: the current lane now checks
   `RPP-0770` with deterministic local storage/performance support evidence. The
   proof carries forward the RPP-0750/RPP-0730 bounded hashing lineage and
