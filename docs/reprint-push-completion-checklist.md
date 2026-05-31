@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 612.
-- Remaining open: 388.
+- Verified complete: 613.
+- Remaining open: 387.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -376,7 +376,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [x] RPP-0347 (Mid / graph-identity) Add generated coverage for comment user reference, variant 3. Success: unsupported target fails closed with hash-only evidence.
 - [x] RPP-0348 (Mid / graph-identity) Add generated coverage for commentmeta comment reference, variant 3. Success: generated harness includes ready and stale cases.
 - [x] RPP-0349 (Mid / graph-identity) Add generated coverage for category term taxonomy reference, variant 3. Success: local production verifier carries the target through apply.
-- [ ] RPP-0350 (Mid / graph-identity) Add generated coverage for post_tag taxonomy reference, variant 3. Success: docs state remaining unmapped WordPress surfaces.
+- [x] RPP-0350 (Mid / graph-identity) Add generated coverage for post_tag taxonomy reference, variant 3. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0351 (Mid / graph-identity) Add generated coverage for custom taxonomy fail-closed reference, variant 3. Success: mapper rewrites or proves stable identity for the target.
 - [ ] RPP-0352 (Mid / graph-identity) Add generated coverage for termmeta term reference, variant 3. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0353 (Mid / graph-identity) Add generated coverage for term relationship object reference, variant 3. Success: generated harness includes ready and stale cases.
