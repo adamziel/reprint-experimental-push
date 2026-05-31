@@ -557,6 +557,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'comment-post-reference-variant3',
     tag: 'comment-post-reference-v3',
   },
+  commentParentThreadReferenceVariant3: {
+    family: 'comment-parent-thread-reference-variant3',
+    tag: 'comment-parent-thread-reference-v3',
+  },
   commentUserGraph: {
     family: 'comment-user-graph-ready',
     tag: 'comment-user-graph',
@@ -2241,6 +2245,15 @@ function buildGeneratedCase({ index, tier, rng }) {
     tags,
   });
 
+  addCommentParentThreadReferenceVariant3Target({
+    family,
+    base,
+    local,
+    remote,
+    allocator,
+    tags,
+  });
+
   addPostAuthorGraphVariant3Target({
     family,
     base,
@@ -2474,6 +2487,28 @@ function addCommentPostReferenceVariant3Target({
 
   addCommentPostReferenceVariant3(base, local, remote, allocator, tags, { staleTarget });
   tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
+}
+
+function addCommentParentThreadReferenceVariant3Target({
+  family,
+  base,
+  local,
+  remote,
+  allocator,
+  tags,
+}) {
+  const variantByFamily = {
+    'same-plan-comment-graph': 'stable',
+    'comment-user-graph-ready': 'identity-map',
+    'stale-post-author-graph': 'stale',
+  };
+  const variant = variantByFamily[family];
+  if (!variant) {
+    return;
+  }
+
+  addCommentParentThreadReferenceVariant3(base, local, remote, allocator, tags, { variant });
+  tags.add(variant === 'stale' ? 'expected-blocked' : 'ready-candidate');
 }
 
 function addPostAuthorGraphVariant3Target({
@@ -5322,6 +5357,100 @@ function addCommentPostReferenceVariant3(base, local, remote, allocator, tags, {
     tags.add('comment-post-reference-v3-stale-target');
     tags.add('comment-post-reference-v3-non-ready');
   }
+}
+
+function addCommentParentThreadReferenceVariant3(base, local, remote, allocator, tags, { variant }) {
+  const sourceParentId = allocator.graphId();
+  const childId = allocator.graphId();
+  const sourceParentRowId = `comment_ID:${sourceParentId}`;
+  const childRowId = `comment_ID:${childId}`;
+  const parentContent = `RPP-0346 generated comment_parent ${variant} parent private ${sourceParentId}`;
+  const childContent = `RPP-0346 generated comment_parent ${variant} child private ${childId}`;
+
+  if (variant === 'stable') {
+    const parent = makeComment(sourceParentId, {
+      comment_post_ID: 1,
+      comment_parent: 0,
+      user_id: 0,
+      comment_content: parentContent,
+    });
+
+    setRow(base, 'wp_comments', sourceParentRowId, parent);
+    setRow(local, 'wp_comments', sourceParentRowId, parent);
+    setRow(remote, 'wp_comments', sourceParentRowId, parent);
+    setRow(local, 'wp_comments', childRowId, makeComment(childId, {
+      comment_post_ID: 1,
+      comment_parent: sourceParentId,
+      user_id: 0,
+      comment_content: childContent,
+    }));
+
+    tags.add('comment-parent-thread-reference-v3-stable');
+    tags.add('comment-parent-thread-reference-v3-stable-ready');
+  } else if (variant === 'identity-map') {
+    const targetParentId = allocator.graphId();
+    const targetParentRowId = `comment_ID:${targetParentId}`;
+    const sourceParent = makeComment(sourceParentId, {
+      comment_post_ID: 1,
+      comment_parent: 0,
+      user_id: 0,
+      comment_content: parentContent,
+    });
+    const targetParent = makeComment(targetParentId, {
+      comment_post_ID: 1,
+      comment_parent: 0,
+      user_id: 0,
+      comment_content: parentContent,
+    });
+
+    setRow(local, 'wp_comments', sourceParentRowId, sourceParent);
+    setRow(remote, 'wp_comments', targetParentRowId, targetParent);
+    addWordPressGraphIdentityMapRow(local, {
+      table: 'wp_comments',
+      localId: sourceParentRowId,
+      remoteId: targetParentRowId,
+    });
+    setRow(local, 'wp_comments', childRowId, makeComment(childId, {
+      comment_post_ID: 1,
+      comment_parent: sourceParentId,
+      user_id: 0,
+      comment_content: childContent,
+    }));
+
+    tags.add('comment-parent-thread-reference-v3-identity-map');
+    tags.add('comment-parent-thread-reference-v3-identity-map-ready');
+  } else {
+    assert.equal(variant, 'stale');
+    const parent = makeComment(sourceParentId, {
+      comment_post_ID: 1,
+      comment_parent: 0,
+      user_id: 0,
+      comment_content: parentContent,
+    });
+
+    setRow(base, 'wp_comments', sourceParentRowId, parent);
+    setRow(local, 'wp_comments', sourceParentRowId, parent);
+    setRow(remote, 'wp_comments', sourceParentRowId, {
+      ...parent,
+      comment_content: `RPP-0346 generated comment_parent stale remote private ${sourceParentId}`,
+    });
+    setRow(local, 'wp_comments', childRowId, makeComment(childId, {
+      comment_post_ID: 1,
+      comment_parent: sourceParentId,
+      user_id: 0,
+      comment_content: childContent,
+    }));
+
+    tags.add('comment-parent-thread-reference-v3-stale');
+    tags.add('comment-parent-thread-reference-v3-stale-target');
+    tags.add('comment-parent-thread-reference-v3-non-ready');
+  }
+
+  tags.add('comment-parent-thread-reference-v3');
+  tags.add('comment-parent-thread-reference-v3-hash-only');
+  tags.add('comment-parent-graph');
+  tags.add('comment-graph');
+  tags.add('wp-comments-create');
 }
 
 function addWordPressGraphIdentityMapRow(site, entry) {

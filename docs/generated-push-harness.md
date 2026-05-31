@@ -94,7 +94,9 @@ The default generated run covers:
   blockers, `wp_postmeta.post_id` variant-3 cases with ready identity-map row
   rewrites and stale post drift blockers, `wp_comments.comment_post_ID`
   variant-3 cases with ready identity-map rewrites and stale post drift
-  blockers, `wp_comments.user_id` author cases with
+  blockers, `wp_comments.comment_parent` thread reference variant-3 cases with
+  stable parent identity proof, ready identity-map rewrites, and stale parent
+  drift blockers, `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
   featured-image attachment references with ready postmeta/attachment closure
   and stale attachment blockers,
@@ -938,6 +940,20 @@ proven remote ID, and reject stale replay before mutation. Stale cases drift the
 base post remotely and require the dependent comment row to fail closed as
 `stale-wordpress-graph-identity` with hash-only target evidence. This remains
 local generated support evidence only; final release remains `NO-GO`.
+
+RPP-0346 adds `commentParentThreadReferenceVariant3` coverage for generated
+`wp_comments.comment_parent` thread references. The deterministic roster emits
+30 support-only variant-3 target cases: 10 stable parent identity proofs, 10
+ready comment identity-map rewrite cases, and 10 stale parent drift cases, with
+three cases in every tier. Stable cases keep the parent comment identical
+across base, local, and remote, plan only the child reply, and carry no graph
+rewrite. Ready identity-map cases map a local parent comment row to an
+equivalent remote parent comment row, preserve that remote parent, rewrite the
+child reply's `comment_parent` to the proven remote ID, and reject stale replay
+before mutation. Stale cases drift the base parent remotely and require the
+child reply to fail closed as `stale-wordpress-graph-identity` with hash-only
+target evidence. This remains local generated support evidence only; final
+release remains `NO-GO`.
 
 The remaining unmapped WordPress graph surfaces continue to fail closed or stay
 intentionally unsupported until an explicit owner/driver, parser-aware rewrite,
