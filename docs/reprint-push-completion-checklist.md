@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 768.
-- Remaining open: 232.
+- Verified complete: 769.
+- Remaining open: 231.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -822,7 +822,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0773 (Far / storage-performance) Add focused regression coverage for apply batch sizing, variant 4. Success: chunk transfer resumes without duplicate mutation work.
 - [x] RPP-0774 (Far / storage-performance) Add focused regression coverage for large post table benchmark, variant 4. Success: large-site run finishes inside documented budgets.
 - [x] RPP-0775 (Far / storage-performance) Add focused regression coverage for large media library benchmark, variant 4. Success: fast-path lane updates only after correctness gates hold.
-- [ ] RPP-0776 (Far / storage-performance) Add focused regression coverage for large plugin file benchmark, variant 4. Success: benchmark command reports runtime, resources, and pass/fail gates.
+- [x] RPP-0776 (Far / storage-performance) Add focused regression coverage for large plugin file benchmark, variant 4. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [x] RPP-0777 (Far / storage-performance) Add focused regression coverage for memory ceiling proof, variant 4. Success: guarded writes reject stale storage state.
 - [ ] RPP-0778 (Far / storage-performance) Add focused regression coverage for timeout budget proof, variant 4. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0779 (Far / storage-performance) Add focused regression coverage for progress reporting for long pushes, variant 4. Success: large-site run finishes inside documented budgets.
