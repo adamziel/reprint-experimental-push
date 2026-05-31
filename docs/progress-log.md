@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:19 CEST +02:00.
+- Last update: 2026-05-31 13:22 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0645 claim expiry policy variant-3 merge ending at `c641848`.
+  the RPP-0449 plugin activation dependency validator variant-3 merge ending at
+  `44c52ae`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 592
-  items checked and leaves 408 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 593
+  items checked and leaves 407 open.
 - Checked slices: 100 release-gate foundation items, 86 graph identity items,
-  91 plugin-driver boundary items, 38 executor/auth items, 46 recovery items,
+  92 plugin-driver boundary items, 38 executor/auth items, 46 recovery items,
   28 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin activation dependency validator variant-3 proof: the current lane now
+  checks `RPP-0449` with local plugin-driver support evidence. The proof carries
+  explicit hash-only dependency metadata through local apply, refuses missing or
+  stale dependency evidence before mutation while preserving plugin-owned remote
+  data, and rejects invalid or forged activation dependency evidence
+  fail-closed. Command:
+  `node --test test/rpp-0449-plugin-activation-dependency-validator-v3.test.js`.
+  Caveat: local plugin-driver support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0449
+  coverage 3/3, adjacent RPP-0469/RPP-0489 activation dependency coverage 3/3,
+  adjacent RPP-0450/RPP-0470/RPP-0490 update dependency coverage 5/5, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 593/407;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed plugin-driver proof.
 - Claim expiry policy variant-3 proof: the current lane now checks `RPP-0645`
   with local recovery support evidence. The proof keeps a non-expired active
   claim fenced, advances one expired claim exactly once after restart, rejects a
