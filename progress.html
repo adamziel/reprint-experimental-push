@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T13:26:00+02:00">Last updated: May 31, 2026, 13:26 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T13:29:00+02:00">Last updated: May 31, 2026, 13:29 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>594</strong>
+        <strong>595</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>406</strong>
+        <strong>405</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -393,7 +393,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production chunking not checked">
-            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, MySQL and SQLite CAS write guard variant-2 support proof, filesystem compare-and-rename write variant-2 support proof, filesystem fsync evidence variant-2 support proof, transaction boundary policy variant-2 support proof, a large post table planner/apply benchmark, a large media library storage/row-precondition benchmark, a large plugin file atomic-group benchmark, a filesystem memory-ceiling proof, timeout-budget resume proof, and long-push progress reporting, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
+            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency and variant-2 guardedLarge replay proof, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, MySQL and SQLite CAS write guard variant-2 support proof, filesystem compare-and-rename write variant-2 support proof, filesystem fsync evidence variant-2 support proof, transaction boundary policy variant-2 support proof, a large post table planner/apply benchmark, a large media library storage/row-precondition benchmark, a large plugin file atomic-group benchmark, a filesystem memory-ceiling proof, timeout-budget resume proof, and long-push progress reporting, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Release CI not checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0539</span>
+        <span>RPP-0729</span>
       </div>
-      <p>The latest refresh checks RPP-0539 with credential rotation behavior variant-2 executor/auth evidence. The proof rejects old credentials, binds the rotated credential to the authenticated session and dry-run receipt, revalidates the live source before mutation, stops stale live-source evidence as PRECONDITION_FAILED, and records only hash evidence for sensitive auth/session/source values. Counts are now 594/406; final release remains NO-GO because this is local mocked HTTP support evidence, not checked production endpoint proof.</p>
+      <p>The latest refresh checks RPP-0729 with chunk replay idempotency variant-2 storage/performance evidence. The proof shows guardedLarge replay attempts return existing receipts, create zero duplicate receipt records, write zero duplicate bytes, do zero duplicate mutation work, stay within documented budgets, and fail stale or mismatched replay attempts closed with hash-only evidence. Counts are now 595/405; final release remains NO-GO because this is local benchmark support evidence, not production storage receipts or release-verifier carry-through.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0729 focused: 2/2</span>
+        <span class="tag">chunk replay adjacent: 4/4</span>
+        <span class="tag">guarded/perf: 19/19</span>
+        <span class="tag">benchmark: ok</span>
+        <span class="tag">duplicate work: 0</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0539 focused: 2/2</span>
         <span class="tag">RPP-0519 adjacent: 2/2</span>
         <span class="tag">auth subset: 6/6</span>
