@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:18 CEST +02:00.
+- Last update: 2026-05-31 11:22 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0295 keep-remote release-verifier v5 merge ending at `4a8320615`.
+  the RPP-0296 blocked-plan apply-refusal release-verifier v5 merge ending at
+  `0eb0d38ed`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 565
-  items checked and leaves 435 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 566
+  items checked and leaves 434 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 99 generated
-  harness items, and 95 merge-invariant items. No release-ops items are checked
+  harness items, and 96 merge-invariant items. No release-ops items are checked
   yet.
+- Blocked plan apply-refusal release-verifier v5 carry-through: the current lane
+  now checks `RPP-0296` with focused and generated support evidence that blocked
+  plans refuse with `PLAN_NOT_READY` before mutation callbacks, durable journal
+  writes, reported applied mutations, or remote snapshot changes. The proof
+  covers direct `active_plugins` mutation refusal, unsupported plugin-owned data
+  refusal, atomic blocker propagation, and all generated blocked harness cases,
+  while keeping planner and refusal evidence hash-only. Command:
+  `node --test test/rpp-0296-blocked-plan-apply-refusal-release-verifier-v5.test.js`.
+  Caveat: local release-verifier support evidence only; release remains gated
+  separately. Validation passed with Node syntax checks, focused RPP-0296
+  coverage 1/1, adjacent RPP-0236/RPP-0256/RPP-0276 blocked-plan refusal
+  coverage 6/6, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 566/434; final release remains `NO-GO` because this is local
+  merge-invariant support evidence, not production-backed release proof.
 - Keep-remote decision release-verifier v5 carry-through: the current lane now
   checks `RPP-0295` with focused and generated support evidence for decision-only
   keep-remote plans. The proof verifies focused create, update, and delete
