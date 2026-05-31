@@ -6,20 +6,41 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 22:57 CEST +02:00.
+- Last update: 2026-05-31 23:00 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0784 filesystem compare-and-rename release-verifier variant-5 merge
-  ending at `92d99b`.
+  the RPP-0783 transaction boundary release-verifier variant-5 merge ending at
+  `9c34e4`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 775
-  items checked and leaves 225 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 776
+  items checked and leaves 224 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  83 storage/performance items, 3 production-topology items, 100 generated
+  84 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Transaction boundary release-verifier variant-5 proof: the current lane now
+  checks `RPP-0783` with deterministic local release-verifier support evidence.
+  The proof carries the RPP-0763/RPP-0743 transaction-boundary lineage into a
+  guarded executor unit profile with runtime metadata, process resources,
+  rollout gate statuses, receipt-only resume behavior, and zero duplicate
+  mutation work before release-verifier output is accepted. The local profile
+  records 1048576 file bytes, 262144-byte chunks, 4 durable local chunk
+  receipts, a finalized staging record, 4 chunks skipped by receipt on resume,
+  0 chunks uploaded on resume, 0 duplicate chunk bytes, 0 duplicate mutation
+  work, generated resume cases for 2 through 5 chunks, 14 total generated
+  chunks skipped by receipt, 4 duplicate-resume probes blocked, 4
+  missing-receipt probes blocked, 9 rollout gates passed, 3 production gates
+  blocked, and 0 failed rollout gates. Command:
+  `node --test --test-name-pattern RPP-0783 test/rpp-0783-transaction-boundary-policy-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0783
+  coverage 2/2, adjacent RPP-0763 coverage 2/2, adjacent RPP-0743 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  776/224; final release remains `NO-GO` because this is support evidence, not
+  production-backed storage receipts, row batch executor evidence, atomic group
+  commit evidence, live production service evidence, or release approval.
 - Filesystem compare-and-rename release-verifier variant-5 proof: the current
   lane now checks `RPP-0784` with deterministic local release-verifier support
   evidence. The proof carries the RPP-0764/RPP-0744 filesystem
