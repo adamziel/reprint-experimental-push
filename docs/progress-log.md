@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:08 CEST +02:00.
+- Last update: 2026-05-31 11:12 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0293 localHash release-verifier v5 merge ending at `36aa1b4c5`.
+  the RPP-0199 remote-only preservation release-verifier v5 merge ending at
+  `8c017d171`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 562
-  items checked and leaves 438 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 563
+  items checked and leaves 437 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 98 generated
+  23 storage/performance items, 3 production-topology items, 99 generated
   harness items, and 93 merge-invariant items. No release-ops items are checked
   yet.
+- Remote-only preservation release-verifier v5 generated proof: the current lane
+  now checks `RPP-0199` with deterministic generated-harness support evidence
+  for remote-only preservation under stale replay. The proof adds the
+  `remoteOnlyPreservationReleaseVerifierVariant5` target, verifies remote-only
+  rows stay mutation-free and precondition-free, proves stale replay fails
+  before mutation, and keeps release-verifier carry-through evidence hash-only.
+  Command:
+  `node --test --test-name-pattern=RPP-0199 test/rpp-0199-remote-only-preservation-release-verifier-v5.test.js test/generated-push-harness.test.js`.
+  Caveat: deterministic local Node generated-fixture evidence only; release
+  remains gated by broader integration evidence. Validation passed with Node
+  syntax checks, focused RPP-0199 coverage 2/2, adjacent
+  RPP-0119/RPP-0139/RPP-0159/RPP-0199 remote-only coverage 5/5, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 563/437; final
+  release remains `NO-GO` because this is local generated-harness support
+  evidence, not production-backed release proof.
 - Local hash correctness release-verifier v5 carry-through: the current lane now
   checks `RPP-0293` with focused release-verifier support evidence for
   hash-only local snapshot binding. The proof covers ready create/update/delete
