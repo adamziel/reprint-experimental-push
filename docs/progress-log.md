@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 01:33 CEST +02:00.
+- Last update: 2026-06-01 01:35 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0828 classic theme files proof merge ending at `8c1b7c621`.
+  the RPP-0830 multisite subdomain topology proof merge ending at `e7e50063d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 817
-  items checked and leaves 183 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 818
+  items checked and leaves 182 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 17 production-topology items, 100 generated
+  100 storage/performance items, 18 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Multisite subdomain topology variant-2 candidate-scope proof: the current lane
+  now checks `RPP-0830` with deterministic multisite subdomain support evidence.
+  The proof records source/local/changed host roles, network and site counts,
+  network and site-scoped table surfaces, plugin/theme surfaces, import/export
+  blockers, and release-ready gaps.
+  Command:
+  `node --test --test-name-pattern RPP-0830 test/rpp-0830-multisite-subdomain-topology-v2.test.js`.
+  Caveat: candidate-scope support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0830
+  coverage 3/3, scoped artifact redaction scan with four allowed hash-evidence
+  occurrences, and diff whitespace checks. Counts are now 818/182; final release
+  remains `NO-GO` because this is support evidence, not production-backed
+  multisite subdomain import/export proof, production credentials, route
+  receipts, durable journal evidence, live mutation proof, throughput, release
+  approval, or a production release gate.
 - Classic theme files variant-2 URL identity proof: the current lane now checks
   `RPP-0828` with deterministic source/local/changed URL identity and classic
   theme file-scope evidence. The proof captures role URL identities, rejects
