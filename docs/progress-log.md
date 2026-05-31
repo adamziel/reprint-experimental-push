@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 12:44 CEST +02:00.
+- Last update: 2026-05-31 12:51 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0724 filesystem compare-and-rename write variant-2 merge ending at
-  `2917a58f`.
+  the RPP-0344 postmeta post_id generated graph variant-3 merge ending at
+  `2fef0f15`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 584
-  items checked and leaves 416 open.
-- Checked slices: 100 release-gate foundation items, 84 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 585
+  items checked and leaves 415 open.
+- Checked slices: 100 release-gate foundation items, 85 graph identity items,
   90 plugin-driver boundary items, 36 executor/auth items, 44 recovery items,
   27 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Generated postmeta post_id reference variant-3 coverage: the current lane now
+  checks `RPP-0344` with generated-harness graph identity evidence. The new
+  target emits 20 deterministic support-only cases across tiers 0 through 9:
+  10 ready cases rewrite `wp_postmeta.post_id` through explicit post identity
+  map evidence and 10 stale cases fail closed as
+  `stale-wordpress-graph-identity` before mutation. Command:
+  `node --test --test-name-pattern=RPP-0344 test/generated-push-harness.test.js`.
+  Caveat: local generated-harness support evidence only; final release remains
+  `NO-GO`. Validation passed with Node syntax checks, focused RPP-0344 coverage
+  1/1, adjacent RPP-0341/RPP-0343/RPP-0344 generated coverage 3/3, adjacent
+  postmeta lineage coverage 8/8, full generated harness coverage 97/97, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 585/415;
+  final release remains `NO-GO` because this is local graph identity support
+  evidence, not production-backed release proof.
 - Filesystem compare-and-rename write variant-2 proof: the current lane now
   checks `RPP-0724` with local storage/performance support evidence. The proof
   applies matching update/create writes only after compare-before-rename,
