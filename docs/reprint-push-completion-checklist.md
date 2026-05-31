@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 694.
-- Remaining open: 306.
+- Verified complete: 695.
+- Remaining open: 305.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -716,7 +716,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [ ] RPP-0672 (Far / recovery) Add focused regression coverage for blocked recovery classification, variant 4. Success: journal rows are durable after process restart.
 - [x] RPP-0673 (Far / recovery) Add focused regression coverage for unknown drift classification, variant 4. Success: retry does not overwrite preserved remote changes.
 - [ ] RPP-0674 (Far / recovery) Add focused regression coverage for same-key replay after commit, variant 4. Success: lease owner identity is visible in audit evidence.
-- [ ] RPP-0675 (Far / recovery) Add focused regression coverage for same-key replay after rejection, variant 4. Success: release verifier reports the recovery gate as proven on the same path.
+- [x] RPP-0675 (Far / recovery) Add focused regression coverage for same-key replay after rejection, variant 4. Success: release verifier reports the recovery gate as proven on the same path.
 - [ ] RPP-0676 (Far / recovery) Add focused regression coverage for different-body idempotency conflict, variant 4. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0677 (Far / recovery) Add focused regression coverage for process kill before first mutation, variant 4. Success: journal rows are durable after process restart.
 - [ ] RPP-0678 (Far / recovery) Add focused regression coverage for process kill mid mutation set, variant 4. Success: retry does not overwrite preserved remote changes.
