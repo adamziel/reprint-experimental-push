@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:03 CEST +02:00.
+- Last update: 2026-05-31 11:06 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0260 atomic group blocker propagation variant-3 merge ending at
-  `0869e007c`.
+  the RPP-0292 remoteBeforeHash release-verifier v5 merge ending at
+  `5a99b2c8f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 560
-  items checked and leaves 440 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 561
+  items checked and leaves 439 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 98 generated
-  harness items, and 91 merge-invariant items. No release-ops items are checked
+  harness items, and 92 merge-invariant items. No release-ops items are checked
   yet.
+- Remote-before hash correctness release-verifier v5 carry-through: the current
+  lane now checks `RPP-0292` with focused release-verifier support evidence for
+  binding each mutation to its live remote precondition. The proof covers valid
+  ready mutations, forged remote-before aliases, stale remote state, duplicate
+  live-remote preconditions, and missing live-remote preconditions, and proves
+  forged or stale mutation attempts are rejected before mutation. Command:
+  `node --test --test-name-pattern=RPP-0292 test/rpp-0292-remote-before-hash-correctness-release-verifier-v5.test.js`.
+  Caveat: local release-verifier support evidence only; release remains gated
+  separately. Validation passed with a Node syntax check, focused RPP-0292
+  coverage 1/1, adjacent RPP-0252/RPP-0272/RPP-0292 remoteBeforeHash coverage
+  7/7, scoped artifact redaction scan, and diff whitespace checks. Counts are
+  now 561/439; final release remains `NO-GO` because this is local
+  merge-invariant support evidence, not production-backed release proof.
 - Atomic group blocker propagation variant-3 generated proof: the current lane
   now checks `RPP-0260` with deterministic support evidence for generated
   atomic-group plans. The proof covers 10 tiered missing-dependency atomic
