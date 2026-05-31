@@ -6,20 +6,41 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 00:49 CEST +02:00.
+- Last update: 2026-06-01 00:53 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0571 Application Password integration variant-4 merge ending at
-  `1170915a6`.
+  the RPP-0586 production recovery inspect route release-verifier variant-5
+  merge ending at `49360479f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 801
-  items checked and leaves 199 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 802
+  items checked and leaves 198 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 98 executor/auth items, 100 recovery items,
+  100 plugin-driver boundary items, 99 executor/auth items, 100 recovery items,
   100 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production recovery inspect route release-verifier variant-5 proof: the
+  current lane now checks `RPP-0586` with release-verifier live-endpoint support
+  coverage. The proof carries the RPP-0566 recovery-inspect read-only route
+  behavior into a release-verifier-shaped envelope, drives a loopback-only live
+  HTTP endpoint for the signed recovery inspect path, records recovery, journal,
+  request, response, and credential evidence as hashes/counts/statuses only,
+  blocks missing or malformed recovery-inspect evidence before release movement,
+  and keeps `releaseStatus: NO-GO` plus `releaseMovement.allowed: false`.
+  Command:
+  `node --test --test-name-pattern RPP-0586 test/rpp-0586-production-recovery-inspect-route-release-verifier-v5.test.js`.
+  Caveat: loopback support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0586 coverage 3/3,
+  adjacent RPP-0566 coverage 2/2, adjacent RPP-0546 coverage 3/3, generated
+  recovery-inspect release-gate coverage 2/2, release-verifier recovery-inspect
+  carry-through coverage 2/2, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 802/198; final release remains `NO-GO`
+  because this is support evidence, not checked production-owned recovery
+  inspect verifier proof, production storage receipts, production row batch
+  executor evidence, production atomic group commit evidence, live production
+  service evidence, production throughput, release approval, or a production
+  release gate.
 - Application Password integration variant-4 proof: the current lane now
   checks `RPP-0571` with focused live loopback endpoint support coverage. The
   proof starts a sandbox-local WordPress Playground endpoint, sends real HTTP
