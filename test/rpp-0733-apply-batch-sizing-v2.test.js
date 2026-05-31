@@ -25,7 +25,7 @@ const expectedGateIds = Object.freeze([
   'support-only-release-no-go',
 ]);
 
-test('RPP-733 variant 2 proves apply batch sizing resume without duplicate mutation work', {
+test('RPP-0733 variant 2 proves apply batch sizing resume without duplicate mutation work', {
   concurrency: false,
 }, () => {
   const proof = buildVariant2Proof();
@@ -137,7 +137,7 @@ test('RPP-733 variant 2 proves apply batch sizing resume without duplicate mutat
   assertHashOnlyApplyBatchEvidence(proof);
 });
 
-test('RPP-733 variant 2 fails closed for stale receipts, missing receipts, duplicate work, drift, and premature output', () => {
+test('RPP-0733 variant 2 fails closed for stale receipts, missing receipts, duplicate work, drift, and premature output', () => {
   const { evidence, repeatedEvidence } = buildRecordedEvidencePair();
   const safeDecision = resolveApplyBatchSizingProof(evidence, { repeatedEvidence });
   const staleBatchReceipt = withPassedStatus(clone(evidence));

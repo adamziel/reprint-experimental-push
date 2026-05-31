@@ -140,7 +140,7 @@ service configuration, bearer tokens, external URLs, or private site values.
 Focused validation commands for this slice:
 
 - `node --check test/rpp-0733-apply-batch-sizing-v2.test.js`
-- `node --test --test-name-pattern RPP-733 test/rpp-0733-apply-batch-sizing-v2.test.js`
+- `node --test --test-name-pattern RPP-0733 test/rpp-0733-apply-batch-sizing-v2.test.js`
 - `node --test --test-name-pattern RPP-0713 test/rpp-0713-apply-batch-sizing.test.js`
 - `node --test --test-name-pattern RPP-0732 test/rpp-0732-dry-run-batch-sizing-v2.test.js`
 - `node scripts/release/artifact-redaction-scan.mjs docs/evidence/rpp-0733-apply-batch-sizing-v2.md`
@@ -149,7 +149,7 @@ Focused validation commands for this slice:
 
 Observed focused proof result:
 
-- RPP-733 proof test: 2 pass, 0 fail
+- RPP-0733 proof test: 2 pass, 0 fail
 - Adjacent RPP-0713 apply batch sizing test: 3 pass, 0 fail
 - Adjacent RPP-0732 dry-run batch sizing variant 2 test: 2 pass, 0 fail
 - Evidence redaction scan: `ok: true`, 0 rejected files
