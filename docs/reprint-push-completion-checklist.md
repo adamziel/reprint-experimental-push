@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 668.
-- Remaining open: 332.
+- Verified complete: 669.
+- Remaining open: 331.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -630,7 +630,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [ ] RPP-0591 (Mid-Far / executor-auth) Carry through the release verifier for Application Password integration, variant 5. Success: real endpoint test runs against a live URL.
 - [x] RPP-0592 (Mid-Far / executor-auth) Carry through the release verifier for request signature canonicalization, variant 5. Success: negative auth cases fail before JSON parsing and mutation.
 - [x] RPP-0593 (Mid-Far / executor-auth) Carry through the release verifier for nonce replay store, variant 5. Success: dry-run receipts bind session, identity, scope, and plan hash.
-- [ ] RPP-0594 (Mid-Far / executor-auth) Carry through the release verifier for receipt expiry validation, variant 5. Success: apply revalidates the live source before mutation.
+- [x] RPP-0594 (Mid-Far / executor-auth) Carry through the release verifier for receipt expiry validation, variant 5. Success: apply revalidates the live source before mutation.
 - [ ] RPP-0595 (Mid-Far / executor-auth) Carry through the release verifier for idempotency key requirement, variant 5. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0596 (Mid-Far / executor-auth) Carry through the release verifier for same-key same-body replay, variant 5. Success: real endpoint test runs against a live URL.
 - [x] RPP-0597 (Mid-Far / executor-auth) Carry through the release verifier for same-key different-body conflict, variant 5. Success: negative auth cases fail before JSON parsing and mutation.
