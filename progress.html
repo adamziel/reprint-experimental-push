@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T14:02:00+02:00">Last updated: May 31, 2026, 14:02 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T14:04:00+02:00">Last updated: May 31, 2026, 14:04 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>603</strong>
+        <strong>604</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>397</strong>
+        <strong>396</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof, credential rotation including variant-2 live-source revalidation, manage_options, capability downgrade rejection including variant-2 dry-run receipt binding, short-lived push-session receipt binding, same-key same-body replay, same-key different-body conflict, production-shaped preflight, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, audit-event schema route proof including variant-2 verify:release summary carry-through, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof, credential rotation including variant-2 live-source revalidation, manage_options, capability downgrade rejection including variant-2 dry-run receipt binding, short-lived push-session receipt binding, same-key same-body replay, same-key different-body conflict, production-shaped preflight including variant-3 support proof, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, audit-event schema route proof including variant-2 verify:release summary carry-through, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0452</span>
+        <span>RPP-0541</span>
       </div>
-      <p>The latest refresh checks RPP-0452 with direct active_plugins mutation refusal variant-3 plugin-driver evidence. The proof refuses direct writes and deletes to `active_plugins` before mutation, keeps explicit checked plugin-driver mutations allowed when `active_plugins` is unchanged, and fails stale or forged evidence closed while preserving remote plugin-owned data. Counts are now 603/397; final release remains NO-GO because this is local plugin-driver support evidence, not production-backed plugin-driver proof.</p>
+      <p>The latest refresh checks RPP-0541 with production preflight route variant-3 executor/auth evidence. The proof accepts production-shaped local preflight route summaries as support-only evidence, refuses missing or stale preflight proof before follow-up routes, and keeps auth failure summaries hash-only without moving release gates. Counts are now 604/396; final release remains NO-GO because this is local executor/auth support evidence, not checked production endpoint proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0541 focused: 3/3</span>
+        <span class="tag">preflight adjacent: 5/5</span>
+        <span class="tag">support-only route</span>
+        <span class="tag">stale proof refused</span>
+        <span class="tag">hash-only auth failure</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0452 focused: 3/3</span>
         <span class="tag">RPP-0472 adjacent: 3/3</span>
         <span class="tag">active_plugins refused</span>
