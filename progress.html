@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T13:29:00+02:00">Last updated: May 31, 2026, 13:29 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T13:32:00+02:00">Last updated: May 31, 2026, 13:32 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>595</strong>
+        <strong>596</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>405</strong>
+        <strong>404</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0729</span>
+        <span>RPP-0450</span>
       </div>
-      <p>The latest refresh checks RPP-0729 with chunk replay idempotency variant-2 storage/performance evidence. The proof shows guardedLarge replay attempts return existing receipts, create zero duplicate receipt records, write zero duplicate bytes, do zero duplicate mutation work, stay within documented budgets, and fail stale or mismatched replay attempts closed with hash-only evidence. Counts are now 595/405; final release remains NO-GO because this is local benchmark support evidence, not production storage receipts or release-verifier carry-through.</p>
+      <p>The latest refresh checks RPP-0450 with plugin update dependency validator variant-3 plugin-driver evidence. The proof carries exact hash-only dependency metadata through local planning and apply, updates the dependent plugin only when live-remote dependency evidence is satisfied, refuses missing or stale dependency evidence before mutation, preserves remote plugin-owned data, and rejects invalid or forged update dependency evidence fail-closed. Counts are now 596/404; final release remains NO-GO because this is local generated-style support evidence, not production-backed plugin-driver proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0450 focused: 3/3</span>
+        <span class="tag">update adjacent: 5/5</span>
+        <span class="tag">activation adjacent: 6/6</span>
+        <span class="tag">hash-only dependency</span>
+        <span class="tag">pre-mutation refusal</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0729 focused: 2/2</span>
         <span class="tag">chunk replay adjacent: 4/4</span>
         <span class="tag">guarded/perf: 19/19</span>

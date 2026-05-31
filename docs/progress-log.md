@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:29 CEST +02:00.
+- Last update: 2026-05-31 13:32 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0729 chunk replay idempotency variant-2 merge ending at `1bc16d2`.
+  the RPP-0450 plugin update dependency validator variant-3 merge ending at
+  `f3dbf9c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 595
-  items checked and leaves 405 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 596
+  items checked and leaves 404 open.
 - Checked slices: 100 release-gate foundation items, 86 graph identity items,
-  92 plugin-driver boundary items, 39 executor/auth items, 46 recovery items,
+  93 plugin-driver boundary items, 39 executor/auth items, 46 recovery items,
   29 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin update dependency validator variant-3 proof: the current lane now
+  checks `RPP-0450` with local plugin-driver support evidence. The proof carries
+  exact hash-only dependency metadata through local planning and apply, allows a
+  satisfied live-remote dependency to update the dependent plugin and
+  plugin-owned row, refuses missing or stale dependency evidence before
+  mutation while preserving remote plugin-owned data, and rejects invalid or
+  forged update dependency evidence fail-closed. Command:
+  `node --test test/rpp-0450-plugin-update-dependency-validator-v3.test.js`.
+  Caveat: local generated-style plugin-driver evidence only; final release
+  remains `NO-GO`. Validation passed with a Node syntax check, focused
+  RPP-0450 coverage 3/3, adjacent RPP-0450/RPP-0470/RPP-0490 update dependency
+  coverage 5/5, related RPP-0449/RPP-0469/RPP-0489 activation dependency
+  coverage 6/6, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 596/404; final release remains `NO-GO` because this is support
+  evidence, not production-backed plugin-driver proof.
 - Chunk replay idempotency variant-2 proof: the current lane now checks
   `RPP-0729` with local storage/performance support evidence. The proof shows
   guardedLarge replay attempts return existing receipts, create zero duplicate
