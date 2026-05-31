@@ -6,20 +6,46 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 00:07 CEST +02:00.
+- Last update: 2026-06-01 00:10 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0546 production recovery inspect route variant-3 merge ending at
-  `c86232`.
+  the RPP-0551 Application Password integration variant-3 merge ending at
+  `2270c8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 793
-  items checked and leaves 207 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 794
+  items checked and leaves 206 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 92 executor/auth items, 100 recovery items,
+  100 plugin-driver boundary items, 93 executor/auth items, 100 recovery items,
   98 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Application Password integration variant-3 proof: the current lane now checks
+  `RPP-0551` with deterministic local generated support evidence. The proof
+  covers a positive scoped Application Password binding/readback case, binding
+  drift for another source/user, binding drift for another Application Password
+  on the same source and user, auth source command readback drift, and the live
+  endpoint unavailable blocker. The positive generated case records
+  `wordpress-core-application-password` as the expected verifier and keeps
+  release posture at `NO-GO`; binding drift fails closed with
+  `APPLICATION_PASSWORD_BINDING_REQUIRED`, auth source readback drift fails with
+  `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED`, and the unavailable live endpoint
+  case stays at `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `gates: 0/4`, and
+  `mutationAttempted: false`. Source, user, and credential material remain
+  hashed or redacted.
+  Command:
+  `node --test --test-name-pattern RPP-0551 test/rpp-0551-application-password-integration-v3.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0551
+  coverage 4/4, adjacent RPP-0531 coverage 1/1, adjacent RPP-0511 coverage
+  1/1, adjacent RPP-0599 coverage 2/2, Application Password release-gate
+  coverage 4/4, Application Password release-verifier coverage 3/3, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 794/206;
+  final release remains `NO-GO` because this is support evidence, not checked
+  production-owned Application Password endpoint proof, production storage
+  receipts, production row batch executor evidence, production atomic group
+  commit evidence, live production service evidence, production throughput,
+  release approval, or a production release gate.
 - Production recovery inspect route variant-3 proof: the current lane now
   checks `RPP-0546` with deterministic local generated executor/auth support
   evidence. The proof models the production-shaped recovery-inspect route as a
