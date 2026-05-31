@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 12:08 CEST +02:00.
+- Last update: 2026-05-31 12:10 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0721 MySQL CAS write guard variant-2 merge ending at `f195aad54`.
+  the RPP-0722 SQLite CAS write guard variant-2 merge ending at `0cb306eeb`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 575
-  items checked and leaves 425 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 576
+  items checked and leaves 424 open.
 - Checked slices: 100 release-gate foundation items, 83 graph identity items,
   88 plugin-driver boundary items, 35 executor/auth items, 42 recovery items,
-  24 storage/performance items, 3 production-topology items, 100 generated
+  25 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- SQLite CAS write guard variant-2 proof: the current lane now checks
+  `RPP-0722` with local SQLite compare-and-swap support evidence. The focused
+  proof validates matching writes, stale replay refusal after a successful
+  guarded write, independent drift refusal, absent-row refusal without inserts,
+  hash-only evidence, deterministic benchmark gate status, and an intentionally
+  failing heap budget that only fails the runtime resource gate. Command:
+  `node --test test/rpp-0722-sqlite-cas-write-guard-v2.test.js`.
+  Caveat: local in-memory SQLite support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0722
+  coverage 2/2, adjacent SQLite CAS coverage 6/6, bounded
+  `npm run bench:sqlite-cas-write-guard -- --iterations 5`, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 576/424; final
+  release remains `NO-GO` because this is support evidence, not external
+  durability or production-backed release proof.
 - MySQL CAS write guard variant-2 proof: the current lane now checks `RPP-0721`
   with deterministic support evidence for the MySQL compare-and-swap write
   guard report contract. The focused test exercises the RPP-0701 benchmark in
