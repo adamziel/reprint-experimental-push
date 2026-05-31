@@ -6,20 +6,40 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 22:49 CEST +02:00.
+- Last update: 2026-05-31 22:57 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0782 SQLite CAS write guard release-verifier variant-5 merge ending at
-  `f72155`.
+  the RPP-0784 filesystem compare-and-rename release-verifier variant-5 merge
+  ending at `92d99b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 774
-  items checked and leaves 226 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 775
+  items checked and leaves 225 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  82 storage/performance items, 3 production-topology items, 100 generated
+  83 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Filesystem compare-and-rename release-verifier variant-5 proof: the current
+  lane now checks `RPP-0784` with deterministic local release-verifier support
+  evidence. The proof carries the RPP-0764/RPP-0744 filesystem
+  compare-and-rename lineage into a benchmark command report with runtime
+  metadata, process resources, storage resources, filesystem atomicity evidence,
+  pass/fail benchmark gates, and support-only release posture. The pass-gate
+  profile records 13 guarded write attempts, 9 applied writes, 4 stale-at-write
+  rejections, 0 unsafe rename-on-stale writes, 0 temp leaks, 53248 bytes written
+  to temporary files, 36864 bytes renamed into place, 16384 drifted bytes
+  preserved, and all seven benchmark gates passing. A fail-gate run with a
+  1-byte heap budget still reports runtime, resources, counts, and gate vector
+  with only `large-site-runtime-budget` failing. Command:
+  `node --test --test-name-pattern RPP-0784 test/rpp-0784-filesystem-compare-and-rename-write-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0784
+  coverage 2/2, adjacent RPP-0764 coverage 3/3, adjacent RPP-0744 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  775/225; final release remains `NO-GO` because this is support evidence, not
+  production-backed filesystem durability, external storage receipts,
+  cross-process locking, live traffic behavior, or release eligibility.
 - SQLite CAS write guard release-verifier variant-5 proof: the current lane now
   checks `RPP-0782` with deterministic local release-verifier support evidence.
   The proof carries the RPP-0762/RPP-0742 SQLite compare-and-swap write guard
