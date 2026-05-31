@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 19:09 CEST +02:00.
+- Last update: 2026-05-31 19:11 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0684 stale claim rejection variant-5 merge ending at `974df6`.
+  the RPP-0686 journal pagination variant-5 merge ending at `999d37`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 710
-  items checked and leaves 290 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 711
+  items checked and leaves 289 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 86 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 87 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Journal pagination variant-5 proof: the current lane now checks `RPP-0686`
+  with local recovery support evidence. The proof carries file-backed paged
+  inspection and SQLite-backed cursor windows through the release verifier
+  evidence shape, preserves completed restart state, and keeps page metadata
+  hash-only. Command:
+  `node --test --test-name-pattern RPP-0686 test/rpp-0686-journal-pagination-v5.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0686 coverage 2/2,
+  adjacent RPP-0666 pagination coverage 2/2, adjacent RPP-0646 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  711/289; final release remains `NO-GO` because this is support evidence, not
+  production-backed recovery proof.
 - Stale claim rejection variant-5 proof: the current lane now checks
   `RPP-0684` with local recovery support evidence. The proof carries stale claim
   rejection through the release verifier audit-evidence path, exposes the active
