@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 21:07 CEST +02:00.
+- Last update: 2026-05-31 21:10 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0756 large plugin file benchmark variant-3 merge ending at `5e497b`.
+  the RPP-0758 timeout budget proof variant-3 merge ending at `72c1df`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 749
-  items checked and leaves 251 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 750
+  items checked and leaves 250 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  57 storage/performance items, 3 production-topology items, 100 generated
+  58 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Timeout budget proof variant-3 proof: the current lane now checks `RPP-0758`
+  with local storage/performance support evidence. The proof carries the
+  RPP-0738 timeout-budget lane forward, generates timeout cases after 1, 2, 3,
+  and 4 durable local chunk receipts, proves every case times out during chunk
+  transfer before apply opens, resumes only exact receipt-backed chunks, uploads
+  unacknowledged chunks after resume, and keeps duplicate chunk bytes plus
+  duplicate mutation work at zero. Command:
+  `node --test --test-name-pattern RPP-0758 test/rpp-0758-timeout-budget-proof-v3.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0758
+  coverage 2/2, adjacent RPP-0738 coverage 2/2, RPP-0718 timeout budget
+  coverage 1/1, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 750/250; final release remains `NO-GO` because this is support
+  evidence, not production-backed external durability proof.
 - Large plugin file benchmark variant-3 proof: the current lane now checks
   `RPP-0756` with local storage/performance support evidence. The proof carries
   the large plugin file benchmark forward with parseable runtime, resources, and
