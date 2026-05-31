@@ -6,20 +6,47 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:24 CEST +02:00.
+- Last update: 2026-05-31 23:26 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0790 parallel snapshot hashing release-verifier variant-5 merge ending
-  at `68caa8`.
+  the RPP-0791 remote hash pagination release-verifier variant-5 merge ending
+  at `87b9d4`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 782
-  items checked and leaves 218 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 783
+  items checked and leaves 217 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  90 storage/performance items, 3 production-topology items, 100 generated
+  91 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Remote hash pagination release-verifier variant-5 proof: the current lane now
+  checks `RPP-0791` with deterministic local release-verifier support evidence.
+  The proof carries the RPP-0771/RPP-0751/RPP-0711 remote hash pagination
+  lineage into a release-verifier envelope that consumes both passing and
+  deliberately failing benchmark command reports while preserving runtime
+  metadata, resource usage, pass/fail gate vectors, deterministic coverage
+  counts, and hash/count-only public evidence. The passing command records 229
+  resources, requested page size 37, 7 pages, 6 cursors, 229 unique resources,
+  0 duplicate keys, 1 complete page, 0 empty pages, 7 planning-only pages, 0
+  raw value evidence leaks, all 7 benchmark gates passing, and live remote
+  service unavailable in this sandbox. The failing-budget command records
+  runtime/resource diagnostics with only `runtime-resource-budget` failing while
+  the other 6 benchmark gates remain pass. The release-verifier gate vector has
+  8 gates and blocks missing command reporting, missing fail-gate reporting,
+  incomplete pagination coverage, missing cursor/configuration error coverage,
+  raw evidence leakage, production-backed release claims, and missing recorded
+  gates.
+  Command:
+  `node --test --test-name-pattern RPP-0791 test/rpp-0791-remote-hash-pagination-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0791
+  coverage 2/2, adjacent RPP-0771 coverage 2/2, adjacent RPP-0751 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  783/217; final release remains `NO-GO` because this is support evidence, not
+  production storage receipts, production row batch executor evidence,
+  production atomic group commit evidence, live remote service evidence,
+  production throughput, release approval, or a production release gate.
 - Parallel snapshot hashing release-verifier variant-5 proof: the current lane
   now checks `RPP-0790` with deterministic local release-verifier support
   evidence. The proof carries the RPP-0770/RPP-0750/RPP-0710 parallel snapshot
