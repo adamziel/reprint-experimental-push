@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 19:03 CEST +02:00.
+- Last update: 2026-05-31 19:05 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0683 single-writer lease claim variant-5 merge ending at `a67e5c`.
+  the RPP-0685 claim expiry policy variant-5 merge ending at `46676e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 707
-  items checked and leaves 293 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 708
+  items checked and leaves 292 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 83 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 84 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Claim expiry policy variant-5 proof: the current lane now checks `RPP-0685`
+  with local recovery support evidence. The proof carries claim expiry and
+  replacement through the release verifier path, proves the recovery gate on the
+  same checked path, and keeps final release movement held without live
+  durability evidence. Command:
+  `node --test --test-name-pattern RPP-0685 test/rpp-0685-claim-expiry-policy-v5.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0685 coverage 1/1,
+  adjacent RPP-0665 expiry coverage 1/1, adjacent RPP-0645 coverage 1/1,
+  adjacent RPP-0625 SQLite coverage 1/1, scoped artifact redaction scan, and
+  diff whitespace checks. Counts are now 708/292; final release remains
+  `NO-GO` because this is support evidence, not production-backed recovery
+  proof.
 - Single-writer lease claim variant-5 proof: the current lane now checks
   `RPP-0683` with local recovery support evidence. The proof carries the
   competing lease retry through the release verifier path, preserves remote
