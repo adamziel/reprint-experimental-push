@@ -6,20 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 00:53 CEST +02:00.
+- Last update: 2026-06-01 00:54 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0586 production recovery inspect route release-verifier variant-5
-  merge ending at `49360479f`.
+  the RPP-0805 WooCommerce product catalog candidate-scope merge ending at
+  `e735f0101`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 802
-  items checked and leaves 198 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 803
+  items checked and leaves 197 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 99 executor/auth items, 100 recovery items,
-  100 storage/performance items, 3 production-topology items, 100 generated
+  100 storage/performance items, 4 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- WooCommerce product catalog candidate-scope proof: the current lane now
+  checks `RPP-0805` with a machine-checked candidate-versus-release-ready
+  progress-report record. The proof records the available BrewCommerce-derived
+  catalog candidate surfaces, product/variation/media/taxonomy/count evidence,
+  and the explicit release-ready gaps: accepted production-bound WooCommerce
+  import/export evidence, plugin lifecycle proof, production auth/session
+  release-verifier acceptance, durable journal proof, HPOS/order safety, and
+  redacted release artifacts. It keeps the scope support-only and keeps final
+  release `NO-GO`.
+  Command:
+  `node --test test/rpp-0805-woocommerce-product-catalog-v1.test.js`.
+  Caveat: candidate-scope support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0805
+  coverage 3/3, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 803/197; final release remains `NO-GO` because this is a
+  product-catalog scope record, not production-backed WooCommerce import/export
+  proof, production storage receipts, production row batch executor evidence,
+  production atomic group commit evidence, live production service evidence,
+  production throughput, release approval, or a production release gate.
 - Production recovery inspect route release-verifier variant-5 proof: the
   current lane now checks `RPP-0586` with release-verifier live-endpoint support
   coverage. The proof carries the RPP-0566 recovery-inspect read-only route
