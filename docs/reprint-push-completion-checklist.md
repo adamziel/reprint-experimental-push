@@ -609,7 +609,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [x] RPP-0570 (Mid-Far / executor-auth) Add focused regression coverage for session user identity binding, variant 4. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0571 (Mid-Far / executor-auth) Add focused regression coverage for Application Password integration, variant 4. Success: real endpoint test runs against a live URL.
 - [x] RPP-0572 (Mid-Far / executor-auth) Add focused regression coverage for request signature canonicalization, variant 4. Success: negative auth cases fail before JSON parsing and mutation.
-- [ ] RPP-0573 (Mid-Far / executor-auth) Add focused regression coverage for nonce replay store, variant 4. Success: dry-run receipts bind session, identity, scope, and plan hash.
+- [x] RPP-0573 (Mid-Far / executor-auth) Add focused regression coverage for nonce replay store, variant 4. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0574 (Mid-Far / executor-auth) Add focused regression coverage for receipt expiry validation, variant 4. Success: apply revalidates the live source before mutation.
 - [ ] RPP-0575 (Mid-Far / executor-auth) Add focused regression coverage for idempotency key requirement, variant 4. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0576 (Mid-Far / executor-auth) Add focused regression coverage for same-key same-body replay, variant 4. Success: real endpoint test runs against a live URL.
