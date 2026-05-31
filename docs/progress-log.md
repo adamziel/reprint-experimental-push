@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 01:44 CEST +02:00.
+- Last update: 2026-06-01 01:45 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0835 plugin activation hooks topology proof merge ending at `e5ad8f332`.
+  the RPP-0838 TLS/HTTPS source proof merge ending at `990104c2c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 822
-  items checked and leaves 178 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 823
+  items checked and leaves 177 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 22 production-topology items, 100 generated
+  100 storage/performance items, 23 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- TLS/HTTPS source proof variant-2 URL identity coverage: the current lane now
+  checks `RPP-0838` with deterministic source/local/changed HTTPS URL support
+  evidence. The proof captures all three topology role surfaces, requires HTTPS
+  for accepted role URLs, checks distinct role identities and same-source route
+  identity, rejects tunnel, secret-shaped, and non-HTTPS role URLs before scope
+  acceptance, and keeps the evidence hash/count/surface-only.
+  Command:
+  `node --test --test-name-pattern RPP-0838 test/rpp-0838-tls-https-source-proof-v2.test.js`.
+  Caveat: local support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0838 coverage 5/5,
+  scoped artifact redaction scan with one allowed hash-evidence occurrence, and
+  diff whitespace checks. Counts are now 823/177; final release remains
+  `NO-GO` because this is support evidence, not production-backed TLS
+  reachability, certificate proof, production credentials, route receipts,
+  durable journal evidence, live mutation proof, throughput, release approval,
+  or a production release gate.
 - Plugin activation hooks topology variant-2 candidate-scope proof: the current
   lane now checks `RPP-0835` with deterministic candidate-versus-release-ready
   activation-hook support evidence. The proof records seven activation-hook
