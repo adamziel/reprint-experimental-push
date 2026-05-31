@@ -6,19 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 21:48 CEST +02:00.
+- Last update: 2026-05-31 21:58 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0769 chunk replay idempotency variant-4 merge ending at `560d39`.
+  the RPP-0771 remote hash pagination variant-4 merge ending at `78f810`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 761
-  items checked and leaves 239 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 762
+  items checked and leaves 238 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  69 storage/performance items, 3 production-topology items, 100 generated
+  70 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Remote hash pagination variant-4 proof: the current lane now checks
+  `RPP-0771` with deterministic local storage/performance support evidence. The
+  proof carries forward the RPP-0751/RPP-0731 pagination lineage and runs
+  `scripts/bench/remote-hash-pagination.js` through the focused test harness. It
+  records parseable runtime metadata, process resources, remote hash resources,
+  deterministic coverage counts, and the full pass/fail gate vector for a
+  197-resource deterministic run with a requested page size of 23, 9 pages, 8
+  cursors, 0 duplicate keys, 0 raw value evidence leaks, 34 ms duration, and
+  6457568 bytes heap used inside the documented budgets. The fail-gate path
+  runs the same command with an impossible heap budget and still emits runtime,
+  resources, coverage counts, and a `runtime-resource-budget` failure while all
+  other benchmark gates pass. Command:
+  `node --test --test-name-pattern RPP-0771 test/rpp-0771-remote-hash-pagination-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0771
+  coverage 2/2, adjacent RPP-0751 coverage 2/2, adjacent RPP-0731 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  762/238; final release remains `NO-GO` because this is support evidence, not
+  production-backed remote pagination, storage receipt, row batch executor, or
+  atomic commit proof.
 - Chunk replay idempotency variant-4 proof: the current lane now checks
   `RPP-0769` with deterministic local storage/performance support evidence. The
   proof carries forward the RPP-0749/RPP-0729/RPP-0709 replay lineage and runs
