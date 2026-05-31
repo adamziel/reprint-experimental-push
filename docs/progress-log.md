@@ -6,20 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 10:40 CEST +02:00.
+- Last update: 2026-05-31 10:49 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0531 Application Password integration live-endpoint merge ending at
-  `5e708f469`.
+  the RPP-0250 planner summary count consistency variant-3 merge ending at
+  `b6cd229b1`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 556
-  items checked and leaves 444 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 557
+  items checked and leaves 443 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 97 generated
-  harness items, and 88 merge-invariant items. No release-ops items are checked
+  harness items, and 89 merge-invariant items. No release-ops items are checked
   yet.
+- Planner summary count consistency variant-3 generated proof: the current lane
+  now checks `RPP-0250` with deterministic generated-harness support evidence
+  across all 620 generated push cases. The focused proof replans every case
+  twice, verifies `plan.summary` exactly matches emitted mutations, decisions,
+  conflicts, blockers, and atomic groups, derives status from emitted
+  conflicts/blockers, keeps preconditions one-for-one with mutations, and
+  compares the aggregate against the generated harness summary totals.
+  Command:
+  `node --test test/rpp-0250-planner-summary-count-consistency-v3.test.js`.
+  Caveat: Generated local/model evidence only; release remains gated
+  separately. Validation passed with a Node syntax check, focused RPP-0250
+  coverage 1/1, adjacent RPP-0270/RPP-0290 planner-summary coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  557/443; final release remains `NO-GO` because this is local generated
+  merge-invariant support evidence, not production-backed release proof.
 - Application Password integration live-endpoint proof: the current lane now
   checks `RPP-0531` with a sandbox-local live WordPress Playground endpoint for
   production-shaped auth behavior. The proof discovers the push preflight route
