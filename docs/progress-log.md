@@ -6,20 +6,42 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 00:36 CEST +02:00.
+- Last update: 2026-06-01 00:41 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0566 production recovery inspect route variant-4 merge ending at
-  `d66bb0ccc`.
+  the RPP-0596 same-key same-body replay release-verifier variant-5 merge
+  ending at `c878c1b50`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 798
-  items checked and leaves 201 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 800
+  items checked and leaves 200 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 96 executor/auth items, 100 recovery items,
+  100 plugin-driver boundary items, 97 executor/auth items, 100 recovery items,
   100 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key same-body replay release-verifier variant-5 proof: the current lane
+  now checks `RPP-0596` with release-verifier live-endpoint support evidence.
+  The proof carries the RPP-0576 same-key same-body replay behavior into a
+  release-verifier-shaped envelope, drives a loopback-only live HTTP endpoint
+  through the production-shaped authenticated client, records request,
+  response, recovery, journal, and credential evidence as hashes/counts/statuses
+  only, and preserves `releaseStatus: NO-GO` plus
+  `releaseMovement.allowed: false`. It proves accepted same-key/same-body
+  replays do not duplicate mutation work and rejected same-key/same-body
+  replays preserve the original rejection without commit rows.
+  Command:
+  `node --test --test-name-pattern RPP-0596 test/rpp-0596-same-key-same-body-replay-release-verifier-v5.test.js`.
+  Caveat: loopback support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0596 coverage 1/1,
+  adjacent RPP-0576 coverage 1/1, adjacent RPP-0556 coverage 3/3, adjacent
+  RPP-0536 coverage 1/1, adjacent RPP-0615 coverage 2/2, adjacent RPP-0654
+  coverage 2/2, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 800/200; final release remains `NO-GO` because this is support
+  evidence, not checked production-owned same-key replay release-verifier proof,
+  production storage receipts, production row batch executor evidence,
+  production atomic group commit evidence, live production service evidence,
+  production throughput, release approval, or a production release gate.
 - Production recovery inspect route variant-4 proof: the current lane now
   checks `RPP-0566` with focused live loopback endpoint support coverage. The
   proof starts a local HTTP listener on `http://127.0.0.1:8080`, sends real
