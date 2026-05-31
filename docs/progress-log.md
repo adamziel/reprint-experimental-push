@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 12:18 CEST +02:00.
+- Last update: 2026-05-31 12:20 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0642 journal ownership record variant-3 merge ending at `3812fd17`.
+  the RPP-0446 wp_termmeta driver semantics variant-3 merge ending at `5ff8406b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 577
-  items checked and leaves 423 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 578
+  items checked and leaves 422 open.
 - Checked slices: 100 release-gate foundation items, 83 graph identity items,
-  88 plugin-driver boundary items, 35 executor/auth items, 43 recovery items,
+  89 plugin-driver boundary items, 35 executor/auth items, 43 recovery items,
   25 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- wp_termmeta driver semantics variant-3 proof: the current lane now checks
+  `RPP-0446` with a standalone generated-style plugin-driver proof. The focused
+  test plans exactly one scoped `wp_termmeta` mutation with live-remote
+  preconditions, verifies only the target row mutates while sibling drift is
+  preserved, records hash-only journal evidence, and refuses a stale live remote
+  row before mutation. Command:
+  `node --test test/rpp-0446-wp-termmeta-driver-semantics-v3.test.js`.
+  Caveat: local plugin-driver support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0446
+  coverage 2/2, adjacent termmeta lineage coverage 16/16, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 578/422; final
+  release remains `NO-GO` because this is support evidence, not
+  production-backed plugin-driver release proof.
 - Journal ownership record variant-3 proof: the current lane now checks
   `RPP-0642` with generated-style recovery evidence for file-backed and SQLite
   ownership record readback. The proof writes an ownership record with claim,
