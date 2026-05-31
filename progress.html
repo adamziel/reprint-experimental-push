@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T12:21:00+02:00">Last updated: May 31, 2026, 12:21 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T12:23:00+02:00">Last updated: May 31, 2026, 12:23 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>579</strong>
+        <strong>580</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>421</strong>
+        <strong>420</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -393,7 +393,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production chunking not checked">
-            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, MySQL and SQLite CAS write guard variant-2 support proof, a large post table planner/apply benchmark, a large media library storage/row-precondition benchmark, a large plugin file atomic-group benchmark, a filesystem memory-ceiling proof, timeout-budget resume proof, and long-push progress reporting, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
+            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, MySQL and SQLite CAS write guard variant-2 support proof, transaction boundary policy variant-2 support proof, a large post table planner/apply benchmark, a large media library storage/row-precondition benchmark, a large plugin file atomic-group benchmark, a filesystem memory-ceiling proof, timeout-budget resume proof, and long-push progress reporting, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Release CI not checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0536</span>
+        <span>RPP-0723</span>
       </div>
-      <p>The latest refresh checks RPP-0536 with local authenticated same-key same-body replay support evidence. The proof validates a committed replay without fresh mutation work, fresh nonce/auth signatures over the same signed body, same-key different-body conflict before mutation, checked journal ordering, and hash-only replay evidence. Counts are now 579/421; final release remains NO-GO because this is support evidence, not a checked live production endpoint proof.</p>
+      <p>The latest refresh checks RPP-0723 with guarded-executor transaction boundary policy variant-2 support evidence. The proof validates receipt-only chunk resume, transfer finalization before apply mutation work, zero duplicate mutation work on replay, bounded runtime gates, and blocked production speed claims. Counts are now 580/420; final release remains NO-GO because production storage receipts and external durability proof are still missing.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0723 focused: 2/2</span>
+        <span class="tag">RPP-0703 adjacent: 1/1</span>
+        <span class="tag">guarded benchmark: pass</span>
+        <span class="tag">duplicate mutation: 0</span>
+        <span class="tag">speed claims blocked</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0536 focused: 1/1</span>
         <span class="tag">RPP-0516/0615/0616: 5/5</span>
         <span class="tag">auth replay subset: 29/29</span>

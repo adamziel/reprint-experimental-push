@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 12:21 CEST +02:00.
+- Last update: 2026-05-31 12:23 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0536 same-key same-body replay variant-2 merge ending at `cafcd31b`.
+  the RPP-0723 transaction boundary policy variant-2 merge ending at `920d57a6`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 579
-  items checked and leaves 421 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 580
+  items checked and leaves 420 open.
 - Checked slices: 100 release-gate foundation items, 83 graph identity items,
   89 plugin-driver boundary items, 36 executor/auth items, 43 recovery items,
-  25 storage/performance items, 3 production-topology items, 100 generated
+  26 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Transaction boundary policy variant-2 proof: the current lane now checks
+  `RPP-0723` with guarded-executor support evidence. The proof projects the
+  RPP-0703 policy into a variant-2 receipt-only resume report, verifies
+  transfer finalization precedes apply mutation work, proves replayed chunks
+  skip from exact durable receipts without duplicate mutation work, and keeps
+  production throughput/speed claims blocked until production storage receipts
+  and external durability evidence exist. Command:
+  `node --test --test-name-pattern RPP-0723 test/rpp-0723-transaction-boundary-policy-v2.test.js`.
+  Caveat: local guarded-executor support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0723
+  coverage 2/2, adjacent RPP-0703 coverage 1/1, bounded guarded-executor
+  benchmark, scoped artifact redaction scan, and diff whitespace checks. Counts
+  are now 580/420; final release remains `NO-GO` because production storage
+  receipts and external durability proof are still missing.
 - Same-key same-body replay variant-2 proof: the current lane now checks
   `RPP-0536` with local authenticated-client support evidence. The proof sends
   an authenticated apply, repeats the same idempotency key with a byte-equivalent
