@@ -212,7 +212,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0193 (Near / generated-harness) Carry through the release verifier for wp_term_relationships graph changes, variant 5. Success: ready cases apply with no unplanned remote overwrite.
 - [x] RPP-0194 (Near / generated-harness) Carry through the release verifier for plugin-owned option changes, variant 5. Success: stale remote replay fails before mutation.
 - [x] RPP-0195 (Near / generated-harness) Carry through the release verifier for plugin-owned custom-table changes, variant 5. Success: docs/generated-push-harness.md records the surface and invariant.
-- [ ] RPP-0196 (Near / generated-harness) Carry through the release verifier for atomic plugin install stack, variant 5. Success: generator emits at least one ready case and one non-ready case for this target.
+- [x] RPP-0196 (Near / generated-harness) Carry through the release verifier for atomic plugin install stack, variant 5. Success: generator emits at least one ready case and one non-ready case for this target.
 - [ ] RPP-0197 (Near / generated-harness) Carry through the release verifier for stale remote after dry-run, variant 5. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0198 (Near / generated-harness) Carry through the release verifier for same independent content, variant 5. Success: ready cases apply with no unplanned remote overwrite.
 - [ ] RPP-0199 (Near / generated-harness) Carry through the release verifier for remote-only preservation, variant 5. Success: stale remote replay fails before mutation.

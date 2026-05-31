@@ -6,20 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 09:54 CEST +02:00.
+- Last update: 2026-05-31 09:56 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0290 planner summary count consistency release-verifier v5 merge
-  ending at `a32e31a6b`.
+  the RPP-0196 atomic plugin install stack release-verifier v5 merge ending at
+  `42187d105`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 550
-  items checked and leaves 450 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 551
+  items checked and leaves 449 open.
 - Checked slices: 100 release-gate foundation items, 81 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 95 generated
+  23 storage/performance items, 3 production-topology items, 96 generated
   harness items, and 86 merge-invariant items. No release-ops items are checked
   yet.
+- Atomic plugin install stack release-verifier v5 carry-through: the current
+  lane now checks `RPP-0196` with generated-harness support evidence for the
+  atomic plugin install stack. The generator emits
+  `atomicPluginInstallStackReleaseVerifierVariant5` target coverage with 20
+  cases across tiers 0 through 9, including 10 ready cases and 10 non-ready
+  missing-dependency cases. The focused proof verifies ready atomic groups carry
+  dependency plugin files, plugin metadata, same-group dependency evidence, and
+  plugin-owned option driver evidence; stale dependency replay is rejected with
+  `PRECONDITION_FAILED`; missing-dependency plans refuse with `PLAN_NOT_READY`
+  before mutation; and the evidence stays hash-only. Validation passed with
+  Node syntax checks, focused RPP-0196 coverage 2/2, adjacent
+  RPP-0116/RPP-0136/RPP-0156/RPP-0176/RPP-0196 atomic-plugin stack coverage
+  6/6, scoped artifact redaction scan, and diff whitespace checks. Counts are
+  now 551/449; final release remains `NO-GO` because this is local
+  generated-harness release-verifier support evidence, not production-backed
+  release proof.
 - Planner summary count consistency release-verifier v5 carry-through: the
   current lane now checks `RPP-0290` with focused support evidence for ready,
   conflict, blocked, ready atomic, and blocked atomic planner surfaces. The
