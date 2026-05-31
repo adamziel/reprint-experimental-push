@@ -6,20 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 10:35 CEST +02:00.
+- Last update: 2026-05-31 10:40 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0291 mutation/precondition one-to-one release-verifier v5 merge ending
-  at `e50a3866e`.
+  the RPP-0531 Application Password integration live-endpoint merge ending at
+  `5e708f469`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 555
-  items checked and leaves 445 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 556
+  items checked and leaves 444 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
-  88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
+  88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 97 generated
   harness items, and 88 merge-invariant items. No release-ops items are checked
   yet.
+- Application Password integration live-endpoint proof: the current lane now
+  checks `RPP-0531` with a sandbox-local live WordPress Playground endpoint for
+  production-shaped auth behavior. The proof discovers the push preflight route
+  and core `users/me` route, shows a valid but unscoped Application Password can
+  authenticate to WordPress core while failing push preflight with
+  `401 reprint_push_lab_auth_required`, and shows a scoped push Application
+  Password reaches the production-shaped preflight and adjacent snapshot read
+  endpoints with hash-only credential/session/user/capability/source evidence.
+  Command:
+  `node --test test/rpp-0531-application-password-integration.test.js`.
+  Caveat: the live URL stays sandbox-local and loopback-only; this is not an
+  externally reachable production host. Validation passed with a Node syntax
+  check, PHP lint for the Playground mu-plugin, focused RPP-0531 live endpoint
+  coverage 1/1, adjacent RPP-0511 Application Password live endpoint coverage
+  1/1, scoped artifact redaction scan, and diff whitespace checks. Counts are
+  now 556/444; final release remains `NO-GO` because production-backed
+  topology, credentials, and release evidence are still absent.
 - Mutation/precondition one-to-one release-verifier v5 carry-through: the
   current lane now checks `RPP-0291` with focused and generated support evidence
   for the invariant that every emitted mutation maps to exactly one
