@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 21:41 CEST +02:00.
+- Last update: 2026-05-31 21:43 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0766 large upload chunk manifest variant-4 merge ending at `e4d870`.
+  the RPP-0765 filesystem fsync evidence variant-4 merge ending at `78cf39`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 758
-  items checked and leaves 242 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 759
+  items checked and leaves 241 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  66 storage/performance items, 3 production-topology items, 100 generated
+  67 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Filesystem fsync evidence variant-4 proof: the current lane now checks
+  `RPP-0765` with deterministic local storage/performance support evidence. The
+  proof exercises the filesystem compare/rename/fsync boundary and proves the
+  fast-path lane updates only after temp-file fsync, live-storage precondition,
+  rename, target-directory fsync, and post-rename storage-match gates all pass.
+  The focused matrix records 6 guarded writes, 2 fast-path lane updates, 4
+  fast-path lane blocks, 2 fsync-complete applied writes, 2 fsync-incomplete
+  applied writes, 1 stale-at-write rejection, and 1 temp-file fsync failure. It
+  also covers target-directory fsync failure and post-rename storage mismatch
+  blockers while keeping public evidence hash-and-count-only. Command:
+  `node --test --test-name-pattern RPP-0765 test/rpp-0765-filesystem-fsync-evidence-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0765
+  coverage 2/2, adjacent RPP-0745 coverage 2/2, adjacent RPP-0725 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  759/241; final release remains `NO-GO` because this is support evidence, not
+  production-backed filesystem durability or external receipt proof.
 - Large upload chunk manifest variant-4 proof: the current lane now checks
   `RPP-0766` with deterministic local storage/performance support evidence. The
   proof exercises the guarded executor benchmark on a 1 MiB staged upload split
