@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 19:49 CEST +02:00.
+- Last update: 2026-05-31 19:50 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0699 missing commit finalization variant-5 merge ending at `88f41c`.
+  the RPP-0700 manual recovery audit export variant-5 merge ending at `8bb1fa`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 723
-  items checked and leaves 277 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 724
+  items checked and leaves 276 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 99 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Manual recovery audit export variant-5 proof: the current lane now checks
+  `RPP-0700` with local recovery support evidence. The proof carries a hash-only
+  manual recovery audit export through the release verifier on the same checked
+  recovery path, reports `GATE-2` as proven, and rejects malformed exports that
+  are not read-only, state-matched, count-matched, or hash-only. Command:
+  `node --test --test-name-pattern RPP-0700 test/rpp-0700-manual-recovery-audit-export-v5.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0700 coverage 2/2,
+  adjacent RPP-0680 coverage 2/2, adjacent RPP-0660 coverage 2/2, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 724/276;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed recovery proof.
 - Missing commit finalization variant-5 proof: the current lane now checks
   `RPP-0699` with local recovery support evidence. The proof carries an expired
   retry claim through missing `journal-completed` finalization, preserves the
