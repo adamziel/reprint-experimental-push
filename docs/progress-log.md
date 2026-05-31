@@ -6,20 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 10:31 CEST +02:00.
+- Last update: 2026-05-31 10:35 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0245 local file type-swap versus remote descendant variant-3 merge
-  ending at `8a06ab49e`.
+  the RPP-0291 mutation/precondition one-to-one release-verifier v5 merge ending
+  at `e50a3866e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 554
-  items checked and leaves 446 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 555
+  items checked and leaves 445 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 97 generated
-  harness items, and 87 merge-invariant items. No release-ops items are checked
+  harness items, and 88 merge-invariant items. No release-ops items are checked
   yet.
+- Mutation/precondition one-to-one release-verifier v5 carry-through: the
+  current lane now checks `RPP-0291` with focused and generated support evidence
+  for the invariant that every emitted mutation maps to exactly one
+  `live-remote` precondition with the same resource key, resource object, and
+  remote-before hash. The focused proof covers ready mixed file/row/plugin-owned
+  row changes, conflict with an independent safe mutation, blocked unsupported
+  plugin-owned data beside a safe mutation, ready atomic grouping, and blocked
+  atomic-group propagation. It also verifies missing, duplicate, orphaned,
+  mismatched, and non-live-remote precondition variants fail before mutation.
+  Command:
+  `node --test test/rpp-0291-mutation-precondition-one-to-one-release-verifier-v5.test.js`.
+  Caveat: local release-verifier support evidence only; release remains gated
+  separately. Validation passed with a Node syntax check, focused RPP-0291
+  coverage 1/1, adjacent RPP-0271/RPP-0290 mutation/precondition and planner
+  summary release-verifier coverage 3/3, scoped artifact redaction scan, and
+  diff whitespace checks. Counts are now 555/445; final release remains
+  `NO-GO` because this is local release-verifier support evidence, not
+  production-backed release proof.
 - Local file type-swap versus remote descendant variant-3 generated proof: the
   current lane now checks `RPP-0245` with deterministic generated-harness
   coverage for ready directory-to-file swaps and non-ready remote-descendant

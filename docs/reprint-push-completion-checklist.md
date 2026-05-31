@@ -312,7 +312,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [x] RPP-0288 (Near-Mid / merge-invariants) Carry through the release verifier for unknown plugin-owned resource refusal, variant 5. Success: no raw private value appears in serialized plan evidence.
 - [x] RPP-0289 (Near-Mid / merge-invariants) Carry through the release verifier for conflict evidence hash redaction, variant 5. Success: scenario matrix row names the behavior and command.
 - [x] RPP-0290 (Near-Mid / merge-invariants) Carry through the release verifier for planner summary count consistency, variant 5. Success: progress log records the command and caveat.
-- [ ] RPP-0291 (Near-Mid / merge-invariants) Carry through the release verifier for mutation/precondition one-to-one mapping, variant 5. Success: node test proves the invariant over generated and focused fixtures.
+- [x] RPP-0291 (Near-Mid / merge-invariants) Carry through the release verifier for mutation/precondition one-to-one mapping, variant 5. Success: node test proves the invariant over generated and focused fixtures.
 - [ ] RPP-0292 (Near-Mid / merge-invariants) Carry through the release verifier for remoteBeforeHash correctness, variant 5. Success: executor rejects forged or stale mutation attempts.
 - [ ] RPP-0293 (Near-Mid / merge-invariants) Carry through the release verifier for localHash correctness, variant 5. Success: no raw private value appears in serialized plan evidence.
 - [ ] RPP-0294 (Near-Mid / merge-invariants) Carry through the release verifier for already-in-sync decision, variant 5. Success: scenario matrix row names the behavior and command.
