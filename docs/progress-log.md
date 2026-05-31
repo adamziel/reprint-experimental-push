@@ -6,20 +6,43 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 00:30 CEST +02:00.
+- Last update: 2026-06-01 00:32 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0800 rollout threshold configuration release-verifier variant-5 merge
-  ending at `d13ee7b9`.
+  the RPP-0581 production preflight route release-verifier variant-5 merge
+  ending at `f50e50e0`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 797
-  items checked and leaves 203 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 798
+  items checked and leaves 202 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 94 executor/auth items, 100 recovery items,
+  100 plugin-driver boundary items, 95 executor/auth items, 100 recovery items,
   100 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production preflight route release-verifier variant-5 proof: the current lane
+  now checks `RPP-0581` with release-verifier live-endpoint support evidence.
+  The proof carries the RPP-0561 production preflight route proof into a
+  release-verifier-shaped envelope, keeps the route registered as a signed
+  authenticated `GET` route, drives a loopback-only live HTTP endpoint for
+  `/wp-json/reprint/v1/push/preflight`, records production-shaped auth/session
+  evidence as hashes/counts/statuses only, and blocks missing or malformed route
+  evidence before release movement. The public verifier summary omits source
+  URL, endpoint URL, credentials, username, session id, signing key, and nonce,
+  keeps `releaseStatus: NO-GO`, and keeps `releaseMovement.allowed: false`.
+  Command:
+  `node --test --test-name-pattern RPP-0581 test/rpp-0581-production-preflight-route-release-verifier-v5.test.js`.
+  Caveat: loopback support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0581 coverage 3/3,
+  adjacent RPP-0561 coverage 4/4, adjacent RPP-0541 coverage 3/3, shared
+  production preflight route coverage 5/5, release-verifier preflight
+  carry-through coverage 2/2, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 798/202; final release remains `NO-GO`
+  because this is support evidence, not checked production-owned preflight
+  endpoint proof, production storage receipts, production row batch executor
+  evidence, production atomic group commit evidence, live production service
+  evidence, production throughput, release approval, or a production release
+  gate.
 - Rollout threshold configuration release-verifier variant-5 proof: the current
   lane now checks `RPP-0800` with deterministic local release-verifier support
   evidence. The proof carries the RPP-0780/RPP-0760/RPP-0740 rollout-threshold
