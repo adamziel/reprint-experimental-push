@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 09:56 CEST +02:00.
+- Last update: 2026-05-31 10:13 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0196 atomic plugin install stack release-verifier v5 merge ending at
-  `42187d105`.
+  the RPP-0338 GUID and slug collision variant-2 proof merge ending at
+  `e4b8aa485`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 551
-  items checked and leaves 449 open.
-- Checked slices: 100 release-gate foundation items, 81 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 552
+  items checked and leaves 448 open.
+- Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 96 generated
   harness items, and 86 merge-invariant items. No release-ops items are checked
   yet.
+- GUID and slug collision handling variant-2 proof: the current lane now checks
+  `RPP-0338` with item-specific graph-identity evidence over the existing
+  generated `postGuidSlugCollision` target. The proof verifies 20 generated
+  cases across tiers 0 through 9, with one ready unique GUID/slug page and one
+  stale remote identity collision per tier; ready cases apply with live remote
+  preconditions and reject stale replay with `PRECONDITION_FAILED`, while stale
+  cases block as `stale-wordpress-graph-identity`, keep the colliding remote row,
+  and refuse apply with `PLAN_NOT_READY` before mutation. Validation passed with
+  a Node syntax check, focused RPP-0338 coverage 1/1, adjacent RPP-0398
+  generated GUID/slug coverage 1/1, scoped artifact redaction scan, and diff
+  whitespace check. Counts are now 552/448; final release remains `NO-GO`
+  because this is local generated graph-identity support evidence, not
+  production-backed release proof.
 - Atomic plugin install stack release-verifier v5 carry-through: the current
   lane now checks `RPP-0196` with generated-harness support evidence for the
   atomic plugin install stack. The generator emits
