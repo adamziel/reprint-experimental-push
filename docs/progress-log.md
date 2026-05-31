@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 18:52 CEST +02:00.
+- Last update: 2026-05-31 18:54 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0679 missing commit finalization variant-4 merge ending at
-  `118a3a`.
+  the RPP-0680 manual recovery audit export variant-4 merge ending at
+  `0f1a66`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 703
-  items checked and leaves 297 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 704
+  items checked and leaves 296 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 79 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 80 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Manual recovery audit export variant-4 proof: the current lane now checks
+  `RPP-0680` with local recovery support evidence. The proof carries a
+  hash-only manual recovery audit export through the release verifier path,
+  keeps `GATE-2` proven on the same checked recovery path, and rejects malformed
+  audit evidence before proof movement. Command:
+  `node --test --test-name-pattern RPP-0680 test/rpp-0680-manual-recovery-audit-export-v4.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0680 coverage 2/2,
+  adjacent RPP-0660 audit-export coverage 2/2, adjacent RPP-0640 coverage 1/1,
+  adjacent RPP-0620 coverage 1/1, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 704/296; final release remains `NO-GO`
+  because this is support evidence, not production-backed recovery proof.
 - Missing commit finalization variant-4 proof: the current lane now checks
   `RPP-0679` with local recovery support evidence. The proof verifies missing
   commit finalization preserves mutation rows, exposes lease owner identity in
