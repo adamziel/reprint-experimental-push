@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 15:13 CEST +02:00.
+- Last update: 2026-05-31 15:17 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0455 remote plugin removal refusal variant-3 merge ending at
-  `875fd5e`.
+  the RPP-0460 arbitrary plugin fixture package variant-3 merge ending at
+  `0f857d8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 625
-  items checked and leaves 375 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 626
+  items checked and leaves 374 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  99 plugin-driver boundary items, 42 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 42 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Arbitrary plugin fixture package variant-3 proof: the current lane now checks
+  `RPP-0460` with local plugin-driver support evidence. The proof adds
+  deterministic generated arbitrary-table fixture cases, keeps plugin fixture
+  package evidence hash-only, records local/support-only release-gate scope, and
+  refuses unsupported fixture package variants before release credit. Command:
+  `node --test --test-name-pattern RPP-0460 test/rpp-0460-arbitrary-plugin-fixture-package-v3.test.js`.
+  Caveat: local plugin-driver support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0460
+  coverage 5/5, adjacent RPP-0480 coverage 6/6, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 626/374; final release remains
+  `NO-GO` because this is support evidence, not production-backed plugin-driver
+  proof.
 - Remote plugin removal refusal variant-3 proof: the current lane now checks
   `RPP-0455` with local plugin-driver support evidence. The proof keeps remote
   plugin removal refusal local/support-only and hash-only, records release-gate
