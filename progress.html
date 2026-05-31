@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>583</strong>
+        <strong>584</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>417</strong>
+        <strong>416</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -393,7 +393,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production chunking not checked">
-            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, MySQL and SQLite CAS write guard variant-2 support proof, transaction boundary policy variant-2 support proof, a large post table planner/apply benchmark, a large media library storage/row-precondition benchmark, a large plugin file atomic-group benchmark, a filesystem memory-ceiling proof, timeout-budget resume proof, and long-push progress reporting, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
+            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, MySQL and SQLite CAS write guard variant-2 support proof, filesystem compare-and-rename write variant-2 support proof, transaction boundary policy variant-2 support proof, a large post table planner/apply benchmark, a large media library storage/row-precondition benchmark, a large plugin file atomic-group benchmark, a filesystem memory-ceiling proof, timeout-budget resume proof, and long-push progress reporting, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Release CI not checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0643</span>
+        <span>RPP-0724</span>
       </div>
-      <p>The latest refresh checks RPP-0643 with generated-style single-writer lease claim variant-3 recovery evidence. The proof validates restart-readable competing-writer refusal, expired-lease claim advancement for one writer, prior-writer fencing, preserved remote-change snapshots, zero mutation rows on blocked recovery, and hash-only journal evidence. Counts are now 583/417; final release remains NO-GO because this is local recovery support evidence, not production-backed durability proof.</p>
+      <p>The latest refresh checks RPP-0724 with filesystem compare-and-rename write variant-2 evidence. The proof validates matching update/create writes after compare-before-rename, stale filesystem refusal without rename, stale temp cleanup, deterministic benchmark gates, and hash-only evidence. Counts are now 584/416; final release remains NO-GO because this is local filesystem support evidence, not production-backed storage durability proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0724 focused: 3/3</span>
+        <span class="tag">filesystem adjacent: 6/6</span>
+        <span class="tag">bounded benchmark: pass</span>
+        <span class="tag">direct core/focused/benchmark: 9/9</span>
+        <span class="tag">stale rename blocked</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0643 focused: 2/2</span>
         <span class="tag">direct focused: 2/2</span>
         <span class="tag">lease adjacent: 5/5</span>
