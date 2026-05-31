@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 12:43 CEST +02:00.
+- Last update: 2026-05-31 12:44 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0643 single-writer lease claim variant-3 merge ending at `4bf7dd67`.
+  the RPP-0724 filesystem compare-and-rename write variant-2 merge ending at
+  `2917a58f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 583
-  items checked and leaves 417 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 584
+  items checked and leaves 416 open.
 - Checked slices: 100 release-gate foundation items, 84 graph identity items,
   90 plugin-driver boundary items, 36 executor/auth items, 44 recovery items,
-  26 storage/performance items, 3 production-topology items, 100 generated
+  27 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Filesystem compare-and-rename write variant-2 proof: the current lane now
+  checks `RPP-0724` with local storage/performance support evidence. The proof
+  applies matching update/create writes only after compare-before-rename,
+  rejects stale filesystem state without renaming the temp file, removes stale
+  temp files, keeps benchmark gates deterministic, and records hash-only
+  evidence. Command:
+  `node --test --test-name-pattern RPP-0724 test/rpp-0724-filesystem-compare-and-rename-write-v2.test.js`.
+  Caveat: local filesystem support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0724
+  coverage 3/3, adjacent filesystem compare-and-rename coverage 6/6, bounded
+  filesystem compare-and-rename unit benchmark, direct core/focused/benchmark
+  coverage 3/3 each, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 584/416; final release remains `NO-GO` because this is
+  support evidence, not external durability or production-backed storage proof.
 - Single-writer lease claim variant-3 proof: the current lane now checks
   `RPP-0643` with generated-style recovery evidence for restart-readable
   single-writer lease fencing. The proof covers competing writer refusal after
