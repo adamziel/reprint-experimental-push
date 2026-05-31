@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 21:10 CEST +02:00.
+- Last update: 2026-05-31 21:13 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0758 timeout budget proof variant-3 merge ending at `72c1df`.
+  the RPP-0759 long-push progress reporting variant-3 merge ending at `17f4ae`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 750
-  items checked and leaves 250 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 751
+  items checked and leaves 249 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  58 storage/performance items, 3 production-topology items, 100 generated
+  59 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Long-push progress reporting variant-3 proof: the current lane now checks
+  `RPP-0759` with local storage/performance support evidence. The proof carries
+  the RPP-0719 large-site profile forward with 254 scheduled actions, 206 upload
+  chunks, 27 database batches, 40 operator progress events, monotonic counters,
+  durable cursor hashes, phase coverage through final commit, and completion
+  reaching 100 percent only after final durable evidence. It blocks over-budget,
+  missing-event, stale-cursor, missing-phase, minimum-event, raw-value, and
+  premature-pass cases. Command:
+  `node --test --test-name-pattern RPP-0759 test/rpp-0759-long-push-progress-reporting-v3.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0759
+  coverage 3/3, adjacent RPP-0739 coverage 2/2, RPP-0719 long-push progress
+  coverage 3/3, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 751/249; final release remains `NO-GO` because this is support
+  evidence, not production-backed external durability proof.
 - Timeout budget proof variant-3 proof: the current lane now checks `RPP-0758`
   with local storage/performance support evidence. The proof carries the
   RPP-0738 timeout-budget lane forward, generates timeout cases after 1, 2, 3,
