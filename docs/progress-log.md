@@ -6,20 +6,44 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 00:25 CEST +02:00.
+- Last update: 2026-06-01 00:30 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0576 same-key same-body replay variant-4 merge ending at
-  `2b052954`.
+  the RPP-0800 rollout threshold configuration release-verifier variant-5 merge
+  ending at `d13ee7b9`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 796
-  items checked and leaves 204 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 797
+  items checked and leaves 203 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 94 executor/auth items, 100 recovery items,
-  99 storage/performance items, 3 production-topology items, 100 generated
+  100 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Rollout threshold configuration release-verifier variant-5 proof: the current
+  lane now checks `RPP-0800` with deterministic local release-verifier support
+  evidence. The proof carries the RPP-0780/RPP-0760/RPP-0740 rollout-threshold
+  lineage, keeps the threshold sequence at 250, 500, 1000, 2500, 5000, 7500,
+  9000, and 10000 basis points, records the carried storage/performance shape,
+  and verifies that fast-path lane updates are accepted only after correctness
+  gates hold. The focused verifier also carries a support-only loopback live
+  HTTP fixture with request/response hashes, counts, and statuses only. All ten
+  release-verifier gates must pass and be recorded before output is accepted,
+  including runtime/resources, loopback fixture carry-through, threshold
+  configuration carry-through, storage/performance carry-through, unsafe
+  threshold cases that fail closed, hash/count-only output, and support-only
+  `NO-GO`.
+  Command:
+  `node --test --test-name-pattern RPP-0800 test/rpp-0800-rollout-threshold-configuration-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0800
+  coverage 2/2, adjacent RPP-0780 coverage 2/2, adjacent RPP-0760 coverage
+  2/2, adjacent RPP-0740 coverage 2/2, scoped artifact redaction scan, and
+  diff whitespace checks. Counts are now 797/203; final release remains
+  `NO-GO` because this is support evidence, not checked production storage
+  receipts, production row batch executor evidence, production atomic group
+  commit evidence, live production service evidence, production throughput,
+  release approval, or a production release gate.
 - Same-key same-body replay variant-4 proof: the current lane now checks
   `RPP-0576` with focused live loopback endpoint support coverage. The proof
   starts a local HTTP listener on `http://127.0.0.1:8080`, sends real
