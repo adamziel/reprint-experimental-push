@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 19:44 CEST +02:00.
+- Last update: 2026-05-31 19:47 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0697 process kill before first mutation variant-5 merge ending at
-  `ed8608`.
+  the RPP-0696 different-body idempotency conflict variant-5 merge ending at
+  `99d5d7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 721
-  items checked and leaves 279 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 722
+  items checked and leaves 278 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 97 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 98 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Different-body idempotency conflict variant-5 proof: the current lane now
+  checks `RPP-0696` with local recovery support evidence. The proof carries a
+  SQLite-backed different-body conflict through the release verifier, proves the
+  recovery state from SQLite readback, and rejects missing, malformed, stale,
+  duplicated, or drifted conflict evidence. Command:
+  `node --test --test-name-pattern RPP-0696 test/rpp-0696-different-body-idempotency-conflict-v5.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0696 coverage 2/2,
+  adjacent RPP-0676 coverage 2/2, adjacent RPP-0656 coverage 2/2, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 722/278;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed recovery proof.
 - Process kill before first mutation variant-5 proof: the current lane now
   checks `RPP-0697` with local recovery support evidence. The proof carries
   pre-mutation process-kill restart rows through the release verifier, proves

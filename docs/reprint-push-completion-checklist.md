@@ -737,7 +737,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [x] RPP-0693 (Far / recovery) Carry through the release verifier for unknown drift classification, variant 5. Success: retry does not overwrite preserved remote changes.
 - [x] RPP-0694 (Far / recovery) Carry through the release verifier for same-key replay after commit, variant 5. Success: lease owner identity is visible in audit evidence.
 - [x] RPP-0695 (Far / recovery) Carry through the release verifier for same-key replay after rejection, variant 5. Success: release verifier reports the recovery gate as proven on the same path.
-- [ ] RPP-0696 (Far / recovery) Carry through the release verifier for different-body idempotency conflict, variant 5. Success: MySQL or SQLite-backed test proves the recovery state.
+- [x] RPP-0696 (Far / recovery) Carry through the release verifier for different-body idempotency conflict, variant 5. Success: MySQL or SQLite-backed test proves the recovery state.
 - [x] RPP-0697 (Far / recovery) Carry through the release verifier for process kill before first mutation, variant 5. Success: journal rows are durable after process restart.
 - [x] RPP-0698 (Far / recovery) Carry through the release verifier for process kill mid mutation set, variant 5. Success: retry does not overwrite preserved remote changes.
 - [ ] RPP-0699 (Far / recovery) Carry through the release verifier for missing commit finalization, variant 5. Success: lease owner identity is visible in audit evidence.
