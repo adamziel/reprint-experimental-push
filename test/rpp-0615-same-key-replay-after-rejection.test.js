@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { buildDurableRecoveryJournalReleaseProof } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
 
 function buildReleaseSummary() {
+  const originalRequestHash = 'c'.repeat(64);
+  const conflictingRequestHash = 'd'.repeat(64);
   const claim = {
     activeClaimId: 'psh_rpp0615_active_claim',
     activeClaimKeyHash: 'a'.repeat(64),
@@ -91,6 +93,8 @@ function buildReleaseSummary() {
         idempotency: {
           conflict: true,
           freshMutationWork: false,
+          requestHash: conflictingRequestHash,
+          originalRequestHash,
         },
         targetSnapshotUnchanged: true,
       },
@@ -100,12 +104,12 @@ function buildReleaseSummary() {
           'idempotency-key-conflict': 1,
         },
         latestEvents: [
-          { sequence: 1, event: 'idempotency-opened' },
-          { sequence: 2, event: 'apply-started' },
-          { sequence: 3, event: 'mutation-applied' },
-          { sequence: 4, event: 'apply-committed' },
-          { sequence: 5, event: 'apply-replayed' },
-          { sequence: 6, event: 'idempotency-key-conflict' },
+          { sequence: 1, event: 'idempotency-opened', requestHash: originalRequestHash },
+          { sequence: 2, event: 'apply-started', requestHash: originalRequestHash },
+          { sequence: 3, event: 'mutation-applied', requestHash: originalRequestHash },
+          { sequence: 4, event: 'apply-committed', requestHash: originalRequestHash },
+          { sequence: 5, event: 'apply-replayed', requestHash: originalRequestHash },
+          { sequence: 6, event: 'idempotency-key-conflict', requestHash: conflictingRequestHash },
         ],
       },
       staleClaimRetry: {
