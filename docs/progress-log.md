@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 12:20 CEST +02:00.
+- Last update: 2026-05-31 12:21 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0446 wp_termmeta driver semantics variant-3 merge ending at `5ff8406b`.
+  the RPP-0536 same-key same-body replay variant-2 merge ending at `cafcd31b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 578
-  items checked and leaves 422 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 579
+  items checked and leaves 421 open.
 - Checked slices: 100 release-gate foundation items, 83 graph identity items,
-  89 plugin-driver boundary items, 35 executor/auth items, 43 recovery items,
+  89 plugin-driver boundary items, 36 executor/auth items, 43 recovery items,
   25 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key same-body replay variant-2 proof: the current lane now checks
+  `RPP-0536` with local authenticated-client support evidence. The proof sends
+  an authenticated apply, repeats the same idempotency key with a byte-equivalent
+  body, verifies replay returns the committed result without fresh mutation
+  work, then probes the same key with a different body and confirms the conflict
+  is pre-mutation and hash-only. Command:
+  `node --test test/rpp-0536-same-key-same-body-replay-v2.test.js`.
+  Caveat: local authenticated endpoint support evidence only; final release
+  remains `NO-GO`. Validation passed with a Node syntax check, focused RPP-0536
+  coverage 1/1, adjacent RPP-0516/RPP-0615/RPP-0616 coverage 5/5,
+  authenticated replay/idempotency subset coverage 29/29, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 579/421; final
+  release remains `NO-GO` because this is support evidence, not a checked live
+  production endpoint proof.
 - wp_termmeta driver semantics variant-3 proof: the current lane now checks
   `RPP-0446` with a standalone generated-style plugin-driver proof. The focused
   test plans exactly one scoped `wp_termmeta` mutation with live-remote
