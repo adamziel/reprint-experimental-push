@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 637.
-- Remaining open: 363.
+- Verified complete: 655.
+- Remaining open: 345.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -614,7 +614,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [x] RPP-0575 (Mid-Far / executor-auth) Add focused regression coverage for idempotency key requirement, variant 4. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0576 (Mid-Far / executor-auth) Add focused regression coverage for same-key same-body replay, variant 4. Success: real endpoint test runs against a live URL.
 - [x] RPP-0577 (Mid-Far / executor-auth) Add focused regression coverage for same-key different-body conflict, variant 4. Success: negative auth cases fail before JSON parsing and mutation.
-- [ ] RPP-0578 (Mid-Far / executor-auth) Add focused regression coverage for capability downgrade rejection, variant 4. Success: dry-run receipts bind session, identity, scope, and plan hash.
+- [x] RPP-0578 (Mid-Far / executor-auth) Add focused regression coverage for capability downgrade rejection, variant 4. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0579 (Mid-Far / executor-auth) Add focused regression coverage for credential rotation behavior, variant 4. Success: apply revalidates the live source before mutation.
 - [ ] RPP-0580 (Mid-Far / executor-auth) Add focused regression coverage for production audit event schema, variant 4. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0581 (Mid-Far / executor-auth) Carry through the release verifier for production preflight route, variant 5. Success: real endpoint test runs against a live URL.
