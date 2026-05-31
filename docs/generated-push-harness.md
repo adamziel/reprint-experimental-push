@@ -101,7 +101,8 @@ The default generated run covers:
   carry-through, and delete refusal with per-tier target counts, atomic plugin
   install ready and missing-dependency paths with
   per-tier target counts, stale remote after dry-run target counts with
-  explicit variant-3 and variant-4 hash-only replay refusal evidence, and
+  explicit variant-3, variant-4, and release-verifier variant-5 hash-only
+  replay refusal evidence, and
   explicit atomic plugin install stack release-verifier variant-5 hash-only
   carry-through,
   same-plan post-parent,
@@ -866,6 +867,18 @@ digest unchanged before mutation. The evidence remains hash-only: resource keys,
 mutation/precondition hashes, refusal-detail hashes, tier counts, and status
 counts are retained, while generated payload values are omitted.
 
+RPP-0197 adds `staleRemoteAfterDryRunReleaseVerifierVariant5` coverage for the
+same ready-plan precondition surface as an explicit release-verifier-v5 target.
+The deterministic summary exposes the same 344 ready replay-refusal cases
+across all 10 tiers, and the focused carry-through proof independently
+recounts the target, cross-checks it against the legacy, variant-3, and
+variant-4 stale-replay targets, selects the highest-mutation-count ready case
+in each tier, drifts a midpoint planned mutation after dry-run, and verifies
+`PRECONDITION_FAILED` leaves the remote digest unchanged before mutation. The
+evidence remains local generated-model proof only and hash-only for resource
+keys, mutation/precondition hashes, refusal-detail hashes, tier counts, status
+counts, and release-verifier model proof hashes.
+
 The `commentUserGraph` target coverage records per-tier counts for generated
 `wp_comments.user_id` author references. Ready cases create the user and comment
 in one plan and reject a stale replay before mutation; stale cases keep the user
@@ -912,7 +925,7 @@ rejects stale dependency replay with `PRECONDITION_FAILED` before mutation, and
 verifies the missing-dependency stack refuses apply with `PLAN_NOT_READY`
 before mutation while preserving the remote digest.
 
-At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 345 ready, 201 conflict, and 74 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 10 `sameIndependentContent` cases, 10 `sameIndependentContentVariant3` cases, 20 `postAuthorGraph` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 20 `atomicPluginInstallStackV2` cases, 20 `atomicPluginInstallStackV4` cases, 20 `atomicPluginInstallStackReleaseVerifierVariant5` cases, 20 `wpOptionsDriverSemanticsVariant3` cases, 20 `pluginOwnedOptionChangeReleaseVerifierVariant5` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, 10 `pluginOwnedCustomTableChangesReleaseVerifierVariant5` cases, 9 `remoteOnlyPreservation` cases, 9 `remoteOnlyPreservationVariant3` cases, 344 `staleRemoteAfterDryRun` ready-plan stale-replay precondition cases, 344 `staleRemoteAfterDryRunVariant3` ready-plan stale-replay precondition cases, and 344 `staleRemoteAfterDryRunVariant4` ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
+At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 345 ready, 201 conflict, and 74 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 10 `sameIndependentContent` cases, 10 `sameIndependentContentVariant3` cases, 20 `postAuthorGraph` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 20 `atomicPluginInstallStackV2` cases, 20 `atomicPluginInstallStackV4` cases, 20 `atomicPluginInstallStackReleaseVerifierVariant5` cases, 20 `wpOptionsDriverSemanticsVariant3` cases, 20 `pluginOwnedOptionChangeReleaseVerifierVariant5` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, 10 `pluginOwnedCustomTableChangesReleaseVerifierVariant5` cases, 9 `remoteOnlyPreservation` cases, 9 `remoteOnlyPreservationVariant3` cases, 344 `staleRemoteAfterDryRun` ready-plan stale-replay precondition cases, 344 `staleRemoteAfterDryRunVariant3` ready-plan stale-replay precondition cases, 344 `staleRemoteAfterDryRunVariant4` ready-plan stale-replay precondition cases, and 344 `staleRemoteAfterDryRunReleaseVerifierVariant5` ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
 
 ## Extension Rule
 
