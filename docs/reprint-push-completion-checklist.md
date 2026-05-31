@@ -789,7 +789,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0740 (Far / storage-performance) Prove rollout threshold configuration, variant 2. Success: fast-path lane updates only after correctness gates hold.
 - [x] RPP-0741 (Far / storage-performance) Add generated coverage for MySQL compare-and-swap write guard, variant 3. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [x] RPP-0742 (Far / storage-performance) Add generated coverage for SQLite compare-and-swap write guard, variant 3. Success: guarded writes reject stale storage state.
-- [ ] RPP-0743 (Far / storage-performance) Add generated coverage for transaction boundary policy, variant 3. Success: chunk transfer resumes without duplicate mutation work.
+- [x] RPP-0743 (Far / storage-performance) Add generated coverage for transaction boundary policy, variant 3. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0744 (Far / storage-performance) Add generated coverage for filesystem compare-and-rename write, variant 3. Success: large-site run finishes inside documented budgets.
 - [ ] RPP-0745 (Far / storage-performance) Add generated coverage for filesystem fsync evidence, variant 3. Success: fast-path lane updates only after correctness gates hold.
 - [ ] RPP-0746 (Far / storage-performance) Add generated coverage for large upload chunk manifest, variant 3. Success: benchmark command reports runtime, resources, and pass/fail gates.
