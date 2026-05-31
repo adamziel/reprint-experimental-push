@@ -6,19 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 22:12 CEST +02:00.
+- Last update: 2026-05-31 22:21 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0774 large post table benchmark variant-4 merge ending at `39822e`.
+  the RPP-0777 memory ceiling proof variant-4 merge ending at `1f9067`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 766
-  items checked and leaves 234 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 767
+  items checked and leaves 233 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  74 storage/performance items, 3 production-topology items, 100 generated
+  75 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Memory ceiling proof variant-4 proof: the current lane now checks `RPP-0777`
+  with deterministic local storage/performance support evidence. The proof
+  carries forward the RPP-0757/RPP-0737/RPP-0717 filesystem memory-ceiling
+  guarded-write lineage and runs a fixed local unit profile with 4 update
+  files, 3 create files, 3 stale files, 10 guarded writes attempted, 7 applied
+  writes, 3 stale-at-write rejections, 0 unsafe rename-on-stale writes, 196608
+  preserved stale-drift bytes, and 4096-byte maximum buffered planned payloads.
+  It proves stale target drift is detected after streaming the planned bytes to
+  a same-directory temp file and before rename, temp files are cleaned up, the
+  drifted target state is preserved, and output remains blocked until the full
+  eight-gate correctness vector is present and passing. Command:
+  `node --test --test-name-pattern RPP-0777 test/rpp-0777-memory-ceiling-proof-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0777
+  coverage 3/3, adjacent RPP-0757 coverage 3/3, adjacent RPP-0737 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  767/233; final release remains `NO-GO` because this is support evidence, not
+  production-backed storage performance, filesystem durability, remote receipt,
+  row batch executor, or atomic commit proof.
 - Large post table benchmark variant-4 proof: the current lane now checks
   `RPP-0774` with deterministic local storage/performance support evidence. The
   proof carries forward the RPP-0754/RPP-0734/RPP-0714 large `wp_posts` table
