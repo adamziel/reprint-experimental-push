@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 15:41 CEST +02:00.
+- Last update: 2026-05-31 15:44 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0553 nonce replay store variant-3 merge ending at `75b4c3`.
+  the RPP-0554 receipt expiry validation variant-3 merge ending at `9f3ef6`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 635
-  items checked and leaves 365 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 636
+  items checked and leaves 364 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 51 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 52 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Receipt expiry validation variant-3 proof: the current lane now checks
+  `RPP-0554` with local executor-auth support evidence. The proof rejects
+  expired dry-run receipts before any apply, recovery, replay, journal, or
+  mutation-path request is sent, and requires apply-time live-source
+  revalidation before mutation on the accepted unexpired receipt path. Command:
+  `node --test --test-name-pattern RPP-0554 test/rpp-0554-receipt-expiry-validation-v3.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0554
+  coverage 3/3, adjacent RPP-0534 coverage 3/3, authenticated-client
+  receipt/expired coverage 6/6, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 636/364; final release remains `NO-GO`
+  because this is support evidence, not production-backed receipt expiry proof.
 - Nonce replay store variant-3 proof: the current lane now checks `RPP-0553`
   with local executor-auth support evidence. The proof shows a signed dry-run
   retry regenerates nonce evidence and binds the accepted receipt to the final
