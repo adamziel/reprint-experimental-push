@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 14:54 CEST +02:00.
+- Last update: 2026-05-31 14:58 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0358 GUID and slug collision handling variant-3 merge ending at
-  `bcb45a7`.
+  the RPP-0359 cross-table create batch mapping variant-3 merge ending at
+  `35a93d4`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 620
-  items checked and leaves 380 open.
-- Checked slices: 100 release-gate foundation items, 98 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 621
+  items checked and leaves 379 open.
+- Checked slices: 100 release-gate foundation items, 99 graph identity items,
   96 plugin-driver boundary items, 42 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Cross-table create batch mapping variant-3 proof: the current lane now checks
+  `RPP-0359` with local graph-identity support evidence. The proof carries a
+  same-plan post/postmeta create batch through local-production apply, fails
+  closed when the postmeta target is not apply-revalidated, and refuses stale
+  replay before mutation. Command:
+  `node --test --test-name-pattern RPP-0359 test/rpp-0359-cross-table-create-batch-mapping-v3.test.js`.
+  Caveat: local graph-identity support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0359
+  coverage 3/3, adjacent RPP-0379 coverage 2/2, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 621/379; final release remains
+  `NO-GO` because this is support evidence, not production-backed graph identity
+  proof.
 - GUID and slug collision handling variant-3 proof: the current lane now checks
   `RPP-0358` with local graph-identity support evidence. The proof confirms the
   generated harness includes ready unique GUID/slug cases and stale remote
