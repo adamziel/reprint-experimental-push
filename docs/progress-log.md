@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 14:07 CEST +02:00.
+- Last update: 2026-05-31 14:15 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0731 remote hash pagination variant-2 merge ending at `acca3b4`.
+  the RPP-0542 production snapshot hashes route variant-3 merge ending at
+  `eb17adc`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 606
-  items checked and leaves 394 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 607
+  items checked and leaves 393 open.
 - Checked slices: 100 release-gate foundation items, 88 graph identity items,
-  95 plugin-driver boundary items, 41 executor/auth items, 48 recovery items,
+  95 plugin-driver boundary items, 42 executor/auth items, 48 recovery items,
   31 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production snapshot hashes route variant-3 proof: the current lane now checks
+  `RPP-0542` with local executor/auth support evidence. The proof accepts a
+  production-shaped local snapshot-hashes route summary as support-only
+  evidence, confirms negative auth cases fail before JSON parsing or
+  mutation-capable work, and refuses missing or stale route evidence before
+  release movement. Command:
+  `node --test --test-name-pattern RPP-0542 test/rpp-0542-production-snapshot-hashes-route-v3.test.js`.
+  Caveat: local production-shaped executor/auth evidence only; final release
+  remains `NO-GO`. Validation passed with a Node syntax check, focused RPP-0542
+  coverage 3/3, adjacent production snapshot hashes route coverage 7/7, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 607/393;
+  final release remains `NO-GO` because this is support evidence, not checked
+  production endpoint proof.
 - Remote hash pagination variant-2 proof: the current lane now checks
   `RPP-0731` with local storage/performance support evidence. The proof reports
   runtime, resource usage, page count, page size, and pass/fail gates for paged
