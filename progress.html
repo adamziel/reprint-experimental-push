@@ -406,13 +406,13 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0678</span>
+        <span>RPP-0679</span>
       </div>
-      <p>The latest refresh checks RPP-0678 with process kill mid mutation set variant-4 evidence. The proof verifies a mid-mutation crash and retry path preserves remote-only changes before and after the kill boundary, appends only retry recovery rows, and repair replay mutates only planned old targets. Counts are now 702/298; final release remains NO-GO because this is local recovery support evidence, not production-backed recovery proof.</p>
+      <p>The latest refresh checks RPP-0679 with missing commit finalization variant-4 evidence. The proof verifies missing finalization preserves mutation rows, exposes lease owner identity in hash-only audit evidence, and keeps restart-readable writer and lease-fence identities aligned with the same claim. Counts are now 703/297; final release remains NO-GO because this is local recovery support evidence, not production-backed recovery proof.</p>
       <div class="tag-row" aria-label="Latest validation">
-        <span class="tag">RPP-0678 focused: 1/1</span>
-        <span class="tag">RPP-0658 adjacent: 1/1</span>
-        <span class="tag">retry-preservation adjacent: 1/1</span>
+        <span class="tag">RPP-0679 focused: 1/1</span>
+        <span class="tag">RPP-0659 adjacent: 1/1</span>
+        <span class="tag">RPP-0639 adjacent: 1/1</span>
         <span class="tag">local support-only</span>
         <span class="tag">ownership record</span>
         <span class="tag">release-gate scoped</span>
