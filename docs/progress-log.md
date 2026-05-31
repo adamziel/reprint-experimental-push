@@ -6,20 +6,42 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 22:45 CEST +02:00.
+- Last update: 2026-05-31 22:47 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0780 rollout threshold configuration variant-4 merge ending at
-  `766e60`.
+  the RPP-0781 MySQL CAS write guard release-verifier variant-5 merge ending at
+  `217425`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 772
-  items checked and leaves 228 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 773
+  items checked and leaves 227 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  80 storage/performance items, 3 production-topology items, 100 generated
+  81 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- MySQL CAS write guard release-verifier variant-5 proof: the current lane now
+  checks `RPP-0781` with deterministic local release-verifier support evidence.
+  The proof carries the RPP-0761/RPP-0741 MySQL compare-and-swap write guard
+  lineage into a benchmark command report that includes runtime metadata,
+  process resources, storage resources, SQL shape resources, and pass/fail gate
+  output even when MySQL connection settings are unset. The pass-gate profile
+  records deterministic-no-MySQL-runtime mode, 38.974 ms duration inside a
+  5000 ms budget, 5673720 bytes heap used inside a 268435456-byte budget,
+  112 guarded writes attempted, 35 applied writes, 35 stale-at-write refusals,
+  35 absent-at-write refusals, 7 duplicate-key refusals, 0 unsafe multiple-match
+  writes, 5 single-statement SQL shapes, 10 evidence samples, and all seven
+  benchmark gates passing. A fail-gate run with a 1-byte heap budget exits
+  non-zero while still reporting runtime, resources, counts, SQL shapes, and
+  the `runtime-resource-budget` failure. Command:
+  `node --test --test-name-pattern RPP-0781 test/rpp-0781-mysql-cas-write-guard-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0781
+  coverage 2/2, adjacent RPP-0761 coverage 2/2, adjacent RPP-0741 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  773/227; final release remains `NO-GO` because this is support evidence, not
+  production-backed MySQL durability, live CAS DML, production throughput, or
+  external release approval.
 - Rollout threshold configuration variant-4 proof: the current lane now checks
   `RPP-0780` with deterministic local storage/performance support evidence. The
   proof carries forward the RPP-0760/RPP-0740 rollout threshold lineage and
