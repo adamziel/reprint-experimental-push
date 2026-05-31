@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 14:02 CEST +02:00.
+- Last update: 2026-05-31 14:04 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0452 direct active_plugins mutation refusal variant-3 merge ending at
-  `aa7ecde`.
+  the RPP-0541 production preflight route variant-3 merge ending at `082a363`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 603
-  items checked and leaves 397 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 604
+  items checked and leaves 396 open.
 - Checked slices: 100 release-gate foundation items, 88 graph identity items,
-  95 plugin-driver boundary items, 40 executor/auth items, 47 recovery items,
+  95 plugin-driver boundary items, 41 executor/auth items, 47 recovery items,
   30 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production preflight route variant-3 proof: the current lane now checks
+  `RPP-0541` with local executor/auth support evidence. The proof accepts a
+  production-shaped local preflight route summary as support-only evidence,
+  refuses missing or stale preflight proof before follow-up routes, and keeps
+  auth failure summaries hash-only without moving release gates. Command:
+  `node --test --test-name-pattern RPP-0541 test/rpp-0541-production-preflight-route-v3.test.js`.
+  Caveat: local production-shaped executor/auth evidence only; final release
+  remains `NO-GO`. Validation passed with a Node syntax check, focused RPP-0541
+  coverage 3/3, adjacent production preflight route coverage 5/5, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 604/396;
+  final release remains `NO-GO` because this is support evidence, not checked
+  production endpoint proof.
 - Direct active_plugins mutation refusal variant-3 proof: the current lane now
   checks `RPP-0452` with local plugin-driver support evidence. The proof refuses
   direct writes and deletes to the `active_plugins` option before mutation,
