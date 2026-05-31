@@ -12737,6 +12737,511 @@ function assertPluginOwnedCustomTableVariant3EvidenceRedacted(testCase, shape) {
   }
 }
 
+test('RPP-0341 generated harness records post_parent page hierarchy variant 3 coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.postParentPageHierarchyVariant3;
+  const expectedPerTier = Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2]));
+
+  assert.ok(coverage, 'missing post_parent page hierarchy variant 3 target coverage');
+  assert.equal(coverage.family, 'post-parent-page-hierarchy-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['post-parent-page-hierarchy-v3']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { blocked: 10, ready: 10 });
+  assert.deepEqual(coverage.perTier, expectedPerTier);
+  assert.equal(report.summary.featureFamilies['post-parent-page-hierarchy-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['post-parent-page-hierarchy-v3-stale'], 10);
+  assert.equal(report.summary.featureFamilies['post-parent-page-hierarchy-v3-non-ready'], 10);
+
+  const firstEvidence = generatedPostParentPageHierarchyVariant3Evidence(coverage);
+  const replayEvidence = generatedPostParentPageHierarchyVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0341 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; final release remains NO-GO.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'post_parent variant 3 evidence changed between runs');
+  assert.equal(firstEvidence.target, 'postParentPageHierarchyVariant3');
+  assert.equal(firstEvidence.family, 'post-parent-page-hierarchy-variant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.variant),
+    ['ready-identity-map', 'stale-fail-closed'],
+  );
+
+  const [readyCase, staleCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.status, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.identityMap.sourceDecision, 'map-local-identity-to-remote');
+  assert.equal(readyCase.identityMap.targetDecision, 'keep-remote');
+  assert.equal(readyCase.childMutation.action, 'put');
+  assert.equal(readyCase.childMutation.changeKind, 'create');
+  assert.equal(readyCase.childMutation.plannedPostParent, readyCase.surface.targetParent.id);
+  assert.equal(readyCase.childMutation.rewrite.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(readyCase.childMutation.rewrite.relationshipType, 'post-parent');
+  assert.equal(readyCase.childMutation.rewrite.sourceTargetResourceKey, readyCase.surface.sourceParent.resourceKey);
+  assert.equal(readyCase.childMutation.rewrite.targetResourceKey, readyCase.surface.targetParent.resourceKey);
+  assert.equal(readyCase.childMutation.preconditionExpectedHash, readyCase.childMutation.remoteBeforeHash);
+  assert.equal(readyCase.childMutation.appliedHash, readyCase.childMutation.plannedLocalHash);
+  assert.match(readyCase.childMutation.rewrite.rewriteHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(staleCase.status, 'blocked');
+  assert.equal(staleCase.applied, false);
+  assert.equal(staleCase.blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(staleCase.blocker.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(staleCase.blocker.relationshipType, 'post-parent');
+  assert.equal(staleCase.blocker.targetResourceKey, staleCase.surface.sourceParent.resourceKey);
+  assert.equal(staleCase.blocker.targetRemoteChange, 'update');
+  assert.equal(staleCase.blocker.plannedMutation, false);
+  assert.equal(staleCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(staleCase.refusal.remoteBeforeHash, staleCase.refusal.remoteAfterHash);
+  assert.match(staleCase.blocker.referenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(staleCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('RPP-0341 generated mapped parent'), false, 'variant 3 evidence leaked parent title');
+  assert.equal(evidenceText.includes('RPP-0341 generated page hierarchy child'), false, 'variant 3 evidence leaked child title');
+  assert.equal(evidenceText.includes('rpp0341-ready-parent-private'), false, 'variant 3 evidence leaked ready parent body');
+  assert.equal(evidenceText.includes('rpp0341-stale-remote-parent-private'), false, 'variant 3 evidence leaked stale parent body');
+  assert.equal(evidenceText.includes('rpp0341-stale-local-child-private'), false, 'variant 3 evidence leaked stale child body');
+});
+
+function generatedPostParentPageHierarchyVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('post-parent-page-hierarchy-v3')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedPostParentPageHierarchyVariant3CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'stale';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'post_parent variant 3 target recount should match tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'post_parent variant 3 target recount should match statuses');
+  assert.equal(totalCases, targetCoverage.total, 'post_parent variant 3 target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready post_parent case');
+  assert.ok(selectedCases.has('stale'), 'variant 3 target should select one stale post_parent case');
+
+  return {
+    target: 'postParentPageHierarchyVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('stale'),
+    ],
+  };
+}
+
+function generatedPostParentPageHierarchyVariant3CaseEvidence(testCase, result) {
+  const staleTarget = testCase.tags.has('post-parent-page-hierarchy-v3-stale');
+  assert.equal(
+    testCase.tags.has('post-parent-page-hierarchy-v3-ready'),
+    !staleTarget,
+    `${testCase.id} should carry exactly one post_parent variant 3 ready/stale tag`,
+  );
+  assert.equal(
+    testCase.tags.has('post-parent-page-hierarchy-v3-non-ready'),
+    staleTarget,
+    `${testCase.id} should tag stale post_parent variant 3 cases as non-ready`,
+  );
+
+  const shape = postParentPageHierarchyVariant3Shape(testCase, { staleTarget });
+  const plan = createGeneratedPlan(testCase);
+  const surface = postParentPageHierarchyVariant3Surface(testCase, shape);
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant: result.status === 'ready' ? 'ready-identity-map' : 'stale-fail-closed',
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    surface,
+  };
+
+  if (result.status === 'ready') {
+    assert.equal(staleTarget, false, `${testCase.id} ready evidence should use the identity-map target`);
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(result.applied, true, `${testCase.id} should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const identityMap = postParentPageHierarchyVariant3IdentityMapEvidence({ plan, shape });
+    const childMutation = postParentPageHierarchyVariant3ReadyMutationEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+    const evidence = {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      staleReplayRejected: result.staleReplayRejected,
+      staleReplayRejectionCode: result.staleReplayRejectionCode,
+      staleReplayRemoteUnchanged: result.staleReplayRemoteUnchanged,
+      identityMap,
+      childMutation,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        identityMap,
+        childMutation,
+      })}`,
+    };
+    assertPostParentPageHierarchyVariant3RawValuesAbsent(testCase, shape, JSON.stringify(evidence));
+    return evidence;
+  }
+
+  assert.equal(staleTarget, true, `${testCase.id} non-ready evidence should use the stale post_parent target`);
+  assert.equal(result.status, 'blocked', `${testCase.id} should validate as blocked`);
+  assert.equal(plan.status, 'blocked', `${testCase.id} should plan as blocked`);
+  assert.equal(result.applied, false, `${testCase.id} stale post_parent graph should not apply`);
+  assert.equal(result.nonReadyRemoteUnchanged, true, `${testCase.id} stale post_parent graph should leave remote unchanged`);
+
+  const blocker = postParentPageHierarchyVariant3StaleBlockerEvidence({ testCase, plan, shape });
+  const refusal = postParentPageHierarchyVariant3RefusalEvidence(testCase, plan);
+  const evidence = {
+    ...commonEvidence,
+    applied: result.applied,
+    blocker,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      blocker,
+      refusal,
+    })}`,
+  };
+  assertPostParentPageHierarchyVariant3RawValuesAbsent(testCase, shape, JSON.stringify(evidence));
+  return evidence;
+}
+
+function postParentPageHierarchyVariant3Shape(testCase, { staleTarget }) {
+  const childRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([, row]) => String(row.post_title || '').startsWith(
+      `RPP-0341 generated page hierarchy child ${staleTarget ? 'stale' : 'ready'} `,
+    ));
+
+  assert.equal(childRows.length, 1, `${testCase.id} should include one generated post_parent child page`);
+
+  const [childRowId, childRow] = childRows[0];
+  const sourceParentId = Number(childRow.post_parent);
+  const sourceParentRowId = `ID:${sourceParentId}`;
+  const sourceParent = testCase.local.db.wp_posts[sourceParentRowId];
+  const mapEntry = (testCase.local.meta?.wordpressGraphIdentityMap?.rows || [])
+    .find((entry) => entry.table === 'wp_posts' && entry.localId === sourceParentRowId);
+  const targetParentRowId = staleTarget ? sourceParentRowId : mapEntry?.remoteId;
+  const targetParentId = postParentPageHierarchyVariant3IdFromRowId(targetParentRowId);
+  const targetParent = targetParentRowId ? testCase.remote.db.wp_posts[targetParentRowId] : null;
+
+  assert.equal(childRowId, `ID:${childRow.ID}`);
+  assert.equal(childRow.post_type, 'page');
+  assert.ok(sourceParent, `${testCase.id} missing local source parent ${sourceParentRowId}`);
+  assert.equal(sourceParent.post_type, 'page');
+  assert.ok(targetParent, `${testCase.id} missing remote target parent ${targetParentRowId}`);
+  assert.equal(targetParent.post_type, 'page');
+
+  if (staleTarget) {
+    assert.equal(mapEntry, undefined, `${testCase.id} stale target should not use an identity map`);
+    assert.ok(testCase.base.db.wp_posts[sourceParentRowId], `${testCase.id} stale parent should exist in base`);
+    assert.notDeepEqual(
+      testCase.remote.db.wp_posts[sourceParentRowId],
+      testCase.base.db.wp_posts[sourceParentRowId],
+      `${testCase.id} stale parent should drift remotely`,
+    );
+  } else {
+    assert.ok(mapEntry, `${testCase.id} ready target should carry a wp_posts identity map`);
+    assert.equal(testCase.remote.db.wp_posts[sourceParentRowId], undefined);
+    assert.equal(testCase.base.db.wp_posts[sourceParentRowId], undefined);
+    assert.equal(testCase.base.db.wp_posts[targetParentRowId], undefined);
+    assert.equal(sourceParent.post_title, targetParent.post_title);
+    assert.equal(sourceParent.post_name, targetParent.post_name);
+    assert.equal(sourceParent.post_content, targetParent.post_content);
+  }
+
+  return {
+    childId: childRow.ID,
+    childRowId,
+    childResource: postParentPageHierarchyVariant3RowResource('wp_posts', childRowId),
+    childResourceKey: rowResourceKey('wp_posts', childRowId),
+    sourceParentId,
+    sourceParentRowId,
+    sourceParentResource: postParentPageHierarchyVariant3RowResource('wp_posts', sourceParentRowId),
+    sourceParentResourceKey: rowResourceKey('wp_posts', sourceParentRowId),
+    targetParentId,
+    targetParentRowId,
+    targetParentResource: postParentPageHierarchyVariant3RowResource('wp_posts', targetParentRowId),
+    targetParentResourceKey: rowResourceKey('wp_posts', targetParentRowId),
+    privateValues: [
+      sourceParent.post_title,
+      sourceParent.post_name,
+      sourceParent.post_content,
+      targetParent.post_title,
+      targetParent.post_name,
+      targetParent.post_content,
+      childRow.post_title,
+      childRow.post_name,
+      childRow.post_content,
+    ].filter(Boolean),
+  };
+}
+
+function postParentPageHierarchyVariant3Surface(testCase, shape) {
+  return {
+    relationship: {
+      relationshipKey: 'wp_posts.post_parent',
+      relationshipType: 'post-parent',
+    },
+    sourceParent: {
+      id: shape.sourceParentId,
+      resourceKey: shape.sourceParentResourceKey,
+      baseHash: resourceHash(testCase.base, shape.sourceParentResource),
+      localHash: resourceHash(testCase.local, shape.sourceParentResource),
+      remoteHash: resourceHash(testCase.remote, shape.sourceParentResource),
+    },
+    targetParent: {
+      id: shape.targetParentId,
+      resourceKey: shape.targetParentResourceKey,
+      baseHash: resourceHash(testCase.base, shape.targetParentResource),
+      localHash: resourceHash(testCase.local, shape.targetParentResource),
+      remoteHash: resourceHash(testCase.remote, shape.targetParentResource),
+    },
+    child: {
+      id: shape.childId,
+      resourceKey: shape.childResourceKey,
+      baseHash: resourceHash(testCase.base, shape.childResource),
+      localHash: resourceHash(testCase.local, shape.childResource),
+      remoteHash: resourceHash(testCase.remote, shape.childResource),
+    },
+  };
+}
+
+function postParentPageHierarchyVariant3IdentityMapEvidence({ plan, shape }) {
+  const sourceDecision = plan.decisions.find((decision) =>
+    decision.resourceKey === shape.sourceParentResourceKey);
+  const targetDecision = plan.decisions.find((decision) =>
+    decision.resourceKey === shape.targetParentResourceKey);
+
+  assert.equal(sourceDecision?.decision, 'map-local-identity-to-remote');
+  assert.equal(targetDecision?.decision, 'keep-remote');
+
+  return {
+    sourceResourceKey: shape.sourceParentResourceKey,
+    targetResourceKey: shape.targetParentResourceKey,
+    sourceDecision: sourceDecision.decision,
+    targetDecision: targetDecision.decision,
+    identityMapSource: sourceDecision.identityMapSource,
+    sourceDecisionHash: `sha256:${digest(sourceDecision)}`,
+    targetDecisionHash: `sha256:${digest(targetDecision)}`,
+  };
+}
+
+function postParentPageHierarchyVariant3ReadyMutationEvidence({ testCase, plan, applied, shape }) {
+  const childMutation = plan.mutations.find((mutation) => mutation.resourceKey === shape.childResourceKey);
+  const childPrecondition = plan.preconditions.find((precondition) =>
+    precondition.resourceKey === shape.childResourceKey);
+  const plannedChild = deserializeResourceValue(childMutation?.value);
+  const rewrite = childMutation?.wordpressGraphIdentity?.rewrites.find((entry) =>
+    entry.relationshipType === 'post-parent');
+  const appliedHash = resourceHash(applied.site, shape.childResource);
+
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.sourceParentResourceKey),
+    false,
+    `${testCase.id} should not create the mapped local source parent`,
+  );
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.targetParentResourceKey),
+    false,
+    `${testCase.id} should preserve the remote target parent`,
+  );
+  assert.ok(childMutation, `${testCase.id} should plan the post_parent child page`);
+  assert.ok(childPrecondition, `${testCase.id} should precondition the child page`);
+  assert.ok(rewrite, `${testCase.id} should carry post_parent rewrite evidence`);
+  assert.equal(plannedChild.post_parent, shape.targetParentId);
+  assert.equal(rewrite.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(rewrite.relationshipType, 'post-parent');
+  assert.equal(rewrite.field, 'post_parent');
+  assert.equal(rewrite.sourceResourceKey, shape.childResourceKey);
+  assert.equal(rewrite.rewrittenResourceKey, shape.childResourceKey);
+  assert.equal(rewrite.sourceTargetResourceKey, shape.sourceParentResourceKey);
+  assert.equal(rewrite.targetResourceKey, shape.targetParentResourceKey);
+  assert.match(rewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(rewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.equal(childPrecondition.mutationId, childMutation.id);
+  assert.equal(childPrecondition.expectedHash, childMutation.remoteBeforeHash);
+  assert.equal(appliedHash, childMutation.localHash, `${testCase.id} did not apply the rewritten child hash`);
+  assert.equal(applied.site.db.wp_posts[shape.sourceParentRowId], undefined);
+  assert.equal(applied.site.db.wp_posts[shape.targetParentRowId].ID, shape.targetParentId);
+  assert.equal(applied.site.db.wp_posts[shape.childRowId].post_parent, shape.targetParentId);
+
+  return {
+    resourceKey: shape.childResourceKey,
+    action: childMutation.action,
+    changeKind: childMutation.changeKind,
+    plannedPostParent: plannedChild.post_parent,
+    plannedLocalHash: childMutation.localHash,
+    rawLocalHash: resourceHash(testCase.local, shape.childResource),
+    remoteBeforeHash: childMutation.remoteBeforeHash,
+    preconditionExpectedHash: childPrecondition.expectedHash,
+    appliedHash,
+    plannedMutation: true,
+    plannedPrecondition: true,
+    rewrite: {
+      relationshipKey: rewrite.relationshipKey,
+      relationshipType: rewrite.relationshipType,
+      field: rewrite.field,
+      sourceResourceKey: rewrite.sourceResourceKey,
+      rewrittenResourceKey: rewrite.rewrittenResourceKey,
+      sourceTargetResourceKey: rewrite.sourceTargetResourceKey,
+      targetResourceKey: rewrite.targetResourceKey,
+      identityMapSource: rewrite.identityMapSource,
+      sourceTargetLocalHash: rewrite.sourceTargetLocalHash,
+      targetRemoteHash: rewrite.targetRemoteHash,
+      rewriteHash: `sha256:${digest(rewrite)}`,
+    },
+    mutationHash: `sha256:${digest({
+      resourceKey: childMutation.resourceKey,
+      action: childMutation.action,
+      changeKind: childMutation.changeKind,
+      plannedPostParent: plannedChild.post_parent,
+      localHash: childMutation.localHash,
+      remoteBeforeHash: childMutation.remoteBeforeHash,
+    })}`,
+  };
+}
+
+function postParentPageHierarchyVariant3StaleBlockerEvidence({ testCase, plan, shape }) {
+  const childMutation = plan.mutations.find((mutation) => mutation.resourceKey === shape.childResourceKey);
+  const blocker = plan.blockers.find((entry) =>
+    entry.resourceKey === shape.childResourceKey
+    && entry.references?.some((reference) => reference.relationshipType === 'post-parent'));
+  const reference = blocker?.references.find((entry) => entry.relationshipType === 'post-parent');
+
+  assert.equal(childMutation, undefined, `${testCase.id} should not plan the stale post_parent child page`);
+  assert.ok(blocker, `${testCase.id} should expose a post_parent graph blocker`);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.ok(reference, `${testCase.id} should include post_parent target evidence`);
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.sourceResourceKey, shape.childResourceKey);
+  assert.equal(reference.targetResourceKey, shape.sourceParentResourceKey);
+  assert.equal(reference.targetChange.localChange, 'unchanged');
+  assert.equal(reference.targetChange.remoteChange, 'update');
+  assert.match(reference.targetBaseHash, /^[a-f0-9]{64}$/);
+  assert.match(reference.targetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(reference.targetRemoteHash, /^[a-f0-9]{64}$/);
+
+  return {
+    resourceKey: blocker.resourceKey,
+    class: blocker.class,
+    resolutionPolicy: blocker.resolutionPolicy,
+    relationshipKey: reference.relationshipKey,
+    relationshipType: reference.relationshipType,
+    targetResourceKey: reference.targetResourceKey,
+    targetLocalChange: reference.targetChange.localChange,
+    targetRemoteChange: reference.targetChange.remoteChange,
+    targetBaseHash: reference.targetBaseHash,
+    targetLocalHash: reference.targetLocalHash,
+    targetRemoteHash: reference.targetRemoteHash,
+    plannedMutation: false,
+    blockerHash: `sha256:${digest({
+      resourceKey: blocker.resourceKey,
+      class: blocker.class,
+      resolutionPolicy: blocker.resolutionPolicy,
+      change: blocker.change,
+    })}`,
+    referenceHash: `sha256:${digest(reference)}`,
+  };
+}
+
+function postParentPageHierarchyVariant3RefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} stale post_parent plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} stale post_parent refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
+}
+
+function postParentPageHierarchyVariant3IdFromRowId(rowId) {
+  const match = /^ID:(\d+)$/.exec(String(rowId || ''));
+  assert.ok(match, `invalid wp_posts row id ${rowId}`);
+  return Number(match[1]);
+}
+
+function postParentPageHierarchyVariant3RowResource(table, id) {
+  return {
+    type: 'row',
+    table,
+    id,
+    key: rowResourceKey(table, id),
+  };
+}
+
+function assertPostParentPageHierarchyVariant3RawValuesAbsent(testCase, shape, evidenceText) {
+  for (const value of shape.privateValues) {
+    assert.equal(
+      evidenceText.includes(String(value)),
+      false,
+      `${testCase.id} post_parent variant 3 evidence leaked ${value}`,
+    );
+  }
+}
+
 test('RPP-0303 generated harness emits post author ready and stale graph cases', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.postAuthorGraph;
