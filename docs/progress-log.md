@@ -6,20 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:24 CEST +02:00.
+- Last update: 2026-05-31 11:27 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0297 conflict-plan apply-refusal release-verifier v5 merge ending at
-  `fa01f33e7`.
+  the RPP-0200 large-ready-plan-tier release-verifier v5 merge ending at
+  `0341ad18b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 567
-  items checked and leaves 433 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 568
+  items checked and leaves 432 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 99 generated
+  23 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 97 merge-invariant items. No release-ops items are checked
   yet.
+- Large ready plan tier release-verifier v5 generated proof: the current lane
+  now checks `RPP-0200` with deterministic generated-harness support evidence
+  for the large-ready surface. The proof exposes
+  `largeReadyPlanTierReleaseVerifierVariant5`, cross-checks 10 ready cases
+  across tiers 0 through 9 against the legacy, variant-3, and variant-4 large
+  ready targets, applies every selected ready plan, verifies live-remote
+  preconditions match planned mutations, preserves remote-only row/file drift,
+  and rejects stale replay with `PRECONDITION_FAILED` before mutation. Command:
+  `node --test test/rpp-0200-large-ready-plan-tier-release-verifier-v5.test.js`.
+  Caveat: deterministic local Node generated-fixture evidence only; release
+  remains gated by broader integration evidence. Validation passed with Node
+  syntax checks, focused RPP-0200 coverage 1/1, generated-harness RPP-0200
+  summary coverage 1/1, required-family plus RPP-0200 coverage 2/2, adjacent
+  RPP-0120/RPP-0140/RPP-0160/RPP-0180/RPP-0200 large-ready coverage 6/6,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  568/432; final release remains `NO-GO` because this is local generated
+  harness support evidence, not production-backed release proof.
 - Conflict plan apply-refusal release-verifier v5 carry-through: the current
   lane now checks `RPP-0297` with focused and generated support evidence that
   conflict plans refuse before mutation and that forged ready-plan paths fail

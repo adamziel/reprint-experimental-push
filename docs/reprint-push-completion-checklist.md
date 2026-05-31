@@ -216,7 +216,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0197 (Near / generated-harness) Carry through the release verifier for stale remote after dry-run, variant 5. Success: summary exposes per-tier counts for this target.
 - [x] RPP-0198 (Near / generated-harness) Carry through the release verifier for same independent content, variant 5. Success: ready cases apply with no unplanned remote overwrite.
 - [x] RPP-0199 (Near / generated-harness) Carry through the release verifier for remote-only preservation, variant 5. Success: stale remote replay fails before mutation.
-- [ ] RPP-0200 (Near / generated-harness) Carry through the release verifier for large ready plan tier, variant 5. Success: docs/generated-push-harness.md records the surface and invariant.
+- [x] RPP-0200 (Near / generated-harness) Carry through the release verifier for large ready plan tier, variant 5. Success: docs/generated-push-harness.md records the surface and invariant.
 
 ## Near-Mid: Planner No-Data-Loss Invariants
 
