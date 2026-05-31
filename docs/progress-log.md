@@ -6,20 +6,41 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 00:32 CEST +02:00.
+- Last update: 2026-06-01 00:36 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0581 production preflight route release-verifier variant-5 merge
-  ending at `f50e50e0`.
+  the RPP-0566 production recovery inspect route variant-4 merge ending at
+  `d66bb0ccc`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
   goals, but it is no longer a static all-unchecked inventory. It now marks 798
-  items checked and leaves 202 open.
+  items checked and leaves 201 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 95 executor/auth items, 100 recovery items,
+  100 plugin-driver boundary items, 96 executor/auth items, 100 recovery items,
   100 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production recovery inspect route variant-4 proof: the current lane now
+  checks `RPP-0566` with focused live loopback endpoint support coverage. The
+  proof starts a local HTTP listener on `http://127.0.0.1:8080`, sends real
+  `fetch()` traffic through the production-shaped authenticated client for the
+  signed `GET /wp-json/reprint/v1/push/recovery/inspect` route, records
+  hash-only recovery/session evidence, proves the read-only inspect path
+  carries stale claim and idempotency-bound evidence without mutation rows, and
+  fails closed when the required live recovery inspect URL is unavailable.
+  Command:
+  `node --test --test-name-pattern RPP-0566 test/rpp-0566-production-recovery-inspect-route-v4.test.js`.
+  Caveat: loopback support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0566 coverage 2/2,
+  adjacent RPP-0546 coverage 3/3, adjacent RPP-0567 coverage 2/2, shared
+  production recovery mutate route coverage 5/5, generated recovery inspect
+  release-gate coverage 2/2, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 799/201; final release remains `NO-GO`
+  because this is support evidence, not checked production-owned recovery
+  inspect proof, production storage receipts, production row batch executor
+  evidence, production atomic group commit evidence, live production service
+  evidence, production throughput, release approval, or a production release
+  gate.
 - Production preflight route release-verifier variant-5 proof: the current lane
   now checks `RPP-0581` with release-verifier live-endpoint support evidence.
   The proof carries the RPP-0561 production preflight route proof into a
