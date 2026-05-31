@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 14:58 CEST +02:00.
+- Last update: 2026-05-31 15:05 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0359 cross-table create batch mapping variant-3 merge ending at
-  `35a93d4`.
+  the RPP-0459 driver audit evidence redaction variant-3 merge ending at
+  `d1607a0`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 621
-  items checked and leaves 379 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 622
+  items checked and leaves 378 open.
 - Checked slices: 100 release-gate foundation items, 99 graph identity items,
-  96 plugin-driver boundary items, 42 executor/auth items, 49 recovery items,
+  97 plugin-driver boundary items, 42 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Driver audit evidence redaction variant-3 proof: the current lane now checks
+  `RPP-0459` with local plugin-driver support evidence. The proof covers remote
+  owner-context drift preserving plugin-owned remote data with hash-only audit
+  evidence and stale remote row drift preserving plugin-owned remote data while
+  audit evidence stays redacted. Command:
+  `node --test --test-name-pattern RPP-0459 test/rpp-0459-driver-audit-evidence-redaction-v3.test.js`.
+  Caveat: local plugin-driver support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0459
+  coverage 2/2, adjacent RPP-0479 coverage 2/2, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 622/378; final release remains
+  `NO-GO` because this is support evidence, not production-backed plugin-driver
+  proof.
 - Cross-table create batch mapping variant-3 proof: the current lane now checks
   `RPP-0359` with local graph-identity support evidence. The proof carries a
   same-plan post/postmeta create batch through local-production apply, fails
