@@ -6,19 +6,43 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 00:02 CEST +02:00.
+- Last update: 2026-06-01 00:04 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0556 same-key same-body replay variant-3 merge ending at `7af16e`.
+  the RPP-0561 production preflight route variant-4 merge ending at `e6ef87`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 791
-  items checked and leaves 209 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 792
+  items checked and leaves 208 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 90 executor/auth items, 100 recovery items,
+  100 plugin-driver boundary items, 91 executor/auth items, 100 recovery items,
   98 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production preflight route variant-4 proof: the current lane now checks
+  `RPP-0561` with deterministic local focused regression support evidence. The
+  proof pins the production preflight route as a signed `GET` route under
+  `/wp-json/reprint/v1/push/preflight`, keeps the production-shaped namespace,
+  authenticated permission callback, and read-only callback path in order, wraps
+  accepted local preflight proof as support-only route evidence, blocks
+  identity/auth-session/source-hash drift before release movement, and fails
+  closed when a required live preflight endpoint is unavailable. The proof
+  records exact route-evidence shape, zero mutation-capable work, no snapshot,
+  dry-run, or apply follow-up on unavailable live endpoint, support-only
+  `NO-GO` release posture, and hash-only credential, user, identity, session,
+  source, endpoint, route proof, and execution phase values.
+  Command:
+  `node --test --test-name-pattern RPP-0561 test/rpp-0561-production-preflight-route-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0561
+  coverage 4/4, adjacent RPP-0541 coverage 3/3, production preflight route
+  coverage 5/5, adjacent RPP-0562 coverage 3/3, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 792/208; final release remains
+  `NO-GO` because this is support evidence, not checked production-owned live
+  preflight endpoint proof, production storage receipts, production row batch
+  executor evidence, production atomic group commit evidence, live production
+  service evidence, production throughput, release approval, or a production
+  release gate.
 - Same-key same-body replay variant-3 proof: the current lane now checks
   `RPP-0556` with deterministic local generated support evidence. The proof
   carries the same-key same-canonical-body replay contract forward with

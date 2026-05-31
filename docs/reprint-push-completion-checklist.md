@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 791.
-- Remaining open: 209.
+- Verified complete: 792.
+- Remaining open: 208.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -597,7 +597,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [x] RPP-0558 (Mid-Far / executor-auth) Add generated coverage for capability downgrade rejection, variant 3. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [x] RPP-0559 (Mid-Far / executor-auth) Add generated coverage for credential rotation behavior, variant 3. Success: apply revalidates the live source before mutation.
 - [x] RPP-0560 (Mid-Far / executor-auth) Add generated coverage for production audit event schema, variant 3. Success: verify:release includes the route evidence in one summary.
-- [ ] RPP-0561 (Mid-Far / executor-auth) Add focused regression coverage for production preflight route, variant 4. Success: real endpoint test runs against a live URL.
+- [x] RPP-0561 (Mid-Far / executor-auth) Add focused regression coverage for production preflight route, variant 4. Success: real endpoint test runs against a live URL.
 - [x] RPP-0562 (Mid-Far / executor-auth) Add focused regression coverage for production snapshot hashes route, variant 4. Success: negative auth cases fail before JSON parsing and mutation.
 - [x] RPP-0563 (Mid-Far / executor-auth) Add focused regression coverage for production dry-run route, variant 4. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [x] RPP-0564 (Mid-Far / executor-auth) Add focused regression coverage for production apply route, variant 4. Success: apply revalidates the live source before mutation.
