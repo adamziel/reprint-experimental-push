@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 15:44 CEST +02:00.
+- Last update: 2026-05-31 15:47 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0554 receipt expiry validation variant-3 merge ending at `9f3ef6`.
+  the RPP-0555 idempotency key requirement variant-3 merge ending at `638c99`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 636
-  items checked and leaves 364 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 637
+  items checked and leaves 363 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 52 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 53 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Idempotency key requirement variant-3 proof: the current lane now checks
+  `RPP-0555` with local executor-auth support evidence. The proof carries one
+  hash-only route-evidence block into a `verify:release`-shaped summary, proves
+  mutating signed dry-run/apply routes require idempotency keys, and proves
+  read-only recovery inspect / journal routes reject mutating idempotency
+  material. Command:
+  `node --test --test-name-pattern RPP-0555 test/rpp-0555-idempotency-key-requirement-v3.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0555
+  coverage 3/3, adjacent authenticated-client idempotency coverage 6/6, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 637/363;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed idempotency-key route proof.
 - Receipt expiry validation variant-3 proof: the current lane now checks
   `RPP-0554` with local executor-auth support evidence. The proof rejects
   expired dry-run receipts before any apply, recovery, replay, journal, or
