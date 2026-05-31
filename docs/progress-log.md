@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 18:56 CEST +02:00.
+- Last update: 2026-05-31 18:58 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0681 journal table schema migration variant-5 merge ending at
-  `1e5323`.
+  the RPP-0682 journal ownership record variant-5 merge ending at `cf64e5`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 705
-  items checked and leaves 295 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 706
+  items checked and leaves 294 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 81 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 82 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Journal ownership record variant-5 proof: the current lane now checks
+  `RPP-0682` with local recovery support evidence. The proof carries durable
+  file-backed and SQLite journal ownership rows through the release verifier,
+  preserves writer and lease-owner identities after restart, and rejects
+  malformed ownership evidence before proof movement. Command:
+  `node --test --test-name-pattern RPP-0682 test/rpp-0682-journal-ownership-record-v5.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0682 coverage 2/2,
+  adjacent RPP-0662 ownership coverage 2/2, adjacent RPP-0642 coverage 2/2,
+  adjacent RPP-0622 coverage 1/1, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 706/294; final release remains `NO-GO`
+  because this is support evidence, not production-backed recovery proof.
 - Journal table schema migration variant-5 proof: the current lane now checks
   `RPP-0681` with local recovery support evidence. The proof carries the SQLite
   journal table schema migration through the release verifier proof surface,
