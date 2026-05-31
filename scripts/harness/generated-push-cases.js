@@ -541,6 +541,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'same-plan-post-author-graph',
     tag: 'post-author-graph',
   },
+  postAuthorGraphVariant3: {
+    family: 'post-author-graph-variant3',
+    tag: 'post-author-graph-v3',
+  },
   postParentPageHierarchyVariant3: {
     family: 'post-parent-page-hierarchy-variant3',
     tag: 'post-parent-page-hierarchy-v3',
@@ -2211,6 +2215,15 @@ function buildGeneratedCase({ index, tier, rng }) {
     tags,
   });
 
+  addPostAuthorGraphVariant3Target({
+    family,
+    base,
+    local,
+    remote,
+    allocator,
+    tags,
+  });
+
   addPluginOwnedResourceRefusalVariant3Target({
     family,
     tier,
@@ -2398,6 +2411,24 @@ function addPostParentPageHierarchyVariant3Target({
   }
 
   addPostParentPageHierarchyVariant3(base, local, remote, allocator, tags, { staleTarget });
+  tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
+}
+
+function addPostAuthorGraphVariant3Target({
+  family,
+  base,
+  local,
+  remote,
+  allocator,
+  tags,
+}) {
+  const readyTarget = family === 'same-plan-post-author-graph';
+  const staleTarget = family === 'stale-post-author-graph';
+  if (!readyTarget && !staleTarget) {
+    return;
+  }
+
+  addPostAuthorGraphVariant3(base, local, remote, allocator, tags, { staleTarget });
   tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
 }
 
@@ -5014,6 +5045,80 @@ function addPostAuthorGraph(base, local, remote, allocator, tags, { staleTarget 
     tags.add('wp-users-remote-drift');
   } else {
     tags.add('post-author-ready');
+  }
+}
+
+function addPostAuthorGraphVariant3(base, local, remote, allocator, tags, { staleTarget }) {
+  const sourceUserId = allocator.graphId();
+  const postId = allocator.graphId();
+  const sourceUserRowId = `ID:${sourceUserId}`;
+  const postRowId = `ID:${postId}`;
+  const userLogin = `rpp-0343-post-author-identity-${sourceUserId}`;
+  const userEmail = `rpp-0343-post-author-identity-${sourceUserId}@example.test`;
+  const displayName = `RPP-0343 generated post author identity ${sourceUserId}`;
+  const sourceUser = makeUser(sourceUserId, {
+    user_login: userLogin,
+    user_email: userEmail,
+    display_name: displayName,
+  });
+
+  if (staleTarget) {
+    setRow(base, 'wp_users', sourceUserRowId, sourceUser);
+    setRow(local, 'wp_users', sourceUserRowId, sourceUser);
+    setRow(remote, 'wp_users', sourceUserRowId, {
+      ...sourceUser,
+      user_email: `rpp-0343-remote-private-post-author-${sourceUserId}@example.test`,
+      display_name: `Remote stale RPP-0343 post author ${sourceUserId}`,
+    });
+    setRow(local, 'wp_posts', postRowId, makePost(
+      postId,
+      `RPP-0343 generated post_author identity-map post stale ${postId}`,
+      {
+        post_name: `rpp-0343-stale-post-author-post-${postId}`,
+        post_content: `rpp0343-stale-local-post-author-private-${postId}`,
+        post_author: sourceUserId,
+      },
+    ));
+  } else {
+    const targetUserId = allocator.graphId();
+    const targetUserRowId = `ID:${targetUserId}`;
+    const targetUser = makeUser(targetUserId, {
+      user_login: userLogin,
+      user_email: userEmail,
+      display_name: displayName,
+    });
+
+    setRow(local, 'wp_users', sourceUserRowId, sourceUser);
+    setRow(remote, 'wp_users', targetUserRowId, targetUser);
+    addWordPressGraphIdentityMapRow(local, {
+      table: 'wp_users',
+      localId: sourceUserRowId,
+      remoteId: targetUserRowId,
+    });
+    setRow(local, 'wp_posts', postRowId, makePost(
+      postId,
+      `RPP-0343 generated post_author identity-map post ready ${postId}`,
+      {
+        post_name: `rpp-0343-ready-post-author-post-${postId}`,
+        post_content: `rpp0343-ready-local-post-author-private-${postId}`,
+        post_author: sourceUserId,
+      },
+    ));
+
+    tags.add('post-author-graph-v3-ready');
+    tags.add('post-author-graph-v3-identity-map');
+  }
+
+  tags.add('post-author-graph-v3');
+  tags.add('post-author-graph-v3-hash-only');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('post-author-graph-v3-stale');
+    tags.add('post-author-graph-v3-stale-target');
+    tags.add('post-author-graph-v3-non-ready');
+    tags.add('wp-users-remote-drift');
   }
 }
 
