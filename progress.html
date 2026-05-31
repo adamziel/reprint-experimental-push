@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T13:03:00+02:00">Last updated: May 31, 2026, 13:03 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T13:06:00+02:00">Last updated: May 31, 2026, 13:06 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>588</strong>
+        <strong>589</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>412</strong>
+        <strong>411</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof, credential rotation, manage_options, capability downgrade rejection, short-lived push-session receipt binding, same-key same-body replay, same-key different-body conflict, production-shaped preflight, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof, credential rotation, manage_options, capability downgrade rejection including variant-2 dry-run receipt binding, short-lived push-session receipt binding, same-key same-body replay, same-key different-body conflict, production-shaped preflight, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0448</span>
+        <span>RPP-0538</span>
       </div>
-      <p>The latest refresh checks RPP-0448 with serialized option validator variant-3 plugin-driver evidence. The proof carries one exact serialized option mutation through local apply, refuses stale serialized drift before mutation, rejects forged invalid serialized payloads, and keeps emitted evidence hash-only. Counts are now 588/412; final release remains NO-GO because this is local plugin-driver support evidence, not production-backed plugin-driver proof.</p>
+      <p>The latest refresh checks RPP-0538 with capability downgrade rejection variant-2 executor/auth evidence. The proof rejects a downgraded signed session after dry-run and before mutation setup, keeps the dry-run receipt bound to session, identity, scope, and plan hash, and records only hash evidence for sensitive auth/session values. Counts are now 589/411; final release remains NO-GO because this is local mocked HTTP support evidence, not production-backed endpoint proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0538 focused: 2/2</span>
+        <span class="tag">RPP-0518 adjacent: 3/3</span>
+        <span class="tag">RPP-0536 adjacent: 1/1</span>
+        <span class="tag">auth subset: 9/9</span>
+        <span class="tag">receipt binding</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0448 focused: 2/2</span>
         <span class="tag">serialized adjacent: 3/3</span>
         <span class="tag">generated adjacent: 4/4</span>

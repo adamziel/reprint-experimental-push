@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:03 CEST +02:00.
+- Last update: 2026-05-31 13:06 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0448 serialized option validator variant-3 merge ending at
-  `fb17c1e`.
+  the RPP-0538 capability downgrade rejection variant-2 merge ending at
+  `87f4907`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 588
-  items checked and leaves 412 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 589
+  items checked and leaves 411 open.
 - Checked slices: 100 release-gate foundation items, 85 graph identity items,
-  91 plugin-driver boundary items, 37 executor/auth items, 45 recovery items,
+  91 plugin-driver boundary items, 38 executor/auth items, 45 recovery items,
   27 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Capability downgrade rejection variant-2 proof: the current lane now checks
+  `RPP-0538` with local executor/auth support evidence. The proof verifies that
+  a signed session that loses capability after dry-run is rejected before
+  mutation setup, keeps the dry-run receipt bound to session, identity, scope,
+  and plan hash, and records only hash evidence for sensitive auth/session
+  values. Command:
+  `node --test test/rpp-0538-capability-downgrade-rejection-v2.test.js`.
+  Caveat: local mocked HTTP executor evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0538
+  coverage 2/2, adjacent RPP-0518 capability coverage 3/3, adjacent RPP-0536
+  replay coverage 1/1, authenticated-client capability/idempotency subset
+  coverage 9/9, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 589/411; final release remains `NO-GO` because this is support
+  evidence, not a checked live production endpoint proof.
 - Serialized option validator variant-3 proof: the current lane now checks
   `RPP-0448` with local plugin-driver support evidence. The proof carries one
   exact serialized option mutation through local apply, refuses stale serialized
