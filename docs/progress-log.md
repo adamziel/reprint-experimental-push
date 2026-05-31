@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 17:16 CEST +02:00.
+- Last update: 2026-05-31 17:18 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0593 nonce replay store variant-5 merge ending at `695f2e`.
+  the RPP-0597 same-key different-body conflict variant-5 merge ending at
+  `8e11be`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 667
-  items checked and leaves 333 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 668
+  items checked and leaves 332 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 83 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 84 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key different-body conflict variant-5 proof: the current lane now checks
+  `RPP-0597` with local executor-auth support evidence. The proof rejects bad
+  auth before JSON parsing, rejects same-key different-body idempotency
+  conflicts before mutation-capable work, preserves hash-only conflict evidence
+  before fresh work, and keeps same-key same-body replay support scoped to local
+  verifier evidence. Command:
+  `node --test --test-name-pattern RPP-0597 test/rpp-0597-same-key-different-body-conflict-v5.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0597
+  coverage 3/3, adjacent same-key conflict coverage 10/10, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 668/332; final
+  release remains `NO-GO` because this is support evidence, not production-backed
+  idempotency conflict proof.
 - Nonce replay store variant-5 proof: the current lane now checks `RPP-0593`
   with local executor-auth support evidence. The proof keeps signed nonce replay
   checks before dry-run parsing and receipt movement, binds accepted dry-run
