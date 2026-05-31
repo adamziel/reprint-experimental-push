@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 804.
-- Remaining open: 196.
+- Verified complete: 805.
+- Remaining open: 195.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -859,7 +859,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0805 (Far / production-topology) Implement WooCommerce product catalog, variant 1. Success: progress report records candidate versus release-ready scope.
 - [x] RPP-0806 (Far / production-topology) Implement WooCommerce order safety refusal, variant 1. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0807 (Far / production-topology) Implement block theme templates, variant 1. Success: verify:release passes without packaged fallback on the topology.
-- [ ] RPP-0808 (Far / production-topology) Implement classic theme files, variant 1. Success: source/local/changed URLs are captured and identity-checked.
+- [x] RPP-0808 (Far / production-topology) Implement classic theme files, variant 1. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0809 (Far / production-topology) Implement multisite subdirectory topology, variant 1. Success: plugin and graph evidence survive real WordPress import/export.
 - [ ] RPP-0810 (Far / production-topology) Implement multisite subdomain topology, variant 1. Success: progress report records candidate versus release-ready scope.
 - [ ] RPP-0811 (Far / production-topology) Implement object cache enabled topology, variant 1. Success: topology command starts the sites or records exact unavailable capability.

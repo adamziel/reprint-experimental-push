@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 00:55 CEST +02:00.
+- Last update: 2026-06-01 00:56 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0806 WooCommerce order safety refusal merge ending at `5c1ba39f4`.
+  the RPP-0808 classic theme files URL identity merge ending at `629820d65`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 804
-  items checked and leaves 196 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 805
+  items checked and leaves 195 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 99 executor/auth items, 100 recovery items,
-  100 storage/performance items, 5 production-topology items, 100 generated
+  100 storage/performance items, 6 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Classic theme files URL identity proof: the current lane now checks
+  `RPP-0808` with deterministic local topology support coverage. The proof
+  captures source, local edited, and changed-remote role URLs, identity-checks
+  them through the existing external-topology contract, rejects tunnel and
+  secret-shaped URLs, and records classic-theme file scope as hash-only support
+  evidence for stylesheet, functions, template, and asset paths.
+  Command:
+  `node --test --test-name-pattern RPP-0808 test/rpp-0808-classic-theme-files-v1.test.js`.
+  Caveat: local support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0808 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  805/195; final release remains `NO-GO` because this is deterministic local
+  URL/file-scope evidence, not production-backed WordPress reachability,
+  production credentials, route receipts, durable journal evidence, live
+  mutation proof, throughput, release approval, or a production release gate.
 - WooCommerce order safety refusal variant-1 proof: the current lane now checks
   `RPP-0806` with focused order-safety and topology unavailable-capability
   evidence. The proof models WooCommerce legacy `shop_order` rows and HPOS order
