@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 15:58 CEST +02:00.
+- Last update: 2026-05-31 16:01 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0560 production audit event schema variant-3 merge ending at
-  `5479d4`.
+  the RPP-0562 production snapshot hashes route variant-4 merge ending at
+  `95e032`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 641
-  items checked and leaves 359 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 642
+  items checked and leaves 358 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 57 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 58 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production snapshot hashes route variant-4 proof: the current lane now checks
+  `RPP-0562` with local executor-auth support evidence. The proof rejects
+  negative auth, signature, and session cases before JSON parsing, snapshot-hash
+  work, or mutation-capable work, while accepted support evidence remains
+  planning-only, read-only, hash-only, and release-blocked. Command:
+  `node --test --test-name-pattern RPP-0562 test/rpp-0562-production-snapshot-hashes-route-v4.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0562
+  coverage 3/3, adjacent RPP-0542 coverage 3/3, production snapshot-hashes
+  route coverage 7/7, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 642/358; final release remains `NO-GO` because this is
+  support evidence, not production-backed snapshot-hashes route proof.
 - Production audit event schema variant-3 proof: the current lane now checks
   `RPP-0560` with local executor-auth support evidence. The proof carries
   exactly one production audit event schema route-evidence summary through
