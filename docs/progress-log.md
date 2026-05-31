@@ -6,20 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 10:49 CEST +02:00.
+- Last update: 2026-05-31 10:53 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0250 planner summary count consistency variant-3 merge ending at
-  `b6cd229b1`.
+  the RPP-0255 keep-remote decision variant-3 merge ending at `13bcd9bb4`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 557
-  items checked and leaves 443 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 558
+  items checked and leaves 442 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 97 generated
-  harness items, and 89 merge-invariant items. No release-ops items are checked
+  harness items, and 90 merge-invariant items. No release-ops items are checked
   yet.
+- Keep-remote decision variant-3 generated proof: the current lane now checks
+  `RPP-0255` with deterministic generated-harness support evidence over the
+  existing `remoteOnlyPreservationVariant3` target. The proof scans all 620
+  generated cases, covers 1,575 `keep-remote` decisions across 533 cases, proves
+  each decision stays mutation-free and precondition-free, verifies 706 ready
+  `keep-remote` decisions preserve remote state through apply, and verifies 249
+  non-ready plans refuse with `PLAN_NOT_READY` without mutating the remote
+  digest. Command:
+  `node --test --test-name-pattern=RPP-0255 test/rpp-0255-keep-remote-decision-v3.test.js`.
+  Caveat: deterministic local Node generated-fixture evidence only; release
+  remains gated by broader integration evidence. Validation passed with a Node
+  syntax check, focused RPP-0255 coverage 1/1, adjacent
+  RPP-0215/RPP-0235/RPP-0255/RPP-0275 keep-remote coverage 5/5, adjacent
+  RPP-0159 generated remote-only preservation target coverage 1/1, scoped
+  artifact redaction scan, artifact redaction regression suite 10/10, and diff
+  whitespace checks. Counts are now 558/442; final release remains `NO-GO`
+  because this is local generated merge-invariant support evidence, not
+  production-backed release proof.
 - Planner summary count consistency variant-3 generated proof: the current lane
   now checks `RPP-0250` with deterministic generated-harness support evidence
   across all 620 generated push cases. The focused proof replans every case
