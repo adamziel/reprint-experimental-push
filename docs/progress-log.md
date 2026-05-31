@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 21:38 CEST +02:00.
+- Last update: 2026-05-31 21:41 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0767 chunk hash verification variant-4 merge ending at `eb960e`.
+  the RPP-0766 large upload chunk manifest variant-4 merge ending at `e4d870`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 757
-  items checked and leaves 243 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 758
+  items checked and leaves 242 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  65 storage/performance items, 3 production-topology items, 100 generated
+  66 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Large upload chunk manifest variant-4 proof: the current lane now checks
+  `RPP-0766` with deterministic local storage/performance support evidence. The
+  proof exercises the guarded executor benchmark on a 1 MiB staged upload split
+  into four 256 KiB chunks, verifies parseable runtime and resource reporting,
+  records 12 rollout gates with 9 passing and 3 production-only blockers,
+  proves the finalized chunk manifest covers all bytes with contiguous ranges,
+  matches four durable chunk receipts exactly once, verifies all chunk hashes
+  against the finalized file hash, and keeps receipt-only resume and replay at 0
+  duplicate chunk bytes, 0 duplicate receipts, and 0 duplicate mutation work.
+  Command:
+  `node --test --test-name-pattern RPP-0766 test/rpp-0766-large-upload-chunk-manifest-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0766
+  coverage 2/2, adjacent RPP-0746 coverage 2/2, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 758/242; final release remains
+  `NO-GO` because this is support evidence, not production-backed storage
+  receipt or row batch executor proof.
 - Chunk hash verification variant-4 proof: the current lane now checks
   `RPP-0767` with deterministic local storage/performance support evidence. The
   proof verifies every manifest chunk in the unit transfer, records a matching
