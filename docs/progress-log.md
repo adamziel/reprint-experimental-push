@@ -6,20 +6,45 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:13 CEST +02:00.
+- Last update: 2026-05-31 23:16 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0787 chunk hash verification release-verifier variant-5 merge ending
-  at `e118d0`.
+  the RPP-0788 chunk resume after interruption release-verifier variant-5 merge
+  ending at `3d830e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 779
-  items checked and leaves 221 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 780
+  items checked and leaves 220 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  87 storage/performance items, 3 production-topology items, 100 generated
+  88 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Chunk resume after interruption release-verifier variant-5 proof: the current
+  lane now checks `RPP-0788` with deterministic local release-verifier support
+  evidence. The proof carries the RPP-0768/RPP-0748 chunk-resume interruption
+  lineage into the local guarded executor benchmark shape with a 1048576-byte
+  file, 262144-byte chunks, 4 chunks, 8 row records, 64 row payload bytes, 1
+  replay attempt per chunk, a 10000 ms duration budget, and a 268435456-byte
+  heap budget. The release-verifier projection records RPP-0768 carry-through,
+  RPP-0738/RPP-0718 timeout lineage, runtime metadata, process resources, local
+  lab file-journal receipts, a finalized staging record, generated interruption
+  cases for 2 through 6 chunk transfers, interruption points 1, 1, 2, 3, and 4,
+  11 chunks skipped by receipt, 9 chunks uploaded after resume, 0 duplicate
+  chunk bytes, 0 duplicate mutation work, 0 resume mutation records, 10 resume
+  bookkeeping records, apply opening only after transfer finalization, 9
+  release-verifier gates, and rollout gate carry-through with 9 passed, 3
+  blocked, and 0 failed gates.
+  Command:
+  `node --test --test-name-pattern RPP-0788 test/rpp-0788-chunk-resume-after-interruption-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0788
+  coverage 2/2, adjacent RPP-0768 coverage 2/2, adjacent RPP-0748 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  780/220; final release remains `NO-GO` because this is support evidence, not
+  production storage receipts, production row batch execution, production
+  atomic group commit behavior, live production service behavior, production
+  throughput, release approval, or rollout safety.
 - Chunk hash verification release-verifier variant-5 proof: the current lane
   now checks `RPP-0787` with deterministic local release-verifier support
   evidence. The proof carries the RPP-0767/RPP-0747 chunk-hash verification
