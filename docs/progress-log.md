@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 14:37 CEST +02:00.
+- Last update: 2026-05-31 14:39 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0350 post_tag taxonomy reference variant-3 merge ending at
-  `d3ea03d`.
+  the RPP-0351 custom taxonomy fail-closed reference variant-3 merge ending at
+  `0e4803e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 613
-  items checked and leaves 387 open.
-- Checked slices: 100 release-gate foundation items, 91 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 614
+  items checked and leaves 386 open.
+- Checked slices: 100 release-gate foundation items, 92 graph identity items,
   96 plugin-driver boundary items, 42 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Custom taxonomy fail-closed reference variant-3 proof: the current lane now
+  checks `RPP-0351` with local graph-identity support evidence. The proof
+  refuses generated custom taxonomy targets before mutation when stable identity
+  proof is missing, rewrites the target only with an explicit identity map, and
+  keeps the evidence hash-only for fail-closed cases. Command:
+  `node --test --test-name-pattern RPP-0351 test/rpp-0351-custom-taxonomy-fail-closed-reference-v3.test.js`.
+  Caveat: local graph-identity support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0351
+  coverage 3/3, adjacent RPP-0331 coverage 2/2, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 614/386; final release remains
+  `NO-GO` because this is support evidence, not production-backed graph identity
+  proof.
 - Post_tag taxonomy reference variant-3 proof: the current lane now checks
   `RPP-0350` with local graph-identity support evidence. The proof carries a
   mapped `post_tag` term taxonomy target through apply-shaped evidence, proves
