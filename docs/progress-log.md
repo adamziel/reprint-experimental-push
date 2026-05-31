@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 19:15 CEST +02:00.
+- Last update: 2026-05-31 19:18 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0689 restart-readable committed state variant-5 merge ending at
-  `38c3cd`.
+  the RPP-0690 old remote recovery classification variant-5 merge ending at
+  `a7b36d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 713
-  items checked and leaves 287 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 714
+  items checked and leaves 286 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 89 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 90 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Old remote recovery classification variant-5 proof: the current lane now
+  checks `RPP-0690` with local recovery support evidence. The proof carries the
+  old-remote classification through the release verifier on the same checked
+  recovery path, keeps `GATE-2` proven, and rejects missing, malformed, stale,
+  or drifted classification evidence. Command:
+  `node --test --test-name-pattern RPP-0690 test/rpp-0690-old-remote-recovery-classification-v5.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0690 coverage 2/2,
+  adjacent RPP-0670 old-remote coverage 2/2, adjacent RPP-0650 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  714/286; final release remains `NO-GO` because this is support evidence, not
+  production-backed recovery proof.
 - Restart-readable committed state variant-5 proof: the current lane now checks
   `RPP-0689` with local recovery support evidence. The proof carries committed
   restart-readable rows through the release verifier audit surface, exposes the
