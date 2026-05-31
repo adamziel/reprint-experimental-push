@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 18:58 CEST +02:00.
+- Last update: 2026-05-31 19:03 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0682 journal ownership record variant-5 merge ending at `cf64e5`.
+  the RPP-0683 single-writer lease claim variant-5 merge ending at `a67e5c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 706
-  items checked and leaves 294 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 707
+  items checked and leaves 293 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 82 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 83 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Single-writer lease claim variant-5 proof: the current lane now checks
+  `RPP-0683` with local recovery support evidence. The proof carries the
+  competing lease retry through the release verifier path, preserves remote
+  changes before mutation, and keeps the retry evidence hash-only while refusing
+  drifted fixtures. Command:
+  `node --test --test-name-pattern RPP-0683 test/rpp-0683-single-writer-lease-claim-v5.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0683 coverage 1/1,
+  adjacent RPP-0663 lease coverage 2/2, adjacent RPP-0643 coverage 2/2, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 707/293;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed recovery proof.
 - Journal ownership record variant-5 proof: the current lane now checks
   `RPP-0682` with local recovery support evidence. The proof carries durable
   file-backed and SQLite journal ownership rows through the release verifier,
