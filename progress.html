@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>582</strong>
+        <strong>583</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>418</strong>
+        <strong>417</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay v2 release-proof carry-through, different-body idempotency conflict v2, process kill before mutation set v2, process kill mid mutation set v2, missing commit finalization v2, before-mutation process-kill readback, manual recovery audit export, journal schema migration through variant 3, ownership-record SQLite readback and variant-3 file/SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, single-writer lease claim variant-3 fencing, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay v2 release-proof carry-through, different-body idempotency conflict v2, process kill before mutation set v2, process kill mid mutation set v2, missing commit finalization v2, before-mutation process-kill readback, manual recovery audit export, journal schema migration through variant 3, ownership-record SQLite readback and variant-3 file/SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0447</span>
+        <span>RPP-0643</span>
       </div>
-      <p>The latest refresh checks RPP-0447 with generated-style wp_usermeta driver semantics variant-3 evidence. The proof validates support-only NO-GO summary registration, an exact live-preconditioned wp_usermeta row mutation, stale remote refusal before mutation, unsupported row fail-closed behavior, and hash-only driver evidence. Counts are now 582/418; final release remains NO-GO because this is local plugin-driver support evidence, not production-backed release proof.</p>
+      <p>The latest refresh checks RPP-0643 with generated-style single-writer lease claim variant-3 recovery evidence. The proof validates restart-readable competing-writer refusal, expired-lease claim advancement for one writer, prior-writer fencing, preserved remote-change snapshots, zero mutation rows on blocked recovery, and hash-only journal evidence. Counts are now 583/417; final release remains NO-GO because this is local recovery support evidence, not production-backed durability proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0643 focused: 2/2</span>
+        <span class="tag">direct focused: 2/2</span>
+        <span class="tag">lease adjacent: 5/5</span>
+        <span class="tag">RPP-0642 ownership: 2/2</span>
+        <span class="tag">single-writer fenced</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0447 focused: 3/3</span>
         <span class="tag">wp_usermeta adjacent: 16/16</span>
         <span class="tag">live precondition</span>
