@@ -6,20 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:00 CEST +02:00.
+- Last update: 2026-05-31 11:03 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0198 same independent content release-verifier v5 merge ending at
-  `1b9db79d3`.
+  the RPP-0260 atomic group blocker propagation variant-3 merge ending at
+  `0869e007c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 559
-  items checked and leaves 441 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 560
+  items checked and leaves 440 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 98 generated
-  harness items, and 90 merge-invariant items. No release-ops items are checked
+  harness items, and 91 merge-invariant items. No release-ops items are checked
   yet.
+- Atomic group blocker propagation variant-3 generated proof: the current lane
+  now checks `RPP-0260` with deterministic support evidence for generated
+  atomic-group plans. The proof covers 10 tiered missing-dependency atomic
+  groups, verifies every grouped mutation is blocked before apply mutation,
+  checks blocker propagation and source binding across the group, verifies
+  summaries and live-remote preconditions remain consistent, and keeps the proof
+  envelope hash-only. Command:
+  `node --test --test-name-pattern=RPP-0260 test/rpp-0260-atomic-group-blocker-propagation-v3.test.js`.
+  Caveat: deterministic local Node generated-fixture evidence only; release
+  remains gated by broader integration evidence. Validation passed with a Node
+  syntax check, focused RPP-0260 coverage 1/1, adjacent
+  RPP-0240/RPP-0260/RPP-0280 atomic blocker coverage 3/3, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 560/440; final
+  release remains `NO-GO` because this is local merge-invariant support
+  evidence, not production-backed release proof.
 - Same independent content release-verifier v5 generated proof: the current lane
   now checks `RPP-0198` with deterministic generated-harness support evidence
   over the existing same-independent-content target family. The proof carries

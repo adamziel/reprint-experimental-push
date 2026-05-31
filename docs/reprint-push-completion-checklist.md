@@ -281,7 +281,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [x] RPP-0257 (Near-Mid / merge-invariants) Add generated coverage for conflict plan apply refusal, variant 3. Success: executor rejects forged or stale mutation attempts.
 - [x] RPP-0258 (Near-Mid / merge-invariants) Add generated coverage for forged ready plan defense, variant 3. Success: no raw private value appears in serialized plan evidence.
 - [x] RPP-0259 (Near-Mid / merge-invariants) Add generated coverage for redacted raw value evidence, variant 3. Success: scenario matrix row names the behavior and command.
-- [ ] RPP-0260 (Near-Mid / merge-invariants) Add generated coverage for atomic group blocker propagation, variant 3. Success: progress log records the command and caveat.
+- [x] RPP-0260 (Near-Mid / merge-invariants) Add generated coverage for atomic group blocker propagation, variant 3. Success: progress log records the command and caveat.
 - [x] RPP-0261 (Near-Mid / merge-invariants) Add focused regression coverage for independent local file plus remote row edit, variant 4. Success: node test proves the invariant over generated and focused fixtures.
 - [x] RPP-0262 (Near-Mid / merge-invariants) Add focused regression coverage for independent local row plus remote file edit, variant 4. Success: executor rejects forged or stale mutation attempts.
 - [x] RPP-0263 (Near-Mid / merge-invariants) Add focused regression coverage for local delete versus remote edit, variant 4. Success: no raw private value appears in serialized plan evidence.
