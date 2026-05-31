@@ -13505,6 +13505,523 @@ function assertPostAuthorGraphShape(testCase, { staleTarget }) {
   };
 }
 
+test('RPP-0343 generated harness records post_author identity-map variant 3 coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.postAuthorGraphVariant3;
+  const expectedPerTier = Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2]));
+
+  assert.ok(coverage, 'missing post_author identity-map variant 3 target coverage');
+  assert.equal(coverage.family, 'post-author-graph-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['post-author-graph-v3']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { blocked: 10, ready: 10 });
+  assert.deepEqual(coverage.perTier, expectedPerTier);
+  assert.equal(report.summary.featureFamilies['post-author-graph-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['post-author-graph-v3-stale'], 10);
+  assert.equal(report.summary.featureFamilies['post-author-graph-v3-non-ready'], 10);
+
+  const firstEvidence = generatedPostAuthorGraphVariant3Evidence(coverage);
+  const replayEvidence = generatedPostAuthorGraphVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0343 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; final release remains NO-GO.',
+    evidenceScope: 'local-generated-support-only',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'post_author variant 3 evidence changed between runs');
+  assert.equal(firstEvidence.target, 'postAuthorGraphVariant3');
+  assert.equal(firstEvidence.family, 'post-author-graph-variant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.variant),
+    ['ready-identity-map', 'stale-fail-closed'],
+  );
+
+  const [readyCase, staleCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.status, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.identityMap.sourceDecision, 'map-local-identity-to-remote');
+  assert.equal(readyCase.identityMap.targetDecision, 'keep-remote');
+  assert.equal(readyCase.postMutation.action, 'put');
+  assert.equal(readyCase.postMutation.changeKind, 'create');
+  assert.equal(readyCase.postMutation.plannedPostAuthor, readyCase.surface.targetAuthor.id);
+  assert.equal(readyCase.postMutation.rewrite.relationshipKey, 'wp_posts.post_author');
+  assert.equal(readyCase.postMutation.rewrite.relationshipType, 'post-author');
+  assert.equal(readyCase.postMutation.rewrite.sourceTargetResourceKey, readyCase.surface.sourceAuthor.resourceKey);
+  assert.equal(readyCase.postMutation.rewrite.targetResourceKey, readyCase.surface.targetAuthor.resourceKey);
+  assert.equal(readyCase.postMutation.sourceAuthorMutationPlanned, false);
+  assert.equal(readyCase.postMutation.targetAuthorMutationPlanned, false);
+  assert.equal(readyCase.postMutation.preconditionExpectedHash, readyCase.postMutation.remoteBeforeHash);
+  assert.equal(readyCase.postMutation.appliedHash, readyCase.postMutation.plannedLocalHash);
+  assert.match(readyCase.postMutation.rewrite.rewriteHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(staleCase.status, 'blocked');
+  assert.equal(staleCase.applied, false);
+  assert.equal(staleCase.blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(staleCase.blocker.relationshipKey, 'wp_posts.post_author');
+  assert.equal(staleCase.blocker.relationshipType, 'post-author');
+  assert.equal(staleCase.blocker.targetResourceKey, staleCase.surface.sourceAuthor.resourceKey);
+  assert.equal(staleCase.blocker.targetRemoteChange, 'update');
+  assert.equal(staleCase.blocker.plannedMutation, false);
+  assert.equal(staleCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(staleCase.refusal.remoteBeforeHash, staleCase.refusal.remoteAfterHash);
+  assert.match(staleCase.blocker.referenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(staleCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('RPP-0343 generated post_author'), false, 'variant 3 evidence leaked post title');
+  assert.equal(evidenceText.includes('rpp0343-ready-local-post-author-private'), false, 'variant 3 evidence leaked ready post body');
+  assert.equal(evidenceText.includes('rpp0343-stale-local-post-author-private'), false, 'variant 3 evidence leaked stale post body');
+  assert.equal(evidenceText.includes('rpp-0343-post-author-identity'), false, 'variant 3 evidence leaked author login/email');
+  assert.equal(evidenceText.includes('Remote stale RPP-0343 post author'), false, 'variant 3 evidence leaked remote author display name');
+  assert.equal(evidenceText.includes('rpp-0343-remote-private-post-author'), false, 'variant 3 evidence leaked remote author email');
+});
+
+function generatedPostAuthorGraphVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('post-author-graph-v3')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedPostAuthorGraphVariant3CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'stale';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'post_author variant 3 target recount should match tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'post_author variant 3 target recount should match statuses');
+  assert.equal(totalCases, targetCoverage.total, 'post_author variant 3 target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready post_author case');
+  assert.ok(selectedCases.has('stale'), 'variant 3 target should select one stale post_author case');
+
+  return {
+    target: 'postAuthorGraphVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-support-only',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('stale'),
+    ],
+  };
+}
+
+function generatedPostAuthorGraphVariant3CaseEvidence(testCase, result) {
+  const staleTarget = testCase.tags.has('post-author-graph-v3-stale');
+  assert.equal(
+    testCase.tags.has('post-author-graph-v3-ready'),
+    !staleTarget,
+    `${testCase.id} should carry exactly one post_author variant 3 ready/stale tag`,
+  );
+  assert.equal(
+    testCase.tags.has('post-author-graph-v3-non-ready'),
+    staleTarget,
+    `${testCase.id} should tag stale post_author variant 3 cases as non-ready`,
+  );
+
+  const shape = postAuthorGraphVariant3Shape(testCase, { staleTarget });
+  const plan = createGeneratedPlan(testCase);
+  const surface = postAuthorGraphVariant3Surface(testCase, shape);
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant: result.status === 'ready' ? 'ready-identity-map' : 'stale-fail-closed',
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    surface,
+  };
+
+  if (result.status === 'ready') {
+    assert.equal(staleTarget, false, `${testCase.id} ready evidence should use the identity-map target`);
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(result.applied, true, `${testCase.id} should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const identityMap = postAuthorGraphVariant3IdentityMapEvidence({ plan, shape });
+    const postMutation = postAuthorGraphVariant3ReadyMutationEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+    const evidence = {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      staleReplayRejected: result.staleReplayRejected,
+      staleReplayRejectionCode: result.staleReplayRejectionCode,
+      staleReplayRemoteUnchanged: result.staleReplayRemoteUnchanged,
+      identityMap,
+      postMutation,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        identityMap,
+        postMutation,
+      })}`,
+    };
+    assertPostAuthorGraphVariant3RawValuesAbsent(testCase, shape, JSON.stringify(evidence));
+    return evidence;
+  }
+
+  assert.equal(staleTarget, true, `${testCase.id} non-ready evidence should use the stale post_author target`);
+  assert.equal(result.status, 'blocked', `${testCase.id} should validate as blocked`);
+  assert.equal(plan.status, 'blocked', `${testCase.id} should plan as blocked`);
+  assert.equal(result.applied, false, `${testCase.id} stale post_author graph should not apply`);
+  assert.equal(result.nonReadyRemoteUnchanged, true, `${testCase.id} stale post_author graph should leave remote unchanged`);
+
+  const blocker = postAuthorGraphVariant3StaleBlockerEvidence({ testCase, plan, shape });
+  const refusal = postAuthorGraphVariant3RefusalEvidence(testCase, plan);
+  const evidence = {
+    ...commonEvidence,
+    applied: result.applied,
+    blocker,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      blocker,
+      refusal,
+    })}`,
+  };
+  assertPostAuthorGraphVariant3RawValuesAbsent(testCase, shape, JSON.stringify(evidence));
+  return evidence;
+}
+
+function postAuthorGraphVariant3Shape(testCase, { staleTarget }) {
+  const postRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([, row]) => String(row.post_title || '').startsWith(
+      `RPP-0343 generated post_author identity-map post ${staleTarget ? 'stale' : 'ready'} `,
+    ));
+
+  assert.equal(postRows.length, 1, `${testCase.id} should include one generated post_author variant 3 post`);
+
+  const [postRowId, postRow] = postRows[0];
+  const sourceAuthorId = Number(postRow.post_author);
+  const sourceAuthorRowId = `ID:${sourceAuthorId}`;
+  const sourceAuthor = testCase.local.db.wp_users[sourceAuthorRowId];
+  const mapEntry = (testCase.local.meta?.wordpressGraphIdentityMap?.rows || [])
+    .find((entry) => entry.table === 'wp_users' && entry.localId === sourceAuthorRowId);
+  const targetAuthorRowId = staleTarget ? sourceAuthorRowId : mapEntry?.remoteId;
+  const targetAuthorId = postAuthorGraphVariant3IdFromRowId(targetAuthorRowId);
+  const targetAuthor = targetAuthorRowId ? testCase.remote.db.wp_users[targetAuthorRowId] : null;
+
+  assert.equal(postRowId, `ID:${postRow.ID}`);
+  assert.ok(Number.isSafeInteger(sourceAuthorId), `${testCase.id} post_author should be numeric`);
+  assert.ok(sourceAuthor, `${testCase.id} missing local source author ${sourceAuthorRowId}`);
+  assert.equal(sourceAuthor.ID, sourceAuthorId);
+  assert.ok(targetAuthor, `${testCase.id} missing remote target author ${targetAuthorRowId}`);
+  assert.equal(targetAuthor.ID, targetAuthorId);
+
+  if (staleTarget) {
+    assert.equal(mapEntry, undefined, `${testCase.id} stale target should not use an identity map`);
+    assert.ok(testCase.base.db.wp_users[sourceAuthorRowId], `${testCase.id} stale author should exist in base`);
+    assert.deepEqual(
+      testCase.local.db.wp_users[sourceAuthorRowId],
+      testCase.base.db.wp_users[sourceAuthorRowId],
+      `${testCase.id} stale local author should match base`,
+    );
+    assert.notDeepEqual(
+      testCase.remote.db.wp_users[sourceAuthorRowId],
+      testCase.base.db.wp_users[sourceAuthorRowId],
+      `${testCase.id} stale author should drift remotely`,
+    );
+  } else {
+    assert.ok(mapEntry, `${testCase.id} ready target should carry a wp_users identity map`);
+    assert.equal(testCase.remote.db.wp_users[sourceAuthorRowId], undefined);
+    assert.equal(testCase.base.db.wp_users[sourceAuthorRowId], undefined);
+    assert.equal(testCase.base.db.wp_users[targetAuthorRowId], undefined);
+    assert.equal(sourceAuthor.user_login, targetAuthor.user_login);
+    assert.equal(sourceAuthor.user_email, targetAuthor.user_email);
+    assert.equal(sourceAuthor.display_name, targetAuthor.display_name);
+  }
+
+  return {
+    postId: postRow.ID,
+    postRowId,
+    postResource: postAuthorGraphVariant3RowResource('wp_posts', postRowId),
+    postResourceKey: rowResourceKey('wp_posts', postRowId),
+    sourceAuthorId,
+    sourceAuthorRowId,
+    sourceAuthorResource: postAuthorGraphVariant3RowResource('wp_users', sourceAuthorRowId),
+    sourceAuthorResourceKey: rowResourceKey('wp_users', sourceAuthorRowId),
+    targetAuthorId,
+    targetAuthorRowId,
+    targetAuthorResource: postAuthorGraphVariant3RowResource('wp_users', targetAuthorRowId),
+    targetAuthorResourceKey: rowResourceKey('wp_users', targetAuthorRowId),
+    privateValues: [
+      sourceAuthor.user_login,
+      sourceAuthor.user_email,
+      sourceAuthor.display_name,
+      targetAuthor.user_login,
+      targetAuthor.user_email,
+      targetAuthor.display_name,
+      postRow.post_title,
+      postRow.post_name,
+      postRow.post_content,
+    ].filter(Boolean),
+  };
+}
+
+function postAuthorGraphVariant3Surface(testCase, shape) {
+  return {
+    relationship: {
+      relationshipKey: 'wp_posts.post_author',
+      relationshipType: 'post-author',
+    },
+    sourceAuthor: {
+      id: shape.sourceAuthorId,
+      resourceKey: shape.sourceAuthorResourceKey,
+      baseHash: resourceHash(testCase.base, shape.sourceAuthorResource),
+      localHash: resourceHash(testCase.local, shape.sourceAuthorResource),
+      remoteHash: resourceHash(testCase.remote, shape.sourceAuthorResource),
+    },
+    targetAuthor: {
+      id: shape.targetAuthorId,
+      resourceKey: shape.targetAuthorResourceKey,
+      baseHash: resourceHash(testCase.base, shape.targetAuthorResource),
+      localHash: resourceHash(testCase.local, shape.targetAuthorResource),
+      remoteHash: resourceHash(testCase.remote, shape.targetAuthorResource),
+    },
+    post: {
+      id: shape.postId,
+      resourceKey: shape.postResourceKey,
+      baseHash: resourceHash(testCase.base, shape.postResource),
+      localHash: resourceHash(testCase.local, shape.postResource),
+      remoteHash: resourceHash(testCase.remote, shape.postResource),
+    },
+  };
+}
+
+function postAuthorGraphVariant3IdentityMapEvidence({ plan, shape }) {
+  const sourceDecision = plan.decisions.find((decision) =>
+    decision.resourceKey === shape.sourceAuthorResourceKey);
+  const targetDecision = plan.decisions.find((decision) =>
+    decision.resourceKey === shape.targetAuthorResourceKey);
+
+  assert.equal(sourceDecision?.decision, 'map-local-identity-to-remote');
+  assert.equal(targetDecision?.decision, 'keep-remote');
+
+  return {
+    sourceResourceKey: shape.sourceAuthorResourceKey,
+    targetResourceKey: shape.targetAuthorResourceKey,
+    sourceDecision: sourceDecision.decision,
+    targetDecision: targetDecision.decision,
+    identityMapSource: sourceDecision.identityMapSource,
+    sourceDecisionHash: `sha256:${digest(sourceDecision)}`,
+    targetDecisionHash: `sha256:${digest(targetDecision)}`,
+  };
+}
+
+function postAuthorGraphVariant3ReadyMutationEvidence({ testCase, plan, applied, shape }) {
+  const postMutation = plan.mutations.find((mutation) => mutation.resourceKey === shape.postResourceKey);
+  const postPrecondition = plan.preconditions.find((precondition) =>
+    precondition.resourceKey === shape.postResourceKey);
+
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.sourceAuthorResourceKey),
+    false,
+    `${testCase.id} should not create the mapped local source author`,
+  );
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.targetAuthorResourceKey),
+    false,
+    `${testCase.id} should preserve the remote target author`,
+  );
+  assert.ok(postMutation, `${testCase.id} should plan the post_author authored post`);
+  assert.ok(postPrecondition, `${testCase.id} should precondition the authored post`);
+
+  const plannedPost = deserializeResourceValue(postMutation.value);
+  const rewrite = postMutation.wordpressGraphIdentity?.rewrites.find((entry) =>
+    entry.relationshipType === 'post-author');
+  const appliedHash = resourceHash(applied.site, shape.postResource);
+
+  assert.ok(rewrite, `${testCase.id} should carry post_author rewrite evidence`);
+  assert.equal(plannedPost.post_author, shape.targetAuthorId);
+  assert.equal(rewrite.relationshipKey, 'wp_posts.post_author');
+  assert.equal(rewrite.relationshipType, 'post-author');
+  assert.equal(rewrite.field, 'post_author');
+  assert.equal(rewrite.sourceResourceKey, shape.postResourceKey);
+  assert.equal(rewrite.rewrittenResourceKey, shape.postResourceKey);
+  assert.equal(rewrite.sourceTargetResourceKey, shape.sourceAuthorResourceKey);
+  assert.equal(rewrite.targetResourceKey, shape.targetAuthorResourceKey);
+  assert.match(rewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(rewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.equal(postPrecondition.mutationId, postMutation.id);
+  assert.equal(postPrecondition.expectedHash, postMutation.remoteBeforeHash);
+  assert.equal(appliedHash, postMutation.localHash, `${testCase.id} did not apply the rewritten post hash`);
+  assert.equal(applied.site.db.wp_users[shape.sourceAuthorRowId], undefined);
+  assert.equal(applied.site.db.wp_users[shape.targetAuthorRowId].ID, shape.targetAuthorId);
+  assert.equal(applied.site.db.wp_posts[shape.postRowId].post_author, shape.targetAuthorId);
+
+  return {
+    resourceKey: shape.postResourceKey,
+    action: postMutation.action,
+    changeKind: postMutation.changeKind,
+    plannedPostAuthor: plannedPost.post_author,
+    plannedLocalHash: postMutation.localHash,
+    rawLocalHash: resourceHash(testCase.local, shape.postResource),
+    remoteBeforeHash: postMutation.remoteBeforeHash,
+    preconditionExpectedHash: postPrecondition.expectedHash,
+    appliedHash,
+    sourceAuthorMutationPlanned: false,
+    targetAuthorMutationPlanned: false,
+    plannedPrecondition: true,
+    rewrite: {
+      relationshipKey: rewrite.relationshipKey,
+      relationshipType: rewrite.relationshipType,
+      field: rewrite.field,
+      sourceResourceKey: rewrite.sourceResourceKey,
+      rewrittenResourceKey: rewrite.rewrittenResourceKey,
+      sourceTargetResourceKey: rewrite.sourceTargetResourceKey,
+      targetResourceKey: rewrite.targetResourceKey,
+      identityMapSource: rewrite.identityMapSource,
+      sourceTargetLocalHash: rewrite.sourceTargetLocalHash,
+      targetRemoteHash: rewrite.targetRemoteHash,
+      rewriteHash: `sha256:${digest(rewrite)}`,
+    },
+    mutationHash: `sha256:${digest({
+      resourceKey: postMutation.resourceKey,
+      action: postMutation.action,
+      changeKind: postMutation.changeKind,
+      plannedPostAuthor: plannedPost.post_author,
+      localHash: postMutation.localHash,
+      remoteBeforeHash: postMutation.remoteBeforeHash,
+    })}`,
+  };
+}
+
+function postAuthorGraphVariant3StaleBlockerEvidence({ testCase, plan, shape }) {
+  const postMutation = plan.mutations.find((mutation) => mutation.resourceKey === shape.postResourceKey);
+  const blocker = plan.blockers.find((entry) =>
+    entry.resourceKey === shape.postResourceKey
+    && entry.references?.some((reference) => reference.relationshipType === 'post-author'));
+  const reference = blocker?.references.find((entry) => entry.relationshipType === 'post-author');
+
+  assert.equal(postMutation, undefined, `${testCase.id} should not plan the stale post_author post`);
+  assert.ok(blocker, `${testCase.id} should expose a post_author graph blocker`);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.ok(reference, `${testCase.id} should include post_author target evidence`);
+  assert.equal(reference.relationshipKey, 'wp_posts.post_author');
+  assert.equal(reference.relationshipType, 'post-author');
+  assert.equal(reference.sourceResourceKey, shape.postResourceKey);
+  assert.equal(reference.targetResourceKey, shape.sourceAuthorResourceKey);
+  assert.equal(reference.targetChange.localChange, 'unchanged');
+  assert.equal(reference.targetChange.remoteChange, 'update');
+  assert.match(reference.targetBaseHash, /^[a-f0-9]{64}$/);
+  assert.match(reference.targetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(reference.targetRemoteHash, /^[a-f0-9]{64}$/);
+
+  return {
+    resourceKey: blocker.resourceKey,
+    class: blocker.class,
+    resolutionPolicy: blocker.resolutionPolicy,
+    relationshipKey: reference.relationshipKey,
+    relationshipType: reference.relationshipType,
+    targetResourceKey: reference.targetResourceKey,
+    targetLocalChange: reference.targetChange.localChange,
+    targetRemoteChange: reference.targetChange.remoteChange,
+    targetBaseHash: reference.targetBaseHash,
+    targetLocalHash: reference.targetLocalHash,
+    targetRemoteHash: reference.targetRemoteHash,
+    plannedMutation: false,
+    blockerHash: `sha256:${digest({
+      resourceKey: blocker.resourceKey,
+      class: blocker.class,
+      resolutionPolicy: blocker.resolutionPolicy,
+      change: blocker.change,
+    })}`,
+    referenceHash: `sha256:${digest(reference)}`,
+  };
+}
+
+function postAuthorGraphVariant3RefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} stale post_author plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} stale post_author refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
+}
+
+function postAuthorGraphVariant3IdFromRowId(rowId) {
+  const match = /^ID:(\d+)$/.exec(String(rowId || ''));
+  assert.ok(match, `invalid wp_users row id ${rowId}`);
+  return Number(match[1]);
+}
+
+function postAuthorGraphVariant3RowResource(table, id) {
+  return {
+    type: 'row',
+    table,
+    id,
+    key: rowResourceKey(table, id),
+  };
+}
+
+function assertPostAuthorGraphVariant3RawValuesAbsent(testCase, shape, evidenceText) {
+  for (const value of shape.privateValues) {
+    assert.equal(
+      evidenceText.includes(String(value)),
+      false,
+      `${testCase.id} post_author variant 3 evidence leaked ${value}`,
+    );
+  }
+}
+
 test('RPP-0347 generated harness emits comment user ready and stale graph cases', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.commentUserGraph;
