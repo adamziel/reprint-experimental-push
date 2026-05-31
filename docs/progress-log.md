@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 18:19 CEST +02:00.
+- Last update: 2026-05-31 18:20 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0663 single-writer lease claim variant-4 merge ending at
-  `cdbb74`.
+  the RPP-0664 stale claim rejection variant-4 merge ending at
+  `7e64a3`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 688
-  items checked and leaves 312 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 689
+  items checked and leaves 311 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 64 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 65 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Stale claim rejection variant-4 proof: the current lane now checks
+  `RPP-0664` with local recovery support evidence. The proof verifies a
+  competing writer before the stale threshold is rejected with restart-readable
+  stale-claim audit evidence and hash-bound active lease owner identity, while
+  stale mutation appends are fenced before any row is written. Command:
+  `node --test --test-name-pattern RPP-0664 test/rpp-0664-stale-claim-rejection-v4.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0664 coverage 1/1,
+  adjacent RPP-0644 stale-claim coverage 1/1, adjacent recovery-journal stale
+  claim/lease fence/durable boundary coverage 2/2, scoped artifact redaction
+  scan, and diff whitespace checks. Counts are now 689/311; final release
+  remains `NO-GO` because this is support evidence, not production-backed
+  recovery proof.
 - Single-writer lease claim variant-4 proof: the current lane now checks
   `RPP-0663` with local recovery support evidence. The proof verifies competing
   and expired writer claims preserve remote changes on planned targets, fail
