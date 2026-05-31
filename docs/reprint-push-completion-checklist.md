@@ -685,7 +685,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [x] RPP-0641 (Far / recovery) Add generated coverage for journal table schema migration, variant 3. Success: MySQL or SQLite-backed test proves the recovery state.
 - [x] RPP-0642 (Far / recovery) Add generated coverage for journal ownership record, variant 3. Success: journal rows are durable after process restart.
 - [x] RPP-0643 (Far / recovery) Add generated coverage for single-writer lease claim, variant 3. Success: retry does not overwrite preserved remote changes.
-- [ ] RPP-0644 (Far / recovery) Add generated coverage for stale claim rejection, variant 3. Success: lease owner identity is visible in audit evidence.
+- [x] RPP-0644 (Far / recovery) Add generated coverage for stale claim rejection, variant 3. Success: lease owner identity is visible in audit evidence.
 - [ ] RPP-0645 (Far / recovery) Add generated coverage for claim expiry policy, variant 3. Success: release verifier reports the recovery gate as proven on the same path.
 - [ ] RPP-0646 (Far / recovery) Add generated coverage for journal pagination, variant 3. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0647 (Far / recovery) Add generated coverage for restart-readable open state, variant 3. Success: journal rows are durable after process restart.

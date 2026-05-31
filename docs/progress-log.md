@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 12:55 CEST +02:00.
+- Last update: 2026-05-31 13:00 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0537 same-key different-body conflict variant-2 merge ending at
-  `d6773aba`.
+  the RPP-0644 stale-claim rejection variant-3 merge ending at `3cb1c2a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 586
-  items checked and leaves 414 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 587
+  items checked and leaves 413 open.
 - Checked slices: 100 release-gate foundation items, 85 graph identity items,
-  90 plugin-driver boundary items, 37 executor/auth items, 44 recovery items,
+  90 plugin-driver boundary items, 37 executor/auth items, 45 recovery items,
   27 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Stale-claim rejection variant-3 proof: the current lane now checks `RPP-0644`
+  with local recovery support evidence for restart-readable lease fencing. The
+  proof records active owner identity, rejects a stale writer before mutation
+  rows are prepared, preserves remote-change hash evidence across restart, and
+  keeps journal payloads hash-only. Command:
+  `node --test test/rpp-0644-stale-claim-rejection-v3.test.js`. Caveat: local
+  recovery support evidence only; final release remains `NO-GO`. Validation
+  passed with a Node syntax check, focused RPP-0644 coverage 1/1, adjacent
+  recovery stale-claim/ownership/lease coverage 5/5, adjacent RPP-0642/RPP-0643
+  variant-3 coverage 4/4, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 587/413; final release remains `NO-GO` because this is
+  support evidence, not external durability or production-backed recovery
+  proof.
 - Same-key different-body conflict variant-2 proof: the current lane now checks
   `RPP-0537` with local authenticated-client support evidence. The proof
   verifies a repeated idempotency key with a different body is rejected before
