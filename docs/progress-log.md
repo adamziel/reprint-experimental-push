@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 14:47 CEST +02:00.
+- Last update: 2026-05-31 14:49 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0357 serialized block reference detection variant-3 merge ending at
-  `9ff059f`.
+  the RPP-0355 nav menu item fail-closed reference variant-3 merge ending at
+  `728c85f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 617
-  items checked and leaves 383 open.
-- Checked slices: 100 release-gate foundation items, 95 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 618
+  items checked and leaves 382 open.
+- Checked slices: 100 release-gate foundation items, 96 graph identity items,
   96 plugin-driver boundary items, 42 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Nav menu item fail-closed reference variant-3 proof: the current lane now
+  checks `RPP-0355` with local graph-identity support evidence. The proof shows
+  generated hash-only nav menu item graph references fail closed before mutation
+  and documents the remaining unmapped WordPress surfaces. Command:
+  `node --test --test-name-pattern RPP-0355 test/rpp-0355-nav-menu-item-fail-closed-reference-v3.test.js`.
+  Caveat: local graph-identity support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0355
+  coverage 2/2, adjacent RPP-0375 coverage 1/1, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 618/382; final release remains
+  `NO-GO` because this is support evidence, not production-backed graph identity
+  proof.
 - Serialized block reference detection variant-3 proof: the current lane now
   checks `RPP-0357` with local graph-identity support evidence. The proof detects
   an unsupported serialized `core/cover` block attachment target, emits hash-only
