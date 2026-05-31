@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:49 CEST +02:00.
+- Last update: 2026-05-31 12:03 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0534 receipt expiry validation v2 merge ending at `4fec1c531`.
+  the RPP-0341 post_parent page hierarchy variant-3 generated coverage merge
+  ending at `2bdecd24b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 572
-  items checked and leaves 428 open.
-- Checked slices: 100 release-gate foundation items, 82 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 573
+  items checked and leaves 427 open.
+- Checked slices: 100 release-gate foundation items, 83 graph identity items,
   88 plugin-driver boundary items, 35 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Generated post_parent page hierarchy variant-3 coverage: the current lane now
+  checks `RPP-0341` with generated-harness graph identity evidence for
+  `post_parent` page hierarchy rewrites and stale parent drift refusals. The
+  target emits 20 deterministic cases across tiers 0 through 9, with ready
+  cases rewriting `post_parent` through explicit identity-map evidence and
+  stale cases blocking as `stale-wordpress-graph-identity` before mutation.
+  Command:
+  `node --test --test-name-pattern=RPP-0341 test/generated-push-harness.test.js`.
+  Caveat: local generated-harness graph identity evidence only; final release
+  remains `NO-GO`. Validation passed with Node syntax checks, focused RPP-0341
+  coverage 1/1, adjacent RPP-0303/RPP-0341/RPP-0347/RPP-0342 generated graph
+  coverage 4/4, adjacent post_parent planner/release-verifier coverage 6/6,
+  full generated harness coverage 95/95, scoped artifact redaction scan, and
+  diff whitespace checks. Counts are now 573/427; final release remains
+  `NO-GO` because this is local generated graph identity support evidence, not
+  production-backed release proof.
 - Receipt expiry validation v2 proof: the current lane now checks `RPP-0534`
   with focused executor/auth support evidence that expired dry-run receipts fail
   with `AUTH_RECEIPT_EXPIRED` before apply, apply-side expired receipt refusals

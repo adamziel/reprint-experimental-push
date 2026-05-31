@@ -367,7 +367,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [x] RPP-0338 (Mid / graph-identity) Prove GUID and slug collision handling, variant 2. Success: generated harness includes ready and stale cases.
 - [x] RPP-0339 (Mid / graph-identity) Prove cross-table create batch mapping, variant 2. Success: local production verifier carries the target through apply.
 - [x] RPP-0340 (Mid / graph-identity) Prove production importer/exporter identity map, variant 2. Success: docs state remaining unmapped WordPress surfaces.
-- [ ] RPP-0341 (Mid / graph-identity) Add generated coverage for post_parent page hierarchy, variant 3. Success: mapper rewrites or proves stable identity for the target.
+- [x] RPP-0341 (Mid / graph-identity) Add generated coverage for post_parent page hierarchy, variant 3. Success: mapper rewrites or proves stable identity for the target.
 - [x] RPP-0342 (Mid / graph-identity) Add generated coverage for featured image attachment reference, variant 3. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0343 (Mid / graph-identity) Add generated coverage for post author reference, variant 3. Success: generated harness includes ready and stale cases.
 - [ ] RPP-0344 (Mid / graph-identity) Add generated coverage for postmeta post_id reference, variant 3. Success: local production verifier carries the target through apply.
