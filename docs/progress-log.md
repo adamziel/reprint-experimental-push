@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 19:25 CEST +02:00.
+- Last update: 2026-05-31 19:34 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0693 unknown drift classification variant-5 merge ending at
-  `9933e3`.
+  the RPP-0695 same-key replay after rejection variant-5 merge ending at
+  `266ce6`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 717
-  items checked and leaves 283 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 718
+  items checked and leaves 282 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 93 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 94 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key replay after rejection variant-5 proof: the current lane now checks
+  `RPP-0695` with local recovery support evidence. The proof carries rejected
+  same-key replay evidence through the release-verifier-shaped durable recovery
+  proof, reports `GATE-2` on the same checked path, and rejects missing,
+  malformed, stale, duplicated, or drifted replay fixtures. Command:
+  `node --test --test-name-pattern RPP-0695 test/rpp-0695-same-key-replay-after-rejection-v5.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0695 coverage 2/2,
+  adjacent RPP-0675 coverage 2/2, adjacent RPP-0655 coverage 2/2, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 718/282;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed recovery proof.
 - Unknown drift classification variant-5 proof: the current lane now checks
   `RPP-0693` with local recovery support evidence. The proof carries preserved
   remote retry evidence through the release verifier shape, proves unknown-drift
