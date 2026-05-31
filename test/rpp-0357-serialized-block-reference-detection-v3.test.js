@@ -1,0 +1,156 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { applyPlan, PushPlanError } from '../src/apply.js';
+import { createPushPlan } from '../src/planner.js';
+import { digest } from '../src/stable-json.js';
+
+const fixedNow = new Date('2026-05-30T00:00:00.000Z');
+const hashPattern = /^[a-f0-9]{64}$/;
+
+function baseSite() {
+  return {
+    files: {
+      'index.php': '<?php echo "base";',
+    },
+    plugins: {},
+    db: {
+      wp_posts: {},
+    },
+  };
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function rowResourceKey(table, id) {
+  return `row:${JSON.stringify([table, id])}`;
+}
+
+function captureError(fn) {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  assert.fail('Expected function to throw');
+}
+
+function assertHash(value, label) {
+  assert.match(value, hashPattern, `${label} should be a SHA-256 hex digest`);
+}
+
+function assertNoRawValues(serializedEvidence, rawValues, label) {
+  for (const rawValue of rawValues) {
+    assert.equal(
+      serializedEvidence.includes(rawValue),
+      false,
+      `${label} leaked raw value: ${rawValue}`,
+    );
+  }
+}
+
+function assertHashOnlyChangeEvidence(entry, rawValues, label) {
+  assertHash(entry.baseHash, `${label}.baseHash`);
+  assertHash(entry.localHash, `${label}.localHash`);
+  assertHash(entry.remoteHash, `${label}.remoteHash`);
+  for (const slot of ['base', 'local', 'remote']) {
+    assertHash(entry.change[slot].hash, `${label}.change.${slot}.hash`);
+    assert.equal(
+      Object.hasOwn(entry.change[slot], 'value'),
+      false,
+      `${label}.change.${slot} must be hash-only`,
+    );
+  }
+  assertNoRawValues(JSON.stringify(entry), rawValues, label);
+}
+
+function assertHashOnlyTargetEvidence(reference, rawValues, label) {
+  assertHash(reference.targetBaseHash, `${label}.targetBaseHash`);
+  assertHash(reference.targetLocalHash, `${label}.targetLocalHash`);
+  assertHash(reference.targetRemoteHash, `${label}.targetRemoteHash`);
+  for (const slot of ['base', 'local', 'remote']) {
+    assertHash(reference.targetChange[slot].hash, `${label}.targetChange.${slot}.hash`);
+    assert.equal(
+      Object.hasOwn(reference.targetChange[slot], 'value'),
+      false,
+      `${label}.targetChange.${slot} must be hash-only`,
+    );
+  }
+  assertNoRawValues(JSON.stringify(reference), rawValues, label);
+}
+
+test('RPP-0357 serialized cover block unsupported target fails closed with hash-only evidence', () => {
+  const sourceResourceKey = rowResourceKey('wp_posts', 'ID:357');
+  const pageTargetResourceKey = rowResourceKey('wp_posts', 'ID:8357');
+  const rawValues = [
+    'rpp-0357-local-cover-host-title',
+    'rpp-0357-local-cover-caption',
+    'rpp-0357-base-page-target-title',
+    'rpp-0357-base-page-target-body',
+  ];
+  const base = baseSite();
+  base.db.wp_posts['ID:8357'] = {
+    ID: 8357,
+    post_title: rawValues[2],
+    post_name: 'rpp0357-base-page-target',
+    post_content: rawValues[3],
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.db.wp_posts['ID:357'] = {
+    ID: 357,
+    post_title: rawValues[0],
+    post_name: 'rpp0357-local-cover-host',
+    post_content: `<!-- wp:cover {"id":8357,"dimRatio":50} --><div class="wp-block-cover"><span aria-hidden="true" class="wp-block-cover__background has-background-dim"></span><div class="wp-block-cover__inner-container"><p>${rawValues[1]}</p></div></div><!-- /wp:cover -->`,
+    post_status: 'publish',
+    post_type: 'post',
+    post_parent: 0,
+    post_author: 0,
+  };
+
+  const plan = createPushPlan({ base, local, remote, now: fixedNow });
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === sourceResourceKey);
+  const reference = blocker?.references.find((entry) =>
+    entry.relationshipType === 'serialized-block-attachment'
+    && entry.targetResourceKey === pageTargetResourceKey);
+  const remoteBefore = cloneJson(remote);
+  const beforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.blockers, 1);
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === sourceResourceKey), false);
+  assert.equal(plan.preconditions.some((entry) => entry.resourceKey === sourceResourceKey), false);
+
+  assert.ok(blocker, 'missing unsupported serialized block graph blocker');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(blocker.reason, /without proven identity mapping or reference rewriting/);
+  assertHashOnlyChangeEvidence(blocker, rawValues, 'unsupported serialized cover blocker');
+
+  assert.ok(reference, 'missing serialized cover target evidence');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_content');
+  assert.equal(reference.serializedBlockName, 'core/cover');
+  assert.equal(reference.serializedBlockAttributePath, 'id');
+  assert.deepEqual(reference.targetSupport, {
+    supported: false,
+    className: 'stale-wordpress-graph-identity',
+    reason: `WordPress graph mutation ${sourceResourceKey} references a serialized block attachment target that is not a supported attachment row.`,
+  });
+  assert.equal(reference.targetChange.localChange, 'unchanged');
+  assert.equal(reference.targetChange.remoteChange, 'unchanged');
+  assertHashOnlyTargetEvidence(reference, rawValues, 'unsupported serialized cover target reference');
+  assertNoRawValues(JSON.stringify(plan.blockers), rawValues, 'blocked plan graph evidence');
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(digest(remoteBefore), beforeHash, 'unsupported serialized block target must refuse before mutation');
+});
