@@ -6,20 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 12:51 CEST +02:00.
+- Last update: 2026-05-31 12:55 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0344 postmeta post_id generated graph variant-3 merge ending at
-  `2fef0f15`.
+  the RPP-0537 same-key different-body conflict variant-2 merge ending at
+  `d6773aba`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 585
-  items checked and leaves 415 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 586
+  items checked and leaves 414 open.
 - Checked slices: 100 release-gate foundation items, 85 graph identity items,
-  90 plugin-driver boundary items, 36 executor/auth items, 44 recovery items,
+  90 plugin-driver boundary items, 37 executor/auth items, 44 recovery items,
   27 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key different-body conflict variant-2 proof: the current lane now checks
+  `RPP-0537` with local authenticated-client support evidence. The proof
+  verifies a repeated idempotency key with a different body is rejected before
+  fresh mutation setup, records hash-only conflict evidence, and keeps the
+  full live RPP-0517 listener test documented as blocked by this sandbox's
+  loopback bind limitation. Command:
+  `node --test test/rpp-0537-same-key-different-body-conflict-v2.test.js`.
+  Caveat: local authenticated endpoint support evidence only; final release
+  remains `NO-GO`. Validation passed with a Node syntax check, focused
+  RPP-0537 coverage 2/2, RPP-0517 non-listener route-order/auth coverage 1/1,
+  adjacent RPP-0536 coverage 1/1, adjacent RPP-0615/RPP-0616 coverage 3/3,
+  authenticated replay/idempotency subset coverage 26/26, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 586/414; final
+  release remains `NO-GO` because this is support evidence, not a checked live
+  production endpoint proof.
 - Generated postmeta post_id reference variant-3 coverage: the current lane now
   checks `RPP-0344` with generated-harness graph identity evidence. The new
   target emits 20 deterministic support-only cases across tiers 0 through 9:
