@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 610.
-- Remaining open: 390.
+- Verified complete: 611.
+- Remaining open: 389.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -778,7 +778,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0729 (Far / storage-performance) Prove chunk replay idempotency, variant 2. Success: large-site run finishes inside documented budgets.
 - [x] RPP-0730 (Far / storage-performance) Prove parallel snapshot hashing, variant 2. Success: fast-path lane updates only after correctness gates hold.
 - [x] RPP-0731 (Far / storage-performance) Prove remote hash pagination, variant 2. Success: benchmark command reports runtime, resources, and pass/fail gates.
-- [ ] RPP-0732 (Far / storage-performance) Prove dry-run batch sizing, variant 2. Success: guarded writes reject stale storage state.
+- [x] RPP-0732 (Far / storage-performance) Prove dry-run batch sizing, variant 2. Success: guarded writes reject stale storage state.
 - [ ] RPP-0733 (Far / storage-performance) Prove apply batch sizing, variant 2. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0734 (Far / storage-performance) Prove large post table benchmark, variant 2. Success: large-site run finishes inside documented budgets.
 - [ ] RPP-0735 (Far / storage-performance) Prove large media library benchmark, variant 2. Success: fast-path lane updates only after correctness gates hold.
