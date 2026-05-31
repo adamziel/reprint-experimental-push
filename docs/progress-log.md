@@ -6,19 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 22:30 CEST +02:00.
+- Last update: 2026-05-31 22:32 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0778 timeout budget proof variant-4 merge ending at `9e9fef`.
+  the RPP-0779 long-push progress reporting variant-4 merge ending at `17c865`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 770
-  items checked and leaves 230 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 771
+  items checked and leaves 229 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  78 storage/performance items, 3 production-topology items, 100 generated
+  79 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Long-push progress reporting variant-4 proof: the current lane now checks
+  `RPP-0779` with deterministic local storage/performance support evidence. The
+  proof carries forward the RPP-0759/RPP-0739/RPP-0719 long-push progress
+  reporting lineage and runs the RPP-0719 large-site profile with 254 scheduled
+  actions, 206 upload chunks, 1711276032 upload bytes, 27 database batches,
+  12620 database rows, 40 operator progress events, max 8 completed-action gap
+  between reports, max 67108864 upload-byte gap between reports, and all eight
+  underlying benchmark gates passing. It also records one safe generated case
+  and seven fail-closed cases for over-budget runtime, missing progress event,
+  stale durable cursor, missing required phase, too-high minimum operator event,
+  raw progress value, and premature passed status evidence. Command:
+  `node --test --test-name-pattern RPP-0779 test/rpp-0779-long-push-progress-reporting-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0779
+  coverage 3/3, adjacent RPP-0759 coverage 3/3, adjacent RPP-0739 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  771/229; final release remains `NO-GO` because this is support evidence, not
+  production-backed live progress UI, storage receipt, row batch executor,
+  atomic commit, or release-verifier proof.
 - Timeout budget proof variant-4 proof: the current lane now checks `RPP-0778`
   with deterministic local storage/performance support evidence. The proof
   carries forward the RPP-0758/RPP-0738/RPP-0718 timeout-budget lineage and
