@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 16:21 CEST +02:00.
+- Last update: 2026-05-31 16:24 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0570 session user identity binding variant-4 merge ending at
-  `7ae42b`.
+  the RPP-0572 request signature canonicalization variant-4 merge ending at
+  `f1e3c9`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 649
-  items checked and leaves 351 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 650
+  items checked and leaves 350 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 65 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 66 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Request signature canonicalization variant-4 proof: the current lane now
+  checks `RPP-0572` with local executor-auth support evidence. The proof
+  normalizes equivalent signed request shapes, accepts a support path only after
+  canonical signature proof, and rejects malformed or tampered signed requests
+  before JSON parsing, receipt work, or mutation-capable work. Command:
+  `node --test --test-name-pattern RPP-0572 test/rpp-0572-request-signature-canonicalization-v4.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0572
+  coverage 4/4, adjacent canonicalization coverage 4/4, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 650/350; final
+  release remains `NO-GO` because this is support evidence, not
+  production-backed signature canonicalization proof.
 - Session user identity binding variant-4 proof: the current lane now checks
   `RPP-0570` with local executor-auth support evidence. The proof carries
   exactly one session-user-identity route-evidence summary through
