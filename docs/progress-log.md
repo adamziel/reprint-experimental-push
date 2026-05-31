@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 01:29 CEST +02:00.
+- Last update: 2026-06-01 01:31 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0825 WooCommerce product catalog proof merge ending at `40e4329bf`.
+  the RPP-0826 WooCommerce order safety proof merge ending at `ee4655f1e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 815
-  items checked and leaves 185 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 816
+  items checked and leaves 184 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 15 production-topology items, 100 generated
+  100 storage/performance items, 16 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- WooCommerce order safety refusal variant-2 unavailable-capability proof: the
+  current lane now checks `RPP-0826` with deterministic WooCommerce order
+  refusal and fail-closed topology evidence. The proof keeps legacy and HPOS
+  order rows plugin-owned, refuses forged order mutations before
+  mutation-capable work, and records exact blocker `DOCKER_CLI_MISSING` when the
+  Docker topology cannot start in this sandbox.
+  Commands:
+  `node --test test/rpp-0826-woocommerce-order-safety-refusal-v2.test.js` and
+  `npm run verify:release:docker-local-production`.
+  Caveat: unavailable-capability support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0826
+  coverage 4/4, Docker topology command exit 2 with `DOCKER_CLI_MISSING`,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  816/184; final release remains `NO-GO` because this is support evidence, not
+  production-backed WooCommerce order proof, production storage receipts,
+  production row batch executor evidence, production atomic group commit
+  evidence, live production service evidence, production throughput, release
+  approval, or a production release gate.
 - WooCommerce product catalog variant-2 candidate-scope proof: the current lane
   now checks `RPP-0825` with deterministic candidate-versus-release-ready
   catalog support evidence. The proof records WooCommerce product, variation,
