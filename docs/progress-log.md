@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 16:05 CEST +02:00.
+- Last update: 2026-05-31 16:09 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0564 production apply route variant-4 merge ending at `6a1997`.
+  the RPP-0565 production journal route variant-4 merge ending at `fdaef7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 644
-  items checked and leaves 356 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 645
+  items checked and leaves 355 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 60 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 61 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production journal route variant-4 proof: the current lane now checks
+  `RPP-0565` with local executor-auth support evidence. The proof carries
+  exactly one read-only production journal route summary through a
+  `verify:release`-shaped `NO-GO` result, keeps route evidence hash-only, and
+  rejects malformed or write-observed journal route evidence before release
+  movement. Command:
+  `node --test --test-name-pattern RPP-0565 test/rpp-0565-production-journal-route-v4.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0565
+  coverage 3/3, adjacent journal route coverage 6/6, scoped artifact redaction
+  scan, and diff whitespace checks. Counts are now 645/355; final release
+  remains `NO-GO` because this is support evidence, not production-backed
+  journal-route proof.
 - Production apply route variant-4 proof: the current lane now checks
   `RPP-0564` with local executor-auth support evidence. The proof keeps
   live-source revalidation before mutation setup, accepts only hash-only support
