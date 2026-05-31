@@ -570,7 +570,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [x] RPP-0531 (Mid-Far / executor-auth) Prove Application Password integration, variant 2. Success: real endpoint test runs against a live URL.
 - [x] RPP-0532 (Mid-Far / executor-auth) Prove request signature canonicalization, variant 2. Success: negative auth cases fail before JSON parsing and mutation.
 - [x] RPP-0533 (Mid-Far / executor-auth) Prove nonce replay store, variant 2. Success: dry-run receipts bind session, identity, scope, and plan hash.
-- [ ] RPP-0534 (Mid-Far / executor-auth) Prove receipt expiry validation, variant 2. Success: apply revalidates the live source before mutation.
+- [x] RPP-0534 (Mid-Far / executor-auth) Prove receipt expiry validation, variant 2. Success: apply revalidates the live source before mutation.
 - [x] RPP-0535 (Mid-Far / executor-auth) Prove idempotency key requirement, variant 2. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0536 (Mid-Far / executor-auth) Prove same-key same-body replay, variant 2. Success: real endpoint test runs against a live URL.
 - [ ] RPP-0537 (Mid-Far / executor-auth) Prove same-key different-body conflict, variant 2. Success: negative auth cases fail before JSON parsing and mutation.

@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:45 CEST +02:00.
+- Last update: 2026-05-31 11:49 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0300 atomic group blocker propagation release-verifier v5 merge
-  ending at `200b2067e`.
+  the RPP-0534 receipt expiry validation v2 merge ending at `4fec1c531`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 571
-  items checked and leaves 429 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 572
+  items checked and leaves 428 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
-  88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
+  88 plugin-driver boundary items, 35 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Receipt expiry validation v2 proof: the current lane now checks `RPP-0534`
+  with focused executor/auth support evidence that expired dry-run receipts fail
+  with `AUTH_RECEIPT_EXPIRED` before apply, apply-side expired receipt refusals
+  remain pre-mutation with `applied: 0`, and unexpired receipts still carry
+  live-source apply revalidation at `phase: before-first-mutation`. Command:
+  `node --test --test-name-pattern='RPP-0534' test/rpp-0534-receipt-expiry-validation-v2.test.js`.
+  Caveat: local executor/unit evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0534 coverage 3/3,
+  adjacent RPP-0514 receipt-expiry coverage 3/3, broader auth/receipt/session
+  pattern coverage 72/72, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 572/428; final release remains `NO-GO` because this is
+  local executor/auth support evidence, not production-backed release proof.
 - Atomic group blocker propagation release-verifier v5 carry-through: the
   current lane now checks `RPP-0300` with focused and generated support evidence
   that atomic group source blockers propagate to every grouped mutation and
