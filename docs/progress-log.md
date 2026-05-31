@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 21:58 CEST +02:00.
+- Last update: 2026-05-31 22:01 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0771 remote hash pagination variant-4 merge ending at `78f810`.
+  the RPP-0770 parallel snapshot hashing variant-4 merge ending at `c26dee`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 762
-  items checked and leaves 238 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 763
+  items checked and leaves 237 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  70 storage/performance items, 3 production-topology items, 100 generated
+  71 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Parallel snapshot hashing variant-4 proof: the current lane now checks
+  `RPP-0770` with deterministic local storage/performance support evidence. The
+  proof carries forward the RPP-0750/RPP-0730 bounded hashing lineage and
+  verifies that fast-path lane output is emitted only after the full correctness
+  gate vector is recorded before the lane field and every gate holds. The local
+  projection covers 22 snapshot hash resources, 3 snapshots, 66 snapshot hash
+  jobs, concurrency 2, 6 correctness gates, 10 generated support cases, 1
+  accepted fast-path lane update, 9 blocked lane attempts, and 0 unsafe
+  fast-path outputs while keeping public evidence hash/count-only. Command:
+  `node --test --test-name-pattern RPP-0770 test/rpp-0770-parallel-snapshot-hashing-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0770
+  coverage 2/2, adjacent RPP-0750 coverage 2/2, adjacent RPP-0730 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  763/237; final release remains `NO-GO` because this is support evidence, not
+  production-backed snapshot hashing, storage receipt, row batch executor, or
+  atomic commit proof.
 - Remote hash pagination variant-4 proof: the current lane now checks
   `RPP-0771` with deterministic local storage/performance support evidence. The
   proof carries forward the RPP-0751/RPP-0731 pagination lineage and runs

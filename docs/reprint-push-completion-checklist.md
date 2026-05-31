@@ -816,7 +816,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0767 (Far / storage-performance) Add focused regression coverage for chunk hash verification, variant 4. Success: guarded writes reject stale storage state.
 - [x] RPP-0768 (Far / storage-performance) Add focused regression coverage for chunk resume after interruption, variant 4. Success: chunk transfer resumes without duplicate mutation work.
 - [x] RPP-0769 (Far / storage-performance) Add focused regression coverage for chunk replay idempotency, variant 4. Success: large-site run finishes inside documented budgets.
-- [ ] RPP-0770 (Far / storage-performance) Add focused regression coverage for parallel snapshot hashing, variant 4. Success: fast-path lane updates only after correctness gates hold.
+- [x] RPP-0770 (Far / storage-performance) Add focused regression coverage for parallel snapshot hashing, variant 4. Success: fast-path lane updates only after correctness gates hold.
 - [x] RPP-0771 (Far / storage-performance) Add focused regression coverage for remote hash pagination, variant 4. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [ ] RPP-0772 (Far / storage-performance) Add focused regression coverage for dry-run batch sizing, variant 4. Success: guarded writes reject stale storage state.
 - [ ] RPP-0773 (Far / storage-performance) Add focused regression coverage for apply batch sizing, variant 4. Success: chunk transfer resumes without duplicate mutation work.
