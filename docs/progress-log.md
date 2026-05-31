@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 20:22 CEST +02:00.
+- Last update: 2026-05-31 20:24 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0744 filesystem compare-and-rename write variant-3 merge ending at
-  `e248bb`.
+  the RPP-0745 filesystem fsync evidence variant-3 merge ending at `0fc588`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 736
-  items checked and leaves 264 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 737
+  items checked and leaves 263 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  44 storage/performance items, 3 production-topology items, 100 generated
+  45 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Filesystem fsync evidence variant-3 proof: the current lane now checks
+  `RPP-0745` with local storage/performance support evidence. The proof
+  exercises generated local filesystem outcomes through the
+  compare-rename-fsync adapter, proves fast-path lane updates happen only after
+  the temp-file fsync, live comparison, rename, target-directory fsync, and
+  post-rename gates pass, and keeps stale storage plus temp/directory fsync
+  failures out of the lane with blocker identifiers. Command:
+  `node --test --test-name-pattern RPP-0745 test/rpp-0745-filesystem-fsync-evidence-v3.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0745
+  coverage 2/2, adjacent RPP-0725 coverage 3/3, filesystem fsync benchmark
+  coverage 3/3, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 737/263; final release remains `NO-GO` because this is support
+  evidence, not production-backed external durability proof.
 - Filesystem compare-and-rename write variant-3 proof: the current lane now
   checks `RPP-0744` with local storage/performance support evidence. The proof
   exercises generated matching update/create cases through the local filesystem
