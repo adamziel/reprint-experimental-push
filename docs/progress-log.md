@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 21:13 CEST +02:00.
+- Last update: 2026-05-31 21:16 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0759 long-push progress reporting variant-3 merge ending at `17f4ae`.
+  the RPP-0760 rollout threshold configuration variant-3 merge ending at
+  `3de9e3`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 751
-  items checked and leaves 249 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 752
+  items checked and leaves 248 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  59 storage/performance items, 3 production-topology items, 100 generated
+  60 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Rollout threshold configuration variant-3 proof: the current lane now checks
+  `RPP-0760` with local storage/performance support evidence. The proof records
+  the normalized 500, 1000, 2500, 5000, 7500, and 10000 basis point thresholds,
+  18 matched storage checks with zero drift, 18 performance samples, p95
+  decision time of 5.2 ms against a 5.5 ms budget, and six fast-path lane
+  updates emitted only after correctness gates pass. It blocks unsafe lane
+  updates, unknown thresholds, storage drift, performance budget violations,
+  mismatched configuration hashes, and premature pass status. Command:
+  `node --test --test-name-pattern RPP-0760 test/rpp-0760-rollout-threshold-configuration-v3.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0760
+  coverage 2/2, adjacent RPP-0740 coverage 2/2, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 752/248; final release remains
+  `NO-GO` because this is support evidence, not production-backed external
+  durability proof.
 - Long-push progress reporting variant-3 proof: the current lane now checks
   `RPP-0759` with local storage/performance support evidence. The proof carries
   the RPP-0719 large-site profile forward with 254 scheduled actions, 206 upload
