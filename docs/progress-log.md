@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 19:40 CEST +02:00.
+- Last update: 2026-05-31 19:42 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0698 process kill mid mutation set variant-5 merge ending at
-  `7ba07c`.
+  the RPP-0694 same-key replay after commit variant-5 merge ending at
+  `ce4294`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 719
-  items checked and leaves 281 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 720
+  items checked and leaves 280 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 95 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 96 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key replay after commit variant-5 proof: the current lane now checks
+  `RPP-0694` with local recovery support evidence. The proof carries committed
+  same-key replay through the release verifier, keeps lease owner identity
+  visible in audit evidence, and rejects missing lease-owner carry-through.
+  Command:
+  `node --test --test-name-pattern RPP-0694 test/rpp-0694-same-key-replay-after-commit-v5.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0694 coverage 1/1,
+  adjacent RPP-0674 coverage 1/1, adjacent RPP-0654 coverage 2/2, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 720/280;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed recovery proof.
 - Process kill mid mutation set variant-5 proof: the current lane now checks
   `RPP-0698` with local recovery support evidence. The proof carries a
   process-kill mid-mutation retry scenario through the release verifier,
