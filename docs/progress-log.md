@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 18:22 CEST +02:00.
+- Last update: 2026-05-31 18:24 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0665 claim expiry policy variant-4 merge ending at
-  `fc8baf`.
+  the RPP-0666 journal pagination variant-4 merge ending at
+  `8aa52e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 690
-  items checked and leaves 310 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 691
+  items checked and leaves 309 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 89 executor/auth items, 66 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 67 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Journal pagination variant-4 proof: the current lane now checks `RPP-0666`
+  with local recovery support evidence. The proof verifies file-backed and
+  SQLite-backed paged journal readback keeps cursor windows, path-bound cursor
+  envelopes, monotonic record order, and completed recovery state stable after
+  restart. Command:
+  `node --test --test-name-pattern RPP-0666 test/rpp-0666-journal-pagination-v4.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0666 coverage 2/2,
+  adjacent RPP-0646 pagination coverage 2/2, adjacent recovery-journal
+  pagination/readback coverage 1/1, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 691/309; final release remains `NO-GO`
+  because this is support evidence, not production-backed recovery proof.
 - Claim expiry policy variant-4 proof: the current lane now checks `RPP-0665`
   with local recovery support evidence. The proof verifies a stale claim
   advances exactly once after expiry, preserves restart-readable writer lease
