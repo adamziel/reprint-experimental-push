@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 13:32 CEST +02:00.
+- Last update: 2026-05-31 13:40 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0450 plugin update dependency validator variant-3 merge ending at
-  `f3dbf9c`.
+  the RPP-0346 comment parent thread reference variant-3 merge ending at
+  `2d0449b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 596
-  items checked and leaves 404 open.
-- Checked slices: 100 release-gate foundation items, 86 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 597
+  items checked and leaves 403 open.
+- Checked slices: 100 release-gate foundation items, 87 graph identity items,
   93 plugin-driver boundary items, 39 executor/auth items, 46 recovery items,
   29 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Comment parent thread reference variant-3 generated coverage: the current lane
+  now checks `RPP-0346` with local generated graph-identity support evidence. The
+  generated target proves stable parent references, identity-map rewrites, and
+  stale parent drift refusal for `wp_comments.comment_parent` while keeping the
+  default generated roster at 620 deterministic cases. Command:
+  `node --test --test-name-pattern=RPP-0346 test/generated-push-harness.test.js`.
+  Caveat: local generated-harness support evidence only; final release remains
+  `NO-GO`. Validation passed with Node syntax checks, focused RPP-0346 coverage
+  1/1, adjacent RPP-0343/RPP-0344/RPP-0345/RPP-0346/RPP-0347 generated graph
+  coverage 5/5, adjacent comment-parent graph proof coverage 7/7, push-planner
+  comment-parent subset coverage 4/4, full generated harness coverage 99/99
+  across the current 620-case roster, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 597/403; final release remains `NO-GO`
+  because this is support evidence, not production-backed graph identity proof.
 - Plugin update dependency validator variant-3 proof: the current lane now
   checks `RPP-0450` with local plugin-driver support evidence. The proof carries
   exact hash-only dependency metadata through local planning and apply, allows a
