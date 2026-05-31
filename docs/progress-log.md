@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 19:55 CEST +02:00.
+- Last update: 2026-05-31 19:58 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0734 large post table benchmark variant-2 merge ending at `faa5b0`.
+  the RPP-0733 apply batch sizing variant-2 integration ending at `f430fc`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 725
-  items checked and leaves 275 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 726
+  items checked and leaves 274 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  33 storage/performance items, 3 production-topology items, 100 generated
+  34 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Apply batch sizing variant-2 proof: the current lane now checks `RPP-0733`
+  with local storage/performance support evidence. The proof models apply
+  batches as resumable mutation chunks, skips exact durable receipts for already
+  committed batches, applies only missing batches after interruption, and
+  blocks stale receipts, missing receipts, duplicate mutation work, drifted
+  storage-boundary checks, or premature output. Command:
+  `node --test --test-name-pattern RPP-0733 test/rpp-0733-apply-batch-sizing-v2.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0733
+  coverage 2/2, adjacent RPP-0713 coverage 3/3, adjacent RPP-0732 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  726/274; final release remains `NO-GO` because this is support evidence, not
+  production-backed row batch execution proof.
 - Large post table benchmark variant-2 proof: the current lane now checks
   `RPP-0734` with local storage/performance support evidence. The proof carries
   the RPP-0714 large-site `wp_posts` benchmark through documented duration and

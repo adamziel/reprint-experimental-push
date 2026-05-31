@@ -779,7 +779,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0730 (Far / storage-performance) Prove parallel snapshot hashing, variant 2. Success: fast-path lane updates only after correctness gates hold.
 - [x] RPP-0731 (Far / storage-performance) Prove remote hash pagination, variant 2. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [x] RPP-0732 (Far / storage-performance) Prove dry-run batch sizing, variant 2. Success: guarded writes reject stale storage state.
-- [ ] RPP-0733 (Far / storage-performance) Prove apply batch sizing, variant 2. Success: chunk transfer resumes without duplicate mutation work.
+- [x] RPP-0733 (Far / storage-performance) Prove apply batch sizing, variant 2. Success: chunk transfer resumes without duplicate mutation work.
 - [x] RPP-0734 (Far / storage-performance) Prove large post table benchmark, variant 2. Success: large-site run finishes inside documented budgets.
 - [ ] RPP-0735 (Far / storage-performance) Prove large media library benchmark, variant 2. Success: fast-path lane updates only after correctness gates hold.
 - [ ] RPP-0736 (Far / storage-performance) Prove large plugin file benchmark, variant 2. Success: benchmark command reports runtime, resources, and pass/fail gates.
