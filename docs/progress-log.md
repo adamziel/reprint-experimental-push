@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 20:55 CEST +02:00.
+- Last update: 2026-05-31 20:58 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0757 memory ceiling proof variant-3 merge ending at `ca6832`.
+  the RPP-0753 apply batch sizing variant-3 merge ending at `cd1475`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 745
-  items checked and leaves 255 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 746
+  items checked and leaves 254 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  53 storage/performance items, 3 production-topology items, 100 generated
+  54 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Apply batch sizing variant-3 proof: the current lane now checks `RPP-0753`
+  with local storage/performance support evidence. The proof models apply
+  batches as four resumable transfer chunks for thirteen mutations, commits the
+  first two chunks before interruption, resumes by skipping exactly the two
+  durable receipt-backed chunks with zero mutation work, applies only the two
+  missing chunks, and proves a completed replay performs zero duplicate
+  mutation work. The generated matrix blocks stale receipts, missing receipts,
+  duplicate work, drifted storage, raw-value evidence, out-of-order chunks,
+  over-budget runtime evidence, and premature pass status. Command:
+  `node --test --test-name-pattern RPP-0753 test/rpp-0753-apply-batch-sizing-v3.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0753
+  coverage 2/2, adjacent RPP-0733 coverage 2/2, RPP-0713 apply batch sizing
+  coverage 3/3, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 746/254; final release remains `NO-GO` because this is support
+  evidence, not production-backed external durability proof.
 - Memory ceiling proof variant-3 proof: the current lane now checks `RPP-0757`
   with local storage/performance support evidence. The proof runs seven guarded
   filesystem writes, applies five matching writes, rejects two stale-at-write
