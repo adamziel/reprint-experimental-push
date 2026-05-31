@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 14:05 CEST +02:00.
+- Last update: 2026-05-31 14:07 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0647 restart-readable open-state variant-3 merge ending at `bb63399`.
+  the RPP-0731 remote hash pagination variant-2 merge ending at `acca3b4`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 605
-  items checked and leaves 395 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 606
+  items checked and leaves 394 open.
 - Checked slices: 100 release-gate foundation items, 88 graph identity items,
   95 plugin-driver boundary items, 41 executor/auth items, 48 recovery items,
-  30 storage/performance items, 3 production-topology items, 100 generated
+  31 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Remote hash pagination variant-2 proof: the current lane now checks
+  `RPP-0731` with local storage/performance support evidence. The proof reports
+  runtime, resource usage, page count, page size, and pass/fail gates for paged
+  remote hash collection, and fails stale cursors, missing pages, mismatched
+  page hashes, and premature pass claims closed with hash-only evidence.
+  Command:
+  `node --test --test-name-pattern RPP-0731 test/rpp-0731-remote-hash-pagination-v2.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0731 coverage
+  2/2, adjacent remote hash pagination benchmark coverage 1/1, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 606/394; final
+  release remains `NO-GO` because this is support evidence, not production
+  storage receipts.
 - Restart-readable open-state variant-3 proof: the current lane now checks
   `RPP-0647` with local recovery support evidence. The proof covers file-backed
   open-state rows across a process restart, invalid and stale restart-state
