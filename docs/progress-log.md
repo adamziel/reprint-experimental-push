@@ -6,20 +6,53 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 23:47 CEST +02:00.
+- Last update: 2026-05-31 23:49 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0797 memory ceiling proof release-verifier variant-5 merge ending at
-  `d9fe53`.
+  the RPP-0798 timeout budget proof release-verifier variant-5 merge ending at
+  `befb8a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 789
-  items checked and leaves 211 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 790
+  items checked and leaves 210 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  97 storage/performance items, 3 production-topology items, 100 generated
+  98 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Timeout budget proof release-verifier variant-5 proof: the current lane now
+  checks `RPP-0798` with deterministic local release-verifier support evidence.
+  The proof carries the RPP-0778/RPP-0758/RPP-0738/RPP-0718 timeout-budget
+  lineage into a release-verifier envelope that preserves runtime/resource
+  reporting, local file-journal receipts, finalized staging records, replay
+  resume from durable receipts, no duplicate chunk bytes, no duplicate mutation
+  work, no resumed mutation records, and apply opening only after transfer
+  finalization. The unit shape records a 1048576 byte file, 262144 byte chunks,
+  4 chunks, 8 rows, replay-resume cases for 4, 5, 6, and 7 chunk manifests,
+  timeout receipt counts 1 through 4, 22 total chunks replayed on resume, 10
+  chunks skipped by receipt, 12 chunks uploaded after resume, 0 duplicate chunk
+  bytes, 0 duplicate mutation work, 0 resume mutation records, 22 resume
+  bookkeeping records, a 9 passed / 3 blocked / 0 failed rollout vector, and 10
+  release-verifier gates. Negative coverage blocks missing runtime reporting,
+  stale replay coverage, missing receipts, duplicate chunk replay, duplicate
+  mutation work, resumed mutation records, timeout completion before budget
+  expiry, early apply opening, rollout gate drift, raw-value leakage,
+  over-budget runtime, and missing recorded gates.
+  Command:
+  `node --test --test-name-pattern RPP-0798 test/rpp-0798-timeout-budget-proof-release-verifier-v5.test.js`.
+  Batch gate:
+  `node --test test/rpp-0794-large-post-table-benchmark-release-verifier-v5.test.js test/rpp-0795-large-media-library-benchmark-release-verifier-v5.test.js test/rpp-0796-large-plugin-file-benchmark-release-verifier-v5.test.js test/rpp-0797-memory-ceiling-proof-release-verifier-v5.test.js test/rpp-0798-timeout-budget-proof-release-verifier-v5.test.js`
+  passed 12/12 across the five storage/performance release-verifier variant-5
+  slices.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0798
+  coverage 2/2, adjacent RPP-0778 coverage 2/2, adjacent RPP-0758 coverage 2/2,
+  scoped artifact redaction scan, diff whitespace checks, and the 12/12 storage
+  tranche batch. Counts are now 790/210; final release remains `NO-GO` because
+  this is support evidence, not production storage receipts, production row
+  batch executor evidence, production atomic group commit evidence, live
+  production service evidence, production throughput, release approval, or a
+  production release gate.
 - Memory ceiling proof release-verifier variant-5 proof: the current lane now
   checks `RPP-0797` with deterministic local release-verifier support evidence.
   The proof carries the RPP-0777/RPP-0757/RPP-0717 filesystem memory-ceiling
