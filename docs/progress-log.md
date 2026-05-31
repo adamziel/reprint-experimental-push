@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 12:41 CEST +02:00.
+- Last update: 2026-05-31 12:43 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0447 wp_usermeta generated driver semantics variant-3 merge ending at
-  `5eef11fe`.
+  the RPP-0643 single-writer lease claim variant-3 merge ending at `4bf7dd67`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 582
-  items checked and leaves 418 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 583
+  items checked and leaves 417 open.
 - Checked slices: 100 release-gate foundation items, 84 graph identity items,
-  90 plugin-driver boundary items, 36 executor/auth items, 43 recovery items,
+  90 plugin-driver boundary items, 36 executor/auth items, 44 recovery items,
   26 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Single-writer lease claim variant-3 proof: the current lane now checks
+  `RPP-0643` with generated-style recovery evidence for restart-readable
+  single-writer lease fencing. The proof covers competing writer refusal after
+  restart, expired-lease claim advancement for exactly one writer, prior-writer
+  fencing, preserved remote-change snapshots, zero mutation rows on blocked
+  recovery, and hash-only journal/claim evidence. Command:
+  `node --test test/rpp-0643-single-writer-lease-claim-v3.test.js`.
+  Caveat: local recovery support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0643 coverage 2/2,
+  direct focused coverage 2/2, adjacent recovery lease/claim path coverage 5/5,
+  adjacent RPP-0642 ownership coverage 2/2 in both `node --test` and direct
+  modes, scoped artifact redaction scan, and diff whitespace checks. Counts are
+  now 583/417; final release remains `NO-GO` because this is local recovery
+  support evidence, not external durability or production-backed release proof.
 - wp_usermeta driver semantics variant-3 proof: the current lane now checks
   `RPP-0447` with a standalone generated-style plugin-driver proof. The focused
   test covers generated support-only NO-GO summary registration, an exact
