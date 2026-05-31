@@ -92,7 +92,9 @@ The default generated run covers:
   hash-only stale-user blockers, `wp_posts.post_parent` page hierarchy
   variant-3 cases with ready identity-map rewrites and stale parent drift
   blockers, `wp_postmeta.post_id` variant-3 cases with ready identity-map row
-  rewrites and stale post drift blockers, `wp_comments.user_id` author cases with
+  rewrites and stale post drift blockers, `wp_comments.comment_post_ID`
+  variant-3 cases with ready identity-map rewrites and stale post drift
+  blockers, `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
   featured-image attachment references with ready postmeta/attachment closure
   and stale attachment blockers,
@@ -925,6 +927,32 @@ proven remote ID, and reject stale replay before mutation. Stale cases drift the
 base post remotely and require the dependent postmeta row to fail closed as
 `stale-wordpress-graph-identity` with hash-only target evidence. This remains
 local generated support evidence only; final release remains `NO-GO`.
+
+RPP-0345 adds `commentPostReferenceVariant3` coverage for generated
+`wp_comments.comment_post_ID` references. The deterministic roster emits 20
+support-only variant-3 target cases: 10 ready post identity-map rewrite cases
+and 10 stale post drift cases, with two cases in every tier. Ready cases map a
+local `wp_posts` source row to an equivalent remote post row, preserve that
+remote post, rewrite the dependent comment row's `comment_post_ID` to the
+proven remote ID, and reject stale replay before mutation. Stale cases drift the
+base post remotely and require the dependent comment row to fail closed as
+`stale-wordpress-graph-identity` with hash-only target evidence. This remains
+local generated support evidence only; final release remains `NO-GO`.
+
+The remaining unmapped WordPress graph surfaces continue to fail closed or stay
+intentionally unsupported until an explicit owner/driver, parser-aware rewrite,
+or equivalent remote identity-map proof exists:
+
+- `wp_posts.post_type = nav_menu_item`, `revision`, and `wp_navigation` rows.
+- Menu item graph metadata such as `_menu_item_object`,
+  `_menu_item_object_id`, `_menu_item_menu_item_parent`, `_menu_item_type`, and
+  `menu_item_parent`.
+- `wp_term_taxonomy.taxonomy = nav_menu` rows and dependent menu
+  relationships.
+- Custom/plugin taxonomy rows such as `product_cat` without an equivalent
+  remote identity-map target.
+- Serialized block references that require parser-aware updates rather than
+  scalar row-field rewrites.
 
 The `staleRemoteAfterDryRun` target coverage records per-tier counts for ready
 plans whose live-remote preconditions reject a stale remote replay before any
