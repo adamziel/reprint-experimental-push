@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 01:22 CEST +02:00.
+- Last update: 2026-06-01 01:24 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0818 TLS/HTTPS source proof merge ending at `aac41567c`.
+  the RPP-0821 three-site topology proof merge ending at `7dcb46f82`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 812
-  items checked and leaves 188 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 813
+  items checked and leaves 187 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 12 production-topology items, 100 generated
+  100 storage/performance items, 13 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Three-site local production topology variant-2 unavailable-capability proof:
+  the current lane now checks `RPP-0821` with fail-closed topology evidence. The
+  proof records the three primary WordPress site contract, refuses to count
+  support-only roles as primary sites, rejects non-started topology reports that
+  omit an exact capability code, and records exact blocker `DOCKER_CLI_MISSING`
+  in this sandbox.
+  Commands:
+  `node --test test/rpp-0821-three-site-local-production-topology-v2.test.js`
+  and `npm run verify:release:docker-local-production`.
+  Caveat: unavailable-capability support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0821
+  coverage 3/3, Docker topology command exit 2 with `DOCKER_CLI_MISSING`,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  813/187; final release remains `NO-GO` because this is support evidence, not
+  production-backed three-site topology startup proof, production storage
+  receipts, production row batch executor evidence, production atomic group
+  commit evidence, live production service evidence, production throughput,
+  release approval, or a production release gate.
 - TLS/HTTPS source proof URL identity coverage: the current lane now checks
   `RPP-0818` with deterministic source/local/changed HTTPS URL support evidence.
   The proof identity-checks all three topology roles, requires HTTPS for each
