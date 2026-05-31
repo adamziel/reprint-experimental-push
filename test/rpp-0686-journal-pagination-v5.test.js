@@ -1,0 +1,869 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+import { assertEvidenceHasNoRawValues } from '../src/evidence-redaction.js';
+import { createPushPlan } from '../src/planner.js';
+import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
+import {
+  appendJournalCompleted,
+  assertJournalRecordHasNoRawValues,
+  openProductionRecoveryJournal,
+  productionRecoveryJournalInspectionSurfaceIsPresent,
+  readRecoveryJournal,
+  readRecoveryJournalPage,
+  readRecoveryJournalPaged,
+  readSqliteRecoveryJournalTable,
+} from '../src/recovery-journal.js';
+import { deserializeResourceValue, setResource } from '../src/resources.js';
+import { digest } from '../src/stable-json.js';
+
+const fixedNow = new Date('2026-05-31T00:00:00.000Z');
+const checkedCommand = 'timeout 300s npm run verify:release';
+const sourceUrl = 'http://127.0.0.1:8080';
+const hashPattern = /^[a-f0-9]{64}$/;
+const sha256EvidencePattern = /^sha256:[a-f0-9]{64}$/;
+const cursorPattern = /^rpp-0686:([a-f0-9]{16}):(\d+)$/;
+let DatabaseSync = null;
+
+try {
+  ({ DatabaseSync } = await import('node:sqlite'));
+} catch {
+  DatabaseSync = null;
+}
+
+const generatedPaginationCases = Object.freeze([
+  {
+    id: 'rpp-0686-window-four-v5',
+    mutationCount: 9,
+    filePageSize: 4,
+    sqlitePageLimit: 5,
+  },
+  {
+    id: 'rpp-0686-window-six-v5',
+    mutationCount: 14,
+    filePageSize: 6,
+    sqlitePageLimit: 4,
+  },
+]);
+
+function tempJournalPath() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-rpp-0686-journal-'));
+  return path.join(dir, 'recovery.jsonl');
+}
+
+function tempSqlitePath() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-rpp-0686-sqlite-'));
+  return path.join(dir, 'recovery.sqlite');
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function generatedSites(generatedCase) {
+  const base = { files: {}, plugins: {}, db: {} };
+  for (let index = 1; index <= generatedCase.mutationCount + 1; index++) {
+    base.files[`${generatedCase.id}-file-${index}.txt`] =
+      `base-raw-rpp-0686-${generatedCase.id}-${index}`;
+  }
+
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  for (let index = 1; index <= generatedCase.mutationCount; index++) {
+    local.files[`${generatedCase.id}-file-${index}.txt`] =
+      `local-raw-rpp-0686-${generatedCase.id}-${index}`;
+  }
+
+  const plan = createPushPlan({
+    base,
+    local,
+    remote,
+    now: fixedNow,
+  });
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.mutations.length, generatedCase.mutationCount);
+
+  const current = cloneJson(remote);
+  for (const mutation of plan.mutations) {
+    setResource(current, mutation.resource, deserializeResourceValue(mutation.value));
+  }
+
+  return {
+    plan,
+    remote,
+    current,
+    rawSiteValues: rawSiteValuesFor(base, local, remote, current),
+  };
+}
+
+function rawSiteValuesFor(...sites) {
+  const values = new Set([
+    'base-raw-rpp-0686',
+    'local-raw-rpp-0686',
+  ]);
+  for (const site of sites) {
+    for (const value of Object.values(site.files || {})) {
+      values.add(value);
+    }
+  }
+  return [...values];
+}
+
+function seedCompletedProductionJournal(generatedCase) {
+  const filePath = tempJournalPath();
+  const { plan, remote, current, rawSiteValues } = generatedSites(generatedCase);
+  const artifactRefs = {
+    releaseProof: `artifact://rpp-0686/${generatedCase.id}/journal-pagination-v5`,
+    recoverySupport: `artifact://rpp-0686/${generatedCase.id}/local-recovery-support`,
+  };
+  const claimId = `${generatedCase.id}-claim`;
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: fixedNow,
+    claimId,
+  });
+  appendJournalCompleted(journal, { plan, current, artifactRefs });
+  const productionInspection = journal.inspect();
+  journal.close();
+
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(productionInspection), true);
+  assert.equal(productionInspection.journal.path, filePath);
+  assert.deepEqual(productionInspection.journal.checked, [filePath]);
+  assert.equal(productionInspection.journal.restartReadable, true);
+  assertNoRawSiteValues(productionInspection, rawSiteValues);
+
+  const restarted = readRecoveryJournal(filePath);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.filePath, filePath);
+  assertHashOnlyRecords(restarted.records, rawSiteValues);
+
+  return {
+    filePath,
+    plan,
+    current,
+    rawSiteValues,
+    records: restarted.records,
+  };
+}
+
+function assertNoRawSiteValues(value, rawSiteValues) {
+  const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+  for (const rawValue of rawSiteValues) {
+    assert.equal(
+      serialized.includes(rawValue),
+      false,
+      `Unexpected raw site value in RPP-0686 pagination evidence: ${rawValue}`,
+    );
+  }
+}
+
+function assertHashOnlyRecords(records, rawSiteValues) {
+  for (const record of records) {
+    assert.doesNotThrow(() => assertJournalRecordHasNoRawValues(record));
+    assert.equal(Object.hasOwn(record, 'beforeValue'), false);
+    assert.equal(Object.hasOwn(record, 'afterValue'), false);
+    if (record.beforeHash !== undefined) {
+      assert.match(record.beforeHash, hashPattern);
+    }
+    if (record.afterHash !== undefined) {
+      assert.match(record.afterHash, hashPattern);
+    }
+    if (record.observedHash !== undefined) {
+      assert.match(record.observedHash, hashPattern);
+    }
+  }
+  assertNoRawSiteValues(records, rawSiteValues);
+}
+
+function assertCompletedRecoveryState(journal, generatedCase, totalRecords) {
+  assert.equal(journal.openState.status, 'opened');
+  assert.equal(journal.openState.restartReadable, true);
+  assert.equal(journal.committedState.status, 'completed');
+  assert.equal(journal.committedState.phase, 'completed');
+  assert.equal(journal.committedState.restartReadable, true);
+  assert.equal(journal.committedState.records, totalRecords);
+  assert.equal(journal.committedState.durableRows, totalRecords);
+  assert.equal(journal.committedState.completedRows, 1);
+  assert.equal(journal.committedState.targetRows, generatedCase.mutationCount);
+  assert.equal(journal.committedState.targetEnvelope.plannedTargets, generatedCase.mutationCount);
+  assert.equal(journal.committedState.targetEnvelope.allCommittedTargetsHaveHashes, true);
+  assert.equal(journal.committedState.latestCommittedType, 'journal-completed');
+  assert.equal(journal.committedState.latestCompletedSequence, totalRecords);
+  assert.match(journal.committedState.observedHash, hashPattern);
+}
+
+function expectedSequences(totalRecords) {
+  return Array.from({ length: totalRecords }, (_, index) => index + 1);
+}
+
+function readFilePageWindows(filePath, pageSize) {
+  const windows = [];
+  let offset = 0;
+
+  do {
+    const page = readRecoveryJournalPage(filePath, { offset, limit: pageSize });
+    windows.push(page);
+    offset = page.page.nextOffset ?? offset;
+  } while (windows.at(-1).page.hasMore);
+
+  return windows;
+}
+
+function assertPageWindowsPreserveOrder(windows, {
+  pageSize,
+  totalRecords,
+  rawSiteValues,
+}) {
+  assert.ok(windows.length > 1);
+  assert.deepEqual(
+    windows.flatMap((page) => page.records.map((record) => record.sequence)),
+    expectedSequences(totalRecords),
+  );
+
+  let expectedOffset = 0;
+  for (const [index, page] of windows.entries()) {
+    assert.equal(page.integrity.status, 'ok');
+    assert.equal(page.page.offset, expectedOffset);
+    assert.equal(page.page.limit, pageSize);
+    assert.equal(page.page.totalRecords, totalRecords);
+    assert.equal(page.page.returned, page.records.length);
+    assert.equal(page.records.length <= pageSize, true);
+    assert.equal(page.page.hasMore, index < windows.length - 1);
+    assert.equal(
+      page.page.nextOffset,
+      index < windows.length - 1 ? expectedOffset + page.records.length : null,
+    );
+    assertHashOnlyRecords(page.records, rawSiteValues);
+    assertNoRawSiteValues(page.page, rawSiteValues);
+    expectedOffset += page.records.length;
+  }
+  assert.equal(expectedOffset, totalRecords);
+}
+
+function assertFilePageRequestsFailClosed(filePath, {
+  pageSize,
+  totalRecords,
+  plan,
+  current,
+}) {
+  const before = readRecoveryJournal(filePath);
+  const failingRequests = [
+    {
+      options: { offset: -1, limit: pageSize },
+      pattern: /offset must be a non-negative integer/,
+    },
+    {
+      options: { offset: 1.5, limit: pageSize },
+      pattern: /offset must be a non-negative integer/,
+    },
+    {
+      options: { offset: `db-journal:${totalRecords + 1}`, limit: pageSize },
+      pattern: /offset must be a non-negative integer/,
+    },
+    {
+      options: { offset: 0, limit: 0 },
+      pattern: /limit must be a positive integer/,
+    },
+    {
+      options: { offset: 0, limit: pageSize, cursor: `db-journal:${totalRecords}` },
+      pattern: /unsupported option keys: cursor/,
+    },
+  ];
+
+  for (const { options, pattern } of failingRequests) {
+    assert.throws(() => readRecoveryJournalPage(filePath, options), pattern);
+  }
+
+  const after = readRecoveryJournal(filePath);
+  assert.deepEqual(
+    after.records.map((record) => record.sequence),
+    before.records.map((record) => record.sequence),
+  );
+  assert.equal(after.records.length, totalRecords);
+  assert.equal(inspectRecoveryJournal({ journal: after, plan, current }).status, 'fully-updated-remote');
+}
+
+function writeSqliteJournalTable(database, records) {
+  database.exec(`CREATE TABLE recovery_journal (
+    sequence INTEGER PRIMARY KEY,
+    schema_version INTEGER NOT NULL,
+    record_json TEXT NOT NULL
+  )`);
+  const insert = database.prepare(
+    'INSERT INTO recovery_journal (sequence, schema_version, record_json) VALUES (?, ?, ?)',
+  );
+  for (const record of records) {
+    insert.run(record.sequence, record.schemaVersion, JSON.stringify(record));
+  }
+}
+
+function journalPathCursorPrefix(journalPath) {
+  return digest({ journalPath }).slice(0, 16);
+}
+
+function journalCursorFor(journalPath, offset) {
+  return `rpp-0686:${journalPathCursorPrefix(journalPath)}:${offset}`;
+}
+
+function cursorError(message, code, details = {}) {
+  const error = new Error(message);
+  error.code = code;
+  error.details = details;
+  return error;
+}
+
+function offsetFromJournalCursor(cursor, journalPath) {
+  if (cursor === null || cursor === undefined || cursor === '') {
+    return 0;
+  }
+  const match = typeof cursor === 'string' ? cursor.match(cursorPattern) : null;
+  if (!match) {
+    throw cursorError(
+      'RPP-0686 journal page cursor is invalid.',
+      'RPP0686_JOURNAL_CURSOR_INVALID',
+      { cursorHash: digest({ cursor }) },
+    );
+  }
+  if (match[1] !== journalPathCursorPrefix(journalPath)) {
+    throw cursorError(
+      'RPP-0686 journal page cursor belongs to a different checked journal path.',
+      'RPP0686_JOURNAL_CURSOR_STALE',
+      { cursorHash: digest({ cursor }) },
+    );
+  }
+  return Number.parseInt(match[2], 10);
+}
+
+function readSqliteJournalPage(database, {
+  journalPath,
+  cursor = null,
+  limit,
+}) {
+  if (!Number.isInteger(limit) || limit <= 0) {
+    throw cursorError(
+      'RPP-0686 SQLite journal page limit must be a positive integer.',
+      'RPP0686_JOURNAL_PAGE_LIMIT_INVALID',
+      { limit },
+    );
+  }
+
+  const restarted = readSqliteRecoveryJournalTable(database);
+  const offset = offsetFromJournalCursor(cursor, journalPath);
+  if (offset > restarted.records.length) {
+    throw cursorError(
+      'RPP-0686 journal page cursor is outside the restarted recovery journal.',
+      'RPP0686_JOURNAL_CURSOR_STALE',
+      { cursorHash: digest({ cursor }), totalRecords: restarted.records.length },
+    );
+  }
+
+  const records = restarted.records.slice(offset, offset + limit);
+  const nextOffset = offset + records.length < restarted.records.length
+    ? offset + records.length
+    : null;
+  const nextCursor = nextOffset === null ? null : journalCursorFor(journalPath, nextOffset);
+
+  return {
+    ...restarted,
+    records,
+    page: {
+      storage: 'sqlite',
+      cursor: cursor || null,
+      cursorHash: cursor ? digest({ cursor }) : null,
+      offset,
+      limit,
+      returned: records.length,
+      totalRecords: restarted.records.length,
+      nextOffset,
+      nextCursor,
+      nextCursorHash: nextCursor ? digest({ cursor: nextCursor }) : null,
+      hasMore: nextCursor !== null,
+    },
+  };
+}
+
+function readSqlitePageWindows(database, {
+  journalPath,
+  limit,
+}) {
+  const windows = [];
+  let cursor = null;
+
+  do {
+    const page = readSqliteJournalPage(database, { journalPath, cursor, limit });
+    windows.push(page);
+    cursor = page.page.nextCursor;
+  } while (windows.at(-1).page.hasMore);
+
+  return windows;
+}
+
+function readSqliteJournalPaged(database, {
+  journalPath,
+  limit,
+}) {
+  const windows = readSqlitePageWindows(database, { journalPath, limit });
+  const latestPage = windows.at(-1);
+
+  return {
+    ...latestPage,
+    records: windows.flatMap((page) => page.records),
+    page: {
+      mode: 'paged-readback',
+      storage: 'sqlite',
+      pageSize: limit,
+      pages: windows.length,
+      totalRecords: latestPage.page.totalRecords,
+      ranges: windows.map((page) => ({
+        offset: page.page.offset,
+        returned: page.page.returned,
+        nextOffset: page.page.nextOffset,
+        cursorHash: page.page.cursorHash,
+        nextCursorHash: page.page.nextCursorHash,
+      })),
+    },
+  };
+}
+
+function assertSqliteCursorFailure(error, expectedCode) {
+  assert.equal(error.code, expectedCode);
+  assert.match(error.details.cursorHash, hashPattern);
+  return true;
+}
+
+function buildReleaseVerifierPaginationProof({
+  generatedCase,
+  storage,
+  journalPath,
+  paged,
+  inspection,
+}) {
+  const pageSize = storage === 'sqlite'
+    ? generatedCase.sqlitePageLimit
+    : generatedCase.filePageSize;
+  const checkedRoute = storage === 'sqlite'
+    ? `/wp-json/reprint/v1/push/db-journal?limit=${pageSize}`
+    : `/wp-json/reprint/v1/push/recovery/inspect?journalPageSize=${pageSize}`;
+  const plannedTargets = generatedCase.mutationCount;
+  const proof = {
+    rpp: 'RPP-0686',
+    variant: 5,
+    evidenceSource: 'release-verifier-journal-pagination-v5',
+    status: 'support_only',
+    verdict: 'JOURNAL_PAGINATION_RECOVERY_STATE_PROVED_SUPPORT_ONLY',
+    evidenceScope: `local-${storage}-backed-release-verifier`,
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    checkedCommand,
+    checkedRoute,
+    sourceUrl,
+    rawValuesIncluded: false,
+    storage,
+    checkedJournalPathHash: digest({ journalPath }),
+    journal: {
+      integrityStatus: paged.integrity.status,
+      pageMode: paged.page.mode,
+      pageSize: paged.page.pageSize,
+      pages: paged.page.pages,
+      totalRecords: paged.page.totalRecords,
+      returnedRecords: paged.records.length,
+      ranges: paged.page.ranges,
+      durableRows: paged.committedState.durableRows,
+      completedRows: paged.committedState.completedRows,
+      restartReadable: paged.committedState.restartReadable,
+      latestCompletedSequence: paged.committedState.latestCompletedSequence,
+      observedHash: paged.committedState.observedHash,
+      targetEnvelope: paged.committedState.targetEnvelope,
+    },
+    recoveryInspect: {
+      status: inspection.status,
+      reasonCode: inspection.reasonCode,
+      counts: {
+        ...inspection.counts,
+        total: plannedTargets,
+      },
+      journalPageMode: inspection.journal.page.mode,
+      journalIntegrity: inspection.journal.integrity.status,
+      remoteRecoveryClassification: inspection.remoteRecoveryClassification,
+    },
+    releaseMovement: {
+      allowed: false,
+      gates: '0/4',
+      reason: 'support-only journal pagination proof; production release boundary still required',
+    },
+    plannedTargets,
+  };
+
+  return {
+    ...proof,
+    proofHash: `sha256:${digest(proof)}`,
+  };
+}
+
+function assertReleaseVerifierPaginationProof(proof, {
+  storage,
+  plan,
+  pageSize,
+  totalRecords,
+  rawSiteValues,
+}) {
+  assert.equal(proof.rpp, 'RPP-0686');
+  assert.equal(proof.variant, 5);
+  assert.equal(proof.evidenceSource, 'release-verifier-journal-pagination-v5');
+  assert.equal(proof.status, 'support_only');
+  assert.equal(proof.verdict, 'JOURNAL_PAGINATION_RECOVERY_STATE_PROVED_SUPPORT_ONLY');
+  assert.equal(proof.evidenceScope, `local-${storage}-backed-release-verifier`);
+  assert.equal(proof.productionBacked, false);
+  assert.equal(proof.releaseEligible, false);
+  assert.equal(proof.releaseGate, 'NO-GO');
+  assert.equal(proof.checkedCommand, checkedCommand);
+  assert.equal(proof.sourceUrl, sourceUrl);
+  assert.equal(proof.rawValuesIncluded, false);
+  assert.equal(proof.storage, storage);
+  assert.match(proof.checkedJournalPathHash, hashPattern);
+  assert.equal(proof.journal.integrityStatus, 'ok');
+  assert.equal(proof.journal.pageMode, 'paged-readback');
+  assert.equal(proof.journal.pageSize, pageSize);
+  assert.ok(proof.journal.pages > 1);
+  assert.equal(proof.journal.totalRecords, totalRecords);
+  assert.equal(proof.journal.returnedRecords, totalRecords);
+  assert.equal(proof.journal.durableRows, totalRecords);
+  assert.equal(proof.journal.completedRows, 1);
+  assert.equal(proof.journal.restartReadable, true);
+  assert.equal(proof.journal.latestCompletedSequence, totalRecords);
+  assert.match(proof.journal.observedHash, hashPattern);
+  assert.equal(proof.journal.targetEnvelope.plannedTargets, plan.mutations.length);
+  assert.equal(proof.journal.targetEnvelope.allCommittedTargetsHaveHashes, true);
+  assert.deepEqual(
+    proof.journal.ranges.map((range) => range.offset),
+    proof.journal.ranges.map((_, index) =>
+      proof.journal.ranges
+        .slice(0, index)
+        .reduce((total, range) => total + range.returned, 0)),
+  );
+  assert.equal(
+    proof.journal.ranges.reduce((total, range) => total + range.returned, 0),
+    totalRecords,
+  );
+  assert.equal(proof.journal.ranges.at(-1).nextOffset, null);
+  if (storage === 'sqlite') {
+    assert.equal(proof.checkedRoute, `/wp-json/reprint/v1/push/db-journal?limit=${pageSize}`);
+    assert.equal(proof.journal.ranges[0].cursorHash, null);
+    assert.ok(proof.journal.ranges.slice(0, -1).every((range) =>
+      hashPattern.test(range.nextCursorHash || '')));
+  } else {
+    assert.equal(
+      proof.checkedRoute,
+      `/wp-json/reprint/v1/push/recovery/inspect?journalPageSize=${pageSize}`,
+    );
+  }
+  assert.equal(proof.recoveryInspect.status, 'fully-updated-remote');
+  assert.equal(proof.recoveryInspect.reasonCode, 'FULLY_UPDATED_REMOTE');
+  assert.deepEqual(proof.recoveryInspect.counts, {
+    old: 0,
+    new: plan.mutations.length,
+    blockedUnknown: 0,
+    total: plan.mutations.length,
+  });
+  assert.equal(proof.recoveryInspect.journalPageMode, 'paged-readback');
+  assert.equal(proof.recoveryInspect.journalIntegrity, 'ok');
+  assert.deepEqual(proof.recoveryInspect.remoteRecoveryClassification, {
+    kind: 'new-remote',
+    state: 'fully-updated-remote',
+    proved: true,
+    replaySafe: true,
+    counts: {
+      old: 0,
+      new: plan.mutations.length,
+      blockedUnknown: 0,
+      total: plan.mutations.length,
+    },
+    journalState: 'ok',
+    storage: storage === 'sqlite' ? 'sqlite' : 'filesystem',
+  });
+  assert.deepEqual(proof.releaseMovement, {
+    allowed: false,
+    gates: '0/4',
+    reason: 'support-only journal pagination proof; production release boundary still required',
+  });
+  assert.equal(proof.plannedTargets, plan.mutations.length);
+  assert.match(proof.proofHash, sha256EvidencePattern);
+
+  const { proofHash, ...proofWithoutHash } = proof;
+  assert.equal(proofHash, `sha256:${digest(proofWithoutHash)}`);
+  assert.doesNotThrow(() =>
+    assertEvidenceHasNoRawValues(proof, { label: 'RPP-0686 release verifier pagination proof' }));
+  assertNoRawSiteValues(proof, rawSiteValues);
+}
+
+test('RPP-0686 file-backed journal pagination variant 5 carries paged recovery inspection state', () => {
+  for (const generatedCase of generatedPaginationCases) {
+    const seeded = seedCompletedProductionJournal(generatedCase);
+    const totalRecords = seeded.records.length;
+    const windows = readFilePageWindows(seeded.filePath, generatedCase.filePageSize);
+    const restartCursor = windows[0].page.nextOffset;
+
+    assertCompletedRecoveryState(readRecoveryJournal(seeded.filePath), generatedCase, totalRecords);
+
+    assertPageWindowsPreserveOrder(windows, {
+      pageSize: generatedCase.filePageSize,
+      totalRecords,
+      rawSiteValues: seeded.rawSiteValues,
+    });
+
+    const restartedCursorPage = readRecoveryJournalPage(seeded.filePath, {
+      offset: restartCursor,
+      limit: generatedCase.filePageSize,
+    });
+    assert.deepEqual(
+      restartedCursorPage.records.map((record) => record.sequence),
+      windows[1].records.map((record) => record.sequence),
+    );
+
+    const paged = readRecoveryJournalPaged(seeded.filePath, {
+      pageSize: generatedCase.filePageSize,
+    });
+    assert.equal(paged.integrity.status, 'ok');
+    assert.equal(paged.filePath, seeded.filePath);
+    assert.equal(paged.page.mode, 'paged-readback');
+    assert.equal(paged.page.pages, windows.length);
+    assert.deepEqual(
+      paged.page.ranges,
+      windows.map((page) => ({
+        offset: page.page.offset,
+        returned: page.page.returned,
+        nextOffset: page.page.nextOffset,
+      })),
+    );
+    assert.deepEqual(
+      paged.records.map((record) => record.sequence),
+      expectedSequences(totalRecords),
+    );
+    assertHashOnlyRecords(paged.records, seeded.rawSiteValues);
+    assertCompletedRecoveryState(paged, generatedCase, totalRecords);
+
+    const inspection = inspectRecoveryJournal({
+      journalPath: seeded.filePath,
+      journalPageSize: generatedCase.filePageSize,
+      plan: seeded.plan,
+      current: seeded.current,
+    });
+    assert.equal(inspection.status, 'fully-updated-remote');
+    assert.deepEqual(inspection.counts, {
+      old: 0,
+      new: generatedCase.mutationCount,
+      blockedUnknown: 0,
+    });
+    assert.equal(inspection.journal.filePath, seeded.filePath);
+    assert.equal(inspection.journal.page.mode, 'paged-readback');
+    assert.deepEqual(inspection.journal.page.ranges, paged.page.ranges);
+    assertNoRawSiteValues(inspection, seeded.rawSiteValues);
+
+    const proof = buildReleaseVerifierPaginationProof({
+      generatedCase,
+      storage: 'filesystem',
+      journalPath: seeded.filePath,
+      paged: inspection.journal,
+      inspection,
+    });
+    assertReleaseVerifierPaginationProof(proof, {
+      storage: 'filesystem',
+      plan: seeded.plan,
+      pageSize: generatedCase.filePageSize,
+      totalRecords,
+      rawSiteValues: seeded.rawSiteValues,
+    });
+
+    assertFilePageRequestsFailClosed(seeded.filePath, {
+      pageSize: generatedCase.filePageSize,
+      totalRecords,
+      plan: seeded.plan,
+      current: seeded.current,
+    });
+  }
+});
+
+test('RPP-0686 release verifier carries SQLite-backed journal pagination variant 5 recovery state', {
+  skip: DatabaseSync === null ? 'node:sqlite is unavailable in this Node.js runtime' : false,
+}, () => {
+  for (const generatedCase of generatedPaginationCases) {
+    const sqlitePath = tempSqlitePath();
+    const seeded = seedCompletedProductionJournal(generatedCase);
+    let database = new DatabaseSync(sqlitePath);
+    writeSqliteJournalTable(database, seeded.records);
+    database.close();
+
+    database = new DatabaseSync(sqlitePath);
+    try {
+      const restarted = readSqliteRecoveryJournalTable(database);
+      assert.equal(restarted.storage, 'sqlite');
+      assert.equal(restarted.integrity.status, 'ok');
+      assert.deepEqual(
+        restarted.records.map((record) => record.sequence),
+        expectedSequences(seeded.records.length),
+      );
+      assertHashOnlyRecords(restarted.records, seeded.rawSiteValues);
+      assertCompletedRecoveryState(restarted, generatedCase, seeded.records.length);
+
+      const windows = readSqlitePageWindows(database, {
+        journalPath: seeded.filePath,
+        limit: generatedCase.sqlitePageLimit,
+      });
+      assertPageWindowsPreserveOrder(windows, {
+        pageSize: generatedCase.sqlitePageLimit,
+        totalRecords: seeded.records.length,
+        rawSiteValues: seeded.rawSiteValues,
+      });
+      assert.ok(windows.slice(0, -1).every((page) => page.page.nextCursorHash.match(hashPattern)));
+
+      const restartCursor = windows[0].page.nextCursor;
+      const restartedCursorPage = readSqliteJournalPage(database, {
+        journalPath: seeded.filePath,
+        cursor: restartCursor,
+        limit: generatedCase.sqlitePageLimit,
+      });
+      assert.deepEqual(
+        restartedCursorPage.records.map((record) => record.sequence),
+        windows[1].records.map((record) => record.sequence),
+      );
+      assert.equal(restartedCursorPage.page.cursor, restartCursor);
+      assert.match(restartedCursorPage.page.cursorHash, hashPattern);
+
+      const paged = readSqliteJournalPaged(database, {
+        journalPath: seeded.filePath,
+        limit: generatedCase.sqlitePageLimit,
+      });
+      assert.equal(paged.integrity.status, 'ok');
+      assert.equal(paged.storage, 'sqlite');
+      assert.equal(paged.page.mode, 'paged-readback');
+      assert.equal(paged.page.storage, 'sqlite');
+      assert.equal(paged.page.pages, windows.length);
+      assert.deepEqual(
+        paged.records.map((record) => record.sequence),
+        expectedSequences(seeded.records.length),
+      );
+      assert.deepEqual(
+        paged.page.ranges,
+        windows.map((page) => ({
+          offset: page.page.offset,
+          returned: page.page.returned,
+          nextOffset: page.page.nextOffset,
+          cursorHash: page.page.cursorHash,
+          nextCursorHash: page.page.nextCursorHash,
+        })),
+      );
+      assertHashOnlyRecords(paged.records, seeded.rawSiteValues);
+      assertCompletedRecoveryState(paged, generatedCase, seeded.records.length);
+
+      const inspection = inspectRecoveryJournal({
+        journal: paged,
+        plan: seeded.plan,
+        current: seeded.current,
+      });
+      assert.equal(inspection.status, 'fully-updated-remote');
+      assert.deepEqual(inspection.counts, {
+        old: 0,
+        new: generatedCase.mutationCount,
+        blockedUnknown: 0,
+      });
+      assert.equal(inspection.journal.page.mode, 'paged-readback');
+      assert.deepEqual(inspection.journal.page.ranges, paged.page.ranges);
+      assert.deepEqual(inspection.remoteRecoveryClassification, {
+        kind: 'new-remote',
+        state: 'fully-updated-remote',
+        proved: true,
+        replaySafe: true,
+        counts: {
+          old: 0,
+          new: generatedCase.mutationCount,
+          blockedUnknown: 0,
+          total: generatedCase.mutationCount,
+        },
+        journalState: 'ok',
+        storage: 'sqlite',
+      });
+      assertNoRawSiteValues(inspection, seeded.rawSiteValues);
+
+      const proof = buildReleaseVerifierPaginationProof({
+        generatedCase,
+        storage: 'sqlite',
+        journalPath: seeded.filePath,
+        paged,
+        inspection,
+      });
+      assertReleaseVerifierPaginationProof(proof, {
+        storage: 'sqlite',
+        plan: seeded.plan,
+        pageSize: generatedCase.sqlitePageLimit,
+        totalRecords: seeded.records.length,
+        rawSiteValues: seeded.rawSiteValues,
+      });
+
+      assert.throws(
+        () => readSqliteJournalPage(database, {
+          journalPath: seeded.filePath,
+          cursor: 'not-a-rpp-0686-cursor',
+          limit: generatedCase.sqlitePageLimit,
+        }),
+        (error) => assertSqliteCursorFailure(error, 'RPP0686_JOURNAL_CURSOR_INVALID'),
+      );
+      assert.throws(
+        () => readSqliteJournalPage(database, {
+          journalPath: seeded.filePath,
+          cursor: journalCursorFor(`${seeded.filePath}.stale`, generatedCase.sqlitePageLimit),
+          limit: generatedCase.sqlitePageLimit,
+        }),
+        (error) => assertSqliteCursorFailure(error, 'RPP0686_JOURNAL_CURSOR_STALE'),
+      );
+      assert.throws(
+        () => readSqliteJournalPage(database, {
+          journalPath: seeded.filePath,
+          cursor: journalCursorFor(seeded.filePath, seeded.records.length + 1),
+          limit: generatedCase.sqlitePageLimit,
+        }),
+        (error) => assertSqliteCursorFailure(error, 'RPP0686_JOURNAL_CURSOR_STALE'),
+      );
+      assert.throws(
+        () => readSqliteJournalPage(database, {
+          journalPath: seeded.filePath,
+          cursor: restartCursor,
+          limit: 0,
+        }),
+        (error) => {
+          assert.equal(error.code, 'RPP0686_JOURNAL_PAGE_LIMIT_INVALID');
+          return true;
+        },
+      );
+
+      const afterFailures = readSqliteRecoveryJournalTable(database);
+      assert.equal(afterFailures.integrity.status, 'ok');
+      assert.deepEqual(
+        afterFailures.records.map((record) => record.sequence),
+        expectedSequences(seeded.records.length),
+      );
+      assertCompletedRecoveryState(afterFailures, generatedCase, seeded.records.length);
+
+      const afterFailureInspection = inspectRecoveryJournal({
+        journal: afterFailures,
+        plan: seeded.plan,
+        current: seeded.current,
+      });
+      assert.equal(afterFailureInspection.status, 'fully-updated-remote');
+      assert.deepEqual(afterFailureInspection.counts, {
+        old: 0,
+        new: generatedCase.mutationCount,
+        blockedUnknown: 0,
+      });
+      assertNoRawSiteValues(afterFailureInspection, seeded.rawSiteValues);
+    } finally {
+      database.close();
+    }
+  }
+});
