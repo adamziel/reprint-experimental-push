@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 09:48 CEST +02:00.
+- Last update: 2026-05-31 09:50 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0288 unknown plugin-owned resource refusal release-verifier v5 merge
-  ending at `360eaa3a5`.
+  the RPP-0289 conflict evidence hash redaction release-verifier v5 merge
+  ending at `85f144afb`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 548
-  items checked and leaves 452 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 549
+  items checked and leaves 451 open.
 - Checked slices: 100 release-gate foundation items, 81 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 95 generated
-  harness items, and 84 merge-invariant items. No release-ops items are checked
+  harness items, and 85 merge-invariant items. No release-ops items are checked
   yet.
+- Conflict evidence hash redaction release-verifier v5 carry-through: the
+  current lane now checks `RPP-0289` with focused support evidence for mixed
+  file, `wp_posts`, and plugin-owned `wp_options` conflicts that include private
+  raw source values. The proof verifies conflict evidence carries only resource
+  keys, conflict classes, owner labels, policies, state labels, file type, and
+  SHA-256 hashes; conflicted resources emit no mutation or live precondition;
+  `applyPlan()` refuses with `PLAN_NOT_READY`; no durable journal event is
+  written; and the remote snapshot hash is unchanged. Validation passed with a
+  Node syntax check, focused RPP-0289 coverage 1/1, adjacent
+  RPP-0249/RPP-0269/RPP-0289 conflict-redaction coverage 3/3, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 549/451; final
+  release remains `NO-GO` because this is local release-verifier support
+  evidence, not production-backed release proof.
 - Unknown plugin-owned resource refusal release-verifier v5 carry-through: the
   current lane now checks `RPP-0288` with focused support evidence for a
   plugin-owned custom-table row that has no explicit supported driver policy.
