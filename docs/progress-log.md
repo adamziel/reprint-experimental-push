@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 16:51 CEST +02:00.
+- Last update: 2026-05-31 16:54 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0583 production dry-run route variant-5 merge ending at `539a06`.
+  the RPP-0584 production apply route variant-5 merge ending at `692d00`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 659
-  items checked and leaves 341 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 660
+  items checked and leaves 340 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 75 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 76 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production apply route variant-5 proof: the current lane now checks
+  `RPP-0584` with local executor-auth support evidence. The proof pins
+  production apply live-source revalidation before mutation-capable work, carries
+  accepted apply route evidence through one hash-only verifier summary, and
+  blocks missing, malformed, stale, or drifted revalidation evidence. Command:
+  `node --test --test-name-pattern RPP-0584 test/rpp-0584-production-apply-route-v5.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0584
+  coverage 3/3, adjacent apply route coverage 11/11, scoped artifact redaction
+  scan, and diff whitespace checks. Counts are now 660/340; final release
+  remains `NO-GO` because this is support evidence, not production-backed apply
+  route proof.
 - Production dry-run route variant-5 proof: the current lane now checks
   `RPP-0583` with local executor-auth support evidence. The proof carries one
   production dry-run route summary through the release verifier, binds dry-run
