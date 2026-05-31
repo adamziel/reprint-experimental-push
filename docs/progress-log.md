@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 14:49 CEST +02:00.
+- Last update: 2026-05-31 14:52 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0355 nav menu item fail-closed reference variant-3 merge ending at
-  `728c85f`.
+  the RPP-0356 wp_navigation fail-closed reference variant-3 merge ending at
+  `6261c23`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 618
-  items checked and leaves 382 open.
-- Checked slices: 100 release-gate foundation items, 96 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 619
+  items checked and leaves 381 open.
+- Checked slices: 100 release-gate foundation items, 97 graph identity items,
   96 plugin-driver boundary items, 42 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Wp_navigation fail-closed reference variant-3 proof: the current lane now
+  checks `RPP-0356` with local graph-identity support evidence. The proof keeps
+  unsupported `wp_navigation` references fail-closed with hash-only evidence,
+  rewrites dependent postmeta only when target identity is proven, and labels the
+  evidence support-only. Command:
+  `node --test --test-name-pattern RPP-0356 test/rpp-0356-wp-navigation-fail-closed-reference-v3.test.js`.
+  Caveat: local graph-identity support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0356
+  coverage 3/3, adjacent RPP-0376 coverage 2/2, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 619/381; final release remains
+  `NO-GO` because this is support evidence, not production-backed graph identity
+  proof.
 - Nav menu item fail-closed reference variant-3 proof: the current lane now
   checks `RPP-0355` with local graph-identity support evidence. The proof shows
   generated hash-only nav menu item graph references fail closed before mutation
