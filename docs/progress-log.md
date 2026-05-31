@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 20:42 CEST +02:00.
+- Last update: 2026-05-31 20:55 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0752 dry-run batch sizing variant-3 merge ending at `2870f1`.
+  the RPP-0757 memory ceiling proof variant-3 merge ending at `ca6832`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 744
-  items checked and leaves 256 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 745
+  items checked and leaves 255 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  52 storage/performance items, 3 production-topology items, 100 generated
+  53 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Memory ceiling proof variant-3 proof: the current lane now checks `RPP-0757`
+  with local storage/performance support evidence. The proof runs seven guarded
+  filesystem writes, applies five matching writes, rejects two stale-at-write
+  samples, preserves both stale drifts, records zero unsafe rename-on-stale
+  writes and zero temp leaks, and proves the planned payload stays bounded in
+  chunks before the live storage compare. Public evidence remains
+  hash-and-count-only and the proof keeps the final release at support-only
+  `NO-GO`. Command:
+  `node --test --test-name-pattern RPP-0757 test/rpp-0757-memory-ceiling-proof-v3.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0757
+  coverage 3/3, adjacent RPP-0737 coverage 3/3, filesystem memory ceiling
+  coverage 4/4, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 745/255; final release remains `NO-GO` because this is support
+  evidence, not production-backed external durability proof.
 - Dry-run batch sizing variant-3 proof: the current lane now checks `RPP-0752`
   with local storage/performance support evidence. The proof executes a
   42-resource dry-run fixture, verifies six bounded batch windows, confirms
