@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 21:43 CEST +02:00.
+- Last update: 2026-05-31 21:46 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0765 filesystem fsync evidence variant-4 merge ending at `78cf39`.
+  the RPP-0768 chunk resume after interruption variant-4 merge ending at
+  `bbbd7a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 759
-  items checked and leaves 241 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 760
+  items checked and leaves 240 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  67 storage/performance items, 3 production-topology items, 100 generated
+  68 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Chunk resume after interruption variant-4 proof: the current lane now checks
+  `RPP-0768` with deterministic local storage/performance support evidence. The
+  proof carries forward the RPP-0738 timeout-budget variant-2 lane and generates
+  five interruption cases covering resume after 1, 2, 3, and 4 durable local
+  chunk receipts, including a two-chunk early-resume case. Across those cases it
+  records 11 chunks skipped by exact receipt matches, 9 chunks uploaded after
+  resume, 10 transfer-resume bookkeeping records, 0 transfer-resume mutation
+  records, 0 duplicate chunk bytes, 0 duplicate mutation work, and apply opening
+  only after transfer finalization. Command:
+  `node --test --test-name-pattern RPP-0768 test/rpp-0768-chunk-resume-after-interruption-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0768
+  coverage 2/2, adjacent RPP-0748 coverage 2/2, adjacent RPP-0738 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  760/240; final release remains `NO-GO` because this is support evidence, not
+  production-backed storage receipt, row batch executor, or atomic commit proof.
 - Filesystem fsync evidence variant-4 proof: the current lane now checks
   `RPP-0765` with deterministic local storage/performance support evidence. The
   proof exercises the filesystem compare/rename/fsync boundary and proves the
