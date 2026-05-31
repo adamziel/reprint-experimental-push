@@ -434,6 +434,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'atomic-plugin-install-stack-variant4',
     tag: 'atomic-plugin-install-stack-v4',
   },
+  atomicPluginInstallStackReleaseVerifierVariant5: {
+    family: 'atomic-plugin-install-stack-release-verifier-v5',
+    tag: 'atomic-plugin-install-stack-release-verifier-v5',
+  },
   pluginOwnedOptionChange: {
     family: 'plugin-owned-option-change-ready',
     tag: 'plugin-owned-option-change',
@@ -2694,6 +2698,8 @@ const scenarioFamilyBuilders = {
     tags.add('atomic-plugin-stack-ready-v3');
     tags.add('atomic-plugin-install-stack-v4');
     tags.add('atomic-plugin-stack-ready-v4');
+    tags.add('atomic-plugin-install-stack-release-verifier-v5');
+    tags.add('atomic-plugin-stack-ready-release-verifier-v5');
   },
   'atomic-plugin-missing-dependency': ({ local, tags }) => {
     local.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* generated dependent */';
@@ -2723,6 +2729,8 @@ const scenarioFamilyBuilders = {
     tags.add('atomic-plugin-stack-missing-dependency-v3');
     tags.add('atomic-plugin-install-stack-v4');
     tags.add('atomic-plugin-stack-missing-dependency-v4');
+    tags.add('atomic-plugin-install-stack-release-verifier-v5');
+    tags.add('atomic-plugin-stack-missing-dependency-release-verifier-v5');
   },
   'plugin-file-update': ({ local, allocator, tags }) => {
     local.files['wp-content/plugins/forms/forms.php'] = `<?php /* local forms ${allocator.next()} */`;
