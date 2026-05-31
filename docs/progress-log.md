@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 15:39 CEST +02:00.
+- Last update: 2026-05-31 15:41 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0552 request signature canonicalization variant-3 merge ending at
-  `5633f8`.
+  the RPP-0553 nonce replay store variant-3 merge ending at `75b4c3`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 634
-  items checked and leaves 366 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 635
+  items checked and leaves 365 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 50 executor/auth items, 49 recovery items,
+  100 plugin-driver boundary items, 51 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Nonce replay store variant-3 proof: the current lane now checks `RPP-0553`
+  with local executor-auth support evidence. The proof shows a signed dry-run
+  retry regenerates nonce evidence and binds the accepted receipt to the final
+  nonce claim, while replayed nonce evidence cannot mint or validate a dry-run
+  receipt before JSON parsing or mutation-capable work. Command:
+  `node --test --test-name-pattern RPP-0553 test/rpp-0553-nonce-replay-store-v3.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0553
+  coverage 2/2, adjacent authenticated-client nonce/retry coverage 9/9, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 635/365;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed nonce replay store proof.
 - Request signature canonicalization variant-3 proof: the current lane now
   checks `RPP-0552` with local executor-auth support evidence. The proof shows
   equivalent generated signed request shapes canonicalize to the same signature
