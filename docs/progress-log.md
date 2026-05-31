@@ -6,19 +6,40 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 22:21 CEST +02:00.
+- Last update: 2026-05-31 22:25 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0777 memory ceiling proof variant-4 merge ending at `1f9067`.
+  the RPP-0775 large media library benchmark variant-4 merge ending at `64a925`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 767
-  items checked and leaves 233 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 768
+  items checked and leaves 232 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  75 storage/performance items, 3 production-topology items, 100 generated
+  76 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Large media library benchmark variant-4 proof: the current lane now checks
+  `RPP-0775` with deterministic local storage/performance support evidence. The
+  proof carries forward the RPP-0755/RPP-0735/RPP-0715 large media library
+  lineage and runs a fixed local workload with 4 updated media objects, 3
+  created media objects, 2 stale-at-write media rejections, 2 temp-file fsync
+  failures before rename, 2 target-directory fsync failures, 13 media writes
+  attempted, 7 fully applied and fsynced writes, 7 fast-path lane updates, 6
+  fast-path lane blocks, 78 retained row preconditions, 42 lane-attached row
+  preconditions, 12 database batches, max 7 rows per batch, and 0 unsafe stale
+  or temp-fsync-failure renames. It also proves fast-path output is emitted only
+  after the recorded ten-gate correctness vector is present and passing, and
+  that missing row preconditions, mismatched lane evidence, premature pass
+  status, and failing recorded gate status all suppress output. Command:
+  `node --test --test-name-pattern RPP-0775 test/rpp-0775-large-media-library-benchmark-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0775
+  coverage 2/2, adjacent RPP-0755 coverage 2/2, adjacent RPP-0735 coverage 2/2,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  768/232; final release remains `NO-GO` because this is support evidence, not
+  production-backed media throughput, storage receipt, row batch executor, or
+  atomic commit proof.
 - Memory ceiling proof variant-4 proof: the current lane now checks `RPP-0777`
   with deterministic local storage/performance support evidence. The proof
   carries forward the RPP-0757/RPP-0737/RPP-0717 filesystem memory-ceiling
