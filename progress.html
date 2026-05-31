@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T14:04:00+02:00">Last updated: May 31, 2026, 14:04 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T14:05:00+02:00">Last updated: May 31, 2026, 14:05 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>604</strong>
+        <strong>605</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>396</strong>
+        <strong>395</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, journal pagination variant-3 file/SQLite proof, stale claim refusal, claim-expiry policy and variant-3 same-path release-gate proof, single-writer lease claim variant-3 fencing, stale-claim rejection variant-3 owner-identity proof, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay v2 release-proof carry-through, different-body idempotency conflict v2, process kill before mutation set v2, process kill mid mutation set v2, missing commit finalization v2, before-mutation process-kill readback, manual recovery audit export, journal schema migration through variant 3, ownership-record SQLite readback and variant-3 file/SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, journal pagination variant-3 file/SQLite proof, stale claim refusal, claim-expiry policy and variant-3 same-path release-gate proof, single-writer lease claim variant-3 fencing, stale-claim rejection variant-3 owner-identity proof, restart-readable open-state v2 and variant-3 file/SQLite proof, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay v2 release-proof carry-through, different-body idempotency conflict v2, process kill before mutation set v2, process kill mid mutation set v2, missing commit finalization v2, before-mutation process-kill readback, manual recovery audit export, journal schema migration through variant 3, ownership-record SQLite readback and variant-3 file/SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0541</span>
+        <span>RPP-0647</span>
       </div>
-      <p>The latest refresh checks RPP-0541 with production preflight route variant-3 executor/auth evidence. The proof accepts production-shaped local preflight route summaries as support-only evidence, refuses missing or stale preflight proof before follow-up routes, and keeps auth failure summaries hash-only without moving release gates. Counts are now 604/396; final release remains NO-GO because this is local executor/auth support evidence, not checked production endpoint proof.</p>
+      <p>The latest refresh checks RPP-0647 with restart-readable open-state variant-3 recovery evidence. The proof keeps file-backed open-state rows restart-readable, mirrors durable SQLite open-state readback, and refuses invalid or stale restart state before recovery advancement with hash-only evidence. Counts are now 605/395; final release remains NO-GO because this is local recovery support evidence, not production-backed durable journal proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0647 focused: 3/3</span>
+        <span class="tag">RPP-0646 adjacent: 2/2</span>
+        <span class="tag">file + SQLite</span>
+        <span class="tag">restart-readable</span>
+        <span class="tag">stale state refused</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0541 focused: 3/3</span>
         <span class="tag">preflight adjacent: 5/5</span>
         <span class="tag">support-only route</span>
