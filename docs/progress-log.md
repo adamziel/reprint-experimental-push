@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 11:40 CEST +02:00.
+- Last update: 2026-05-31 11:43 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0298 forged ready-plan defense release-verifier v5 merge ending at
-  `ba2438691`.
+  the RPP-0299 redacted raw-value evidence release-verifier v5 merge ending at
+  `c497a0905`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 569
-  items checked and leaves 431 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 570
+  items checked and leaves 430 open.
 - Checked slices: 100 release-gate foundation items, 82 graph identity items,
   88 plugin-driver boundary items, 34 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 100 generated
-  harness items, and 98 merge-invariant items. No release-ops items are checked
+  harness items, and 99 merge-invariant items. No release-ops items are checked
   yet.
+- Redacted raw-value evidence release-verifier v5 carry-through: the current
+  lane now checks `RPP-0299` with focused support evidence and a scenario-matrix
+  row naming the behavior and command. The proof carries planner mutation
+  values, executor recovery journal values, durable journal records, and stale
+  precondition refusal details through hash-only/redacted evidence; it also
+  proves intentionally raw serialized planner evidence is rejected and
+  fixture-private values are absent from the proof envelope. Command:
+  `node --test test/rpp-0299-redacted-raw-value-evidence-release-verifier-v5.test.js`.
+  Caveat: local release-verifier support evidence only; release remains gated
+  separately. Validation passed with Node syntax checks, focused RPP-0299
+  coverage 1/1, adjacent RPP-0239/RPP-0259/RPP-0279 raw-value lineage coverage
+  3/3, scoped artifact redaction scan, and diff whitespace checks. Counts are
+  now 570/430; final release remains `NO-GO` because this is local
+  merge-invariant support evidence, not production-backed release proof.
 - Forged ready plan defense release-verifier v5 carry-through: the current lane
   now checks `RPP-0298` with focused support evidence that ready plans cannot be
   forged by dropping live preconditions, duplicating live preconditions,
