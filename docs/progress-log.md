@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 20:13 CEST +02:00.
+- Last update: 2026-05-31 20:15 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0740 rollout threshold configuration variant-2 merge ending at
-  `1558ff`.
+  the RPP-0741 MySQL CAS write guard variant-3 merge ending at `93f0b8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 732
-  items checked and leaves 268 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 733
+  items checked and leaves 267 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  40 storage/performance items, 3 production-topology items, 100 generated
+  41 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- MySQL CAS write guard variant-3 proof: the current lane now checks `RPP-0741`
+  with local storage/performance support evidence. The proof runs the benchmark
+  command with MySQL connection settings unset, verifies runtime, resource,
+  storage, SQL shape, and pass/fail gate output, and proves an impossible heap
+  budget still emits diagnosable fail-gate evidence. Command:
+  `node --test --test-name-pattern RPP-0741 test/rpp-0741-mysql-cas-write-guard-v3.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0741
+  coverage 2/2, adjacent RPP-0721 coverage 2/2, adjacent RPP-0701 benchmark
+  coverage 7/7, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 733/267; final release remains `NO-GO` because this is support
+  evidence, not production-backed MySQL durability proof.
 - Rollout threshold configuration variant-2 proof: the current lane now checks
   `RPP-0740` with local storage/performance support evidence. The proof
   normalizes threshold configuration, verifies storage drift and p95 decision
