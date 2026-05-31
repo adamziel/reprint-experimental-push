@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 20:24 CEST +02:00.
+- Last update: 2026-05-31 20:27 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0745 filesystem fsync evidence variant-3 merge ending at `0fc588`.
+  the RPP-0746 large upload chunk manifest variant-3 merge ending at `ab0948`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 737
-  items checked and leaves 263 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 738
+  items checked and leaves 262 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  45 storage/performance items, 3 production-topology items, 100 generated
+  46 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Large upload chunk manifest variant-3 proof: the current lane now checks
+  `RPP-0746` with local storage/performance support evidence. The proof parses
+  the guarded executor benchmark command output for runtime, resources, and
+  rollout gates, verifies a 1 MiB local upload manifest covers all four chunks
+  with contiguous non-overlapping ranges, requires durable receipts for every
+  manifest entry, and keeps hash verification, receipt-only resume, and replay
+  duplicate-free. Command:
+  `node --test --test-name-pattern RPP-0746 test/rpp-0746-large-upload-chunk-manifest-v3.test.js`.
+  Caveat: local storage/performance support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0746
+  coverage 2/2, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 738/262; final release remains `NO-GO` because this is support
+  evidence, not production-backed external durability proof.
 - Filesystem fsync evidence variant-3 proof: the current lane now checks
   `RPP-0745` with local storage/performance support evidence. The proof
   exercises generated local filesystem outcomes through the
