@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T13:46:00+02:00">Last updated: May 31, 2026, 13:46 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T13:49:00+02:00">Last updated: May 31, 2026, 13:49 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>600</strong>
+        <strong>601</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>400</strong>
+        <strong>399</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0451</span>
+        <span>RPP-0730</span>
       </div>
-      <p>The latest refresh checks RPP-0451 with plugin uninstall/delete refusal variant-3 plugin-driver evidence. The proof blocks plugin uninstall metadata deletes, plugin package file removals, and plugin-owned row deletes before mutation unless explicit checked row delete support applies to the exact driver, and stale or forged delete evidence fails closed. Counts are now 600/400; final release remains NO-GO because this is local plugin-driver support evidence, not production-backed plugin-driver proof.</p>
+      <p>The latest refresh checks RPP-0730 with parallel snapshot hashing variant-2 storage/performance evidence. The proof updates the fast-path lane only after parallel snapshot hash correctness gates hold, and stale, unsafe, or premature lane attempts fail closed with hash-only evidence. Counts are now 601/399; final release remains NO-GO because this is local storage/performance support evidence, not production storage receipts or release-verifier carry-through.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0730 focused: 2/2</span>
+        <span class="tag">RPP-0710 adjacent: 1/1</span>
+        <span class="tag">fast path gated</span>
+        <span class="tag">stale blocked</span>
+        <span class="tag">test secret scan: pass</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0451 focused: 3/3</span>
         <span class="tag">uninstall adjacent: 6/6</span>
         <span class="tag">delete refused</span>
