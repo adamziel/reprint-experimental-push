@@ -807,7 +807,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0758 (Far / storage-performance) Add generated coverage for timeout budget proof, variant 3. Success: chunk transfer resumes without duplicate mutation work.
 - [x] RPP-0759 (Far / storage-performance) Add generated coverage for progress reporting for long pushes, variant 3. Success: large-site run finishes inside documented budgets.
 - [x] RPP-0760 (Far / storage-performance) Add generated coverage for rollout threshold configuration, variant 3. Success: fast-path lane updates only after correctness gates hold.
-- [ ] RPP-0761 (Far / storage-performance) Add focused regression coverage for MySQL compare-and-swap write guard, variant 4. Success: benchmark command reports runtime, resources, and pass/fail gates.
+- [x] RPP-0761 (Far / storage-performance) Add focused regression coverage for MySQL compare-and-swap write guard, variant 4. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [ ] RPP-0762 (Far / storage-performance) Add focused regression coverage for SQLite compare-and-swap write guard, variant 4. Success: guarded writes reject stale storage state.
 - [ ] RPP-0763 (Far / storage-performance) Add focused regression coverage for transaction boundary policy, variant 4. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0764 (Far / storage-performance) Add focused regression coverage for filesystem compare-and-rename write, variant 4. Success: large-site run finishes inside documented budgets.

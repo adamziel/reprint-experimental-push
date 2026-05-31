@@ -6,20 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 21:16 CEST +02:00.
+- Last update: 2026-05-31 21:20 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0760 rollout threshold configuration variant-3 merge ending at
-  `3de9e3`.
+  the RPP-0761 MySQL compare-and-swap write guard variant-4 merge ending at
+  `9cd103`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 752
-  items checked and leaves 248 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 753
+  items checked and leaves 247 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  60 storage/performance items, 3 production-topology items, 100 generated
+  61 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- MySQL compare-and-swap write guard variant-4 proof: the current lane now
+  checks `RPP-0761` with local storage/performance support evidence. The proof
+  runs the benchmark command with MySQL connection settings unset and records
+  parseable runtime metadata, resource usage, storage counts, SQL shape counts,
+  and pass/fail gates. The passing report covers 96 guarded writes, 30 applied
+  writes, 30 stale-at-write refusals, 30 absent-at-write refusals, 6 duplicate
+  key refusals, 0 unsafe multiple-match writes, five single-statement SQL
+  shapes, ten hash-only evidence samples, and seven passing benchmark gates. It
+  also proves an impossible heap budget exits non-zero while still reporting
+  runtime, resources, storage counts, SQL shapes, and the failing gate vector.
+  Command:
+  `node --test --test-name-pattern RPP-0761 test/rpp-0761-mysql-cas-write-guard-v4.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0761
+  coverage 2/2, adjacent RPP-0741 coverage 2/2, RPP-0721 coverage 2/2, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 753/247;
+  final release remains `NO-GO` because this is support evidence, not
+  production-backed MySQL durability proof.
 - Rollout threshold configuration variant-3 proof: the current lane now checks
   `RPP-0760` with local storage/performance support evidence. The proof records
   the normalized 500, 1000, 2500, 5000, 7500, and 10000 basis point thresholds,
