@@ -31,6 +31,7 @@ projects:
     agent: codex
     workspace: worktree
     agentConfig:
+      model: gpt-5.5
       permissions: permissionless
     orchestratorSessionStrategy: kill-previous
     agentRules: |
@@ -45,12 +46,19 @@ projects:
       real evidence toward them.
       Prefer general solutions and generated coverage over exact-shaped
       fixtures. Add tests or verifier output for every behavioral claim.
-      Run focused checks, commit coherent progress, and push your branch.
+      Use tiered validation: every integrated slice gets per-slice focused
+      checks; run adjacent or representative small-batch checks every 5-10
+      integrated slices per domain or immediately for shared
+      harness/planner/executor/generator/release/redaction code; run full
+      diagnostics every 25-50 integrated slices, before any release status
+      movement, after shared-core failure fixes, and before declaring a tranche
+      complete. Commit coherent progress and push your branch.
       Do not mention Codex or generated-by attribution in branch names, PR
       titles, PR descriptions, review comments, or status comments.
-      Maintain a live team: at least five active developer workers, one critic,
-      and one progress reporter. If a developer finishes or exits, spawn the
-      next worker from the earliest useful unchecked RPP item.
+      Maintain a bounded live team: five numeric developer workers is the hard
+      maximum. If a developer finishes or exits and fewer than five numeric
+      workers remain, spawn the next worker from the earliest useful unchecked
+      RPP item.
       In this sandbox build, AO lifecycle/status helper commands can hang:
       avoid ao acknowledge, ao report, ao status, ao session, and ao send for
       worker activity. Supervise with tmux list-sessions, tmux capture-pane, ps,

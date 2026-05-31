@@ -12,6 +12,16 @@ Expected before live source exists:
 - `timeout 300s npm run verify:release`: fail closed with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or equivalent.
 - Release gates: still `0/4`.
 
+Tiered validation cadence:
+
+- Every integrated slice gets per-slice focused checks.
+- Run adjacent or representative small-batch checks every 5-10 integrated
+  slices per domain or immediately for shared
+  harness/planner/executor/generator/release/redaction code.
+- Run full diagnostics every 25-50 integrated slices, before any release status
+  movement, after shared-core failure fixes, and before declaring a tranche
+  complete.
+
 Observed topology-verifier proof, 2026-05-27:
 
 ```bash

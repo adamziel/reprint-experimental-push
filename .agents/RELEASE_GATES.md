@@ -107,4 +107,7 @@ Local candidate evidence, 2026-05-28:
 
 ## Gate Movement Rule
 
-Do not use `partially_proven` or `proven` until `timeout 300s npm run verify:release` exists on the integration branch and proves the claim against a real live `REPRINT_PUSH_SOURCE_URL`.
+Do not use `partially_proven` or `proven` until fresh full diagnostics pass at
+the candidate head and `timeout 300s npm run verify:release` exists on the
+integration branch and proves the claim against a real live
+`REPRINT_PUSH_SOURCE_URL`.

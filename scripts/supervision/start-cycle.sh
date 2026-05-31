@@ -6,8 +6,8 @@ lanes_root="${REPRINT_PUSH_LANES_DIR:-"$HOME/reprint-experimental-push-lanes"}"
 cycle="${1:-"cycle-$(date +%Y%m%d-%H%M%S)"}"
 base_ref="${REPRINT_PUSH_LANE_BASE:-origin/main}"
 tmux_socket_dir="${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)"
-codex_fast_model="${CODEX_FAST_MODEL:-gpt-5.4-mini}"
-codex_fast_reasoning_effort="${CODEX_FAST_REASONING_EFFORT:-low}"
+codex_fast_model="${CODEX_FAST_MODEL:-gpt-5.5}"
+codex_fast_reasoning_effort="${CODEX_FAST_REASONING_EFFORT:-xhigh}"
 
 lanes=(
   no-data-loss-invariants

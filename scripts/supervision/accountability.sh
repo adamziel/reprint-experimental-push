@@ -2,8 +2,8 @@
 set -euo pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-codex_fast_model="${CODEX_FAST_MODEL:-gpt-5.4-mini}"
-codex_fast_reasoning_effort="${CODEX_FAST_REASONING_EFFORT:-low}"
+codex_fast_model="${CODEX_FAST_MODEL:-gpt-5.5}"
+codex_fast_reasoning_effort="${CODEX_FAST_REASONING_EFFORT:-xhigh}"
 
 printf '%s\n' "supervisor accountability:"
 printf 'fast mode default: model=%s reasoning=%s\n' "$codex_fast_model" "$codex_fast_reasoning_effort"
