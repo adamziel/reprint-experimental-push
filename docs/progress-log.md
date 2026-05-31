@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 17:39 CEST +02:00.
+- Last update: 2026-05-31 17:43 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0599 credential rotation behavior variant-5 merge ending at
-  `25a11c`.
+  the RPP-0600 production audit event schema variant-5 merge ending at
+  `5cd17f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 673
-  items checked and leaves 327 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 674
+  items checked and leaves 326 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
-  100 plugin-driver boundary items, 88 executor/auth items, 50 recovery items,
+  100 plugin-driver boundary items, 89 executor/auth items, 50 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production audit event schema variant-5 proof: the current lane now checks
+  `RPP-0600` with local executor-auth support evidence. The proof carries
+  exactly one hash-only production audit event schema route-evidence summary
+  through `verify:release`, rejects missing, malformed, duplicated, stale, or
+  drifted audit schema evidence before release movement, and keeps final release
+  blocked without production proof. Command:
+  `node --test --test-name-pattern RPP-0600 test/rpp-0600-production-audit-event-schema-v5.test.js`.
+  Caveat: local executor-auth support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0600
+  coverage 7/7, adjacent audit schema coverage 13/13, scoped artifact redaction
+  scan, and diff whitespace checks. Counts are now 674/326; final release
+  remains `NO-GO` because this is support evidence, not production-backed audit
+  schema proof.
 - Credential rotation behavior variant-5 proof: the current lane now checks
   `RPP-0599` with local executor-auth support evidence. The proof keeps live
   source and credential/session revalidation ahead of mutation-capable work,
