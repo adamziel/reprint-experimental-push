@@ -1370,6 +1370,30 @@ test('RPP-0159 remote-only preservation variant 3 rejects stale replay before mu
   assert.equal(evidenceText.includes('ready-bulk'), false, 'variant 3 evidence leaked generated ready payload');
 });
 
+test('RPP-0199 remote-only preservation release-verifier v5 summary carries stale replay target', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.remoteOnlyPreservationReleaseVerifierVariant5;
+  const legacyCoverage = report.summary.targetCoverage.remoteOnlyPreservation;
+  const variant3Coverage = report.summary.targetCoverage.remoteOnlyPreservationVariant3;
+
+  assert.ok(coverage, 'missing remote-only preservation release-verifier v5 target coverage');
+  assert.ok(legacyCoverage, 'missing remote-only preservation legacy target coverage');
+  assert.ok(variant3Coverage, 'missing remote-only preservation variant 3 target coverage');
+  assert.equal(coverage.family, 'remote-only-preservation-release-verifier-v5');
+  assert.equal(coverage.total, legacyCoverage.total);
+  assert.equal(coverage.total, variant3Coverage.total);
+  assert.deepEqual(coverage.perTier, legacyCoverage.perTier);
+  assert.deepEqual(coverage.perTier, variant3Coverage.perTier);
+  assert.deepEqual(coverage.statuses, legacyCoverage.statuses);
+  assert.deepEqual(coverage.statuses, variant3Coverage.statuses);
+  assert.equal(coverage.total, 9);
+  assert.deepEqual(coverage.statuses, { ready: 9 });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+});
+
 function assertSameIndependentContentShape(testCase) {
   const sharedRows = Object.entries(testCase.local.db.wp_posts)
     .filter(([id, localRow]) => testCase.base.db.wp_posts[id]

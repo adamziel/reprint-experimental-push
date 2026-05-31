@@ -45,6 +45,8 @@ The default generated run covers:
 - ready, conflict, and blocked outcomes;
 - tier-9 ready/apply cases;
 - local edits, remote-only edits, independent merge, same independent content,
+  remote-only preservation with explicit release-verifier variant-5
+  carry-through,
   independent local-file/remote-row and local-row/remote-file targets,
   large ready plan tiers with one ready case per tier, deletes, delete/edit
   conflicts, file topology conflicts, file create/update/
@@ -440,6 +442,20 @@ mutation. Evidence remains hash-only: row/resource keys, tier/status counts,
 decision hashes, precondition hashes, planned-value hashes, and refusal-detail
 hashes are retained while generated row titles, local payloads, and stale replay
 payloads are omitted.
+
+RPP-0199 adds `remoteOnlyPreservationReleaseVerifierVariant5` coverage for the
+same mutation-bearing remote-only post-update surface as an explicit
+release-verifier-v5 target. The deterministic summary exposes the same 9 ready
+cases across tiers 1 through 9 and cross-checks the target against the legacy
+and variant-3 remote-only preservation counts. The focused carry-through proof
+applies every ready plan, verifies the remote-only `wp_posts` row remains a
+hash-only `keep-remote` decision with no mutation or live-remote precondition,
+then drifts the final planned mutation after dry-run and proves stale replay
+fails with `PRECONDITION_FAILED` before the mutation hook runs. Evidence stays
+hash-only: row/resource keys, tier/status counts, row hashes, decision hashes,
+planned-value hashes, precondition hashes, refusal-detail hashes, and
+release-verifier carry-through proof hashes are retained while generated row
+titles and stale replay payload values are omitted.
 
 The `independentLocalFileRemoteRow` target coverage records per-tier counts for
 ready plans where a local file edit and remote row edit coexist. RPP-0221 proves
