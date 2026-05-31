@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 14:20 CEST +02:00.
+- Last update: 2026-05-31 14:22 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0349 category term taxonomy reference variant-3 merge ending at
-  `6eb8902`.
+  the RPP-0648 restart-readable staged-state variant-3 merge ending at
+  `73d82c4`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 609
-  items checked and leaves 391 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 610
+  items checked and leaves 390 open.
 - Checked slices: 100 release-gate foundation items, 89 graph identity items,
-  96 plugin-driver boundary items, 42 executor/auth items, 48 recovery items,
+  96 plugin-driver boundary items, 42 executor/auth items, 49 recovery items,
   31 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Restart-readable staged-state variant-3 proof: the current lane now checks
+  `RPP-0648` with local recovery support evidence. The proof covers
+  file-backed staged rows across a process restart, preserves remote changes on
+  retry, refuses stale or invalid staged restart state before recovery
+  advancement, and mirrors staged-state readback through SQLite while corrupt
+  rows fail closed. Command:
+  `node --test --test-name-pattern RPP-0648 test/rpp-0648-restart-readable-staged-state-v3.test.js`.
+  Caveat: local recovery support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0648
+  coverage 3/3, adjacent RPP-0647 coverage 3/3, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 610/390; final release remains
+  `NO-GO` because this is support evidence, not production-backed durable
+  journal proof.
 - Category term taxonomy reference variant-3 proof: the current lane now checks
   `RPP-0349` with local graph-identity support evidence. The proof carries a
   mapped category `term_taxonomy_id` target through apply-shaped evidence,
