@@ -6,20 +6,41 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 22:47 CEST +02:00.
+- Last update: 2026-05-31 22:49 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0781 MySQL CAS write guard release-verifier variant-5 merge ending at
-  `217425`.
+  the RPP-0782 SQLite CAS write guard release-verifier variant-5 merge ending at
+  `f72155`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 773
-  items checked and leaves 227 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 774
+  items checked and leaves 226 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 89 executor/auth items, 100 recovery items,
-  81 storage/performance items, 3 production-topology items, 100 generated
+  82 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- SQLite CAS write guard release-verifier variant-5 proof: the current lane now
+  checks `RPP-0782` with deterministic local release-verifier support evidence.
+  The proof carries the RPP-0762/RPP-0742 SQLite compare-and-swap write guard
+  lineage into local in-memory `node:sqlite` proof. The stale-write profile
+  covers one boundary, one adapter, one operation, five CAS surfaces, five
+  stale write attempts, five stale-at-write rejections, zero stale writes
+  applied, zero affected stale rows, zero stale rows mutated, five observed
+  stale storage hashes, and five SQL shape hashes. The benchmark support
+  profile runs three iterations across five surfaces and records 45 guarded
+  writes attempted, 15 applied writes, 15 stale-at-write rejections, 15
+  absent-at-write rejections, 0 unsafe multiple-match writes, 45 in-memory
+  database opens, 5 single-statement SQL shapes, and 6/6 passing benchmark
+  gates. Command:
+  `node --test --test-name-pattern RPP-0782 test/rpp-0782-sqlite-cas-write-guard-release-verifier-v5.test.js`.
+  Caveat: deterministic local support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0782
+  coverage 2/2, adjacent RPP-0762 coverage 2/2, adjacent RPP-0742 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  774/226; final release remains `NO-GO` because this is support evidence, not
+  production-backed storage durability, cross-process locking, persistent
+  database recovery, or live traffic behavior.
 - MySQL CAS write guard release-verifier variant-5 proof: the current lane now
   checks `RPP-0781` with deterministic local release-verifier support evidence.
   The proof carries the RPP-0761/RPP-0741 MySQL compare-and-swap write guard

@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 773.
-- Remaining open: 227.
+- Verified complete: 774.
+- Remaining open: 226.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -828,7 +828,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0779 (Far / storage-performance) Add focused regression coverage for progress reporting for long pushes, variant 4. Success: large-site run finishes inside documented budgets.
 - [x] RPP-0780 (Far / storage-performance) Add focused regression coverage for rollout threshold configuration, variant 4. Success: fast-path lane updates only after correctness gates hold.
 - [x] RPP-0781 (Far / storage-performance) Carry through the release verifier for MySQL compare-and-swap write guard, variant 5. Success: benchmark command reports runtime, resources, and pass/fail gates.
-- [ ] RPP-0782 (Far / storage-performance) Carry through the release verifier for SQLite compare-and-swap write guard, variant 5. Success: guarded writes reject stale storage state.
+- [x] RPP-0782 (Far / storage-performance) Carry through the release verifier for SQLite compare-and-swap write guard, variant 5. Success: guarded writes reject stale storage state.
 - [ ] RPP-0783 (Far / storage-performance) Carry through the release verifier for transaction boundary policy, variant 5. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0784 (Far / storage-performance) Carry through the release verifier for filesystem compare-and-rename write, variant 5. Success: large-site run finishes inside documented budgets.
 - [ ] RPP-0785 (Far / storage-performance) Carry through the release verifier for filesystem fsync evidence, variant 5. Success: fast-path lane updates only after correctness gates hold.
