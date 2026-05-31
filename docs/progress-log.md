@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 15:05 CEST +02:00.
+- Last update: 2026-05-31 15:08 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0459 driver audit evidence redaction variant-3 merge ending at
-  `d1607a0`.
+  the RPP-0360 production importer/exporter identity-map variant-3 merge ending
+  at `efc732d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 622
-  items checked and leaves 378 open.
-- Checked slices: 100 release-gate foundation items, 99 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 623
+  items checked and leaves 377 open.
+- Checked slices: 100 release-gate foundation items, 100 graph identity items,
   97 plugin-driver boundary items, 42 executor/auth items, 49 recovery items,
   32 storage/performance items, 3 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Production importer/exporter identity-map variant-3 proof: the current lane
+  now checks `RPP-0360` with local graph-identity support evidence. The proof
+  generates deterministic importer/exporter identity-map cases, keeps ready
+  imported targets hash-only, fails stale imported targets closed, and documents
+  the remaining unmapped WordPress surfaces. Command:
+  `node --test --test-name-pattern RPP-0360 test/rpp-0360-production-importer-exporter-identity-map-v3.test.js`.
+  Caveat: local graph-identity support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0360
+  coverage 2/2, adjacent RPP-0380 coverage 2/2, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 623/377; final release remains
+  `NO-GO` because this is support evidence, not production-backed graph identity
+  proof.
 - Driver audit evidence redaction variant-3 proof: the current lane now checks
   `RPP-0459` with local plugin-driver support evidence. The proof covers remote
   owner-context drift preserving plugin-owned remote data with hash-only audit
