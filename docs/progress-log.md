@@ -6,18 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:26 CEST +02:00.
+- Last update: 2026-06-01 06:27 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0980 go/no-go release decision record v4 merge ending at `9a6b94580`.
+  the RPP-0981 release gate 1 final audit verifier v5 merge ending at
+  `d69a9dced`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 940
-  items checked and leaves 60 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 941
+  items checked and leaves 59 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 80 release-ops items.
+  harness items, 100 merge-invariant items, and 81 release-ops items.
+- Release gate 1 final audit verifier v5: the current lane now checks
+  `RPP-0981` with support-only release-verifier carry-through coverage for the
+  GATE-1 final audit. The evidence carries forward the RPP-0961 v4 final-audit
+  contract, links exact audit and validation commands, links support and lane
+  context commits, records release-verifier carry-through anchors, and keeps
+  GATE-1 movement production-backed-evidence gated.
+  Command:
+  `node --test --test-name-pattern RPP-0981 test/rpp-0981-release-gate-1-final-audit-release-verifier-v5.test.js`.
+  Caveat: release gate 1 verifier support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0981 coverage 7/7,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  941/59; final release remains `NO-GO` until required production-backed
+  GATE-1 verifier proof is present and accepted.
 - Go/no-go release decision record v4: the current lane now checks `RPP-0980`
   with support-only focused regression coverage for the go/no-go release
   decision record. The evidence carries forward the RPP-0960 v3 decision
