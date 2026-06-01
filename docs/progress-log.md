@@ -6,18 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:25 CEST +02:00.
+- Last update: 2026-06-01 04:27 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0926 critic audit update v2 merge ending at `4a219b161`.
+  the RPP-0927 security review checklist v2 merge ending at `5912805a8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 886
-  items checked and leaves 114 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 887
+  items checked and leaves 113 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 26 release-ops items.
+  harness items, 100 merge-invariant items, and 27 release-ops items.
+- Security review checklist v2: the current lane now checks `RPP-0927` with a
+  support-only security review checklist refresh. The evidence requires
+  production-backed evidence before any release-gate status movement and proves
+  support-only review evidence can support candidate review but cannot move
+  final release.
+  Command:
+  `node --test --test-name-pattern RPP-0927 test/rpp-0927-security-review-checklist-v2.test.js`.
+  Caveat: security review support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0927 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  887/113; final release remains `NO-GO` because production-backed release
+  evidence remains absent.
 - Critic audit update v2: the current lane now checks `RPP-0926` with a
   support-only critic-audit disposition update. The evidence links exact
   commands to commit anchors, names the remaining release-blocking evidence
