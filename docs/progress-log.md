@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 02:00 CEST +02:00.
+- Last update: 2026-06-01 02:02 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0840 no tunnel policy proof merge ending at `532f0114f`.
+  the RPP-0843 external WordPress topology proof merge ending at `193a1625f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 827
-  items checked and leaves 173 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 828
+  items checked and leaves 172 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 27 production-topology items, 100 generated
+  100 storage/performance items, 28 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- External WordPress topology variant-3 URL identity proof: the current lane now
+  checks `RPP-0843` with deterministic external-topology support evidence. The
+  proof captures source, local-edited, and remote-changed role identity hashes,
+  binds preflight, dry-run, apply, journal, and recovery route source identities
+  back to source, requires distinct role identities, rejects tunnel-shaped,
+  secret-shaped, non-8080 loopback, route-drift, and packaged fallback inputs,
+  and stores only hash, count, and named-surface summaries.
+  Command:
+  `node --test --test-name-pattern RPP-0843 test/rpp-0843-external-wordpress-topology-v3.test.js`.
+  Caveat: local support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0843 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  828/172; final release remains `NO-GO` because this is support evidence, not
+  production-backed WordPress reachability, production credentials, route
+  receipts, durable journal behavior, live mutation proof, throughput, release
+  approval, or a production release gate.
 - No tunnel policy variant-2 candidate-scope proof: the current lane now checks
   `RPP-0840` with deterministic no-tunnel policy support evidence. The proof
   records known forbidden command and domain surfaces, rejects them with
