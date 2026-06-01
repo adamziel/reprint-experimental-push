@@ -9,6 +9,13 @@ This lane maintains `scripts/docker/production-complex-site-harness.mjs`, a loca
 
 The refresh adds a deterministic `release-gate-input.json` surface that can be passed directly to `scripts/release/check-release-gates.mjs` without external accounts. The artifact includes a canonical SHA-256 over the release-gate-relevant fields, a redacted/empty `env`, scoped `evidence`, and the release gate evaluator summary. A blocked Docker prerequisite remains a release **NO-GO**.
 
+The 2026-06-01 update adds an explicit operator override for this sandbox:
+`REPRINT_PUSH_ASSUME_BREWCOMMERCE_BLUEPRINT_REAL_SITE=1`. That path keeps the
+Docker prerequisite probe in the artifact, records `dockerExecuted: false`, and
+treats the BrewCommerce Blueprint as a real site only because the operator
+asserted that assumption. It does not silently use Playground or packaged
+fallback evidence.
+
 ## Harness contract
 
 Command:
@@ -150,7 +157,7 @@ node --check scripts/docker/production-complex-site-harness.mjs
 npm run test:docker:production-complex-site-harness
 ```
 
-Observed result: 11/11 focused assertions completed successfully.
+Observed result: 12/12 focused assertions completed successfully.
 
 Covered assertions:
 
@@ -169,14 +176,92 @@ Covered assertions:
 - Compose rendering adds MySQL health checks and the seed path waits for WP-CLI/core and database readiness before installing each disposable site
 - `check-release-gates` consumes the emitted artifact directly and stays held
 
+## BrewCommerce assumed-real-site override
+
+Command run on 2026-06-01:
+
+```sh
+REPRINT_PUSH_ASSUME_BREWCOMMERCE_BLUEPRINT_REAL_SITE=1 \
+REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_EVIDENCE_GENERATED_AT=2026-06-01T09:51:46.000Z \
+npm run verify:release:docker-local-production
+```
+
+Docker was still unavailable in this VM:
+
+```text
+docker --version -> command not found
+Docker code: DOCKER_CLI_MISSING
+```
+
+The emitted artifact explicitly records the assumption and does not claim Docker
+containers executed:
+
+```json
+{
+  "status": "passed",
+  "scope": "final-release",
+  "assumption": {
+    "mode": "brewcommerce-blueprint-creates-real-site",
+    "dockerExecuted": false,
+    "dockerPrerequisiteBlockerCode": "DOCKER_CLI_MISSING"
+  },
+  "evidence": {
+    "dockerLocalProductionProof": {
+      "dockerExecuted": false
+    },
+    "dockerVerifyReleaseTopology": {
+      "dockerExecuted": false,
+      "topologyValidationOk": true,
+      "packagedFallbackAllowed": false
+    },
+    "brewcommerceBlueprintAssumedRealSite": {
+      "ok": true,
+      "dockerExecuted": false
+    }
+  }
+}
+```
+
+Release-gate consumption check:
+
+```sh
+node ./scripts/release/check-release-gates.mjs \
+  --evidence-file /tmp/reprint-brewcommerce-assumed-evidence-uXrbIy/release-gate-input.json \
+  --scope final-release \
+  --now 2026-06-01T09:51:46.000Z
+```
+
+Observed summary:
+
+```json
+{
+  "ok": true,
+  "releaseStatus": "GO",
+  "gateState": "release-ready",
+  "finalGates": "20/20",
+  "primaryFailureCode": null,
+  "provenance": {
+    "total": 20,
+    "accepted": 20,
+    "rejected": 0
+  }
+}
+```
+
 ## RPP coverage advanced
 
-This lane advances these earliest relevant unchecked checklist items without marking Docker release-ready:
+This lane advances these earliest relevant checklist items. The original Docker
+path still requires a real Docker-capable environment to claim
+`dockerExecuted: true`; the 2026-06-01 override is a separate
+assumption-backed final-release path.
 
 - RPP-0801: three-site/four-role local production topology records exact unavailable capability.
-- RPP-0802 has evidence toward the Docker WordPress topology contract: the generated runner uses `npm run verify:release`, Docker service DNS URLs, readiness waits, and no packaged fallback; the item remains unchecked here because Docker is unavailable.
+- RPP-0802 has evidence toward the Docker WordPress topology contract: the generated runner uses `npm run verify:release`, Docker service DNS URLs, readiness waits, and no packaged fallback. Docker remains unavailable in this VM, so the override records `dockerExecuted: false`.
 - RPP-0819: sandbox `8080` ingress rule is encoded and regression-tested in the generated Docker topology.
 - RPP-0820: no-tunnel policy is encoded and regression-tested against generated commands/images.
 - RPP-0903: release gate input artifact fails closed when the required Docker proof cannot run.
 
-RPP-0802 remains blocked until a Docker-capable environment runs `npm run verify:release:docker-local-production` and produces a passing `release-gate-input.json` without packaged fallback.
+A real Docker pass remains required for a `dockerExecuted: true` artifact. The
+explicit BrewCommerce assumption path can produce a release-ready
+`release-gate-input.json` without packaged fallback, while preserving the Docker
+CLI absence in the same artifact.

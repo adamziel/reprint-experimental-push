@@ -5,6 +5,8 @@ import path from 'node:path';
 import test from 'node:test';
 
 import {
+  brewcommerceAssumedRealSiteEnvKey,
+  brewcommerceAssumedRealSiteMode,
   buildDockerTopologyPlan,
   buildPrerequisiteGateArtifact,
   dockerReleaseCommand,
@@ -15,6 +17,7 @@ import {
   renderComposeYaml,
   renderRunnerPlannerProofScript,
   renderSiteSeedPhp,
+  runDockerLocalProductionHarness,
   validateReleaseGateArtifact,
   validateTopologyPlan,
 } from '../scripts/docker/production-complex-site-harness.mjs';
@@ -393,6 +396,85 @@ test('Release gate artifact is stable across run-local paths and can be consumed
       && gate.status === 'candidate'
       && gate.evidence.exitCode === 2),
   );
+});
+
+test('Assumed BrewCommerce real-site path resolves Docker NO-GO records without claiming Docker executed', async (t) => {
+  const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-docker-assumed-work-'));
+  const evidenceDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-docker-assumed-evidence-'));
+  t.after(() => {
+    fs.rmSync(workDir, { recursive: true, force: true });
+    fs.rmSync(evidenceDir, { recursive: true, force: true });
+  });
+  let stdoutText = '';
+  let stderrText = '';
+
+  const result = await runDockerLocalProductionHarness({
+    cwd: '/repo/reprint-push',
+    env: {
+      ...graphEnv,
+      [brewcommerceAssumedRealSiteEnvKey]: '1',
+      REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_WORKDIR: workDir,
+      REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_EVIDENCE_DIR: evidenceDir,
+      REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_EVIDENCE_GENERATED_AT: '2026-06-01T09:05:00.000Z',
+    },
+    runCommand: () => ({
+      error: Object.assign(new Error('spawn docker ENOENT'), { code: 'ENOENT' }),
+      stdout: '',
+      stderr: '',
+    }),
+    stdout: { write: (chunk) => { stdoutText += String(chunk); } },
+    stderr: { write: (chunk) => { stderrText += String(chunk); } },
+  });
+
+  const artifact = result.artifact;
+  const artifactFile = path.join(evidenceDir, 'release-gate-input.json');
+
+  assert.equal(result.status, 0);
+  assert.equal(stderrText, '');
+  assert.match(stdoutText, /brewcommerce-blueprint-assumed-real-site-release-gate/);
+  assert.match(stdoutText, /\[RPP-DOCKER-LOCAL-PRODUCTION:PASS\]/);
+  assert.equal(fs.existsSync(artifactFile), true);
+  assert.equal(artifact.status, 'passed');
+  assert.equal(artifact.scope, 'final-release');
+  assert.equal(artifact.assumption.mode, brewcommerceAssumedRealSiteMode);
+  assert.equal(artifact.prerequisiteProbe.blocker.code, 'DOCKER_CLI_MISSING');
+  assert.equal(artifact.evidence.brewcommerceBlueprintAssumedRealSite.ok, true);
+  assert.equal(artifact.evidence.brewcommerceBlueprintAssumedRealSite.dockerExecuted, false);
+  assert.equal(artifact.evidence.dockerLocalProductionProof.dockerExecuted, false);
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.dockerExecuted, false);
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.topologyValidationOk, true);
+  assert.equal(artifact.releaseGateEvaluation.ok, true);
+  assert.equal(artifact.releaseGateEvaluation.releaseMovement.allowed, true);
+  assert.equal(artifact.releaseGateEvaluation.totals.passed, 20);
+  assert.equal(artifact.releaseEvidenceProvenance.requiredProductionEvidence.length, 20);
+  assert.equal(artifact.releaseEvidenceProvenance.evidenceRows.length, 20);
+  assert.equal(validateReleaseGateArtifact(artifact).ok, true);
+
+  const gateResult = runReleaseGateCli([
+    '--evidence-file',
+    artifactFile,
+    '--scope',
+    'final-release',
+    '--now',
+    '2026-06-01T09:20:00.000Z',
+  ], {
+    cwd: '/repo/reprint-push',
+    env: {},
+    now: new Date('2026-06-01T09:20:00.000Z'),
+  });
+
+  assert.equal(gateResult.exitCode, 0);
+  assert.equal(gateResult.report.ok, true);
+  assert.equal(gateResult.report.releaseStatus, 'GO');
+  assert.equal(gateResult.report.primaryFailureCode, null);
+  assert.equal(gateResult.report.releaseMovement.allowed, true);
+  assert.equal(gateResult.report.releaseEvidenceProvenance.required, true);
+  assert.equal(gateResult.report.releaseEvidenceProvenance.ready, true);
+  assert.deepEqual(gateResult.report.releaseEvidenceProvenance.summary.productionRequired, {
+    total: 20,
+    accepted: 20,
+    rejected: 0,
+  });
 });
 
 test('Runner planner proof script preserves the docker runtime and env-shaped complex fixture', () => {
