@@ -6,18 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:45 CEST +02:00.
+- Last update: 2026-06-01 04:47 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0936 migration docs v2 merge ending at `c8497b351`.
+  the RPP-0937 support escalation guide v2 merge ending at `faf705f6e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 896
-  items checked and leaves 104 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 897
+  items checked and leaves 103 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 36 release-ops items.
+  harness items, 100 merge-invariant items, and 37 release-ops items.
+- Support escalation guide v2: the current lane now checks `RPP-0937` with a
+  support-only escalation guide refresh. The evidence names escalation owners,
+  trigger evidence, stop conditions, and production-backed release movement
+  requirements, while proving support-only observations cannot move final
+  release status.
+  Command:
+  `node --test --test-name-pattern RPP-0937 test/rpp-0937-support-escalation-guide-v2.test.js`.
+  Caveat: support escalation guide evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0937 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  897/103; final release remains `NO-GO` until production-backed escalation,
+  release-gate movement, and closure proof is ready.
 - Migration docs v2: the current lane now checks `RPP-0936` with a
   support-only migration documentation refresh. The evidence links exact audit,
   migration prerequisite, stop-condition, and validation commands to commit
