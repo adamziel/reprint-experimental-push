@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 02:15 CEST +02:00.
+- Last update: 2026-06-01 02:16 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0850 multisite subdomain topology proof merge ending at `51193b467`.
+  the RPP-0853 maintenance mode interaction proof merge ending at `a260d464b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 831
-  items checked and leaves 169 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 832
+  items checked and leaves 168 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 31 production-topology items, 100 generated
+  100 storage/performance items, 32 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Maintenance mode interaction variant-3 URL identity proof: the current lane
+  now checks `RPP-0853` with deterministic maintenance-mode support evidence.
+  The proof captures source, local, and changed role URLs on the accepted path,
+  binds maintenance role states to URL identity hashes, records maintenance
+  file, plugin option, and route health surfaces, rejects tunnel-shaped,
+  credential-shaped, duplicate-role, and packaged fallback inputs before scope
+  acceptance, and keeps rejected evidence hash/count/surface-only.
+  Command:
+  `node --test --test-name-pattern RPP-0853 test/rpp-0853-maintenance-mode-interaction-v3.test.js`.
+  Caveat: local support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0853 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  832/168; final release remains `NO-GO` because this is support evidence, not
+  production-backed WordPress reachability, production credentials, route
+  receipts, durable journal behavior, live maintenance-mode mutation proof,
+  throughput, release approval, or a production release gate.
 - Multisite subdomain topology variant-3 candidate-scope proof: the current
   lane now checks `RPP-0850` with deterministic multisite-subdomain support
   evidence. The proof records source, local-edited, and remote-changed host role
