@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:07 CEST +02:00.
+- Last update: 2026-06-01 06:09 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0972 CI required checks list v4 merge ending at `a189e0090`.
+  the RPP-0973 GitHub Pages progress publish v4 merge ending at `0e71545f9`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 932
-  items checked and leaves 68 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 933
+  items checked and leaves 67 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 72 release-ops items.
+  harness items, 100 merge-invariant items, and 73 release-ops items.
+- GitHub Pages progress publish v4: the current lane now checks `RPP-0973`
+  with support-only focused regression coverage for the public progress publish
+  proof. The evidence carries forward the RPP-0953 v3 progress-publish
+  contract, fails closed when publish proof is missing, stale, mismatched, or
+  incomplete, keeps required release checks nonzero on failed proof, and keeps
+  progress publication support-only.
+  Command:
+  `node --test --test-name-pattern RPP-0973 test/rpp-0973-github-pages-progress-publish-v4.test.js`.
+  Caveat: GitHub Pages progress publish support evidence only; final release
+  remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0973 coverage 7/7,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  933/67; final release remains `NO-GO` until required production-backed
+  publish proof is present and accepted.
 - CI required checks list v4: the current lane now checks `RPP-0972` with
   support-only focused regression coverage for the CI required checks list. The
   evidence carries forward the RPP-0952 v3 CI-required-checks contract, keeps
