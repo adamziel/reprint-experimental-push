@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:13 CEST +02:00.
+- Last update: 2026-06-01 03:15 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0893 maintenance mode interaction proof merge ending at `cb621a3fa`.
+  the RPP-0895 plugin activation hooks topology proof merge ending at `8be01e898`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 856
-  items checked and leaves 144 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 857
+  items checked and leaves 143 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 56 production-topology items, 100 generated
+  100 storage/performance items, 57 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin activation hooks topology variant-5 release-verifier carry-through
+  proof: the current lane now checks `RPP-0895` with deterministic activation
+  hook candidate-scope support evidence. The proof records activation hook
+  surfaces, dependency and side-effect boundaries, direct `active_plugins`
+  refusal linkage, existing guardrail carry-through, release-ready gaps, and
+  final `NO-GO` posture while keeping raw activation hook values out of the
+  evidence artifact.
+  Command:
+  `node --test --test-name-pattern RPP-0895 test/rpp-0895-plugin-activation-hooks-topology-v5.test.js`.
+  Caveat: candidate-scope support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0895 coverage 5/5,
+  scoped artifact redaction scan with five allowed hash-evidence occurrences,
+  and diff whitespace checks. Counts are now 857/143; final release remains
+  `NO-GO` because this is support evidence, not production-backed plugin
+  activation execution, production credentials, route receipts, durable journal
+  behavior, live mutation proof, throughput, release approval, or a production
+  release gate.
 - Maintenance mode interaction variant-5 release-verifier carry-through proof:
   the current lane now checks `RPP-0893` with deterministic maintenance-mode
   URL identity support evidence. The proof captures source, local-edited, and
