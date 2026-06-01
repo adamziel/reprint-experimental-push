@@ -6,30 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 07:13 CEST +02:00.
+- Last update: 2026-06-01 07:15 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0802 Docker WordPress topology v1 merge ending at `c396e2775`.
+  the RPP-0804 BrewCommerce blueprint import v1 merge ending at `e6224cc39`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 961
-  items checked and leaves 39 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 962
+  items checked and leaves 38 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 61 production-topology items, 100 generated
+  100 storage/performance items, 62 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
-- Docker WordPress topology v1: the current lane now checks `RPP-0802` with
-  support-only topology evidence for the Docker WordPress path. The artifact
-  records the exact Docker prerequisite blockers, rejects packaged fallback and
-  non-real release runners, and keeps verify:release movement blocked until a
-  real Docker DNS topology can run without fallback.
+- BrewCommerce blueprint import v1: the current lane now checks `RPP-0804`
+  with support-only topology evidence for the BrewCommerce blueprint import
+  path. The artifact records missing real WordPress import/export capability as
+  `NO-GO`, rejects Playground substitutes and partial survival evidence, and
+  accepts the pass contract only when plugin and graph evidence survive a real
+  WordPress import/export run.
   Command:
-  `node --test --test-name-pattern RPP-0802 test/rpp-0802-docker-wordpress-topology-v1.test.js`.
-  Caveat: Docker topology support evidence only; final release remains
+  `node --test --test-name-pattern RPP-0804 test/rpp-0804-brewcommerce-blueprint-import-v1.test.js`.
+  Caveat: BrewCommerce import/export support evidence only; final release remains
   `NO-GO`.
-  Validation passed with a Node syntax check, focused RPP-0802 coverage 4/4,
+  Validation passed with a Node syntax check, focused RPP-0804 coverage 4/4,
   scoped artifact redaction scan, and diff whitespace checks. Counts are now
-  961/39; final release remains `NO-GO` until required production-backed proof
+  962/38; final release remains `NO-GO` until required production-backed proof
   is present and accepted.
 - Support escalation guide release verifier v5: the current lane now checks
   `RPP-0997` with support-only release-verifier carry-through coverage for the
