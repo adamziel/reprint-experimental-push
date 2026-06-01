@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 970.
-- Remaining open: 30.
+- Verified complete: 971.
+- Remaining open: 29.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -873,7 +873,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0819 (Far / production-topology) Implement sandbox 8080 ingress rule proof, variant 1. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0820 (Far / production-topology) Implement no tunnel policy proof, variant 1. Success: progress report records candidate versus release-ready scope.
 - [x] RPP-0821 (Far / production-topology) Prove three-site local production topology, variant 2. Success: topology command starts the sites or records exact unavailable capability.
-- [ ] RPP-0822 (Far / production-topology) Prove Docker WordPress topology, variant 2. Success: verify:release passes without packaged fallback on the topology.
+- [x] RPP-0822 (Far / production-topology) Prove Docker WordPress topology, variant 2. Success: verify:release passes without packaged fallback on the topology.
 - [x] RPP-0823 (Far / production-topology) Prove external WordPress topology, variant 2. Success: source/local/changed URLs are captured and identity-checked.
 - [x] RPP-0824 (Far / production-topology) Prove BrewCommerce blueprint import, variant 2. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0825 (Far / production-topology) Prove WooCommerce product catalog, variant 2. Success: progress report records candidate versus release-ready scope.

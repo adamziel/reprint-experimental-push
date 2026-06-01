@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 07:46 CEST +02:00.
+- Last update: 2026-06-01 07:47 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0819 sandbox 8080 ingress rule proof v1 merge ending at `ca26621ed`.
+  the RPP-0822 Docker WordPress topology v2 merge ending at `f686bbd26`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 970
-  items checked and leaves 30 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 971
+  items checked and leaves 29 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 70 production-topology items, 100 generated
+  100 storage/performance items, 71 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Docker WordPress topology v2: the current lane now checks `RPP-0822` with
+  support-only Docker topology evidence for the release-verifier contract. The
+  artifact keeps final release `NO-GO`, records the exact unavailable
+  `DOCKER_CLI_MISSING` capability in this sandbox, rejects packaged fallback,
+  widened URL scope, and raw URL evidence, and accepts release eligibility only
+  for `npm run verify:release` on Docker service DNS without packaged fallback.
+  Command:
+  `node --test --test-name-pattern RPP-0822 test/rpp-0822-docker-wordpress-topology-v2.test.js`.
+  Caveat: Docker topology support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0822 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  971/29; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Sandbox 8080 ingress rule proof v1: the current lane now checks `RPP-0819`
   with support-only evidence for the Docker local WordPress topology ingress
   rule. The artifact keeps final release `NO-GO`, records a single loopback
