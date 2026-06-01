@@ -6,18 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:32 CEST +02:00.
+- Last update: 2026-06-01 04:33 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0929 operator runbook v2 merge ending at `10a3db701`.
+  the RPP-0930 failure triage runbook v2 merge ending at `c052f63bd`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 889
-  items checked and leaves 111 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 890
+  items checked and leaves 110 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 29 release-ops items.
+  harness items, 100 merge-invariant items, and 30 release-ops items.
+- Failure triage runbook v2: the current lane now checks `RPP-0930` with a
+  support-only failure triage and go/no-go risk refresh. The evidence names
+  every remaining failure-triage and final-release risk and keeps each open
+  unless production-backed closure proof exists.
+  Command:
+  `node --test --test-name-pattern RPP-0930 test/rpp-0930-failure-triage-runbook-v2.test.js`.
+  Caveat: failure triage support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0930 coverage 6/6,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  890/110; final release remains `NO-GO` until production-backed closure proof
+  resolves the remaining release risks.
 - Operator runbook v2: the current lane now checks `RPP-0929` with a
   support-only operator runbook refresh. The evidence names production
   prerequisites, recovery evidence, stop conditions, and hidden-assumption
