@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 09:01 CEST +02:00.
+- Last update: 2026-06-01 09:03 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0884 BrewCommerce blueprint import v5 merge ending at `1c4fb34b`.
+  the RPP-0887 block theme templates v5 merge ending at `a8d35e30`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 994
-  items checked and leaves 6 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 995
+  items checked and leaves 5 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 94 production-topology items, 100 generated
+  100 storage/performance items, 95 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Block theme templates v5: the current lane now checks `RPP-0887` with
+  support-only release-verifier carry-through evidence. The artifact keeps
+  final release `NO-GO`, records block-theme template, template-part, pattern,
+  style-variation, and `theme.json` scope, rejects tunnels, URL secret parts,
+  non-8080 loopback, packaged fallback, and production-ready ambiguity, and
+  requires production-backed `verify:release` proof before release eligibility.
+  Command:
+  `node --test --test-name-pattern RPP-0887 test/rpp-0887-block-theme-templates-v5.test.js`.
+  Caveat: block theme topology support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0887 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  995/5; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - BrewCommerce blueprint import v5: the current lane now checks `RPP-0884`
   with support-only release-verifier carry-through evidence. The artifact keeps
   final release `NO-GO`, requires same-artifact BrewCommerce import/export,
