@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 08:35 CEST +02:00.
+- Last update: 2026-06-01 08:39 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0864 BrewCommerce blueprint import v4 merge ending at `c77a55704`.
+  the RPP-0862 Docker WordPress topology v4 merge ending at `21df6d4ed`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 985
-  items checked and leaves 15 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 986
+  items checked and leaves 14 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 85 production-topology items, 100 generated
+  100 storage/performance items, 86 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Docker WordPress topology v4: the current lane now checks `RPP-0862` with
+  support-only Docker WordPress topology regression evidence. The artifact
+  keeps final release `NO-GO`, records exact Docker CLI, Compose, and daemon
+  prerequisite blockers, requires Docker DNS release URLs, refuses packaged
+  fallback and widened ingress, and accepts release eligibility only when
+  verify:release passes on the Docker topology without fallback.
+  Command:
+  `node --test --test-name-pattern RPP-0862 test/rpp-0862-docker-wordpress-topology-v4.test.js`.
+  Caveat: Docker topology support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0862 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  986/14; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - BrewCommerce blueprint import v4: the current lane now checks `RPP-0864`
   with support-only BrewCommerce import/export regression evidence. The
   artifact keeps final release `NO-GO`, records exact real WordPress
