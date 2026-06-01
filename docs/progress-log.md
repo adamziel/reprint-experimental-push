@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 07:25 CEST +02:00.
+- Last update: 2026-06-01 07:29 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0812 cron activity during push v1 merge ending at `c1389e331`.
+  the RPP-0814 large media library topology v1 merge ending at `a6b8d110c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 963
-  items checked and leaves 37 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 964
+  items checked and leaves 36 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 63 production-topology items, 100 generated
+  100 storage/performance items, 64 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Large media library topology v1: the current lane now checks `RPP-0814` with
+  support-only topology evidence for large media library import/export scope.
+  The artifact records the exact Docker capability gap as `NO-GO`, keeps the
+  report hash/count/surface-only, and accepts the pass contract only when real
+  WordPress import/export preserves plugin and graph evidence for the large
+  media library path.
+  Command:
+  `node --test --test-name-pattern RPP-0814 test/rpp-0814-large-media-library-topology-v1.test.js`.
+  Caveat: large media topology support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0814 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  964/36; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Cron activity during push v1: the current lane now checks `RPP-0812` with
   support-only topology evidence for cron activity during a push. The artifact
   records missing real Docker WordPress capability as `NO-GO`, rejects claimed

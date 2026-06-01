@@ -865,7 +865,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0811 (Far / production-topology) Implement object cache enabled topology, variant 1. Success: topology command starts the sites or records exact unavailable capability.
 - [x] RPP-0812 (Far / production-topology) Implement cron activity during push, variant 1. Success: verify:release passes without packaged fallback on the topology.
 - [x] RPP-0813 (Far / production-topology) Implement maintenance mode interaction, variant 1. Success: source/local/changed URLs are captured and identity-checked.
-- [ ] RPP-0814 (Far / production-topology) Implement large media library topology, variant 1. Success: plugin and graph evidence survive real WordPress import/export.
+- [x] RPP-0814 (Far / production-topology) Implement large media library topology, variant 1. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0815 (Far / production-topology) Implement plugin activation hooks topology, variant 1. Success: progress report records candidate versus release-ready scope.
 - [x] RPP-0816 (Far / production-topology) Implement plugin update hooks topology, variant 1. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0817 (Far / production-topology) Implement REST route matrix proof, variant 1. Success: verify:release passes without packaged fallback on the topology.
