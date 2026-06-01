@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 02:53 CEST +02:00.
+- Last update: 2026-06-01 02:55 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0878 TLS/HTTPS source proof merge ending at `4c3e6e0ef`.
+  the RPP-0880 no-tunnel policy proof merge ending at `a4a71af55`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 847
-  items checked and leaves 153 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 848
+  items checked and leaves 152 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 47 production-topology items, 100 generated
+  100 storage/performance items, 48 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- No-tunnel policy proof variant-4 candidate-scope proof: the current lane now
+  checks `RPP-0880` with deterministic no-tunnel policy support evidence. The
+  proof records candidate versus release-ready scope, accepts only local
+  sandbox ingress semantics, rejects known tunnel command/domain surfaces
+  without invoking those tools, keeps packaged fallback disabled, and records
+  release movement as blocked until production topology/auth evidence exists.
+  Command:
+  `node --test --test-name-pattern RPP-0880 test/rpp-0880-no-tunnel-policy-proof-v4.test.js`.
+  Caveat: policy support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0880 coverage 5/5,
+  scoped artifact redaction scan with five allowed hash-evidence occurrences,
+  and diff whitespace checks. Counts are now 848/152; final release remains
+  `NO-GO` because this is support evidence, not production-backed WordPress
+  reachability, production credentials, route receipts, durable journal
+  behavior, live mutation proof, throughput, release approval, or a production
+  release gate.
 - TLS/HTTPS source proof variant-4 URL identity proof: the current lane now
   checks `RPP-0878` with deterministic TLS source support evidence. The proof
   captures source, local-edited, and remote-changed HTTPS URL identities,
