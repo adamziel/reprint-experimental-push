@@ -6,18 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 08:39 CEST +02:00.
+- Last update: 2026-06-01 08:41 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0862 Docker WordPress topology v4 merge ending at `21df6d4ed`.
+  the RPP-0867 block theme templates v4 merge ending at `42eab42e1`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 986
-  items checked and leaves 14 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 987
+  items checked and leaves 13 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 86 production-topology items, 100 generated
+  100 storage/performance items, 87 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Block theme templates v4: the current lane now checks `RPP-0867` with
+  support-only block theme template regression evidence. The artifact keeps
+  final release `NO-GO`, records expanded template, template part, custom
+  template post-type, role-scoped file-count, and template-part reference
+  surfaces as hash/count-only proof, rejects tunnels, URL secrets, non-8080
+  loopback, packaged fallback, and production-ready claims, and requires
+  production-backed verify:release evidence before release eligibility.
+  Command:
+  `node --test --test-name-pattern RPP-0867 test/rpp-0867-block-theme-templates-v4.test.js`.
+  Caveat: block theme template support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0867 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  987/13; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Docker WordPress topology v4: the current lane now checks `RPP-0862` with
   support-only Docker WordPress topology regression evidence. The artifact
   keeps final release `NO-GO`, records exact Docker CLI, Compose, and daemon
