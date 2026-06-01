@@ -236,3 +236,39 @@ proof gates:
 Until these gates exist, public documentation should keep the claim scoped to:
 **lab evidence for push safety invariants, not production-safe live WordPress
 push.**
+
+## RPP-0905 Final Go/No-Go Record
+
+Date: 2026-06-01
+Variant: 1
+Evidence file: `docs/evidence/rpp-0905-objective-audit-update.md`
+
+Final release verdict: **NO-GO**.
+
+No production-backed evidence was added in this audit update. The objective
+therefore remains blocked for final release. This record closes no risks; it
+names every remaining objective risk and the production proof required to close
+each one.
+
+| Risk ID | Requirement | Disposition | Remaining risk named or closure condition |
+| --- | --- | --- | --- |
+| RPP-0905-RISK-01 | R1 | Open | Pull-base manifest completeness remains unproven until a production Reprint manifest covers stable identities, hashes, ownership, schema fingerprints, and protocol metadata for all in-scope WordPress data shapes. |
+| RPP-0905-RISK-02 | R2 | Open | Live remote read and three-way planning remain unproven until production dry-run reads the current source state and compares base, local, and remote through production Reprint internals. |
+| RPP-0905-RISK-03 | R3 | Open | Remote-only preservation remains unproven until production fixtures prove deletes, files, rows, plugin state, and related resources are preserved by default. |
+| RPP-0905-RISK-04 | R4 | Open | Conflict stop evidence remains unproven until production conflict artifacts are durable, redacted, and operator-inspectable. |
+| RPP-0905-RISK-05 | R5 | Open | Immediate precondition enforcement remains unproven until every production mutation rechecks live state immediately before writing. |
+| RPP-0905-RISK-06 | R6 | Open | Storage-boundary guarded writes remain unproven until production DB and filesystem mutations have CAS or equivalent guards for updates, creates, deletes, plugin files, and schema-sensitive changes. |
+| RPP-0905-RISK-07 | R7 | Open | Atomic group behavior remains unproven until production file, DB, plugin, option, activation, and schema changes have atomic visibility or fail closed with recovery evidence. |
+| RPP-0905-RISK-08 | R8 | Open | Plugin-owned and schema-sensitive data remain unproven until explicit production validators or semantic drivers cover serialized data, custom tables, plugin ownership, and schema changes. |
+| RPP-0905-RISK-09 | R9 | Open | Production auth, permission, replay, and TLS binding remain unproven until source-site mutation uses production credentials and scoped push permissions with replay protection. |
+| RPP-0905-RISK-10 | R10 | Open | Honest dry-run behavior remains unproven until production apply refuses stale state across chunks and individual writes after dry-run. |
+| RPP-0905-RISK-11 | R11 | Open | Durable production recovery remains unproven until a production journal classifies old, updated, and blocked states after kill-at-every-boundary tests. |
+| RPP-0905-RISK-12 | R12 | Open | Idempotent resumability remains unproven until duplicate requests, chunks, process failures, stale claims, and operator retries are proven against production storage. |
+| RPP-0905-RISK-13 | R13 | Open | Real WordPress data shape coverage remains unproven until production-backed fixtures cover posts, metadata, attachments, terms, users, options, uploads, plugin tables, plugin activation, schemas, and multisite if in scope. |
+| RPP-0905-RISK-14 | R14 | Open | Redaction remains unproven for release until all production plans, journals, conflict reports, recovery reports, auth artifacts, and benchmark artifacts follow a formal allowlist schema. |
+| RPP-0905-RISK-15 | R15 | Open | Speed remains unproven until large-site benchmarks move real data with safety guards enabled and record throughput, memory, retry, and recovery measurements. |
+| RPP-0905-RISK-16 | R16 | Open | Release-suite enforcement remains unproven until safety, recovery, auth, storage, plugin, and performance gates run in an enforced release suite or are explicitly quarantined as non-release proof. |
+
+RPP-0905 integration recommendation: **NO-GO** for release movement. Treat this
+as audit evidence only; do not alter release gates, progress records, or
+completion checklists from this slice.
