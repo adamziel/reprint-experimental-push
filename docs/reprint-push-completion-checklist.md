@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 873.
-- Remaining open: 127.
+- Verified complete: 874.
+- Remaining open: 126.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -970,7 +970,7 @@ Focus: turn proven behavior into release discipline and operations.
 - [x] RPP-0911 (Farthest / release-ops) Implement rollback/repair runbook, variant 1. Success: audit file links exact commands and commits.
 - [x] RPP-0912 (Farthest / release-ops) Implement CI required checks list, variant 1. Success: release gate status moves only with production-backed evidence.
 - [x] RPP-0913 (Farthest / release-ops) Implement GitHub Pages progress publish, variant 1. Success: CI blocks release when a required proof fails.
-- [ ] RPP-0914 (Farthest / release-ops) Implement release artifact package, variant 1. Success: operator docs explain safe recovery without hidden assumptions.
+- [x] RPP-0914 (Farthest / release-ops) Implement release artifact package, variant 1. Success: operator docs explain safe recovery without hidden assumptions.
 - [ ] RPP-0915 (Farthest / release-ops) Implement versioned protocol docs, variant 1. Success: final go/no-go record names every remaining risk or closes it.
 - [ ] RPP-0916 (Farthest / release-ops) Implement migration docs, variant 1. Success: audit file links exact commands and commits.
 - [ ] RPP-0917 (Farthest / release-ops) Implement support escalation guide, variant 1. Success: release gate status moves only with production-backed evidence.
