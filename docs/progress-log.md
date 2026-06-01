@@ -6,18 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:53 CEST +02:00.
+- Last update: 2026-06-01 03:54 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0908 privacy/redaction review merge ending at `13ae56163`.
+  the RPP-0909 operator runbook merge ending at `2192d04d1`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 868
-  items checked and leaves 132 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 869
+  items checked and leaves 131 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 8 release-ops items.
+  harness items, 100 merge-invariant items, and 9 release-ops items.
+- Operator runbook: the current lane now checks `RPP-0909` with a support-only
+  production operation runbook. The runbook requires production prerequisites
+  before mutation, records evidence capture and stop conditions, and blocks
+  hidden recovery assumptions while keeping final release `NO-GO`.
+  Command:
+  `node --test --test-name-pattern RPP-0909 test/rpp-0909-operator-runbook.test.js`.
+  Caveat: operator support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0909 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  869/131; final release remains `NO-GO` because production prerequisites and
+  closure evidence are still absent.
 - Privacy/redaction review: the current lane now checks `RPP-0908` with a
   hash/count/surface-only privacy and redaction review. The evidence proves the
   artifact redaction proof remains a required blocking check and that failed,
