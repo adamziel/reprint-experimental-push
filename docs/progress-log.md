@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 08:47 CEST +02:00.
+- Last update: 2026-06-01 08:50 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0872 cron activity during push v4 merge ending at `29e3b5690`.
+  the RPP-0874 large media library topology v4 merge ending at `04f8061a4`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 989
-  items checked and leaves 11 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 990
+  items checked and leaves 10 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 89 production-topology items, 100 generated
+  100 storage/performance items, 90 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Large media library topology v4: the current lane now checks `RPP-0874`
+  with support-only large media import/export survival regression evidence. The
+  artifact keeps final release `NO-GO`, requires same-artifact large media,
+  plugin, graph, and topology survival proof, rejects playground, partial, and
+  split survival substitutes, and accepts release eligibility only when
+  production-backed real WordPress import/export evidence is supplied.
+  Command:
+  `node --test --test-name-pattern RPP-0874 test/rpp-0874-large-media-library-topology-v4.test.js`.
+  Caveat: large media library support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0874 coverage 6/6,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  990/10; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Cron activity during push v4: the current lane now checks `RPP-0872` with
   support-only cron-active topology regression evidence. The artifact keeps
   final release `NO-GO`, carries variant-4 production-topology patterns forward,
