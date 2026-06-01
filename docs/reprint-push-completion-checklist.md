@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 935.
-- Remaining open: 65.
+- Verified complete: 936.
+- Remaining open: 64.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -1032,7 +1032,7 @@ Focus: turn proven behavior into release discipline and operations.
 - [x] RPP-0973 (Farthest / release-ops) Add focused regression coverage for GitHub Pages progress publish, variant 4. Success: CI blocks release when a required proof fails.
 - [x] RPP-0974 (Farthest / release-ops) Add focused regression coverage for release artifact package, variant 4. Success: operator docs explain safe recovery without hidden assumptions.
 - [x] RPP-0975 (Farthest / release-ops) Add focused regression coverage for versioned protocol docs, variant 4. Success: final go/no-go record names every remaining risk or closes it.
-- [ ] RPP-0976 (Farthest / release-ops) Add focused regression coverage for migration docs, variant 4. Success: audit file links exact commands and commits.
+- [x] RPP-0976 (Farthest / release-ops) Add focused regression coverage for migration docs, variant 4. Success: audit file links exact commands and commits.
 - [ ] RPP-0977 (Farthest / release-ops) Add focused regression coverage for support escalation guide, variant 4. Success: release gate status moves only with production-backed evidence.
 - [ ] RPP-0978 (Farthest / release-ops) Add focused regression coverage for telemetry-free audit mode, variant 4. Success: CI blocks release when a required proof fails.
 - [ ] RPP-0979 (Farthest / release-ops) Add focused regression coverage for post-release monitoring plan, variant 4. Success: operator docs explain safe recovery without hidden assumptions.
