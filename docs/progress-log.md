@@ -6,18 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:00 CEST +02:00.
+- Last update: 2026-06-01 04:02 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0912 CI required checks list merge ending at `55a61342e`.
+  the RPP-0913 GitHub Pages progress publish merge ending at `b045215d3`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 872
-  items checked and leaves 128 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 873
+  items checked and leaves 127 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 12 release-ops items.
+  harness items, 100 merge-invariant items, and 13 release-ops items.
+- GitHub Pages progress publish proof: the current lane now checks `RPP-0913`
+  with a support-only publish proof. The evidence keeps
+  `github-pages-progress-publish-proof` as a blocking required proof and proves
+  missing, failed, stale, command-mismatched, or incomplete publish
+  observations hold release readiness.
+  Command:
+  `node --test --test-name-pattern RPP-0913 test/rpp-0913-github-pages-progress-publish.test.js`.
+  Caveat: publish support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0913 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  873/127; final release remains `NO-GO` because required production-backed
+  publish and release observations are still absent.
 - CI required checks list: the current lane now checks `RPP-0912` with a
   support-only required checks list. The evidence records every blocking CI
   check, proves release-gate status can move only with production-backed
