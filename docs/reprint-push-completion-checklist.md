@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 894.
-- Remaining open: 106.
+- Verified complete: 895.
+- Remaining open: 105.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -991,7 +991,7 @@ Focus: turn proven behavior into release discipline and operations.
 - [x] RPP-0932 (Farthest / release-ops) Prove CI required checks list, variant 2. Success: release gate status moves only with production-backed evidence.
 - [x] RPP-0933 (Farthest / release-ops) Prove GitHub Pages progress publish, variant 2. Success: CI blocks release when a required proof fails.
 - [x] RPP-0934 (Farthest / release-ops) Prove release artifact package, variant 2. Success: operator docs explain safe recovery without hidden assumptions.
-- [ ] RPP-0935 (Farthest / release-ops) Prove versioned protocol docs, variant 2. Success: final go/no-go record names every remaining risk or closes it.
+- [x] RPP-0935 (Farthest / release-ops) Prove versioned protocol docs, variant 2. Success: final go/no-go record names every remaining risk or closes it.
 - [ ] RPP-0936 (Farthest / release-ops) Prove migration docs, variant 2. Success: audit file links exact commands and commits.
 - [ ] RPP-0937 (Farthest / release-ops) Prove support escalation guide, variant 2. Success: release gate status moves only with production-backed evidence.
 - [ ] RPP-0938 (Farthest / release-ops) Prove telemetry-free audit mode, variant 2. Success: CI blocks release when a required proof fails.

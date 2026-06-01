@@ -6,18 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:40 CEST +02:00.
+- Last update: 2026-06-01 04:42 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0934 release artifact package v2 merge ending at `997f48bf9`.
+  the RPP-0935 versioned protocol docs v2 merge ending at `9d34c9df2`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 894
-  items checked and leaves 106 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 895
+  items checked and leaves 105 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 34 release-ops items.
+  harness items, 100 merge-invariant items, and 35 release-ops items.
+- Versioned protocol docs v2: the current lane now checks `RPP-0935` with a
+  support-only protocol documentation refresh. The evidence carries the
+  `RPP-0915` version contract forward, names protocol, compatibility,
+  migration, and final-release risks, and keeps every named risk open without
+  production-backed closure proof.
+  Command:
+  `node --test --test-name-pattern RPP-0935 test/rpp-0935-versioned-protocol-docs-v2.test.js`.
+  Caveat: versioned protocol docs support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0935 coverage 7/7,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  895/105; final release remains `NO-GO` until production-backed protocol,
+  compatibility, and migration closure proof is ready.
 - Release artifact package v2: the current lane now checks `RPP-0934` with a
   support-only release package contract refresh. The evidence names packaged
   artifacts, operator recovery prerequisites, safe recovery evidence, stop
