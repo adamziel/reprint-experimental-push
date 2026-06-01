@@ -6,33 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 07:10 CEST +02:00.
+- Last update: 2026-06-01 07:13 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-1000 go/no-go release decision record release verifier v5 merge
-  ending at `03cba1b71`.
+  the RPP-0802 Docker WordPress topology v1 merge ending at `c396e2775`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 960
-  items checked and leaves 40 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 961
+  items checked and leaves 39 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 60 production-topology items, 100 generated
+  100 storage/performance items, 61 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
-- Go/no-go release decision record release verifier v5: the current lane now
-  checks `RPP-1000` with support-only release-verifier carry-through coverage
-  for the final go/no-go decision record. The evidence carries forward the
-  RPP-0980 v4 decision-record contract, names every remaining final-release
-  risk, closes none without production-backed closure proof, keeps the
-  release-gate status unchanged, and holds final release at `NO-GO`.
+- Docker WordPress topology v1: the current lane now checks `RPP-0802` with
+  support-only topology evidence for the Docker WordPress path. The artifact
+  records the exact Docker prerequisite blockers, rejects packaged fallback and
+  non-real release runners, and keeps verify:release movement blocked until a
+  real Docker DNS topology can run without fallback.
   Command:
-  `node --test --test-name-pattern RPP-1000 test/rpp-1000-go-no-go-release-decision-record-release-verifier-v5.test.js`.
-  Caveat: go/no-go verifier support evidence only; final release remains
+  `node --test --test-name-pattern RPP-0802 test/rpp-0802-docker-wordpress-topology-v1.test.js`.
+  Caveat: Docker topology support evidence only; final release remains
   `NO-GO`.
-  Validation passed with a Node syntax check, focused RPP-1000 coverage 4/4,
-  scoped artifact redaction scan, diff whitespace checks, and the RPP-0981
-  through RPP-1000 release-ops verifier-v5 batch at 134/134. Counts are now
-  960/40; final release remains `NO-GO` until required production-backed proof
+  Validation passed with a Node syntax check, focused RPP-0802 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  961/39; final release remains `NO-GO` until required production-backed proof
   is present and accepted.
 - Support escalation guide release verifier v5: the current lane now checks
   `RPP-0997` with support-only release-verifier carry-through coverage for the
