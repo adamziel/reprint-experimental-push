@@ -6,18 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:50 CEST +02:00.
+- Last update: 2026-06-01 04:52 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0939 post-release monitoring plan v2 merge ending at `a4482bd9d`.
+  the RPP-0940 go/no-go release decision record v2 merge ending at `95de26357`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 899
-  items checked and leaves 101 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 900
+  items checked and leaves 100 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 39 release-ops items.
+  harness items, 100 merge-invariant items, and 40 release-ops items.
+- Go/no-go release decision record v2: the current lane now checks `RPP-0940`
+  with a support-only final decision record refresh. The evidence names every
+  remaining final-release risk, closes no risk without production-backed proof,
+  and authorizes no release-gate status movement from support-only evidence.
+  Command:
+  `node --test --test-name-pattern RPP-0940 test/rpp-0940-go-no-go-release-decision-record-v2.test.js`.
+  Caveat: go/no-go decision support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0940 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  900/100; final release remains `NO-GO` until every named remaining risk has
+  production-backed closure proof.
 - Post-release monitoring plan v2: the current lane now checks `RPP-0939` with
   a support-only monitoring plan refresh. The evidence names operator recovery
   prerequisites, safe recovery evidence, stop conditions, rollback and
