@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 05:33 CEST +02:00.
+- Last update: 2026-06-01 05:35 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0954 release artifact package v3 merge ending at `13fc11fca`.
+  the RPP-0955 versioned protocol docs v3 merge ending at `0977a32e2`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
   goals, but it is no longer a static all-unchecked inventory. It now marks 915
-  items checked and leaves 84 open.
+  items checked and leaves 83 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 56 release-ops items.
+  harness items, 100 merge-invariant items, and 57 release-ops items.
+- Versioned protocol docs v3: the current lane now checks `RPP-0955` with
+  support-only generated coverage for versioned protocol documentation. The
+  evidence records the audited lane head, keeps the RPP-0935 version contract,
+  names every protocol, compatibility, migration, and final-release risk, keeps
+  each risk open without production-backed closure proof, and records no
+  release-gate status movement.
+  Command:
+  `node --test --test-name-pattern RPP-0955 test/rpp-0955-versioned-protocol-docs-v3.test.js`.
+  Caveat: protocol documentation support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0955 coverage 7/7,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  917/83; final release remains `NO-GO` until required production-backed
+  protocol closure proof is present and accepted.
 - Release artifact package v3: the current lane now checks `RPP-0954` with
   support-only generated coverage for the held release artifact package. The
   evidence names the package contents, inherits the RPP-0934 recovery
