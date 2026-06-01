@@ -947,7 +947,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0893 (Far / production-topology) Carry through the release verifier for maintenance mode interaction, variant 5. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0894 (Far / production-topology) Carry through the release verifier for large media library topology, variant 5. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0895 (Far / production-topology) Carry through the release verifier for plugin activation hooks topology, variant 5. Success: progress report records candidate versus release-ready scope.
-- [ ] RPP-0896 (Far / production-topology) Carry through the release verifier for plugin update hooks topology, variant 5. Success: topology command starts the sites or records exact unavailable capability.
+- [x] RPP-0896 (Far / production-topology) Carry through the release verifier for plugin update hooks topology, variant 5. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0897 (Far / production-topology) Carry through the release verifier for REST route matrix proof, variant 5. Success: verify:release passes without packaged fallback on the topology.
 - [ ] RPP-0898 (Far / production-topology) Carry through the release verifier for TLS/HTTPS source proof, variant 5. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0899 (Far / production-topology) Carry through the release verifier for sandbox 8080 ingress rule proof, variant 5. Success: plugin and graph evidence survive real WordPress import/export.

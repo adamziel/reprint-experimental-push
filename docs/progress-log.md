@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:15 CEST +02:00.
+- Last update: 2026-06-01 03:19 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0895 plugin activation hooks topology proof merge ending at `8be01e898`.
+  the RPP-0896 plugin update hooks topology proof merge ending at `29ce466e1`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 857
-  items checked and leaves 143 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 858
+  items checked and leaves 142 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 57 production-topology items, 100 generated
+  100 storage/performance items, 58 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin update hooks topology variant-5 release-verifier carry-through proof:
+  the current lane now checks `RPP-0896` with deterministic plugin-update
+  topology support evidence. The proof records update-hook topology
+  requirements, release-verifier carry-through, packaged fallback refusal,
+  sandbox-only ingress policy, final `NO-GO` release posture, and exact blocker
+  `DOCKER_CLI_MISSING` when Docker cannot start the topology.
+  Commands:
+  `node --test --test-name-pattern RPP-0896 test/rpp-0896-plugin-update-hooks-topology-v5.test.js`
+  and `npm run verify:release:docker-local-production`.
+  Caveat: unavailable-capability support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0896
+  coverage 8/8, Docker topology command exit 2 with `DOCKER_CLI_MISSING`,
+  scoped artifact redaction scan with two allowed hash-evidence occurrences,
+  and diff whitespace checks. Counts are now 858/142; final release remains
+  `NO-GO` because this is support evidence, not production-backed plugin update
+  execution, production credentials, route receipts, durable journal behavior,
+  live mutation proof, throughput, release approval, or a production release
+  gate.
 - Plugin activation hooks topology variant-5 release-verifier carry-through
   proof: the current lane now checks `RPP-0895` with deterministic activation
   hook candidate-scope support evidence. The proof records activation hook
