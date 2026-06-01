@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 08:04 CEST +02:00.
+- Last update: 2026-06-01 08:07 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0842 Docker WordPress topology v3 merge ending at `79501e709`.
+  the RPP-0832 cron activity during push v2 merge ending at `2ade2d2e8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 973
-  items checked and leaves 27 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 974
+  items checked and leaves 26 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 73 production-topology items, 100 generated
+  100 storage/performance items, 74 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Cron activity during push v2: the current lane now checks `RPP-0832` with
+  support-only evidence for cron activity during a production-shaped push. The
+  artifact keeps final release `NO-GO`, records the exact unavailable Docker
+  topology capability, rejects packaged fallback, ambiguous blockers, widened
+  URL scope, and raw URL evidence, and accepts release eligibility only for
+  `npm run verify:release` on the topology without packaged fallback.
+  Command:
+  `node --test --test-name-pattern RPP-0832 test/rpp-0832-cron-activity-during-push-v2.test.js`.
+  Caveat: cron activity topology support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0832 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  974/26; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Docker WordPress topology v3: the current lane now checks `RPP-0842` with
   support-only generated coverage for the Docker WordPress topology contract.
   The artifact keeps final release `NO-GO`, records the exact unavailable
