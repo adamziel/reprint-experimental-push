@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:17 CEST +02:00.
+- Last update: 2026-06-01 06:19 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0976 migration docs v4 merge ending at `708885305`.
+  the RPP-0977 support escalation guide v4 merge ending at `df5993b39`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 936
-  items checked and leaves 64 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 937
+  items checked and leaves 63 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 76 release-ops items.
+  harness items, 100 merge-invariant items, and 77 release-ops items.
+- Support escalation guide v4: the current lane now checks `RPP-0977` with
+  support-only focused regression coverage for the support escalation guide.
+  The evidence carries forward the RPP-0957 v3 escalation contract, names
+  owners, prerequisites, stop conditions, and escalation triggers, requires
+  production proof for release movement, and keeps release-gate status
+  production-backed-evidence gated.
+  Command:
+  `node --test --test-name-pattern RPP-0977 test/rpp-0977-support-escalation-guide-v4.test.js`.
+  Caveat: support escalation guide evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0977 coverage 6/6,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  937/63; final release remains `NO-GO` until required production-backed
+  escalation proof is present and accepted.
 - Migration docs v4: the current lane now checks `RPP-0976` with support-only
   focused regression coverage for migration docs. The evidence keeps migration
   proof gaps open, links exact audit and validation commands to existing commit
