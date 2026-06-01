@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 863.
-- Remaining open: 137.
+- Verified complete: 864.
+- Remaining open: 136.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -959,7 +959,7 @@ Focus: turn proven behavior into release discipline and operations.
 
 - [x] RPP-0901 (Farthest / release-ops) Implement release gate 1 final audit, variant 1. Success: audit file links exact commands and commits.
 - [x] RPP-0902 (Farthest / release-ops) Implement release gate 2 final audit, variant 1. Success: release gate status moves only with production-backed evidence.
-- [ ] RPP-0903 (Farthest / release-ops) Implement release gate 3 final audit, variant 1. Success: CI blocks release when a required proof fails.
+- [x] RPP-0903 (Farthest / release-ops) Implement release gate 3 final audit, variant 1. Success: CI blocks release when a required proof fails.
 - [x] RPP-0904 (Farthest / release-ops) Implement release gate 4 final audit, variant 1. Success: operator docs explain safe recovery without hidden assumptions.
 - [ ] RPP-0905 (Farthest / release-ops) Implement objective audit update, variant 1. Success: final go/no-go record names every remaining risk or closes it.
 - [ ] RPP-0906 (Farthest / release-ops) Implement critic audit update, variant 1. Success: audit file links exact commands and commits.
