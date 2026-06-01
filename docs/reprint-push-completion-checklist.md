@@ -900,7 +900,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0846 (Far / production-topology) Add generated coverage for WooCommerce order safety refusal, variant 3. Success: topology command starts the sites or records exact unavailable capability.
 - [x] RPP-0847 (Far / production-topology) Add generated coverage for block theme templates, variant 3. Success: verify:release passes without packaged fallback on the topology.
 - [x] RPP-0848 (Far / production-topology) Add generated coverage for classic theme files, variant 3. Success: source/local/changed URLs are captured and identity-checked.
-- [ ] RPP-0849 (Far / production-topology) Add generated coverage for multisite subdirectory topology, variant 3. Success: plugin and graph evidence survive real WordPress import/export.
+- [x] RPP-0849 (Far / production-topology) Add generated coverage for multisite subdirectory topology, variant 3. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0850 (Far / production-topology) Add generated coverage for multisite subdomain topology, variant 3. Success: progress report records candidate versus release-ready scope.
 - [x] RPP-0851 (Far / production-topology) Add generated coverage for object cache enabled topology, variant 3. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0852 (Far / production-topology) Add generated coverage for cron activity during push, variant 3. Success: verify:release passes without packaged fallback on the topology.
