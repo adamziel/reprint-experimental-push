@@ -6,18 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 08:55 CEST +02:00.
+- Last update: 2026-06-01 08:57 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0877 REST route matrix proof v4 merge ending at `ad1eabc89`.
+  the RPP-0882 Docker WordPress topology v5 merge ending at `5e109d7c6`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 992
-  items checked and leaves 8 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 993
+  items checked and leaves 7 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 92 production-topology items, 100 generated
+  100 storage/performance items, 93 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Docker WordPress topology v5: the current lane now checks `RPP-0882` with
+  support-only release-verifier carry-through evidence. The artifact keeps
+  final release `NO-GO`, carries the RPP-0862 Docker topology contract forward,
+  records prerequisite blocker fail-closed behavior, rejects fallback, non-DNS
+  release URLs, widened ingress, and release-verifier carry-through gaps, and
+  requires passed `verify:release` without packaged fallback before release
+  eligibility.
+  Command:
+  `node --test --test-name-pattern RPP-0882 test/rpp-0882-docker-wordpress-topology-v5.test.js`.
+  Caveat: Docker topology support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0882 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  993/7; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - REST route matrix proof v4: the current lane now checks `RPP-0877` with
   support-only REST route matrix regression evidence. The artifact keeps final
   release `NO-GO`, records the exact unavailable topology capability, preserves
