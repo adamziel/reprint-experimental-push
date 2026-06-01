@@ -858,7 +858,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0804 (Far / production-topology) Implement BrewCommerce blueprint import, variant 1. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0805 (Far / production-topology) Implement WooCommerce product catalog, variant 1. Success: progress report records candidate versus release-ready scope.
 - [x] RPP-0806 (Far / production-topology) Implement WooCommerce order safety refusal, variant 1. Success: topology command starts the sites or records exact unavailable capability.
-- [ ] RPP-0807 (Far / production-topology) Implement block theme templates, variant 1. Success: verify:release passes without packaged fallback on the topology.
+- [x] RPP-0807 (Far / production-topology) Implement block theme templates, variant 1. Success: verify:release passes without packaged fallback on the topology.
 - [x] RPP-0808 (Far / production-topology) Implement classic theme files, variant 1. Success: source/local/changed URLs are captured and identity-checked.
 - [x] RPP-0809 (Far / production-topology) Implement multisite subdirectory topology, variant 1. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0810 (Far / production-topology) Implement multisite subdomain topology, variant 1. Success: progress report records candidate versus release-ready scope.

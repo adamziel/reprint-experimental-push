@@ -6,18 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 07:31 CEST +02:00.
+- Last update: 2026-06-01 07:32 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0817 REST route matrix proof v1 merge ending at `2a00a654c`.
+  the RPP-0807 block theme templates v1 merge ending at `7fb6286e1`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 966
-  items checked and leaves 34 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 967
+  items checked and leaves 33 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 66 production-topology items, 100 generated
+  100 storage/performance items, 67 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Block theme templates v1: the current lane now checks `RPP-0807` with
+  support-only block-theme template topology evidence. The artifact captures
+  source/local/changed URL identity scope, rejects tunnel and secret-shaped
+  topology URLs, proves block theme template/part/style surfaces through
+  deterministic hash-only evidence, and keeps final release `NO-GO` without live
+  production topology proof.
+  Command:
+  `node --test --test-name-pattern RPP-0807 test/rpp-0807-block-theme-templates-v1.test.js`.
+  Caveat: block-theme template topology support evidence only; final release
+  remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0807 coverage 4/4,
+  scoped artifact redaction scan, diff whitespace checks, and the recent
+  production-topology batch gate 29/29. Counts are now 967/33; final release
+  remains `NO-GO` until required production-backed proof is present and
+  accepted.
 - REST route matrix proof v1: the current lane now checks `RPP-0817` with
   support-only topology evidence for the REST route matrix proof. The artifact
   records the exact Docker topology capability gap as `NO-GO`, rejects packaged
