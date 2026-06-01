@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 05:07 CEST +02:00.
+- Last update: 2026-06-01 05:09 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0947 security review checklist v3 merge ending at `932084383`.
+  the RPP-0948 privacy/redaction review v3 merge ending at `167d9ff5d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 907
-  items checked and leaves 93 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 908
+  items checked and leaves 92 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 47 release-ops items.
+  harness items, 100 merge-invariant items, and 48 release-ops items.
+- Privacy/redaction review v3: the current lane now checks `RPP-0948` with
+  support-only generated coverage for redaction proof failure handling. The
+  evidence proves scanner failures become blocking required proof failures,
+  required release checks exit nonzero for redaction failure reasons,
+  hash/count-only evidence remains allowed, and support-only observations cannot
+  move final release readiness.
+  Command:
+  `node --test --test-name-pattern RPP-0948 test/rpp-0948-privacy-redaction-review-v3.test.js`.
+  Caveat: privacy/redaction review support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0948 coverage 5/5,
+  scoped artifact redaction scan with 5 allowed hash-evidence findings, and diff
+  whitespace checks. Counts are now 908/92; final release remains `NO-GO` until
+  required production-backed proof is redaction-safe and accepted.
 - Security review checklist v3: the current lane now checks `RPP-0947` with
   support-only generated coverage for release security review. The evidence
   proves checklist items require production-backed evidence before any
