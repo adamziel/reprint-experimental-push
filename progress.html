@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>861</strong>
+        <strong>862</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>139</strong>
+        <strong>138</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -360,7 +360,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Release operations checked">
-            <span><strong>Release operations</strong>RPP-0904 adds support-only operator safe-recovery documentation and audit evidence for old-remote, fully-updated-remote, and blocked-recovery states. It requires journal ownership, restart-readable records, current hashes, idempotency replay, and redaction evidence before retry or finalization, and it keeps final release NO-GO with no release-gate movement.</span>
+            <span><strong>Release operations</strong>RPP-0901 records the release gate 1 final audit with exact commands, commits, fail-closed evaluator output, and canonical verifier output, while RPP-0904 adds support-only operator safe-recovery documentation for old-remote, fully-updated-remote, and blocked-recovery states. Both keep final release NO-GO with no release-gate movement.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Reporting guardrails checked">
@@ -410,17 +410,17 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0904</span>
+        <span>RPP-0901</span>
       </div>
-      <p>The latest refresh checks RPP-0904 with support-only operator safe-recovery documentation and audit evidence. The runbook names the acceptable failed-apply states, requires journal ownership, restart-readable records, current hashes, idempotency replay, and redaction evidence before retry or finalization, and blocks hidden assumptions, manual remote patching, artifact deletion, automated retry for blocked recovery, and release-gate movement. Counts are now 861/139; final release remains NO-GO because this is not production-backed durable recovery, production rollback, production repair, live topology, credentials, route receipts, throughput, release approval, or a production release gate.</p>
+      <p>The latest refresh checks RPP-0901 with a release gate 1 final audit that links exact support commits, current lane head, release-gate status-row command, final-release gate evaluator, canonical verify:release command, focused test command, redaction scan, and diff whitespace check. The evaluator and canonical verifier both fail closed with REPRINT_PUSH_LIVE_SOURCE_REQUIRED and mutationAttempted=false. Counts are now 862/138; final release remains NO-GO because this is not production-backed source/auth proof, production credentials, route receipts, durable journal behavior, live mutation proof, throughput, release approval, or a production release gate.</p>
       <div class="tag-row" aria-label="Latest validation">
-        <span class="tag">RPP-0904 focused: 5/5</span>
-        <span class="tag">operator recovery docs</span>
+        <span class="tag">RPP-0901 focused: 4/4</span>
+        <span class="tag">release gate 1 audit</span>
         <span class="tag">variant 1</span>
-        <span class="tag">support-only audit</span>
+        <span class="tag">fail-closed evaluator</span>
+        <span class="tag">verify:release held</span>
+        <span class="tag">mutationAttempted=false</span>
         <span class="tag">NO-GO retained</span>
-        <span class="tag">no release-gate movement</span>
-        <span class="tag">safe recovery states</span>
         <span class="tag">redaction clean</span>
         <span class="tag">diff clean</span>
         <span class="tag">support-only NO-GO</span>
