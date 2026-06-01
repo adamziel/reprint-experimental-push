@@ -307,7 +307,8 @@ The release entrypoint has two exact checked outcomes:
 - when the live source is missing, it fails with
   `REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply.`
 - when the real push secret is missing, it fails with
-  `REPRINT_PUSH_SECRET_REQUIRED: production push credentials are missing; provide REPRINT_PUSH_SIGNING_SECRET or REPRINT_PUSH_APPLICATION_PASSWORD before running preflight, dry-run, or apply.`
+  `REPRINT_PUSH_SECRET_REQUIRED` and reports that production push credentials
+  are missing before preflight, dry-run, or apply can run.
 
 When a live source URL and production-shaped credentials are present, that
 same wrapper switches to `npm run test:playground:production-shaped-live-preflight`
