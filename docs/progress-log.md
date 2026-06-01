@@ -6,18 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 08:50 CEST +02:00.
+- Last update: 2026-06-01 08:52 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0874 large media library topology v4 merge ending at `04f8061a4`.
+  the RPP-0879 sandbox 8080 ingress rule proof v4 merge ending at `320b409a5`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 990
-  items checked and leaves 10 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 991
+  items checked and leaves 9 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 90 production-topology items, 100 generated
+  100 storage/performance items, 91 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Sandbox 8080 ingress rule proof v4: the current lane now checks `RPP-0879`
+  with support-only sandbox ingress regression evidence. The artifact keeps
+  final release `NO-GO`, carries variant-4 production-topology and no-tunnel
+  patterns forward, verifies fail-closed 8080-only ingress policy, rejects
+  public, non-8080, and multiple HTTP ingress surfaces, and accepts release
+  eligibility only when production-backed import/export survival proof is
+  supplied under the sandbox ingress rule.
+  Command:
+  `node --test --test-name-pattern RPP-0879 test/rpp-0879-sandbox-8080-ingress-rule-proof-v4.test.js`.
+  Caveat: sandbox ingress support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0879 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  991/9; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Large media library topology v4: the current lane now checks `RPP-0874`
   with support-only large media import/export survival regression evidence. The
   artifact keeps final release `NO-GO`, requires same-artifact large media,
