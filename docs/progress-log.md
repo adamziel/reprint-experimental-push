@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 08:10 CEST +02:00.
+- Last update: 2026-06-01 08:12 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0834 large media library topology v2 merge ending at `b23bb39b4`.
+  the RPP-0837 REST route matrix proof v2 merge ending at `c717d2626`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 975
-  items checked and leaves 25 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 976
+  items checked and leaves 24 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 75 production-topology items, 100 generated
+  100 storage/performance items, 76 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- REST route matrix proof v2: the current lane now checks `RPP-0837` with
+  support-only REST route matrix evidence. The artifact keeps final release
+  `NO-GO`, records route order, permissions, local-only ingress, exact
+  unavailable topology capability, and no-packaged-fallback policy, and accepts
+  release eligibility only when verify:release passes with live route readback
+  and route receipts.
+  Command:
+  `node --test --test-name-pattern RPP-0837 test/rpp-0837-rest-route-matrix-proof-v2.test.js`.
+  Caveat: REST route matrix support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0837 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  976/24; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Large media library topology v2: the current lane now checks `RPP-0834` with
   support-only evidence for the large media import/export survival contract.
   The artifact keeps final release `NO-GO`, links the large media benchmark and
