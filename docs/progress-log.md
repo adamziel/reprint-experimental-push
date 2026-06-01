@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:35 CEST +02:00.
+- Last update: 2026-06-01 04:37 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0931 rollback/repair runbook v2 merge ending at `45b4fe0ac`.
+  the RPP-0932 CI required checks list v2 merge ending at `4a543f55f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 891
-  items checked and leaves 109 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 892
+  items checked and leaves 108 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 31 release-ops items.
+  harness items, 100 merge-invariant items, and 32 release-ops items.
+- CI required checks list v2: the current lane now checks `RPP-0932` with a
+  support-only required release checks refresh. The evidence proves every
+  required CI and release check remains blocking, requires production-backed
+  observations before release-gate movement, and keeps final release held when
+  only support evidence exists.
+  Command:
+  `node --test --test-name-pattern RPP-0932 test/rpp-0932-ci-required-checks-list-v2.test.js`.
+  Caveat: CI required-checks support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0932 coverage 5/5,
+  scoped artifact redaction scan, diff whitespace checks, and the adjacent
+  RPP-0926 through RPP-0932 release-ops batch gate 34/34. Counts are now
+  892/108; final release remains `NO-GO` until production-backed required
+  release observations are ready.
 - Rollback/repair runbook v2: the current lane now checks `RPP-0931` with a
   support-only rollback and repair runbook refresh. The evidence links exact
   audit and validation commands to commit anchors, names repair stop rules, and
