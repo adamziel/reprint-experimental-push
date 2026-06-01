@@ -6,18 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:05 CEST +02:00.
+- Last update: 2026-06-01 06:07 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0971 rollback/repair runbook v4 merge ending at `df5639281`.
+  the RPP-0972 CI required checks list v4 merge ending at `a189e0090`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 931
-  items checked and leaves 69 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 932
+  items checked and leaves 68 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 71 release-ops items.
+  harness items, 100 merge-invariant items, and 72 release-ops items.
+- CI required checks list v4: the current lane now checks `RPP-0972` with
+  support-only focused regression coverage for the CI required checks list. The
+  evidence carries forward the RPP-0952 v3 CI-required-checks contract, keeps
+  every required CI proof blocking and production-observation gated, proves
+  support-only observations cannot move final release, and fails closed when a
+  required proof is missing.
+  Command:
+  `node --test --test-name-pattern RPP-0972 test/rpp-0972-ci-required-checks-list-v4.test.js`.
+  Caveat: CI required-checks support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0972 coverage 7/7,
+  scoped artifact redaction scan, diff whitespace checks, and the RPP-0967
+  through RPP-0972 release-ops batch gate 39/39. Counts are now 932/68; final
+  release remains `NO-GO` until required production-backed CI proof is present
+  and accepted.
 - Rollback/repair runbook v4: the current lane now checks `RPP-0971` with
   support-only focused regression coverage for the rollback and repair runbook.
   The evidence carries forward the RPP-0951 v3 rollback/repair contract, names
