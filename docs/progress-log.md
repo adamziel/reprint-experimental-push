@@ -6,18 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:10 CEST +02:00.
+- Last update: 2026-06-01 04:11 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0917 support escalation guide merge ending at `36bfd82a63`.
+  the RPP-0918 telemetry-free audit mode merge ending at `a98c87c8a8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 877
-  items checked and leaves 123 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 878
+  items checked and leaves 122 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 17 release-ops items.
+  harness items, 100 merge-invariant items, and 18 release-ops items.
+- Telemetry-free audit mode: the current lane now checks `RPP-0918` with a
+  support-only audit mode. The evidence records required-proof failure handling,
+  forbids telemetry and secret capture, and proves failed required proof reports
+  keep release readiness blocked.
+  Command:
+  `node --test --test-name-pattern RPP-0918 test/rpp-0918-telemetry-free-audit-mode.test.js`.
+  Caveat: telemetry-free audit support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0918 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  878/122; final release remains `NO-GO` because production-backed required
+  proof observations are still absent.
 - Support escalation guide: the current lane now checks `RPP-0917` with a
   support-only escalation guide. The evidence records escalation triggers,
   release movement blockers, required production proof, and confirms support
