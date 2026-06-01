@@ -10,6 +10,23 @@ import {
 } from './resources.js';
 import { serializedOptionValidationEvidenceForRows } from './serialized-option-validator.js';
 import { normalizePluginOwnedRowDriverContract } from './plugin-driver-contracts.js';
+import {
+  SERIALIZED_BLOCK_ATTACHMENT_REFERENCE_RULES,
+  SUPPORTED_CORE_POST_OBJECT_TAXONOMIES as SUPPORTED_CORE_POST_OBJECT_TAXONOMY_VALUES,
+  SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS,
+  SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES,
+  UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEYS as UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEY_VALUES,
+  UNSUPPORTED_WORDPRESS_POST_GRAPH_SURFACES as UNSUPPORTED_WORDPRESS_POST_GRAPH_SURFACE_VALUES,
+  WORDPRESS_GRAPH_IDENTITY_FAIL_CLOSED_COLLISION_SURFACES,
+  WORDPRESS_GRAPH_TABLE_SUFFIXES,
+  wordpressGraphRelationshipSupportsScalarRewrite,
+} from './wordpress-graph-contracts.js';
+
+export {
+  SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS,
+  SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES,
+  WORDPRESS_GRAPH_IDENTITY_FAIL_CLOSED_COLLISION_SURFACES,
+} from './wordpress-graph-contracts.js';
 
 const SUPPORTED_PLUGIN_DATA_DRIVERS = new Set([
   'wp-option',
@@ -1766,70 +1783,9 @@ function isPluginOwnedDataResource(resource, owner) {
   return resource.type === 'row' && Boolean(owner);
 }
 
-const WORDPRESS_GRAPH_TABLE_SUFFIXES = [
-  'registration_log',
-  'blog_versions',
-  'commentmeta',
-  'sitemeta',
-  'blogmeta',
-  'comments',
-  'term_relationships',
-  'term_taxonomy',
-  'postmeta',
-  'usermeta',
-  'users',
-  'termmeta',
-  'links',
-  'blogs',
-  'site',
-  'posts',
-  'terms',
-];
-
-const SUPPORTED_CORE_POST_OBJECT_TAXONOMIES = new Set([
-  'category',
-  'post_tag',
-  'post_format',
-]);
-
-const UNSUPPORTED_WORDPRESS_POST_GRAPH_SURFACES = new Set([
-  'nav_menu_item',
-  'revision',
-  'wp_navigation',
-]);
-
-const UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEYS = new Set([
-  '_menu_item_object',
-  '_menu_item_object_id',
-  '_menu_item_menu_item_parent',
-  '_menu_item_type',
-  'menu_item_parent',
-]);
-
-const SERIALIZED_BLOCK_ATTACHMENT_REFERENCE_RULES = new Map([
-  ['core/audio', ['id']],
-  ['core/cover', ['id']],
-  ['core/file', ['id']],
-  ['core/gallery', ['ids']],
-  ['core/image', ['id']],
-  ['core/media-text', ['mediaId']],
-  ['core/video', ['id']],
-]);
-
-export const SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES = Object.freeze([
-  'posts',
-  'users',
-  'comments',
-  'terms',
-  'term_taxonomy',
-  'site',
-  'blogs',
-]);
-
-export const WORDPRESS_GRAPH_IDENTITY_FAIL_CLOSED_COLLISION_SURFACES = Object.freeze([
-  'wp_posts.guid',
-  'wp_posts.post_type+post_name',
-]);
+const SUPPORTED_CORE_POST_OBJECT_TAXONOMIES = new Set(SUPPORTED_CORE_POST_OBJECT_TAXONOMY_VALUES);
+const UNSUPPORTED_WORDPRESS_POST_GRAPH_SURFACES = new Set(UNSUPPORTED_WORDPRESS_POST_GRAPH_SURFACE_VALUES);
+const UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEYS = new Set(UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEY_VALUES);
 
 const WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES = new Set(
   SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES,
@@ -2519,32 +2475,6 @@ function isSafeSamePlanWordPressGraphReference(reference) {
     || reference.targetChange.localChange === 'update';
 }
 
-export const SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS = Object.freeze([
-  'comment-post',
-  'comment-parent',
-  'comment-user',
-  'commentmeta-comment',
-  'link-owner',
-  'blog-site',
-  'blogmeta-blog',
-  'blog-version-blog',
-  'sitemeta-site',
-  'registration-log-blog',
-  'post-parent',
-  'post-author',
-  'postmeta-post',
-  'serialized-block-attachment',
-  'serialized-block-post',
-  'serialized-block-reusable-block',
-  'featured-image-attachment',
-  'term-relationship-object',
-  'term-relationship-taxonomy',
-  'term-taxonomy-term',
-  'term-taxonomy-parent',
-  'termmeta-term',
-  'usermeta-user',
-]);
-
 const SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS = new Set(
   SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS,
 );
@@ -2912,7 +2842,7 @@ function serializedNavigationLinkTargetsPost(attrs) {
 }
 
 function wordpressGraphReferenceSupportsScalarRewrite(reference) {
-  return reference.rewriteSupported !== false;
+  return wordpressGraphRelationshipSupportsScalarRewrite(reference);
 }
 
 function wordpressGraphReferenceEvidence(

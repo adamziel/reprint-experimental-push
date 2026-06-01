@@ -5,10 +5,13 @@ import {
   runGuardedExecutorBenchmark,
 } from './guarded-executor-benchmark.js';
 import {
+  WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+  WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS,
+  WORDPRESS_GRAPH_UNSUPPORTED_SURFACE_CONTRACTS,
   SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS,
   SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES,
   WORDPRESS_GRAPH_IDENTITY_FAIL_CLOSED_COLLISION_SURFACES,
-} from '../../src/planner.js';
+} from '../../src/wordpress-graph-contracts.js';
 
 const DEFAULT_NOW = new Date('2026-05-24T00:00:00.000Z');
 
@@ -18,6 +21,9 @@ export function buildGraphMappingInventory({
   supportedRelationshipTypes = SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS,
   identityMapTableSuffixes = SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES,
   failClosedCollisionSurfaces = WORDPRESS_GRAPH_IDENTITY_FAIL_CLOSED_COLLISION_SURFACES,
+  relationshipContracts = WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS,
+  unsupportedSurfaceContracts = WORDPRESS_GRAPH_UNSUPPORTED_SURFACE_CONTRACTS,
+  graphContractSchemaVersion = WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
 } = {}) {
   if (!report || typeof report !== 'object') {
     throw new Error('Graph mapping inventory requires a benchmark report object.');
@@ -42,6 +48,12 @@ export function buildGraphMappingInventory({
     generatedAt: report.generatedAt || DEFAULT_NOW.toISOString(),
     benchmarkProfile: report.profile || 'unknown',
     supportedRelationshipTypes: [...supportedRelationshipTypes],
+    graphContract: {
+      schemaVersion: graphContractSchemaVersion,
+      relationshipContracts: relationshipContracts.map(summarizeGraphRelationshipContract),
+      unsupportedSurfaceContracts: unsupportedSurfaceContracts.map(summarizeUnsupportedSurfaceContract),
+      rawValuesIncluded: false,
+    },
     identityMapCapabilities: {
       explicitMapTableSuffixes: [...identityMapTableSuffixes],
       failClosedCollisionSurfaces: [...failClosedCollisionSurfaces],
@@ -53,6 +65,33 @@ export function buildGraphMappingInventory({
     guardedFamilies,
     families,
     suggestedLaneShards: buildSuggestedLaneShards(families),
+  };
+}
+
+function summarizeGraphRelationshipContract(contract) {
+  return {
+    schemaVersion: contract.schemaVersion,
+    contractKind: contract.contractKind,
+    relationshipType: contract.relationshipType,
+    sourceSuffix: contract.sourceSuffix,
+    sourceFields: [...(contract.sourceFields || [])],
+    ...(contract.sourceCondition ? { sourceCondition: contract.sourceCondition } : {}),
+    targetSuffix: contract.targetSuffix,
+    scalarRewriteSupported: contract.scalarRewriteSupported === true,
+    targetValidation: contract.targetValidation,
+    samePlanSupported: contract.samePlanSupported === true,
+    resolutionPolicy: contract.resolutionPolicy,
+    rawValuesIncluded: contract.rawValuesIncluded === true,
+  };
+}
+
+function summarizeUnsupportedSurfaceContract(contract) {
+  return {
+    surface: contract.surface,
+    ...(contract.unsupportedValues ? { unsupportedValues: [...contract.unsupportedValues] } : {}),
+    ...(contract.supportedValues ? { supportedValues: [...contract.supportedValues] } : {}),
+    reasonCode: contract.reasonCode,
+    resolutionPolicy: contract.resolutionPolicy,
   };
 }
 

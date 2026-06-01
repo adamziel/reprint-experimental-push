@@ -365,6 +365,7 @@ These are tracked as release-scope boundaries, not as hidden assumptions.
 | --- | --- |
 | `docs/protocol.md` | Canonical push stages, invariants, and production-shaped contract. |
 | `docs/plugin-driver-contracts.md` | Explicit plugin-owned row driver contract, evidence shape, and refusal policy. |
+| `docs/wordpress-graph-contracts.md` | Explicit WordPress graph relationship contracts, rewrite limits, and fail-closed surfaces. |
 | `docs/playground-topology.md` | Playground site roles, REST routes, and topology behavior. |
 | `docs/scenario-matrix.md` | Current coverage map and known missing scenario families. |
 | `docs/generated-push-harness.md` | Generated harness tiers, counts, and invariants. |
