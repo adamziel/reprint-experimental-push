@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:09 CEST +02:00.
+- Last update: 2026-06-01 03:12 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0890 multisite subdomain topology proof merge ending at `7ff787584`.
+  the RPP-0891 object cache topology proof merge ending at `ed303e264`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 854
-  items checked and leaves 146 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 855
+  items checked and leaves 145 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 54 production-topology items, 100 generated
+  100 storage/performance items, 55 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Object cache topology variant-5 release-verifier carry-through proof: the
+  current lane now checks `RPP-0891` with deterministic object-cache topology
+  support evidence. The proof records primary WordPress site roles, support
+  cache-service boundaries, release-verifier carry-through requirements,
+  local-only ingress policy, packaged fallback refusal, cache-backend
+  no-public-ingress posture, and exact blocker `DOCKER_CLI_MISSING` when Docker
+  cannot start the topology.
+  Commands:
+  `node --test --test-name-pattern RPP-0891 test/rpp-0891-object-cache-enabled-topology-v5.test.js`
+  and `npm run verify:release:docker-local-production`.
+  Caveat: unavailable-capability support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0891
+  coverage 6/6, Docker topology command exit 2 with `DOCKER_CLI_MISSING`,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  855/145; final release remains `NO-GO` because this is support evidence, not
+  production-backed object-cache topology execution, production credentials,
+  route receipts, durable journal behavior, live mutation proof, throughput,
+  release approval, or a production release gate.
 - Multisite subdomain topology variant-5 release-verifier carry-through proof:
   the current lane now checks `RPP-0890` with deterministic multisite subdomain
   candidate-scope support evidence. The proof records candidate versus
