@@ -6,18 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:16 CEST +02:00.
+- Last update: 2026-06-01 04:17 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0921 release gate 1 final audit v2 merge ending at `50b30c6197`.
+  the RPP-0922 release gate 2 final audit v2 merge ending at `a236525d17`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 881
-  items checked and leaves 119 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 882
+  items checked and leaves 118 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 21 release-ops items.
+  harness items, 100 merge-invariant items, and 22 release-ops items.
+- Release gate 2 final audit v2: the current lane now checks `RPP-0922` with a
+  support-only GATE-2 audit refresh. The evidence records GATE-2 as
+  support-only, proves support evidence alone cannot move release status, and
+  keeps durable recovery proof gated on a production-backed live boundary.
+  Command:
+  `node --test --test-name-pattern RPP-0922 test/rpp-0922-release-gate-2-final-audit-v2.test.js`.
+  Caveat: GATE-2 audit support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0922 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  882/118; final release remains `NO-GO` because production-backed GATE-2
+  evidence is still absent.
 - Release gate 1 final audit v2: the current lane now checks `RPP-0921` with a
   support-only GATE-1 audit refresh. The evidence links exact commands and
   commit anchors, keeps GATE-1 at support-only, and records the missing

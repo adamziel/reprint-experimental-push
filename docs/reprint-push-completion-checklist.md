@@ -978,7 +978,7 @@ Focus: turn proven behavior into release discipline and operations.
 - [x] RPP-0919 (Farthest / release-ops) Implement post-release monitoring plan, variant 1. Success: operator docs explain safe recovery without hidden assumptions.
 - [x] RPP-0920 (Farthest / release-ops) Implement go/no-go release decision record, variant 1. Success: final go/no-go record names every remaining risk or closes it.
 - [x] RPP-0921 (Farthest / release-ops) Prove release gate 1 final audit, variant 2. Success: audit file links exact commands and commits.
-- [ ] RPP-0922 (Farthest / release-ops) Prove release gate 2 final audit, variant 2. Success: release gate status moves only with production-backed evidence.
+- [x] RPP-0922 (Farthest / release-ops) Prove release gate 2 final audit, variant 2. Success: release gate status moves only with production-backed evidence.
 - [ ] RPP-0923 (Farthest / release-ops) Prove release gate 3 final audit, variant 2. Success: CI blocks release when a required proof fails.
 - [ ] RPP-0924 (Farthest / release-ops) Prove release gate 4 final audit, variant 2. Success: operator docs explain safe recovery without hidden assumptions.
 - [ ] RPP-0925 (Farthest / release-ops) Prove objective audit update, variant 2. Success: final go/no-go record names every remaining risk or closes it.
