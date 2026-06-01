@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:27 CEST +02:00.
+- Last update: 2026-06-01 06:29 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0981 release gate 1 final audit verifier v5 merge ending at
-  `d69a9dced`.
+  the RPP-0982 release gate 2 final audit verifier v5 merge ending at
+  `176acca87`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 941
-  items checked and leaves 59 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 942
+  items checked and leaves 58 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 81 release-ops items.
+  harness items, 100 merge-invariant items, and 82 release-ops items.
+- Release gate 2 final audit verifier v5: the current lane now checks
+  `RPP-0982` with support-only release-verifier carry-through coverage for the
+  GATE-2 final audit. The evidence carries forward the RPP-0962 v4 GATE-2 audit
+  contract, keeps durable recovery journal status support-only, proves support
+  evidence can reach candidate review without moving release status, and keeps
+  production-backed source/local/changed and durable recovery proof gaps open.
+  Command:
+  `node --test --test-name-pattern RPP-0982 test/rpp-0982-release-gate-2-final-audit-release-verifier-v5.test.js`.
+  Caveat: release gate 2 verifier support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0982 coverage 8/8,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  942/58; final release remains `NO-GO` until required production-backed
+  GATE-2 verifier proof is present and accepted.
 - Release gate 1 final audit verifier v5: the current lane now checks
   `RPP-0981` with support-only release-verifier carry-through coverage for the
   GATE-1 final audit. The evidence carries forward the RPP-0961 v4 final-audit
