@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:12 CEST +02:00.
+- Last update: 2026-06-01 03:13 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0891 object cache topology proof merge ending at `ed303e264`.
+  the RPP-0893 maintenance mode interaction proof merge ending at `cb621a3fa`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 855
-  items checked and leaves 145 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 856
+  items checked and leaves 144 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 55 production-topology items, 100 generated
+  100 storage/performance items, 56 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Maintenance mode interaction variant-5 release-verifier carry-through proof:
+  the current lane now checks `RPP-0893` with deterministic maintenance-mode
+  URL identity support evidence. The proof captures source, local-edited, and
+  remote-changed URL identities, binds maintenance states to those identities,
+  verifies route source bindings, records release-verifier carry-through
+  surfaces, rejects tunnel-shaped, secret-shaped, duplicate-role, loopback
+  outside sandbox port 8080, and packaged fallback inputs, and keeps raw URL and
+  maintenance payload values out of the evidence artifact.
+  Command:
+  `node --test --test-name-pattern RPP-0893 test/rpp-0893-maintenance-mode-interaction-v5.test.js`.
+  Caveat: URL identity support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0893 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  856/144; final release remains `NO-GO` because this is support evidence, not
+  production-backed WordPress reachability, production credentials, route
+  receipts, durable journal behavior, live mutation proof, throughput, release
+  approval, or a production release gate.
 - Object cache topology variant-5 release-verifier carry-through proof: the
   current lane now checks `RPP-0891` with deterministic object-cache topology
   support evidence. The proof records primary WordPress site roles, support
