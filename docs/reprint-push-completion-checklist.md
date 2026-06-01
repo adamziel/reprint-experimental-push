@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 914.
-- Remaining open: 86.
+- Verified complete: 915.
+- Remaining open: 85.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -1014,7 +1014,7 @@ Focus: turn proven behavior into release discipline and operations.
 - [ ] RPP-0955 (Farthest / release-ops) Add generated coverage for versioned protocol docs, variant 3. Success: final go/no-go record names every remaining risk or closes it.
 - [x] RPP-0956 (Farthest / release-ops) Add generated coverage for migration docs, variant 3. Success: audit file links exact commands and commits.
 - [ ] RPP-0957 (Farthest / release-ops) Add generated coverage for support escalation guide, variant 3. Success: release gate status moves only with production-backed evidence.
-- [ ] RPP-0958 (Farthest / release-ops) Add generated coverage for telemetry-free audit mode, variant 3. Success: CI blocks release when a required proof fails.
+- [x] RPP-0958 (Farthest / release-ops) Add generated coverage for telemetry-free audit mode, variant 3. Success: CI blocks release when a required proof fails.
 - [ ] RPP-0959 (Farthest / release-ops) Add generated coverage for post-release monitoring plan, variant 3. Success: operator docs explain safe recovery without hidden assumptions.
 - [ ] RPP-0960 (Farthest / release-ops) Add generated coverage for go/no-go release decision record, variant 3. Success: final go/no-go record names every remaining risk or closes it.
 - [ ] RPP-0961 (Farthest / release-ops) Add focused regression coverage for release gate 1 final audit, variant 4. Success: audit file links exact commands and commits.
