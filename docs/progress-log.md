@@ -6,19 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 02:03 CEST +02:00.
+- Last update: 2026-06-01 02:13 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0848 classic theme files proof merge ending at `966f8a4fe`.
+  the RPP-0855 plugin activation hooks topology proof merge ending at `fcecb84da`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 829
-  items checked and leaves 171 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 830
+  items checked and leaves 170 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 29 production-topology items, 100 generated
+  100 storage/performance items, 30 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin activation hooks topology variant-3 candidate-scope proof: the current
+  lane now checks `RPP-0855` with deterministic activation-hook support
+  evidence. The proof records seven activation-hook surfaces, dependency and
+  direct `active_plugins` guardrails, unproven activation side effects blocked
+  before mutation, driver-proofed side effects quarantined as support-only, and
+  release-ready gaps for production activation runs, entrypoint audits,
+  side-effect inventory, multisite activation, hook separation, migrations,
+  durable journal behavior, and recovery evidence.
+  Commands:
+  `node --test test/rpp-0855-plugin-activation-hooks-topology-v3.test.js` and
+  `node --test --test-name-pattern "activation hook" test/production-shaped-proof.test.js`.
+  Caveat: candidate-scope support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0855
+  coverage 5/5, adjacent activation-hook coverage 2/2, scoped artifact
+  redaction scan with five allowed hash-evidence occurrences, and diff
+  whitespace checks. Counts are now 830/170; final release remains `NO-GO`
+  because this is support evidence, not production-backed activation hook
+  execution, entrypoint audit, side-effect inventory, production credentials,
+  route receipts, durable journal evidence, live mutation proof, throughput,
+  release approval, or a production release gate.
 - Classic theme files variant-3 URL identity proof: the current lane now checks
   `RPP-0848` with deterministic classic-theme support evidence. The proof
   captures source, local-edited, and remote-changed role URL identities, enforces
