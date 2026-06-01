@@ -6,18 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 08:12 CEST +02:00.
+- Last update: 2026-06-01 08:15 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0837 REST route matrix proof v2 merge ending at `c717d2626`.
+  the RPP-0839 sandbox 8080 ingress rule proof v2 merge ending at `edb715491`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 976
-  items checked and leaves 24 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 977
+  items checked and leaves 23 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 76 production-topology items, 100 generated
+  100 storage/performance items, 77 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Sandbox 8080 ingress rule proof v2: the current lane now checks `RPP-0839`
+  with support-only evidence for the sandbox 8080 ingress boundary. The
+  artifact keeps final release `NO-GO`, records loopback-only port 8080 ingress,
+  rejects public, non-8080, and multi-HTTP ingress surfaces, records exact
+  unavailable Docker capability, and requires production-backed plugin and graph
+  survival evidence before release eligibility.
+  Command:
+  `node --test --test-name-pattern RPP-0839 test/rpp-0839-sandbox-8080-ingress-rule-proof-v2.test.js`.
+  Caveat: sandbox 8080 ingress support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0839 coverage 5/5,
+  scoped artifact redaction scan, diff whitespace checks, and a representative
+  production-topology batch covering RPP-0832/RPP-0834/RPP-0837/RPP-0839/RPP-0842
+  at 22/22. Counts are now 977/23; final release remains `NO-GO` until
+  required production-backed proof is present and accepted.
 - REST route matrix proof v2: the current lane now checks `RPP-0837` with
   support-only REST route matrix evidence. The artifact keeps final release
   `NO-GO`, records route order, permissions, local-only ingress, exact
