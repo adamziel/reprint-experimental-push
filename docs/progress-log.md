@@ -6,18 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:42 CEST +02:00.
+- Last update: 2026-06-01 03:48 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0905 objective audit update merge ending at `7f3f64d87`.
+  the RPP-0906 critic audit update merge ending at `14283a205`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 865
-  items checked and leaves 135 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 866
+  items checked and leaves 134 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 5 release-ops items.
+  harness items, 100 merge-invariant items, and 6 release-ops items.
+- Critic audit support disposition: the current lane now checks `RPP-0906` with
+  a critic-audit update that links exact validation commands to relevant recent
+  commits and records a support-only, no-production-backed `NO-GO` posture. The
+  critic disposition preserves production blockers, closes zero production
+  risks, records no mutation attempt, and makes no release-gate movement.
+  Command:
+  `node --test --test-name-pattern RPP-0906 test/rpp-0906-critic-audit-update.test.js`.
+  Caveat: audit support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0906 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  866/134; final release remains `NO-GO` because the critic blockers still need
+  production-backed closure evidence before release approval.
 - Objective audit final go/no-go update: the current lane now checks
   `RPP-0905` with an audit-only risk-disposition record. The evidence names all
   remaining R1-R16 objective risks as open release blockers, closes no
