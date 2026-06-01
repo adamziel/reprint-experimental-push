@@ -6,18 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 07:42 CEST +02:00.
+- Last update: 2026-06-01 07:44 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0829 multisite subdirectory topology v2 merge ending at `5c81811b1`.
+  the RPP-0824 BrewCommerce blueprint import v2 merge ending at `d5c01d941`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 968
-  items checked and leaves 32 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 969
+  items checked and leaves 31 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 68 production-topology items, 100 generated
+  100 storage/performance items, 69 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- BrewCommerce blueprint import v2: the current lane now checks `RPP-0824`
+  with support-only import/export survival evidence for the BrewCommerce
+  blueprint gate. The artifact keeps final release `NO-GO`, requires a real
+  WordPress import/export runtime before release eligibility, rejects
+  placeholder blueprint assets and partial survival artifacts, and accepts the
+  pass contract only when the plugin-driver row and featured-image, taxonomy,
+  post-parent, and comment graph evidence survive import and export with
+  hash-only proof.
+  Command:
+  `node --test --test-name-pattern RPP-0824 test/rpp-0824-brewcommerce-blueprint-import-v2.test.js`.
+  Caveat: BrewCommerce blueprint import support evidence only; final release
+  remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0824 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  969/31; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Multisite subdirectory topology v2: the current lane now checks `RPP-0829`
   with support-only topology evidence for variant-2 multisite subdirectory
   import/export survival proof. The artifact keeps final release `NO-GO`,
