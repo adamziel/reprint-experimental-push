@@ -6,18 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:51 CEST +02:00.
+- Last update: 2026-06-01 03:53 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0907 security review checklist merge ending at `8eac0aacb`.
+  the RPP-0908 privacy/redaction review merge ending at `13ae56163`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 867
-  items checked and leaves 133 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 868
+  items checked and leaves 132 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 7 release-ops items.
+  harness items, 100 merge-invariant items, and 8 release-ops items.
+- Privacy/redaction review: the current lane now checks `RPP-0908` with a
+  hash/count/surface-only privacy and redaction review. The evidence proves the
+  artifact redaction proof remains a required blocking check and that failed,
+  stale, command-mismatched, or incomplete redaction observations keep release
+  readiness held.
+  Command:
+  `node --test --test-name-pattern RPP-0908 test/rpp-0908-privacy-redaction-review.test.js`.
+  Caveat: review support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0908 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  868/132; final release remains `NO-GO` because required production-backed
+  release evidence is still absent.
 - Security review checklist: the current lane now checks `RPP-0907` with a
   support-only release security review checklist. The evidence requires
   production-backed proof before release-gate movement, documents that

@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>867</strong>
+        <strong>868</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>133</strong>
+        <strong>132</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -360,7 +360,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Release operations checked">
-            <span><strong>Release operations</strong>RPP-0901 records the release gate 1 final audit, RPP-0902 records the durable recovery journal boundary audit, RPP-0903 records the live topology final audit, RPP-0904 adds support-only operator safe-recovery documentation, RPP-0905 records the objective audit NO-GO risk register, RPP-0906 records the critic audit disposition, and RPP-0907 records the release security review checklist. These audits keep final release NO-GO and require production-backed evidence before any release-gate movement.</span>
+            <span><strong>Release operations</strong>RPP-0901 records the release gate 1 final audit, RPP-0902 records the durable recovery journal boundary audit, RPP-0903 records the live topology final audit, RPP-0904 adds support-only operator safe-recovery documentation, RPP-0905 records the objective audit NO-GO risk register, RPP-0906 records the critic audit disposition, RPP-0907 records the release security review checklist, and RPP-0908 records the privacy/redaction review. These audits keep final release NO-GO and require production-backed evidence before any release-gate movement.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Reporting guardrails checked">
@@ -410,16 +410,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0907</span>
+        <span>RPP-0908</span>
       </div>
-      <p>The latest refresh checks RPP-0907 with a support-only release security review checklist. The evidence requires production-backed proof before release-gate movement, documents that support-only review cannot satisfy release eligibility, and makes no release-gate movement. Counts are now 867/133; final release remains NO-GO because gate movement still requires production-backed evidence.</p>
+      <p>The latest refresh checks RPP-0908 with a hash/count/surface-only privacy and redaction review. The evidence proves artifact redaction remains a required blocking check, and failed, stale, command-mismatched, or incomplete redaction observations keep release readiness held. Counts are now 868/132; final release remains NO-GO because required production-backed release evidence is still absent.</p>
       <div class="tag-row" aria-label="Latest validation">
-        <span class="tag">RPP-0907 focused: 5/5</span>
-        <span class="tag">security review</span>
+        <span class="tag">RPP-0908 focused: 4/4</span>
+        <span class="tag">privacy/redaction review</span>
         <span class="tag">variant 1</span>
-        <span class="tag">production proof required</span>
-        <span class="tag">support-only review</span>
-        <span class="tag">no gate movement</span>
+        <span class="tag">required proof blocking</span>
+        <span class="tag">hash/count evidence</span>
+        <span class="tag">failed proof holds release</span>
         <span class="tag">NO-GO retained</span>
         <span class="tag">NO-GO retained</span>
         <span class="tag">redaction clean</span>
