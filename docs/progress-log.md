@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:27 CEST +02:00.
+- Last update: 2026-06-01 04:29 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0927 security review checklist v2 merge ending at `5912805a8`.
+  the RPP-0928 privacy/redaction review v2 merge ending at `018b3647b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 887
-  items checked and leaves 113 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 888
+  items checked and leaves 112 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 27 release-ops items.
+  harness items, 100 merge-invariant items, and 28 release-ops items.
+- Privacy/redaction review v2: the current lane now checks `RPP-0928` with a
+  support-only redaction review refresh. The evidence proves raw URL,
+  credential, token, cookie, serialized private option, and explicit secret-key
+  findings become blocking required redaction proof failures that keep release
+  readiness held.
+  Command:
+  `node --test --test-name-pattern RPP-0928 test/rpp-0928-privacy-redaction-review-v2.test.js`.
+  Caveat: privacy/redaction review support evidence only; final release
+  remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0928 coverage 4/4,
+  scoped artifact redaction scan with allowed hash evidence, and diff
+  whitespace checks. Counts are now 888/112; final release remains `NO-GO`
+  until a fresh passed artifact-redaction-proof observation and the other
+  required release proofs are release-ready.
 - Security review checklist v2: the current lane now checks `RPP-0927` with a
   support-only security review checklist refresh. The evidence requires
   production-backed evidence before any release-gate status movement and proves
