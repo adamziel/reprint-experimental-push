@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>862</strong>
+        <strong>863</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>138</strong>
+        <strong>137</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -360,7 +360,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Release operations checked">
-            <span><strong>Release operations</strong>RPP-0901 records the release gate 1 final audit with exact commands, commits, fail-closed evaluator output, and canonical verifier output, while RPP-0904 adds support-only operator safe-recovery documentation for old-remote, fully-updated-remote, and blocked-recovery states. Both keep final release NO-GO with no release-gate movement.</span>
+            <span><strong>Release operations</strong>RPP-0901 records the release gate 1 final audit, RPP-0902 records the durable recovery journal boundary audit, and RPP-0904 adds support-only operator safe-recovery documentation. These audits keep final release NO-GO and require production-backed evidence before any release-gate movement.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Reporting guardrails checked">
@@ -410,13 +410,14 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0901</span>
+        <span>RPP-0902</span>
       </div>
-      <p>The latest refresh checks RPP-0901 with a release gate 1 final audit that links exact support commits, current lane head, release-gate status-row command, final-release gate evaluator, canonical verify:release command, focused test command, redaction scan, and diff whitespace check. The evaluator and canonical verifier both fail closed with REPRINT_PUSH_LIVE_SOURCE_REQUIRED and mutationAttempted=false. Counts are now 862/138; final release remains NO-GO because this is not production-backed source/auth proof, production credentials, route receipts, durable journal behavior, live mutation proof, throughput, release approval, or a production release gate.</p>
+      <p>The latest refresh checks RPP-0902 with a durable recovery journal boundary audit. The audit records that GATE-2 remains support_only, that release-gate status can move only with production-backed durable recovery evidence on the checked release path, and that the final release evaluator and canonical verifier still fail closed with REPRINT_PUSH_LIVE_SOURCE_REQUIRED and mutationAttempted=false. Counts are now 863/137; final release remains NO-GO because this is not production-backed durable recovery, production journal ownership, production restart readback, production recovery classification, credentials, route receipts, throughput, release approval, or a production release gate.</p>
       <div class="tag-row" aria-label="Latest validation">
-        <span class="tag">RPP-0901 focused: 4/4</span>
-        <span class="tag">release gate 1 audit</span>
+        <span class="tag">RPP-0902 focused: 4/4</span>
+        <span class="tag">release gate 2 audit</span>
         <span class="tag">variant 1</span>
+        <span class="tag">durable recovery boundary</span>
         <span class="tag">fail-closed evaluator</span>
         <span class="tag">verify:release held</span>
         <span class="tag">mutationAttempted=false</span>
