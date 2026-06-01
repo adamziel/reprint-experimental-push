@@ -905,7 +905,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0851 (Far / production-topology) Add generated coverage for object cache enabled topology, variant 3. Success: topology command starts the sites or records exact unavailable capability.
 - [x] RPP-0852 (Far / production-topology) Add generated coverage for cron activity during push, variant 3. Success: verify:release passes without packaged fallback on the topology.
 - [x] RPP-0853 (Far / production-topology) Add generated coverage for maintenance mode interaction, variant 3. Success: source/local/changed URLs are captured and identity-checked.
-- [ ] RPP-0854 (Far / production-topology) Add generated coverage for large media library topology, variant 3. Success: plugin and graph evidence survive real WordPress import/export.
+- [x] RPP-0854 (Far / production-topology) Add generated coverage for large media library topology, variant 3. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0855 (Far / production-topology) Add generated coverage for plugin activation hooks topology, variant 3. Success: progress report records candidate versus release-ready scope.
 - [x] RPP-0856 (Far / production-topology) Add generated coverage for plugin update hooks topology, variant 3. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0857 (Far / production-topology) Add generated coverage for REST route matrix proof, variant 3. Success: verify:release passes without packaged fallback on the topology.
