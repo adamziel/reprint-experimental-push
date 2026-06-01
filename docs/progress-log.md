@@ -6,18 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:52 CEST +02:00.
+- Last update: 2026-06-01 04:54 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0940 go/no-go release decision record v2 merge ending at `95de26357`.
+  the RPP-0941 release gate 1 final audit v3 merge ending at `bd7ab6e19`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 900
-  items checked and leaves 100 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 901
+  items checked and leaves 99 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 40 release-ops items.
+  harness items, 100 merge-invariant items, and 41 release-ops items.
+- Release gate 1 final audit v3: the current lane now checks `RPP-0941` with
+  support-only generated coverage for the gate-1 final audit. The evidence
+  links exact commands to commit anchors, records support and current lane
+  commits, and keeps the gate held without production-backed live topology,
+  auth/session, and durable journal proof.
+  Command:
+  `node --test --test-name-pattern RPP-0941 test/rpp-0941-release-gate-1-final-audit-v3.test.js`.
+  Caveat: release gate 1 final-audit support evidence only; final release
+  remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0941 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  901/99; final release remains `NO-GO` until a zero-exit canonical verifier
+  proves live production-owned gate-1 evidence.
 - Go/no-go release decision record v2: the current lane now checks `RPP-0940`
   with a support-only final decision record refresh. The evidence names every
   remaining final-release risk, closes no risk without production-backed proof,
