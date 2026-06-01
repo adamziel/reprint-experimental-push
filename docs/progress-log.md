@@ -6,18 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:20 CEST +02:00.
+- Last update: 2026-06-01 04:22 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0923 release gate 3 final audit v2 merge ending at `36d4e6114`.
+  the RPP-0924 release gate 4 final audit v2 merge ending at `ae96fb01c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 883
-  items checked and leaves 117 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 884
+  items checked and leaves 116 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 23 release-ops items.
+  harness items, 100 merge-invariant items, and 24 release-ops items.
+- Release gate 4 final audit v2: the current lane now checks `RPP-0924` with a
+  support-only GATE-4 audit refresh. The evidence verifies that the operator
+  safe-recovery documentation names prerequisites, stop conditions, and
+  hidden-assumption blockers before retry, finalization, or release movement.
+  Command:
+  `node --test --test-name-pattern RPP-0924 test/rpp-0924-release-gate-4-final-audit-v2.test.js`.
+  Caveat: GATE-4 audit support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0924 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  884/116; final release remains `NO-GO` because production-owned
+  plugin-driver proof is still absent.
 - Release gate 3 final audit v2: the current lane now checks `RPP-0923` with a
   support-only GATE-3 audit refresh. The evidence proves required topology
   proof failure blocks release readiness through local CI/reporting, keeps
