@@ -6,18 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 05:47 CEST +02:00.
+- Last update: 2026-06-01 05:50 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0963 release gate 3 final audit v4 merge ending at `6ea2c0874`.
+  the RPP-0964 release gate 4 final audit v4 merge ending at `9f419cea7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 915
-  items checked and leaves 77 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 924
+  items checked and leaves 76 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 63 release-ops items.
+  harness items, 100 merge-invariant items, and 64 release-ops items.
+- Release gate 4 final audit v4: the current lane now checks `RPP-0964` with
+  support-only focused regression coverage for the release gate 4 audit. The
+  evidence names safe recovery prerequisites, explicit operator evidence, stop
+  conditions, rollback and escalation blockers, and hidden-assumption guards,
+  while carrying forward the RPP-0944 v3 gate-4 audit contract.
+  Command:
+  `node --test --test-name-pattern RPP-0964 test/rpp-0964-release-gate-4-final-audit-v4.test.js`.
+  Caveat: release gate 4 audit support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0964 coverage 7/7,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  924/76; final release remains `NO-GO` until required production-backed
+  operator recovery proof is present and accepted.
 - Release gate 3 final audit v4: the current lane now checks `RPP-0963` with
   support-only focused regression coverage for the release gate 3 audit. The
   evidence proves failed or missing topology proof keeps final release held,
