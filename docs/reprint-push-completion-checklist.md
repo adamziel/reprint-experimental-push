@@ -972,7 +972,7 @@ Focus: turn proven behavior into release discipline and operations.
 - [x] RPP-0913 (Farthest / release-ops) Implement GitHub Pages progress publish, variant 1. Success: CI blocks release when a required proof fails.
 - [x] RPP-0914 (Farthest / release-ops) Implement release artifact package, variant 1. Success: operator docs explain safe recovery without hidden assumptions.
 - [x] RPP-0915 (Farthest / release-ops) Implement versioned protocol docs, variant 1. Success: final go/no-go record names every remaining risk or closes it.
-- [ ] RPP-0916 (Farthest / release-ops) Implement migration docs, variant 1. Success: audit file links exact commands and commits.
+- [x] RPP-0916 (Farthest / release-ops) Implement migration docs, variant 1. Success: audit file links exact commands and commits.
 - [ ] RPP-0917 (Farthest / release-ops) Implement support escalation guide, variant 1. Success: release gate status moves only with production-backed evidence.
 - [ ] RPP-0918 (Farthest / release-ops) Implement telemetry-free audit mode, variant 1. Success: CI blocks release when a required proof fails.
 - [ ] RPP-0919 (Farthest / release-ops) Implement post-release monitoring plan, variant 1. Success: operator docs explain safe recovery without hidden assumptions.
