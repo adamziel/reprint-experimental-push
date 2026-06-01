@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:19 CEST +02:00.
+- Last update: 2026-06-01 06:23 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0977 support escalation guide v4 merge ending at `df5993b39`.
+  the RPP-0978 telemetry-free audit mode v4 merge ending at `b5d3acced`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 937
-  items checked and leaves 63 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 938
+  items checked and leaves 62 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 77 release-ops items.
+  harness items, 100 merge-invariant items, and 78 release-ops items.
+- Telemetry-free audit mode v4: the current lane now checks `RPP-0978` with
+  support-only focused regression coverage for telemetry-free audit mode. The
+  evidence carries forward the RPP-0958 v3 telemetry-free audit contract, fails
+  closed when a required proof fails or is missing, keeps release-check exit and
+  report status nonzero/held for failed proof, records no telemetry fields, and
+  keeps release-gate status movement neutral.
+  Command:
+  `node --test --test-name-pattern RPP-0978 test/rpp-0978-telemetry-free-audit-mode-v4.test.js`.
+  Caveat: telemetry-free audit support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0978 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  938/62; final release remains `NO-GO` until required production-backed audit
+  proof is present and accepted.
 - Support escalation guide v4: the current lane now checks `RPP-0977` with
   support-only focused regression coverage for the support escalation guide.
   The evidence carries forward the RPP-0957 v3 escalation contract, names
