@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 02:52 CEST +02:00.
+- Last update: 2026-06-01 02:53 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0876 plugin update hooks topology proof merge ending at `711ce5bc2`.
+  the RPP-0878 TLS/HTTPS source proof merge ending at `4c3e6e0ef`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 846
-  items checked and leaves 154 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 847
+  items checked and leaves 153 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 46 production-topology items, 100 generated
+  100 storage/performance items, 47 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- TLS/HTTPS source proof variant-4 URL identity proof: the current lane now
+  checks `RPP-0878` with deterministic TLS source support evidence. The proof
+  captures source, local-edited, and remote-changed HTTPS URL identities,
+  enforces HTTPS on accepted role URLs, rejects tunnel-shaped, secret-shaped,
+  non-HTTPS, duplicate-role, and packaged fallback inputs before scope
+  acceptance, and keeps raw URL values out of the evidence artifact.
+  Command:
+  `node --test --test-name-pattern RPP-0878 test/rpp-0878-tls-https-source-proof-v4.test.js`.
+  Caveat: URL identity support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0878 coverage 6/6,
+  scoped artifact redaction scan with one allowed hash-evidence occurrence, and
+  diff whitespace checks. Counts are now 847/153; final release remains `NO-GO`
+  because this is support evidence, not production-backed WordPress
+  reachability, production credentials, route receipts, durable journal
+  behavior, live mutation proof, throughput, release approval, or a production
+  release gate.
 - Plugin update hooks topology variant-4 unavailable-capability proof: the
   current lane now checks `RPP-0876` with deterministic plugin-update topology
   support evidence. The proof records updater transient, pre-install,
