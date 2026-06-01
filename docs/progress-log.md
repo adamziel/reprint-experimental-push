@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:56 CEST +02:00.
+- Last update: 2026-06-01 05:00 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0942 release gate 2 final audit v3 merge ending at `cb5278dbb`.
+  the RPP-0943 release gate 3 final audit v3 merge ending at `6601d4834`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 902
-  items checked and leaves 98 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 903
+  items checked and leaves 97 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 42 release-ops items.
+  harness items, 100 merge-invariant items, and 43 release-ops items.
+- Release gate 3 final audit v3: the current lane now checks `RPP-0943` with
+  support-only generated coverage for the gate-3 live topology boundary. The
+  evidence proves required topology and CI proofs fail closed when missing,
+  failed, or support-only, keeps GATE-3 `support_only`, and makes no
+  release-gate status movement from support evidence.
+  Command:
+  `node --test --test-name-pattern RPP-0943 test/rpp-0943-release-gate-3-final-audit-v3.test.js`.
+  Caveat: release gate 3 final-audit support evidence only; final release
+  remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0943 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  903/97; final release remains `NO-GO` until production-backed live topology
+  proof covers source, local edited, and remote-changed WordPress URLs with
+  packaged fallback disabled.
 - Release gate 2 final audit v3: the current lane now checks `RPP-0942` with
   support-only generated coverage for the gate-2 durable recovery boundary. The
   evidence keeps GATE-2 `support_only`, proves release-gate movement remains
