@@ -6,18 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:03 CEST +02:00.
+- Last update: 2026-06-01 04:07 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0914 release artifact package merge ending at `c3b4a783b`.
+  the RPP-0915 versioned protocol docs merge ending at `9ab4557e3b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 874
-  items checked and leaves 126 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 875
+  items checked and leaves 125 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 14 release-ops items.
+  harness items, 100 merge-invariant items, and 15 release-ops items.
+- Versioned release protocol docs: the current lane now checks `RPP-0915`
+  with support-only versioned protocol documentation. The evidence names the
+  protocol version contract, final risk register, go/no-go record obligations,
+  and keeps final release `NO-GO` until production-backed proofs close each
+  remaining risk.
+  Command:
+  `node --test --test-name-pattern RPP-0915 test/rpp-0915-versioned-protocol-docs.test.js`.
+  Caveat: protocol documentation support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0915 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  875/125; final release remains `NO-GO` because protocol docs alone do not
+  close production topology, auth, durability, package, or publish risks.
 - Release artifact package: the current lane now checks `RPP-0914` with a
   support-only artifact package manifest. The evidence lists included artifacts,
   excludes production secrets, records safe recovery prerequisites and stop
