@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>864</strong>
+        <strong>865</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>136</strong>
+        <strong>135</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -360,7 +360,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Release operations checked">
-            <span><strong>Release operations</strong>RPP-0901 records the release gate 1 final audit, RPP-0902 records the durable recovery journal boundary audit, RPP-0903 records the live topology final audit, and RPP-0904 adds support-only operator safe-recovery documentation. These audits keep final release NO-GO and require production-backed evidence before any release-gate movement.</span>
+            <span><strong>Release operations</strong>RPP-0901 records the release gate 1 final audit, RPP-0902 records the durable recovery journal boundary audit, RPP-0903 records the live topology final audit, RPP-0904 adds support-only operator safe-recovery documentation, and RPP-0905 records the objective audit NO-GO risk register. These audits keep final release NO-GO and require production-backed evidence before any release-gate movement.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Reporting guardrails checked">
@@ -410,18 +410,17 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0903</span>
+        <span>RPP-0905</span>
       </div>
-      <p>The latest refresh checks RPP-0903 with a live Docker/Playground production topology audit. The audit records that GATE-3 remains support_only, CI blocks release when the local edited topology proof is missing, blocked Docker prerequisite artifacts remain fail-closed support evidence, and the final release evaluator and canonical verifier still fail closed with REPRINT_PUSH_LIVE_SOURCE_REQUIRED and mutationAttempted=false. Counts are now 864/136; final release remains NO-GO because this is not production-backed topology execution, production source/local/changed URL proof, production credentials, route receipts, durable journal behavior, throughput, release approval, or a production release gate.</p>
+      <p>The latest refresh checks RPP-0905 with an objective audit NO-GO risk-disposition record. The evidence names all remaining R1-R16 objective risks as open release blockers, closes no production risks, keeps final release NO-GO, and records that no production-backed evidence was added by this update. Counts are now 865/135; final release remains NO-GO because every R1-R16 objective risk still needs production-backed closure evidence before release approval.</p>
       <div class="tag-row" aria-label="Latest validation">
-        <span class="tag">RPP-0903 focused: 3/3</span>
-        <span class="tag">release gate 3 audit</span>
+        <span class="tag">RPP-0905 focused: 4/4</span>
+        <span class="tag">objective audit</span>
         <span class="tag">variant 1</span>
-        <span class="tag">live topology boundary</span>
-        <span class="tag">local proof missing blocks</span>
+        <span class="tag">R1-R16 open risks</span>
+        <span class="tag">no production risks closed</span>
         <span class="tag">fail-closed evaluator</span>
-        <span class="tag">verify:release held</span>
-        <span class="tag">mutationAttempted=false</span>
+        <span class="tag">NO-GO retained</span>
         <span class="tag">NO-GO retained</span>
         <span class="tag">redaction clean</span>
         <span class="tag">diff clean</span>

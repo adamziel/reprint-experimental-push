@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:40 CEST +02:00.
+- Last update: 2026-06-01 03:42 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0903 release gate 3 final audit merge ending at `1b06a2b03`.
+  the RPP-0905 objective audit update merge ending at `7f3f64d87`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 864
-  items checked and leaves 136 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 865
+  items checked and leaves 135 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 4 release-ops items.
+  harness items, 100 merge-invariant items, and 5 release-ops items.
+- Objective audit final go/no-go update: the current lane now checks
+  `RPP-0905` with an audit-only risk-disposition record. The evidence names all
+  remaining R1-R16 objective risks as open release blockers, closes no
+  production risks, keeps final release `NO-GO`, and records that no
+  production-backed evidence was added by this update.
+  Command:
+  `node --test --test-name-pattern RPP-0905 test/rpp-0905-objective-audit-update.test.js`.
+  Caveat: audit support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0905 coverage 4/4,
+  fail-closed release-gate evaluator exit 1 with
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 865/135; final release remains `NO-GO`
+  because every R1-R16 objective risk still needs production-backed closure
+  evidence before release approval.
 - Release gate 3 final audit: the current lane now checks `RPP-0903` with a
   refreshed live Docker/Playground production topology audit. The audit records
   that GATE-3 remains `support_only`, CI blocks release when the local edited
