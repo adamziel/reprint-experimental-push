@@ -6,18 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 07:47 CEST +02:00.
+- Last update: 2026-06-01 07:49 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0822 Docker WordPress topology v2 merge ending at `f686bbd26`.
+  the RPP-0827 block theme templates v2 merge ending at `68c027d2b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 971
-  items checked and leaves 29 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 972
+  items checked and leaves 28 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 71 production-topology items, 100 generated
+  100 storage/performance items, 72 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Block theme templates v2: the current lane now checks `RPP-0827` with
+  support-only block theme topology evidence. The artifact keeps final release
+  `NO-GO`, covers theme.json, templates, template parts, patterns, style
+  variations, and active theme option row keys with hash-only proof, and accepts
+  release eligibility only when `npm run verify:release` passes on a production
+  topology without packaged fallback.
+  Command:
+  `node --test --test-name-pattern RPP-0827 test/rpp-0827-block-theme-templates-v2.test.js`.
+  Caveat: block theme templates support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0827 coverage 4/4,
+  scoped artifact redaction scan, diff whitespace checks, and a representative
+  production-topology batch covering RPP-0819/RPP-0822/RPP-0824/RPP-0827/RPP-0829
+  at 22/22. Counts are now 972/28; final release remains `NO-GO` until
+  required production-backed proof is present and accepted.
 - Docker WordPress topology v2: the current lane now checks `RPP-0822` with
   support-only Docker topology evidence for the release-verifier contract. The
   artifact keeps final release `NO-GO`, records the exact unavailable
