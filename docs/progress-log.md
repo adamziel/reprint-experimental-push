@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:23 CEST +02:00.
+- Last update: 2026-06-01 03:33 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0900 no-tunnel policy proof merge ending at `74dccf42a`.
+  the RPP-0904 operator safe recovery docs merge ending at `e82a700ce`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 860
-  items checked and leaves 140 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 861
+  items checked and leaves 139 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, and 100 merge-invariant items. No release-ops items are checked
-  yet.
+  harness items, 100 merge-invariant items, and 1 release-ops item.
+- Operator safe recovery documentation audit: the current lane now checks
+  `RPP-0904` with support-only operator recovery docs and an audit artifact.
+  The runbook names the acceptable failed-apply states `old-remote`,
+  `fully-updated-remote`, and `blocked-recovery`, requires journal ownership,
+  restart-readable records, target hashes, idempotency replay, and redaction
+  evidence before retry or finalization, and explicitly blocks hidden
+  assumptions, manual remote patching, artifact deletion, automated retry for
+  blocked recovery, and release-gate movement.
+  Command:
+  `node --test --test-name-pattern RPP-0904 test/rpp-0904-operator-safe-recovery.test.js`.
+  Caveat: operator documentation support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0904 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  861/139; final release remains `NO-GO` because this is not production-backed
+  durable recovery, production rollback, production repair, live topology,
+  credentials, route receipts, throughput, release approval, or a production
+  release gate.
 - No-tunnel policy proof variant-5 release-verifier carry-through proof: the
   current lane now checks `RPP-0900` with deterministic no-tunnel candidate-scope
   support evidence. The proof records forbidden tunnel command and domain
