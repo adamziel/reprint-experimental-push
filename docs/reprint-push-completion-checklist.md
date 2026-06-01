@@ -932,7 +932,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0878 (Far / production-topology) Add focused regression coverage for TLS/HTTPS source proof, variant 4. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0879 (Far / production-topology) Add focused regression coverage for sandbox 8080 ingress rule proof, variant 4. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0880 (Far / production-topology) Add focused regression coverage for no tunnel policy proof, variant 4. Success: progress report records candidate versus release-ready scope.
-- [ ] RPP-0881 (Far / production-topology) Carry through the release verifier for three-site local production topology, variant 5. Success: topology command starts the sites or records exact unavailable capability.
+- [x] RPP-0881 (Far / production-topology) Carry through the release verifier for three-site local production topology, variant 5. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0882 (Far / production-topology) Carry through the release verifier for Docker WordPress topology, variant 5. Success: verify:release passes without packaged fallback on the topology.
 - [ ] RPP-0883 (Far / production-topology) Carry through the release verifier for external WordPress topology, variant 5. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0884 (Far / production-topology) Carry through the release verifier for BrewCommerce blueprint import, variant 5. Success: plugin and graph evidence survive real WordPress import/export.

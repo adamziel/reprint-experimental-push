@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 02:55 CEST +02:00.
+- Last update: 2026-06-01 02:58 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0880 no-tunnel policy proof merge ending at `a4a71af55`.
+  the RPP-0881 three-site local production topology proof merge ending at
+  `29441cd1d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 848
-  items checked and leaves 152 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 849
+  items checked and leaves 151 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 48 production-topology items, 100 generated
+  100 storage/performance items, 49 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Three-site local production topology variant-5 release-verifier carry-through:
+  the current lane now checks `RPP-0881` with deterministic three-site topology
+  support evidence. The proof records source, local-edited, and remote-changed
+  primary site roles, release-verifier carry-through requirements, support-role
+  exclusions, Docker service DNS release URLs, packaged fallback refusal, and
+  exact blocker `DOCKER_CLI_MISSING` when Docker cannot start the topology.
+  Commands:
+  `node --test --test-name-pattern RPP-0881 test/rpp-0881-three-site-local-production-topology-v5.test.js`
+  and `npm run verify:release:docker-local-production`.
+  Caveat: unavailable-capability support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0881
+  coverage 6/6, Docker topology command exit 2 with `DOCKER_CLI_MISSING`,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  849/151; final release remains `NO-GO` because this is support evidence, not
+  production-backed site startup, production credentials, route receipts,
+  durable journal behavior, live mutation proof, throughput, release approval,
+  or a production release gate.
 - No-tunnel policy proof variant-4 candidate-scope proof: the current lane now
   checks `RPP-0880` with deterministic no-tunnel policy support evidence. The
   proof records candidate versus release-ready scope, accepts only local
