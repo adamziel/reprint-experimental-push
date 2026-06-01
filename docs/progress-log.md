@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:41 CEST +02:00.
+- Last update: 2026-06-01 06:44 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0988 privacy/redaction review release verifier v5 merge ending at
-  `694f564bb`.
+  the RPP-0989 operator runbook release verifier v5 merge ending at
+  `9fecf83e9`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 948
-  items checked and leaves 52 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 949
+  items checked and leaves 51 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 88 release-ops items.
+  harness items, 100 merge-invariant items, and 89 release-ops items.
+- Operator runbook release verifier v5: the current lane now checks `RPP-0989`
+  with support-only release-verifier carry-through coverage for the operator
+  runbook. The evidence carries forward the RPP-0969 v4 operator-runbook
+  contract, proves operator docs explain safe recovery prerequisites before
+  mutation, names explicit recovery evidence, stop conditions, and
+  hidden-assumption blockers, and keeps unresolved production-backed proof gaps
+  open and fail-closed.
+  Command:
+  `node --test --test-name-pattern RPP-0989 test/rpp-0989-operator-runbook-release-verifier-v5.test.js`.
+  Caveat: operator runbook verifier support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0989 coverage 6/6,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  949/51; final release remains `NO-GO` until required production-backed
+  operator-runbook proof is present and accepted.
 - Privacy/redaction review release verifier v5: the current lane now checks
   `RPP-0988` with support-only release-verifier carry-through coverage for the
   privacy/redaction review. The evidence carries forward the RPP-0968 v4
