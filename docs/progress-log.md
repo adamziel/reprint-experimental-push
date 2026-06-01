@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:11 CEST +02:00.
+- Last update: 2026-06-01 06:15 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0974 release artifact package v4 merge ending at `d4cce2a42`.
+  the RPP-0975 versioned protocol docs v4 merge ending at `bd985e407`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 934
-  items checked and leaves 66 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 935
+  items checked and leaves 65 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 74 release-ops items.
+  harness items, 100 merge-invariant items, and 75 release-ops items.
+- Versioned protocol docs v4: the current lane now checks `RPP-0975` with
+  support-only focused regression coverage for versioned protocol docs. The
+  evidence carries forward the RPP-0955 v3 version contract, names every
+  protocol compatibility migration and final-release risk, keeps every named
+  risk open without production-backed closure proof, and records no release-gate
+  movement.
+  Command:
+  `node --test --test-name-pattern RPP-0975 test/rpp-0975-versioned-protocol-docs-v4.test.js`.
+  Caveat: versioned protocol docs support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0975 coverage 7/7,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  935/65; final release remains `NO-GO` until required production-backed
+  protocol-closure proof is present and accepted.
 - Release artifact package v4: the current lane now checks `RPP-0974` with
   support-only focused regression coverage for the release artifact package.
   The evidence carries forward the RPP-0954 v3 package contract, names package
