@@ -6,33 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 07:05 CEST +02:00.
+- Last update: 2026-06-01 07:08 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0998 telemetry-free audit mode release verifier v5 merge ending at
-  `50c64920`.
+  the RPP-0999 post-release monitoring plan release verifier v5 merge ending
+  at `21db24f70`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 958
-  items checked and leaves 42 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 959
+  items checked and leaves 41 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 98 release-ops items.
-- Telemetry-free audit mode release verifier v5: the current lane now checks
-  `RPP-0998` with support-only release-verifier carry-through coverage for
-  telemetry-free audit mode. The evidence carries forward the RPP-0978 v4
-  telemetry-free contract, proves failed and missing required proof keep
-  CI/reporting fail-closed without telemetry fields, keeps support-only
-  observations from moving final release readiness, and keeps production-backed
-  proof gaps open.
+  harness items, 100 merge-invariant items, and 99 release-ops items.
+- Post-release monitoring plan release verifier v5: the current lane now
+  checks `RPP-0999` with support-only release-verifier carry-through coverage
+  for the post-release monitoring plan. The evidence carries forward the
+  RPP-0979 v4 monitoring plan contract, proves operator documentation names
+  safe recovery inputs without hidden assumptions, names required monitoring
+  inputs, stop conditions, rollback and escalation blockers, and keeps
+  monitoring activation, monitoring finalization, and release movement blocked
+  until production-backed proof is supplied.
   Command:
-  `node --test --test-name-pattern RPP-0998 test/rpp-0998-telemetry-free-audit-mode-release-verifier-v5.test.js`.
-  Caveat: telemetry-free audit verifier support evidence only; final release
+  `node --test --test-name-pattern RPP-0999 test/rpp-0999-post-release-monitoring-plan-release-verifier-v5.test.js`.
+  Caveat: post-release monitoring verifier support evidence only; final release
   remains `NO-GO`.
-  Validation passed with a Node syntax check, focused RPP-0998 coverage 5/5,
+  Validation passed with a Node syntax check, focused RPP-0999 coverage 7/7,
   scoped artifact redaction scan, and diff whitespace checks. Counts are now
-  958/42; final release remains `NO-GO` until required production-backed proof
+  959/41; final release remains `NO-GO` until required production-backed proof
   is present and accepted.
 - Support escalation guide release verifier v5: the current lane now checks
   `RPP-0997` with support-only release-verifier carry-through coverage for the

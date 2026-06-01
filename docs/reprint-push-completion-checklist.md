@@ -1055,5 +1055,5 @@ Focus: turn proven behavior into release discipline and operations.
 - [x] RPP-0996 (Farthest / release-ops) Carry through the release verifier for migration docs, variant 5. Success: audit file links exact commands and commits.
 - [x] RPP-0997 (Farthest / release-ops) Carry through the release verifier for support escalation guide, variant 5. Success: release gate status moves only with production-backed evidence.
 - [x] RPP-0998 (Farthest / release-ops) Carry through the release verifier for telemetry-free audit mode, variant 5. Success: CI blocks release when a required proof fails.
-- [ ] RPP-0999 (Farthest / release-ops) Carry through the release verifier for post-release monitoring plan, variant 5. Success: operator docs explain safe recovery without hidden assumptions.
+- [x] RPP-0999 (Farthest / release-ops) Carry through the release verifier for post-release monitoring plan, variant 5. Success: operator docs explain safe recovery without hidden assumptions.
 - [ ] RPP-1000 (Farthest / release-ops) Carry through the release verifier for go/no-go release decision record, variant 5. Success: final go/no-go record names every remaining risk or closes it.
