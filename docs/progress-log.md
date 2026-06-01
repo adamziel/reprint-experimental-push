@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 07:44 CEST +02:00.
+- Last update: 2026-06-01 07:46 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0824 BrewCommerce blueprint import v2 merge ending at `d5c01d941`.
+  the RPP-0819 sandbox 8080 ingress rule proof v1 merge ending at `ca26621ed`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 969
-  items checked and leaves 31 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 970
+  items checked and leaves 30 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 69 production-topology items, 100 generated
+  100 storage/performance items, 70 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Sandbox 8080 ingress rule proof v1: the current lane now checks `RPP-0819`
+  with support-only evidence for the Docker local WordPress topology ingress
+  rule. The artifact keeps final release `NO-GO`, records a single loopback
+  HTTP ingress on port 8080, rejects public hosts, non-8080 ports, and multiple
+  published HTTP ingress surfaces, and requires real WordPress import/export
+  survival before release eligibility.
+  Command:
+  `node --test --test-name-pattern RPP-0819 test/rpp-0819-sandbox-8080-ingress-rule-proof-v1.test.js`.
+  Caveat: sandbox 8080 ingress support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0819 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  970/30; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - BrewCommerce blueprint import v2: the current lane now checks `RPP-0824`
   with support-only import/export survival evidence for the BrewCommerce
   blueprint gate. The artifact keeps final release `NO-GO`, requires a real
