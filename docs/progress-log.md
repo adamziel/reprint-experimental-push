@@ -6,19 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 02:42 CEST +02:00.
+- Last update: 2026-06-01 02:44 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0868 classic theme files proof merge ending at `e3fb42175`.
+  the RPP-0871 object-cache enabled topology proof merge ending at `99a83d2ee`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 841
-  items checked and leaves 159 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 842
+  items checked and leaves 158 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 41 production-topology items, 100 generated
+  100 storage/performance items, 42 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Object-cache enabled topology variant-4 unavailable-capability proof: the
+  current lane now checks `RPP-0871` with deterministic object-cache topology
+  support evidence. The proof records private cache backend requirements,
+  per-site object-cache runtime/readback surfaces, cache/drift boundaries,
+  Docker service DNS release URLs, local-only 8080 ingress, no packaged
+  fallback, and exact blocker `DOCKER_CLI_MISSING` when Docker cannot start the
+  topology.
+  Commands:
+  `node --test --test-name-pattern RPP-0871 test/rpp-0871-object-cache-enabled-topology-v4.test.js`
+  and `npm run verify:release:docker-local-production`.
+  Caveat: unavailable-capability support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0871
+  coverage 5/5, Docker topology command exit 2 with `DOCKER_CLI_MISSING`,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  842/158; final release remains `NO-GO` because this is support evidence, not
+  production-backed object-cache site startup, runtime readback, release
+  verifier cache-path proof, production credentials, route receipts, durable
+  journal behavior, live mutation proof, throughput, release approval, or a
+  production release gate.
 - Classic theme files variant-4 URL identity proof: the current lane now checks
   `RPP-0868` with deterministic classic-theme support evidence. The proof
   captures source, local-edited, and remote-changed URL identities, binds those
