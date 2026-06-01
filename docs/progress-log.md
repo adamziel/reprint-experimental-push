@@ -6,19 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 02:18 CEST +02:00.
+- Last update: 2026-06-01 02:20 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0851 object cache enabled topology proof merge ending at `e764b10bd`.
+  the RPP-0856 plugin update hooks topology proof merge ending at `2430525ce`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 833
-  items checked and leaves 167 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 834
+  items checked and leaves 166 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 33 production-topology items, 100 generated
+  100 storage/performance items, 34 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin update hooks topology variant-3 unavailable-capability proof: the
+  current lane now checks `RPP-0856` with deterministic plugin-update topology
+  support evidence. The proof records updater transient, pre-install,
+  post-install, process-complete, version-readback, and plugin-owned schema
+  marker surfaces, requires WordPress updater runtime and Docker service DNS
+  release URLs, keeps packaged fallback disabled, records exact blocker
+  `DOCKER_CLI_MISSING`, and leaves release movement blocked until live update
+  hook proof runs through started WordPress sites.
+  Commands:
+  `node --test --test-name-pattern RPP-0856 test/rpp-0856-plugin-update-hooks-topology-v3.test.js`
+  and `npm run verify:release:docker-local-production`.
+  Caveat: unavailable-capability support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0856
+  coverage 5/5, Docker topology command exit 2 with `DOCKER_CLI_MISSING`,
+  scoped artifact redaction scan with two allowed hash-evidence occurrences,
+  and diff whitespace checks. Counts are now 834/166; final release remains
+  `NO-GO` because this is support evidence, not production-backed plugin update
+  hook execution, post-update side-effect readback, production credentials,
+  route receipts, durable journal evidence, live mutation proof, throughput,
+  release approval, or a production release gate.
 - Object-cache enabled topology variant-3 unavailable-capability proof: the
   current lane now checks `RPP-0851` with deterministic generated object-cache
   topology support evidence. The proof records a private cache backend with

@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 833.
-- Remaining open: 167.
+- Verified complete: 834.
+- Remaining open: 166.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -907,7 +907,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0853 (Far / production-topology) Add generated coverage for maintenance mode interaction, variant 3. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0854 (Far / production-topology) Add generated coverage for large media library topology, variant 3. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0855 (Far / production-topology) Add generated coverage for plugin activation hooks topology, variant 3. Success: progress report records candidate versus release-ready scope.
-- [ ] RPP-0856 (Far / production-topology) Add generated coverage for plugin update hooks topology, variant 3. Success: topology command starts the sites or records exact unavailable capability.
+- [x] RPP-0856 (Far / production-topology) Add generated coverage for plugin update hooks topology, variant 3. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0857 (Far / production-topology) Add generated coverage for REST route matrix proof, variant 3. Success: verify:release passes without packaged fallback on the topology.
 - [ ] RPP-0858 (Far / production-topology) Add generated coverage for TLS/HTTPS source proof, variant 3. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0859 (Far / production-topology) Add generated coverage for sandbox 8080 ingress rule proof, variant 3. Success: plugin and graph evidence survive real WordPress import/export.
