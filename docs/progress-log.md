@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 08:07 CEST +02:00.
+- Last update: 2026-06-01 08:10 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0832 cron activity during push v2 merge ending at `2ade2d2e8`.
+  the RPP-0834 large media library topology v2 merge ending at `b23bb39b4`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 974
-  items checked and leaves 26 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 975
+  items checked and leaves 25 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 74 production-topology items, 100 generated
+  100 storage/performance items, 75 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Large media library topology v2: the current lane now checks `RPP-0834` with
+  support-only evidence for the large media import/export survival contract.
+  The artifact keeps final release `NO-GO`, links the large media benchmark and
+  external topology identity surfaces, records exact unavailable Docker and
+  live import/export capabilities, and accepts release eligibility only when
+  production-backed real WordPress plugin and graph survival proof is supplied.
+  Command:
+  `node --test --test-name-pattern RPP-0834 test/rpp-0834-large-media-library-topology-v2.test.js`.
+  Caveat: large media topology support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0834 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  975/25; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Cron activity during push v2: the current lane now checks `RPP-0832` with
   support-only evidence for cron activity during a production-shaped push. The
   artifact keeps final release `NO-GO`, records the exact unavailable Docker
