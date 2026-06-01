@@ -95,6 +95,51 @@ promise safe production push support for arbitrary live WordPress source sites.
 The honest claim remains: fixture-scoped and lab-backed push evidence, blocked
 for production until the missing proofs above exist.
 
+## RPP-0906 Critic Audit Risk Disposition
+
+Date: 2026-06-01
+Variant: 1
+Evidence: `docs/evidence/rpp-0906-critic-audit-update.md`
+
+Final release verdict: **NO-GO**.
+
+This critic-audit update is support-only and no-production-backed. It adds no
+production endpoint, no live source mutation proof, no durable production
+journal, no production credential lifecycle proof, no plugin resource contract,
+and no release-gate status movement. The disposition is therefore to preserve
+every production blocker from the critic audit and keep release integration at
+**NO-GO**.
+
+### Relevant Current Commits
+
+| Commit | Subject | Why linked |
+| --- | --- | --- |
+| `609f52cd9` | Merge published progress page state | Current branch head observed before the RPP-0906 support-only update. |
+| `ddc4ff4c5` | docs: publish progress page | Observed `origin/main` / `origin/HEAD` reference during the audit. |
+| `500b7b8f8` | docs: refresh progress for RPP-0905 integration | Most recent integrated progress commit referencing the objective-audit update. |
+| `bcdad0f0f` | Add RPP-0905 objective audit update | Prior objective audit record that also keeps final release `NO-GO`. |
+| `7c2516ca5` | Add RPP-0903 release gate 3 final audit evidence | Recent release-gate audit evidence retained as historical context only. |
+
+### Exact Command Links
+
+| Exact command | Linked commits | Purpose |
+| --- | --- | --- |
+| `git log --oneline --decorate -12` | `609f52cd9`, `ddc4ff4c5`, `500b7b8f8`, `7c2516ca5` | Established the current branch head, remote main reference, and recent integrated audit/progress context. |
+| `git log --oneline --all --grep='RPP-0905' -8` | `500b7b8f8`, `bcdad0f0f` | Located the prior objective-audit update and its integration progress commit. |
+| `git log --oneline --all --grep='audit' -12` | `7c2516ca5`, `b9b889422`, `23784c4f2`, `bcdad0f0f` | Located recent final-audit evidence commits without moving any release gate. |
+
+### Required Validation Commands
+
+```bash
+node --check test/rpp-0906-critic-audit-update.test.js
+node --test --test-name-pattern RPP-0906 test/rpp-0906-critic-audit-update.test.js
+node scripts/release/artifact-redaction-scan.mjs audits/critic.md docs/evidence/rpp-0906-critic-audit-update.md
+git diff --check
+```
+
+RPP-0906 integration recommendation: **NO-GO**. Integrate only as critic-audit
+support evidence; do not move release-gate status files or final release status.
+
 ## 2026-05-24 Auth And Graph Hardening Re-Audit
 
 Verdict: the project still must not claim production-grade push support.
