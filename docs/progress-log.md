@@ -6,20 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 02:33 CEST +02:00.
+- Last update: 2026-06-01 02:34 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0861 three-site local production topology proof merge ending at
-  `b45ee5cba`.
+  the RPP-0865 WooCommerce product catalog proof merge ending at `a5393bf5c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 838
-  items checked and leaves 162 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 839
+  items checked and leaves 161 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 38 production-topology items, 100 generated
+  100 storage/performance items, 39 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- WooCommerce product catalog variant-4 candidate-scope proof: the current lane
+  now checks `RPP-0865` with deterministic WooCommerce catalog support
+  evidence. The proof records product, variation, taxonomy, pricing, inventory,
+  media, attribute, and plugin-data candidate surfaces, keeps raw catalog values
+  out of the evidence artifact, and records production import/export, auth,
+  live readback, durable journal, throughput, and release-approval gaps.
+  Commands:
+  `node --test --test-name-pattern RPP-0865 test/rpp-0865-woocommerce-product-catalog-v4.test.js`
+  and representative adjacent
+  `node --test --test-name-pattern RPP-0845 test/rpp-0845-woocommerce-product-catalog-v3.test.js`.
+  Caveat: candidate-scope support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0865 coverage 4/4,
+  representative RPP-0845 coverage 4/4, scoped artifact redaction scan with ten
+  allowed hash-evidence occurrences, and diff whitespace checks. Counts are now
+  839/161; final release remains `NO-GO` because this is support evidence, not
+  production-backed WooCommerce import/export survival, production credentials,
+  route receipts, durable journal behavior, live mutation proof, throughput,
+  release approval, or a production release gate.
 - Three-site local production topology variant-4 unavailable-capability proof:
   the current lane now checks `RPP-0861` with deterministic three-site topology
   support evidence. The proof records source, local-edited, and remote-changed
