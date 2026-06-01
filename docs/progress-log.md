@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 08:52 CEST +02:00.
+- Last update: 2026-06-01 08:55 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0879 sandbox 8080 ingress rule proof v4 merge ending at `320b409a5`.
+  the RPP-0877 REST route matrix proof v4 merge ending at `ad1eabc89`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 991
-  items checked and leaves 9 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 992
+  items checked and leaves 8 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 91 production-topology items, 100 generated
+  100 storage/performance items, 92 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- REST route matrix proof v4: the current lane now checks `RPP-0877` with
+  support-only REST route matrix regression evidence. The artifact keeps final
+  release `NO-GO`, records the exact unavailable topology capability, preserves
+  local-only no-fallback policy, rejects missing live route receipts, packaged
+  fallback, and ambiguous blockers, and requires live route registration and
+  receipt proof before release eligibility.
+  Command:
+  `node --test --test-name-pattern RPP-0877 test/rpp-0877-rest-route-matrix-proof-v4.test.js`.
+  Caveat: REST route matrix support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0877 coverage 6/6,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  992/8; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Sandbox 8080 ingress rule proof v4: the current lane now checks `RPP-0879`
   with support-only sandbox ingress regression evidence. The artifact keeps
   final release `NO-GO`, carries variant-4 production-topology and no-tunnel
