@@ -6,18 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 09:06 CEST +02:00.
+- Last update: 2026-06-01 09:13 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0889 multisite subdirectory topology v5 merge ending at `01f7320f`.
+  the RPP-0892 cron activity during push v5 merge ending at `8e0eca2f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 996
-  items checked and leaves 4 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 997
+  items checked and leaves 3 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 96 production-topology items, 100 generated
+  100 storage/performance items, 97 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Cron activity during push v5: the current lane now checks `RPP-0892` with
+  support-only release-verifier carry-through evidence. The artifact keeps
+  final release `NO-GO`, records cron-active topology scope, carries
+  `verify:release` requirements through without packaged fallback, rejects
+  release movement, ambiguous blockers, fallback, and unsupported production
+  claims, and requires production-backed cron activity readback before release
+  eligibility.
+  Command:
+  `node --test --test-name-pattern RPP-0892 test/rpp-0892-cron-activity-during-push-v5.test.js`.
+  Caveat: cron-active topology support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0892 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  997/3; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Multisite subdirectory topology v5: the current lane now checks `RPP-0889`
   with support-only release-verifier carry-through evidence. The artifact keeps
   final release `NO-GO`, records multisite subdirectory scope, requires

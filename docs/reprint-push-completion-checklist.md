@@ -943,7 +943,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0889 (Far / production-topology) Carry through the release verifier for multisite subdirectory topology, variant 5. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0890 (Far / production-topology) Carry through the release verifier for multisite subdomain topology, variant 5. Success: progress report records candidate versus release-ready scope.
 - [x] RPP-0891 (Far / production-topology) Carry through the release verifier for object cache enabled topology, variant 5. Success: topology command starts the sites or records exact unavailable capability.
-- [ ] RPP-0892 (Far / production-topology) Carry through the release verifier for cron activity during push, variant 5. Success: verify:release passes without packaged fallback on the topology.
+- [x] RPP-0892 (Far / production-topology) Carry through the release verifier for cron activity during push, variant 5. Success: verify:release passes without packaged fallback on the topology.
 - [x] RPP-0893 (Far / production-topology) Carry through the release verifier for maintenance mode interaction, variant 5. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0894 (Far / production-topology) Carry through the release verifier for large media library topology, variant 5. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0895 (Far / production-topology) Carry through the release verifier for plugin activation hooks topology, variant 5. Success: progress report records candidate versus release-ready scope.
