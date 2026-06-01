@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 02:46 CEST +02:00.
+- Last update: 2026-06-01 02:48 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0870 multisite subdomain topology proof merge ending at `6704b7fc9`.
+  the RPP-0873 maintenance mode interaction proof merge ending at `50d4e716b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 843
-  items checked and leaves 157 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 844
+  items checked and leaves 156 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 43 production-topology items, 100 generated
+  100 storage/performance items, 44 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Maintenance mode interaction variant-4 URL identity proof: the current lane
+  now checks `RPP-0873` with deterministic maintenance-mode support evidence.
+  The proof captures source, local-edited, and remote-changed URL identities,
+  binds maintenance-mode state, maintenance-file and plugin-option surfaces to
+  those identities, rejects tunnel-shaped, secret-shaped, duplicate-role, and
+  packaged fallback inputs before scope acceptance, and keeps raw URL values out
+  of the evidence artifact.
+  Command:
+  `node --test --test-name-pattern RPP-0873 test/rpp-0873-maintenance-mode-interaction-v4.test.js`.
+  Caveat: URL identity support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0873 coverage 3/3,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  844/156; final release remains `NO-GO` because this is support evidence, not
+  production-backed WordPress reachability, production credentials, route
+  receipts, durable journal behavior, live maintenance-mode mutation proof,
+  throughput, release approval, or a production release gate.
 - Multisite subdomain topology variant-4 candidate-scope proof: the current lane
   now checks `RPP-0870` with deterministic multisite-subdomain support
   evidence. The proof records source, local-edited, and remote-changed host role
