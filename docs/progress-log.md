@@ -6,18 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:39 CEST +02:00.
+- Last update: 2026-06-01 04:40 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0933 GitHub Pages progress publish v2 merge ending at `8f55bd853`.
+  the RPP-0934 release artifact package v2 merge ending at `997f48bf9`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 893
-  items checked and leaves 107 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 894
+  items checked and leaves 106 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 33 release-ops items.
+  harness items, 100 merge-invariant items, and 34 release-ops items.
+- Release artifact package v2: the current lane now checks `RPP-0934` with a
+  support-only release package contract refresh. The evidence names packaged
+  artifacts, operator recovery prerequisites, safe recovery evidence, stop
+  conditions, and hidden-assumption blockers before packaging, publication,
+  finalization, or release movement.
+  Command:
+  `node --test --test-name-pattern RPP-0934 test/rpp-0934-release-artifact-package-v2.test.js`.
+  Caveat: release package support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0934 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  894/106; final release remains `NO-GO` until production-backed package and
+  operator recovery proofs are ready.
 - GitHub Pages progress publish v2: the current lane now checks `RPP-0933`
   with a support-only progress publish proof refresh. The evidence requires the
   lane `progress.html` artifact hash to match the published public
