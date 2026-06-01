@@ -6,18 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:54 CEST +02:00.
+- Last update: 2026-06-01 03:56 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0909 operator runbook merge ending at `2192d04d1`.
+  the RPP-0910 failure triage runbook merge ending at `e85a1660d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 869
-  items checked and leaves 131 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 870
+  items checked and leaves 130 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 9 release-ops items.
+  harness items, 100 merge-invariant items, and 10 release-ops items.
+- Failure triage runbook: the current lane now checks `RPP-0910` with a
+  support-only failure triage runbook. The evidence records the final `NO-GO`,
+  names every remaining triage risk, closes zero production risks, and requires
+  production-backed closure evidence before release approval.
+  Command:
+  `node --test --test-name-pattern RPP-0910 test/rpp-0910-failure-triage-runbook.test.js`.
+  Representative batch gate:
+  `node --test test/rpp-0901-release-gate-1-final-audit.test.js test/rpp-0902-release-gate-2-final-audit.test.js test/rpp-0903-release-gate-3-final-audit.test.js test/rpp-0904-operator-safe-recovery-audit.test.js test/rpp-0905-objective-audit-update.test.js test/rpp-0906-critic-audit-update.test.js test/rpp-0907-security-review-checklist.test.js test/rpp-0908-privacy-redaction-review.test.js test/rpp-0909-operator-runbook.test.js test/rpp-0910-failure-triage-runbook.test.js`.
+  Caveat: triage support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0910 coverage 4/4,
+  release-ops batch coverage 37/37, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 870/130; final release remains `NO-GO`
+  because production closure proof is still absent.
 - Operator runbook: the current lane now checks `RPP-0909` with a support-only
   production operation runbook. The runbook requires production prerequisites
   before mutation, records evidence capture and stop conditions, and blocks
