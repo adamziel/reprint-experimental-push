@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:59 CEST +02:00.
+- Last update: 2026-06-01 07:01 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0995 versioned protocol docs release verifier v5 merge ending at
-  `db85ee6a`.
+  the RPP-0996 migration docs release verifier v5 merge ending at `7a6f32a8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 955
-  items checked and leaves 45 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 956
+  items checked and leaves 44 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 95 release-ops items.
+  harness items, 100 merge-invariant items, and 96 release-ops items.
+- Migration docs release verifier v5: the current lane now checks `RPP-0996`
+  with support-only release-verifier carry-through coverage for migration docs.
+  The evidence carries forward the RPP-0976 v4 migration-docs contract, links
+  exact audit, release-verifier, focused validation, and lane context commands
+  to commit anchors, preserves final `NO-GO`, and keeps production-backed
+  migration proof gaps open and fail-closed.
+  Command:
+  `node --test --test-name-pattern RPP-0996 test/rpp-0996-migration-docs-release-verifier-v5.test.js`.
+  Caveat: migration docs verifier support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0996 coverage 6/6,
+  scoped artifact redaction scan, diff whitespace checks, and the
+  RPP-0988-through-RPP-0995 release-ops batch gate 54/54. Counts are now
+  956/44; final release remains `NO-GO` until required production-backed
+  migration proof is present and accepted.
 - Versioned protocol docs release verifier v5: the current lane now checks
   `RPP-0995` with support-only release-verifier carry-through coverage for the
   versioned protocol docs. The evidence carries forward the RPP-0975 v4
