@@ -6,18 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:24 CEST +02:00.
+- Last update: 2026-06-01 04:25 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0925 objective audit update v2 merge ending at `f35e4d582`.
+  the RPP-0926 critic audit update v2 merge ending at `4a219b161`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 885
-  items checked and leaves 115 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 886
+  items checked and leaves 114 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 25 release-ops items.
+  harness items, 100 merge-invariant items, and 26 release-ops items.
+- Critic audit update v2: the current lane now checks `RPP-0926` with a
+  support-only critic-audit disposition update. The evidence links exact
+  commands to commit anchors, names the remaining release-blocking evidence
+  gaps, and keeps final release held.
+  Command:
+  `node --test --test-name-pattern RPP-0926 test/rpp-0926-critic-audit-update-v2.test.js`.
+  Caveat: critic audit support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0926 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  886/114; final release remains `NO-GO` because production-backed live
+  release evidence remains absent.
 - Objective audit update v2: the current lane now checks `RPP-0925` with a
   support-only final go/no-go risk-disposition record. The evidence names all
   17 current final-release risks as open, keeps objective risks R1-R16 open,
