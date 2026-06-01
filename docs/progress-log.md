@@ -6,18 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:25 CEST +02:00.
+- Last update: 2026-06-01 06:26 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0979 post-release monitoring plan v4 merge ending at `55dece9f7`.
+  the RPP-0980 go/no-go release decision record v4 merge ending at `9a6b94580`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 939
-  items checked and leaves 61 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 940
+  items checked and leaves 60 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 79 release-ops items.
+  harness items, 100 merge-invariant items, and 80 release-ops items.
+- Go/no-go release decision record v4: the current lane now checks `RPP-0980`
+  with support-only focused regression coverage for the go/no-go release
+  decision record. The evidence carries forward the RPP-0960 v3 decision
+  contract, names all 17 remaining final-release risks, closes no risk without
+  production-backed proof, records no release-gate movement, and keeps final
+  release `NO-GO`.
+  Command:
+  `node --test --test-name-pattern RPP-0980 test/rpp-0980-go-no-go-release-decision-record-v4.test.js`.
+  Caveat: go/no-go decision support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0980 coverage 4/4,
+  scoped artifact redaction scan, diff whitespace checks, and a representative
+  release-ops batch over RPP-0973 through RPP-0980 with 43/43 tests passing.
+  Counts are now 940/60; final release remains `NO-GO` until required
+  production-backed closure proof is present and accepted.
 - Post-release monitoring plan v4: the current lane now checks `RPP-0979` with
   support-only focused regression coverage for post-release monitoring. The
   evidence carries forward the RPP-0959 v3 monitoring contract, names recovery
