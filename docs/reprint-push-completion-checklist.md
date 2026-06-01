@@ -1039,7 +1039,7 @@ Focus: turn proven behavior into release discipline and operations.
 - [x] RPP-0980 (Farthest / release-ops) Add focused regression coverage for go/no-go release decision record, variant 4. Success: final go/no-go record names every remaining risk or closes it.
 - [x] RPP-0981 (Farthest / release-ops) Carry through the release verifier for release gate 1 final audit, variant 5. Success: audit file links exact commands and commits.
 - [x] RPP-0982 (Farthest / release-ops) Carry through the release verifier for release gate 2 final audit, variant 5. Success: release gate status moves only with production-backed evidence.
-- [ ] RPP-0983 (Farthest / release-ops) Carry through the release verifier for release gate 3 final audit, variant 5. Success: CI blocks release when a required proof fails.
+- [x] RPP-0983 (Farthest / release-ops) Carry through the release verifier for release gate 3 final audit, variant 5. Success: CI blocks release when a required proof fails.
 - [ ] RPP-0984 (Farthest / release-ops) Carry through the release verifier for release gate 4 final audit, variant 5. Success: operator docs explain safe recovery without hidden assumptions.
 - [ ] RPP-0985 (Farthest / release-ops) Carry through the release verifier for objective audit update, variant 5. Success: final go/no-go record names every remaining risk or closes it.
 - [ ] RPP-0986 (Farthest / release-ops) Carry through the release verifier for critic audit update, variant 5. Success: audit file links exact commands and commits.
