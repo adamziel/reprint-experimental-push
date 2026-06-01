@@ -6,18 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:56 CEST +02:00.
+- Last update: 2026-06-01 03:58 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0910 failure triage runbook merge ending at `e85a1660d`.
+  the RPP-0911 rollback/repair runbook merge ending at `173a16387`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 870
-  items checked and leaves 130 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 871
+  items checked and leaves 129 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 10 release-ops items.
+  harness items, 100 merge-invariant items, and 11 release-ops items.
+- Rollback/repair runbook: the current lane now checks `RPP-0911` with a
+  support-only rollback and repair runbook. The evidence links exact audit
+  commands to existing commits, names the stop conditions for unsafe repair,
+  and keeps rollback/repair release proof blocked until production-backed
+  evidence exists.
+  Command:
+  `node --test --test-name-pattern RPP-0911 test/rpp-0911-rollback-repair-runbook.test.js`.
+  Caveat: rollback/repair support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0911 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  871/129; final release remains `NO-GO` because production rollback/repair
+  proof is still absent.
 - Failure triage runbook: the current lane now checks `RPP-0910` with a
   support-only failure triage runbook. The evidence records the final `NO-GO`,
   names every remaining triage risk, closes zero production risks, and requires
