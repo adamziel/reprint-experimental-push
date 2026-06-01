@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 972.
-- Remaining open: 28.
+- Verified complete: 973.
+- Remaining open: 27.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -893,7 +893,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [ ] RPP-0839 (Far / production-topology) Prove sandbox 8080 ingress rule proof, variant 2. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0840 (Far / production-topology) Prove no tunnel policy proof, variant 2. Success: progress report records candidate versus release-ready scope.
 - [x] RPP-0841 (Far / production-topology) Add generated coverage for three-site local production topology, variant 3. Success: topology command starts the sites or records exact unavailable capability.
-- [ ] RPP-0842 (Far / production-topology) Add generated coverage for Docker WordPress topology, variant 3. Success: verify:release passes without packaged fallback on the topology.
+- [x] RPP-0842 (Far / production-topology) Add generated coverage for Docker WordPress topology, variant 3. Success: verify:release passes without packaged fallback on the topology.
 - [x] RPP-0843 (Far / production-topology) Add generated coverage for external WordPress topology, variant 3. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0844 (Far / production-topology) Add generated coverage for BrewCommerce blueprint import, variant 3. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0845 (Far / production-topology) Add generated coverage for WooCommerce product catalog, variant 3. Success: progress report records candidate versus release-ready scope.
