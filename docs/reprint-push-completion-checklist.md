@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 924.
-- Remaining open: 76.
+- Verified complete: 925.
+- Remaining open: 75.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -1021,7 +1021,7 @@ Focus: turn proven behavior into release discipline and operations.
 - [x] RPP-0962 (Farthest / release-ops) Add focused regression coverage for release gate 2 final audit, variant 4. Success: release gate status moves only with production-backed evidence.
 - [x] RPP-0963 (Farthest / release-ops) Add focused regression coverage for release gate 3 final audit, variant 4. Success: CI blocks release when a required proof fails.
 - [x] RPP-0964 (Farthest / release-ops) Add focused regression coverage for release gate 4 final audit, variant 4. Success: operator docs explain safe recovery without hidden assumptions.
-- [ ] RPP-0965 (Farthest / release-ops) Add focused regression coverage for objective audit update, variant 4. Success: final go/no-go record names every remaining risk or closes it.
+- [x] RPP-0965 (Farthest / release-ops) Add focused regression coverage for objective audit update, variant 4. Success: final go/no-go record names every remaining risk or closes it.
 - [ ] RPP-0966 (Farthest / release-ops) Add focused regression coverage for critic audit update, variant 4. Success: audit file links exact commands and commits.
 - [ ] RPP-0967 (Farthest / release-ops) Add focused regression coverage for security review checklist, variant 4. Success: release gate status moves only with production-backed evidence.
 - [ ] RPP-0968 (Farthest / release-ops) Add focused regression coverage for privacy/redaction review, variant 4. Success: CI blocks release when a required proof fails.
