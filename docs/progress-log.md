@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 05:56 CEST +02:00.
+- Last update: 2026-06-01 05:58 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0967 security review checklist v4 merge ending at `b8eb032a5`.
+  the RPP-0968 privacy/redaction review v4 merge ending at `94a0bc88a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 927
-  items checked and leaves 73 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 928
+  items checked and leaves 72 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 67 release-ops items.
+  harness items, 100 merge-invariant items, and 68 release-ops items.
+- Privacy/redaction review v4: the current lane now checks `RPP-0968` with
+  support-only focused regression coverage for the privacy/redaction review.
+  The evidence carries forward the RPP-0948 v3 redaction-scanner contract,
+  maps each required redaction proof failure to a nonzero release-check
+  outcome, keeps support-only redaction observations from moving final release,
+  and records no release-gate movement.
+  Command:
+  `node --test --test-name-pattern RPP-0968 test/rpp-0968-privacy-redaction-review-v4.test.js`.
+  Caveat: privacy/redaction support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0968 coverage 6/6,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  928/72; final release remains `NO-GO` until required production-backed
+  redaction proof is present and accepted.
 - Security review checklist v4: the current lane now checks `RPP-0967` with
   support-only focused regression coverage for the security review checklist.
   The evidence keeps release-gate status movement production-evidence gated,
