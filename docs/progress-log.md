@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 05:41 CEST +02:00.
+- Last update: 2026-06-01 05:43 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0960 go/no-go release decision record v3 merge ending at `950410322`.
+  the RPP-0961 release gate 1 final audit v4 merge ending at `bb6123914`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
   goals, but it is no longer a static all-unchecked inventory. It now marks 915
-  items checked and leaves 80 open.
+  items checked and leaves 79 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 60 release-ops items.
+  harness items, 100 merge-invariant items, and 61 release-ops items.
+- Release gate 1 final audit v4: the current lane now checks `RPP-0961` with
+  support-only focused regression coverage for the release gate 1 audit. The
+  evidence links exact audit commands, validation commands, support commits,
+  and lane context commits, carries forward the RPP-0941 v3 gate-1 audit
+  contract, requires production-backed source/local/changed proof before any
+  gate movement, and records final `NO-GO`.
+  Command:
+  `node --test --test-name-pattern RPP-0961 test/rpp-0961-release-gate-1-final-audit-v4.test.js`.
+  Caveat: release gate 1 audit support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0961 coverage 6/6,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  921/79; final release remains `NO-GO` until required production-backed gate
+  proof is present and accepted.
 - Go/no-go release decision record v3: the current lane now checks `RPP-0960`
   with support-only generated coverage for the final release decision record.
   The evidence names every remaining final-release risk, matches the current
