@@ -691,21 +691,21 @@ function assertGeneratedEvidence(evidence) {
     conflict: 201,
     ready: 345,
   });
-  assert.equal(evidence.casesWithKeepRemote, 533);
-  assert.equal(evidence.readyCasesWithKeepRemote, 284);
+  assert.equal(evidence.casesWithKeepRemote, 542);
+  assert.equal(evidence.readyCasesWithKeepRemote, 293);
   assert.equal(evidence.nonReadyCasesWithKeepRemote, 249);
-  assert.equal(evidence.keepRemoteDecisionCount, 1575);
+  assert.equal(evidence.keepRemoteDecisionCount, 1695);
   assert.deepEqual(Object.keys(evidence.keepRemoteCaseTiers), ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
   assert.deepEqual(evidence.keepRemoteResourceTypes, {
     file: 316,
     plugin: 20,
-    row: 1239,
+    row: 1359,
   });
-  assert.deepEqual(evidence.keepRemoteLocalChanges, { unchanged: 1575 });
+  assert.deepEqual(evidence.keepRemoteLocalChanges, { unchanged: 1695 });
   assert.deepEqual(evidence.keepRemoteRemoteChanges, {
-    create: 514,
+    create: 574,
     delete: 20,
-    update: 1041,
+    update: 1101,
   });
   assert.match(evidence.caseProofHash, sha256EvidencePattern);
 }

@@ -19,16 +19,16 @@ import {
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
 const sha256HexPattern = /^[a-f0-9]{64}$/;
 const expectedReadyCandidateTierCounts = {
-  0: 18,
-  1: 16,
-  2: 18,
-  3: 16,
-  4: 18,
-  5: 16,
-  6: 18,
-  7: 16,
-  8: 18,
-  9: 16,
+  0: 21,
+  1: 19,
+  2: 21,
+  3: 19,
+  4: 21,
+  5: 19,
+  6: 21,
+  7: 19,
+  8: 21,
+  9: 19,
 };
 
 function cloneJson(value) {
@@ -395,7 +395,7 @@ test('RPP-0258 generated forged ready plan defenses keep serialized evidence has
     forgedIssueCodes: {},
   };
 
-  assert.equal(generatedCases.length, 170, 'expected generated ready-candidate coverage set');
+  assert.equal(generatedCases.length, 200, 'expected generated ready-candidate coverage set');
 
   for (const testCase of generatedCases) {
     const plan = planFor(testCase);
@@ -612,13 +612,13 @@ test('RPP-0258 generated forged ready plan defenses keep serialized evidence has
   }
 
   assert.deepEqual(coverage.perTier, expectedReadyCandidateTierCounts);
-  assert.equal(Object.keys(coverage.families).length, 18, 'expected broad generated family coverage');
-  assert.deepEqual(coverage.statuses, { ready: 170 });
+  assert.equal(Object.keys(coverage.families).length, 21, 'expected broad generated family coverage');
+  assert.deepEqual(coverage.statuses, { ready: 200 });
   assert.deepEqual(coverage.forgedIssueCodes, {
-    DUPLICATE_LIVE_REMOTE_PRECONDITION: 170,
-    LOCAL_HASH_MISMATCH: 170,
-    MISSING_LIVE_REMOTE_PRECONDITION: 170,
-    REMOTE_BEFORE_HASH_INVALID: 170,
+    DUPLICATE_LIVE_REMOTE_PRECONDITION: 200,
+    LOCAL_HASH_MISMATCH: 200,
+    MISSING_LIVE_REMOTE_PRECONDITION: 200,
+    REMOTE_BEFORE_HASH_INVALID: 200,
   });
   assertSerializedEvidenceRedacted(coverage, ['raw-private'], 'coverage summary');
 });
