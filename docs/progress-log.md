@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:04 CEST +02:00.
+- Last update: 2026-06-01 03:07 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0883 external WordPress topology proof merge ending at `7a8a2dc1c`.
+  the RPP-0888 classic theme files proof merge ending at `1a2cb8d39`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 852
-  items checked and leaves 148 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 853
+  items checked and leaves 147 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 52 production-topology items, 100 generated
+  100 storage/performance items, 53 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Classic theme files variant-5 release-verifier carry-through proof: the
+  current lane now checks `RPP-0888` with deterministic classic theme file
+  support evidence. The proof captures source, local-edited, and remote-changed
+  URL identities, checks stylesheet, functions, template, asset, and required
+  theme-file scope, carries forward the release-verifier boundary, rejects
+  tunnel-shaped, secret-shaped, duplicate-role, loopback-outside-8080, and
+  packaged fallback inputs, and keeps raw URL and theme payload values out of
+  the evidence artifact.
+  Command:
+  `node --test --test-name-pattern RPP-0888 test/rpp-0888-classic-theme-files-v5.test.js`.
+  Caveat: URL identity support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0888 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  853/147; final release remains `NO-GO` because this is support evidence, not
+  production-backed WordPress reachability, production credentials, route
+  receipts, durable journal behavior, live mutation proof, throughput, release
+  approval, or a production release gate.
 - External WordPress topology variant-5 release-verifier carry-through proof:
   the current lane now checks `RPP-0883` with deterministic external WordPress
   topology support evidence. The proof captures source, local-edited, and

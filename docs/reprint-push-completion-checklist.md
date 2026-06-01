@@ -939,7 +939,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0885 (Far / production-topology) Carry through the release verifier for WooCommerce product catalog, variant 5. Success: progress report records candidate versus release-ready scope.
 - [x] RPP-0886 (Far / production-topology) Carry through the release verifier for WooCommerce order safety refusal, variant 5. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0887 (Far / production-topology) Carry through the release verifier for block theme templates, variant 5. Success: verify:release passes without packaged fallback on the topology.
-- [ ] RPP-0888 (Far / production-topology) Carry through the release verifier for classic theme files, variant 5. Success: source/local/changed URLs are captured and identity-checked.
+- [x] RPP-0888 (Far / production-topology) Carry through the release verifier for classic theme files, variant 5. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0889 (Far / production-topology) Carry through the release verifier for multisite subdirectory topology, variant 5. Success: plugin and graph evidence survive real WordPress import/export.
 - [ ] RPP-0890 (Far / production-topology) Carry through the release verifier for multisite subdomain topology, variant 5. Success: progress report records candidate versus release-ready scope.
 - [ ] RPP-0891 (Far / production-topology) Carry through the release verifier for object cache enabled topology, variant 5. Success: topology command starts the sites or records exact unavailable capability.
