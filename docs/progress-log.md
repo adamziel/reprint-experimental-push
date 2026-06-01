@@ -6,18 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 07:01 CEST +02:00.
+- Last update: 2026-06-01 07:03 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0996 migration docs release verifier v5 merge ending at `7a6f32a8`.
+  the RPP-0997 support escalation guide release verifier v5 merge ending at
+  `83cd1db2`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 956
-  items checked and leaves 44 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 957
+  items checked and leaves 43 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 96 release-ops items.
+  harness items, 100 merge-invariant items, and 97 release-ops items.
+- Support escalation guide release verifier v5: the current lane now checks
+  `RPP-0997` with support-only release-verifier carry-through coverage for the
+  support escalation guide. The evidence carries forward the RPP-0977 v4
+  support escalation contract, names owners, prerequisites, stop conditions, and
+  escalation triggers, proves gate movement remains production-backed-evidence
+  gated, and keeps final release `NO-GO`.
+  Command:
+  `node --test --test-name-pattern RPP-0997 test/rpp-0997-support-escalation-guide-release-verifier-v5.test.js`.
+  Caveat: support escalation verifier support evidence only; final release
+  remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0997 coverage 6/6,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  957/43; final release remains `NO-GO` until required production-backed
+  release-gate movement proof is present and accepted.
 - Migration docs release verifier v5: the current lane now checks `RPP-0996`
   with support-only release-verifier carry-through coverage for migration docs.
   The evidence carries forward the RPP-0976 v4 migration-docs contract, links
