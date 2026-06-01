@@ -6,18 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:33 CEST +02:00.
+- Last update: 2026-06-01 03:36 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0904 operator safe recovery docs merge ending at `e82a700ce`.
+  the RPP-0901 release gate 1 final audit merge ending at `2b7a8f016`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 861
-  items checked and leaves 139 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 862
+  items checked and leaves 138 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 1 release-ops item.
+  harness items, 100 merge-invariant items, and 2 release-ops items.
+- Release gate 1 final audit: the current lane now checks `RPP-0901` with a
+  refreshed audit that links the exact support commits, current lane head,
+  release-gate status-row command, final-release gate evaluator, canonical
+  `verify:release` command, focused test command, redaction scan, and diff
+  whitespace check. The audit records that GATE-1 remains `support_only`, the
+  final release recommendation remains `NO-GO`, and both the release-gate
+  evaluator and canonical verifier fail closed with
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` and no mutation attempt.
+  Commands:
+  `node --test --test-name-pattern RPP-0901 test/rpp-0901-release-gate-1-final-audit.test.js`,
+  `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T01:26:00.000Z`,
+  and `timeout 300s npm run verify:release`.
+  Caveat: audit support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0901 coverage 4/4,
+  fail-closed release-gate evaluator exit 1, fail-closed canonical verifier
+  exit 1 with `mutationAttempted=false`, scoped artifact redaction scan, and
+  diff whitespace checks. Counts are now 862/138; final release remains
+  `NO-GO` because this is not production-backed source/auth proof, production
+  credentials, route receipts, durable journal behavior, live mutation proof,
+  throughput, release approval, or a production release gate.
 - Operator safe recovery documentation audit: the current lane now checks
   `RPP-0904` with support-only operator recovery docs and an audit artifact.
   The runbook names the acceptable failed-apply states `old-remote`,
