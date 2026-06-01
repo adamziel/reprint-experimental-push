@@ -38,6 +38,7 @@ const credentials = {
 };
 const requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1';
 const requiredPreservedRemoteRetryPath = process.env.REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH || '/snapshot';
+const preservedRemoteRetrySimulationMode = process.env.REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_MODE || '';
 const externalRemoteBaseUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
 const externalRemoteChangedUrl = process.env.REPRINT_PUSH_REMOTE_CHANGED_URL || '';
 const externalLocalEditedUrl = process.env.REPRINT_PUSH_LOCAL_URL || '';
@@ -132,6 +133,7 @@ async function runApplyRevalidationProof({ remoteServer, localServer, localSnaps
     routeProfile: 'production-shaped',
     requestTimeoutMs,
     simulatePreservedRemoteRetryPath: requiredPreservedRemoteRetryPath,
+    simulatePreservedRemoteRetryMode: preservedRemoteRetrySimulationMode,
   });
   const authSessionLifecycleTrace = [];
 

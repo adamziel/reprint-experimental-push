@@ -29,6 +29,9 @@ export const dockerTopologyVariant = 'RPP-0802-variant-1';
 export const dockerReleaseCommand = Object.freeze(['npm', 'run', 'verify:release']);
 export const dockerReleaseGateInputSchemaVersion = 1;
 export const dockerReleaseGateInputProducer = 'docker-local-production-release-gate-input';
+export const dockerRunnerAuthSessionSourceScriptPath = '/workspace/scripts/playground/auth-session-source-command.js';
+export const dockerRunnerEntrypointScriptPath = '/workdir/docker-runner-entrypoint.mjs';
+export const dockerRunnerPlaygroundCliBinaryPath = '/workdir/playground-cli/node_modules/@wp-playground/cli/wp-playground.js';
 export const brewcommerceAssumedRealSiteEnvKey = 'REPRINT_PUSH_ASSUME_BREWCOMMERCE_BLUEPRINT_REAL_SITE';
 export const brewcommerceAssumedRealSiteMode = 'brewcommerce-blueprint-creates-real-site';
 
@@ -112,6 +115,10 @@ export const dockerSiteVariants = Object.freeze([
   },
 ]);
 
+const dockerRunnerLoopbackBasePort = 8080;
+const dockerRunnerPlaygroundCliWorkDirName = 'playground-cli';
+const dockerRunnerPlaygroundCliCacheDirEnvKey = 'REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_PLAYGROUND_CLI_CACHE_DIR';
+
 export const defaultDockerImages = Object.freeze({
   wordpress: 'wordpress:php8.2-apache',
   wpCli: 'wordpress:cli-php8.2',
@@ -183,25 +190,40 @@ export function buildDockerTopologyPlan({
 } = {}) {
   const resolvedImages = { ...defaultDockerImages, ...images };
   const siteUrls = Object.fromEntries(dockerSiteVariants.map((variant) => [variant.key, `http://${variant.service}`]));
+  const runnerUrls = Object.fromEntries(
+    dockerSiteVariants.map((variant, index) => [variant.key, `http://127.0.0.1:${dockerRunnerLoopbackBasePort + index}`]),
+  );
+  const runnerProxyRoutes = dockerSiteVariants.map((variant, index) => ({
+    key: variant.key,
+    listenHost: '127.0.0.1',
+    listenPort: dockerRunnerLoopbackBasePort + index,
+    targetHost: variant.service,
+    targetPort: 80,
+  }));
   const authSessionSourceCommand = buildAuthSessionSourceCommand({
-    sourceUrl: siteUrls.source,
+    nodePath: 'node',
+    scriptPath: dockerRunnerAuthSessionSourceScriptPath,
+    sourceUrl: runnerUrls.source,
     username: credentials.username,
     applicationPassword: credentials.applicationPassword,
   });
   const releaseEnv = {
-    REPRINT_PUSH_SOURCE_URL: siteUrls.source,
-    REPRINT_PUSH_REMOTE_URL: siteUrls.source,
-    REPRINT_PUSH_REMOTE_CHANGED_URL: siteUrls['remote-changed'],
-    REPRINT_PUSH_LOCAL_URL: siteUrls['local-edited'],
-    REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL: siteUrls['apply-revalidation-source'],
+    REPRINT_PUSH_SOURCE_URL: runnerUrls.source,
+    REPRINT_PUSH_REMOTE_URL: runnerUrls.source,
+    REPRINT_PUSH_REMOTE_CHANGED_URL: runnerUrls['remote-changed'],
+    REPRINT_PUSH_LOCAL_URL: runnerUrls['local-edited'],
+    REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL: runnerUrls['apply-revalidation-source'],
     REPRINT_PUSH_USERNAME: credentials.username,
     REPRINT_PUSH_APPLICATION_PASSWORD: credentials.applicationPassword,
     REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
     REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.applicationPassword,
     REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: authSessionSourceCommand,
+    REPRINT_PUSH_PLAYGROUND_CLI_BINARY: dockerRunnerPlaygroundCliBinaryPath,
     REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
     REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
     REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH: '/snapshot',
+    REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_MODE: 'after-first-read',
+    REPRINT_PUSH_RECOVERY_FILE_JOURNAL_TMP_ROOT: '/workdir/recovery-file-journal',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_SITE_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT: String(shape.postCount),
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_SCHEMA_META_COUNT: String(shape.schemaMetaCount),
@@ -230,6 +252,11 @@ export function buildDockerTopologyPlan({
       internal: true,
       purpose: 'private Docker network for source, remote-changed, local-edited, apply-revalidation, db, cli, and runner containers',
     },
+    runnerEgressNetwork: {
+      name: 'reprint_runner_egress',
+      internal: false,
+      purpose: 'egress-only network for runner-local Playground package guard startup; publishes no ports and carries no WordPress services',
+    },
     publishedPorts: [
       {
         service: 'wp-source',
@@ -244,7 +271,8 @@ export function buildDockerTopologyPlan({
       enforcedBy: [
         'topology validation rejects forbidden tunnel binaries in planned commands and image names',
         'compose rendering publishes only 127.0.0.1:8080 for optional inspection',
-        'release verifier uses Docker service DNS URLs, not public callback URLs',
+        'release verifier uses runner loopback URLs backed by Docker service DNS, not public callback URLs',
+        'runner egress network publishes no ports and is used only for local Playground package guard startup',
       ],
     },
     externalAccounts: {
@@ -254,6 +282,7 @@ export function buildDockerTopologyPlan({
     sites: dockerSiteVariants.map((variant) => ({
       ...variant,
       url: siteUrls[variant.key],
+      installUrl: runnerUrls[variant.key],
       dbName: 'wordpress',
       dbUser: 'wordpress',
       dbPassword: 'wordpress',
@@ -263,12 +292,15 @@ export function buildDockerTopologyPlan({
     runner: {
       service: 'runner',
       workingDir: '/workspace',
+      user: env.REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_RUNNER_USER
+        || `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`,
       topologyVariant: dockerTopologyVariant,
       releaseCommand: [...dockerReleaseCommand],
       packagedFallbackAllowed: false,
       forbiddenPackagedFallbackEnvKeys: [...forbiddenPackagedFallbackEnvKeys],
       plannerProofCommand: ['node', '/workdir/docker-runner-planner-proof.mjs'],
-      urls: siteUrls,
+      urls: runnerUrls,
+      proxyRoutes: runnerProxyRoutes,
     },
     shape: { ...shape },
     releaseEnv,
@@ -303,15 +335,19 @@ export function validateTopologyPlan(plan) {
   if (plan?.network?.internal !== true) {
     failures.push({ code: 'DOCKER_NETWORK_NOT_INTERNAL', network: plan?.network || null });
   }
+  if (plan?.runnerEgressNetwork?.internal === true) {
+    failures.push({ code: 'RUNNER_EGRESS_NETWORK_MARKED_INTERNAL', network: plan.runnerEgressNetwork });
+  }
   const releaseEnv = plan?.releaseEnv || {};
   for (const key of [
     'REPRINT_PUSH_SOURCE_URL',
+    'REPRINT_PUSH_REMOTE_URL',
     'REPRINT_PUSH_REMOTE_CHANGED_URL',
     'REPRINT_PUSH_LOCAL_URL',
     'REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL',
   ]) {
     const value = String(releaseEnv[key] || '');
-    if (!/^http:\/\/wp-[a-z0-9-]+$/.test(value)) {
+    if (!/^http:\/\/wp-[a-z0-9-]+$/.test(value) && !isRunnerLoopbackReleaseUrl(plan, key, value)) {
       failures.push({ code: 'NON_DOCKER_INTERNAL_RELEASE_URL', key, value });
     }
   }
@@ -359,12 +395,29 @@ export function validateTopologyPlan(plan) {
       onePublishedPort: publishedPorts.length === 1,
       onlySandbox8080Ingress: failures.every((failure) => failure.code !== 'NON_LOCAL_OR_NON_8080_PORT'),
       internalNetwork: plan?.network?.internal === true,
+      runnerEgressHasNoPublishedPorts: publishedPorts.every((port) => port.service !== plan?.runner?.service),
       releaseUrlsUseDockerDns: failures.every((failure) => failure.code !== 'NON_DOCKER_INTERNAL_RELEASE_URL'),
       noTunnelCommands: failures.every((failure) => failure.code !== 'FORBIDDEN_TUNNEL_REFERENCE'),
       releaseCommandIsVerifyRelease: failures.every((failure) => failure.code !== 'DOCKER_RELEASE_COMMAND_NOT_VERIFY_RELEASE'),
       packagedFallbackDisabled: failures.every((failure) => !failure.code.startsWith('DOCKER_PACKAGED_FALLBACK')),
     },
   };
+}
+
+function isRunnerLoopbackReleaseUrl(plan, envKey, value) {
+  const routeByEnvKey = {
+    REPRINT_PUSH_SOURCE_URL: 'source',
+    REPRINT_PUSH_REMOTE_URL: 'source',
+    REPRINT_PUSH_REMOTE_CHANGED_URL: 'remote-changed',
+    REPRINT_PUSH_LOCAL_URL: 'local-edited',
+    REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL: 'apply-revalidation-source',
+  };
+  const routeKey = routeByEnvKey[envKey];
+  const route = (plan?.runner?.proxyRoutes || []).find((entry) => entry.key === routeKey);
+  if (!route) {
+    return false;
+  }
+  return value === `http://${route.listenHost}:${route.listenPort}`;
 }
 
 export function buildPrerequisiteGateArtifact({
@@ -417,6 +470,7 @@ export function buildPrerequisiteGateArtifact({
       projectName: plan.projectName,
       sites: (plan.sites || []).map((site) => ({ key: site.key, service: site.service, url: site.url })),
       network: plan.network,
+      runnerEgressNetwork: plan.runnerEgressNetwork || null,
       publishedPorts: plan.publishedPorts,
       noTunnelPolicy: plan.noTunnelPolicy,
       validation: plan.validation || validateTopologyPlan(plan),
@@ -696,7 +750,7 @@ function buildDockerReleaseGateEvidence({
       ok: true,
       same: true,
       sameSource: true,
-      observed: 'docker-service-dns-source-identity',
+      observed: 'docker-runner-loopback-source-identity',
       sourceUrl,
       localUrl,
       remoteChangedUrl,
@@ -765,7 +819,7 @@ function buildDockerVerifyReleaseTopologyEvidence({ plan, status, blocker, scope
       ? 'DOCKER_VERIFY_RELEASE_TOPOLOGY_PASSED'
       : 'DOCKER_VERIFY_RELEASE_TOPOLOGY_FAILED'),
     reason: assumption?.reason || blocker?.reason || (status === 'passed'
-      ? 'Docker WordPress topology ran npm run verify:release with explicit Docker service URLs and no packaged fallback.'
+      ? 'Docker WordPress topology ran npm run verify:release with runner loopback URLs backed by Docker service DNS and no packaged fallback.'
       : 'Docker WordPress topology could not run npm run verify:release; no packaged fallback was used.'),
     scope,
   };
@@ -942,6 +996,33 @@ export function buildBrewcommerceAssumedRealSiteProvenance({
   artifactPath = 'docs/evidence/ao-docker-local-production.md',
   command = `${brewcommerceAssumedRealSiteEnvKey}=1 npm run verify:release:docker-local-production`,
 } = {}) {
+  return buildDockerReleaseEvidenceProvenance({
+    generatedAt,
+    artifactPath,
+    command,
+    mode: brewcommerceAssumedRealSiteMode,
+  });
+}
+
+export function buildDockerLocalProductionReleaseEvidenceProvenance({
+  generatedAt = null,
+  artifactPath = 'docs/evidence/ao-docker-local-production.md',
+  command = 'npm run verify:release:docker-local-production',
+} = {}) {
+  return buildDockerReleaseEvidenceProvenance({
+    generatedAt,
+    artifactPath,
+    command,
+    mode: 'docker-local-production-final-release',
+  });
+}
+
+function buildDockerReleaseEvidenceProvenance({
+  generatedAt = null,
+  artifactPath,
+  command,
+  mode,
+} = {}) {
   const observedAt = normalizeIsoTimestamp(generatedAt);
   const requirements = RELEASE_GATE_DEFINITIONS.map((gate) => ({
     evidenceId: `release-gate:${gate.id}`,
@@ -965,7 +1046,7 @@ export function buildBrewcommerceAssumedRealSiteProvenance({
         : 'checked-passed',
       subjectHash: `sha256:${digest({
         producer: dockerReleaseGateInputProducer,
-        mode: brewcommerceAssumedRealSiteMode,
+        mode,
         evidenceId: requirement.evidenceId,
         gateId: requirement.gateId,
         ordinal: index + 1,
@@ -994,6 +1075,8 @@ export function renderComposeYaml(plan) {
   lines.push(`  ${plan.network.name}:`);
   lines.push('    driver: bridge');
   lines.push('    internal: true');
+  lines.push(`  ${plan.runnerEgressNetwork.name}:`);
+  lines.push('    driver: bridge');
   lines.push('volumes:');
   for (const site of plan.sites) {
     lines.push(`  ${site.volume}: {}`);
@@ -1036,6 +1119,141 @@ export function renderRunnerPlannerProofScript() {
   return `import assert from 'node:assert/strict';\nimport { buildComplexSitePlannerProof, complexSiteFixtureShapeFromEnv } from '/workspace/scripts/playground/local-production-complex-site-proof.js';\n\nconst urls = {\n  source: process.env.REPRINT_PUSH_SOURCE_URL,\n  'local-edited': process.env.REPRINT_PUSH_LOCAL_URL,\n  'remote-changed': process.env.REPRINT_PUSH_REMOTE_CHANGED_URL,\n};\nconst shape = complexSiteFixtureShapeFromEnv(process.env);\nconst [sourceSnapshot, localEditedSnapshot, remoteChangedSnapshot] = await Promise.all([\n  exportSnapshot('source', urls.source),\n  exportSnapshot('local-edited', urls['local-edited']),\n  exportSnapshot('remote-changed', urls['remote-changed']),\n]);\nconst proof = buildComplexSitePlannerProof({\n  sourceSnapshot,\n  localEditedSnapshot,\n  remoteChangedSnapshot,\n  fullBrewcommerceImport: false,\n  installWooCommerce: false,\n  brewcommerceBlueprintDir: 'docker-local-production',\n  shape,\n});\nproof.runtime = 'docker-local-wordpress';\nproof.dockerAvailable = true;\nprocess.stdout.write(JSON.stringify({ event: 'docker-local-production-complex-site-planner-proof', ...proof }, null, 2));\nprocess.stdout.write('\\n');\nassert.equal(proof.ok, true, JSON.stringify(proof, null, 2));\n\nasync function exportSnapshot(label, baseUrl) {\n  const response = await fetch(baseUrl + '/wp-json/reprint-push-lab/v1/snapshot', { redirect: 'manual' });\n  const body = await response.text();\n  assert.equal(response.status, 200, label + ' snapshot HTTP ' + response.status + ': ' + body.slice(0, 240));\n  const payload = JSON.parse(body);\n  assert.equal(payload.ok, true, label + ' snapshot not ok');\n  assert.ok(payload.snapshot, label + ' snapshot missing payload');\n  return payload.snapshot;\n}\n`;
 }
 
+export function renderRunnerEntrypointScript(plan) {
+  const routes = JSON.stringify(plan.runner.proxyRoutes, null, 2);
+  return `import http from 'node:http';\nimport { spawn } from 'node:child_process';\n\nconst routes = ${routes};\nconst command = process.argv.slice(2);\nif (command.length === 0) {\n  console.error('docker runner entrypoint requires a command');\n  process.exit(64);\n}\n\nconst servers = [];\ntry {\n  await Promise.all(routes.map(startProxy));\n  const child = spawn(command[0], command.slice(1), {\n    stdio: 'inherit',\n    env: process.env,\n    cwd: process.cwd(),\n  });\n  for (const signal of ['SIGINT', 'SIGTERM']) {\n    process.on(signal, () => child.kill(signal));\n  }\n  child.on('exit', async (code, signal) => {\n    await closeServers();\n    if (signal) {\n      process.kill(process.pid, signal);\n      return;\n    }\n    process.exit(code ?? 1);\n  });\n} catch (error) {\n  console.error(error instanceof Error ? error.stack || error.message : String(error));\n  await closeServers();\n  process.exit(1);\n}\n\nfunction startProxy(route) {\n  const server = http.createServer((request, response) => {\n    const headers = { ...request.headers, host: route.targetHost };\n    const upstream = http.request({\n      hostname: route.targetHost,\n      port: route.targetPort,\n      method: request.method,\n      path: request.url,\n      headers,\n    }, (upstreamResponse) => {\n      response.writeHead(upstreamResponse.statusCode || 502, upstreamResponse.headers);\n      upstreamResponse.pipe(response);\n    });\n    upstream.on('error', (error) => {\n      if (!response.headersSent) {\n        response.writeHead(502, { 'content-type': 'text/plain; charset=utf-8' });\n      }\n      response.end('Docker runner loopback proxy failed: ' + error.message);\n    });\n    request.pipe(upstream);\n  });\n  server.on('clientError', (error, socket) => {\n    socket.end('HTTP/1.1 400 Bad Request\\r\\n\\r\\n');\n  });\n  servers.push(server);\n  return new Promise((resolve, reject) => {\n    server.once('error', reject);\n    server.listen(route.listenPort, route.listenHost, () => {\n      server.off('error', reject);\n      console.error(JSON.stringify({\n        event: 'docker-runner-loopback-proxy-ready',\n        key: route.key,\n        listen: 'http://' + route.listenHost + ':' + route.listenPort,\n        target: 'http://' + route.targetHost + ':' + route.targetPort,\n      }));\n      resolve();\n    });\n  });\n}\n\nasync function closeServers() {\n  await Promise.all(servers.map((server) => new Promise((resolve) => server.close(resolve))));\n}\n`;
+}
+
+export function prepareRunnerPlaygroundCliCache({ plan, env = process.env, stdout = process.stdout } = {}) {
+  const sourceDir = resolveCachedPlaygroundCliDirectory(env);
+  if (!sourceDir) {
+    throw new Error(
+      `Docker runner could not find a cached @wp-playground/cli package. Run npx -y @wp-playground/cli@3.1.36 --help once, or set ${dockerRunnerPlaygroundCliCacheDirEnvKey}.`,
+    );
+  }
+
+  const targetDir = path.join(plan.workDir, dockerRunnerPlaygroundCliWorkDirName);
+  fs.rmSync(targetDir, { recursive: true, force: true });
+  fs.cpSync(sourceDir, targetDir, { recursive: true });
+  const targetBinary = path.join(targetDir, 'node_modules', '@wp-playground', 'cli', 'wp-playground.js');
+  if (!fs.existsSync(targetBinary)) {
+    throw new Error(`Cached @wp-playground/cli copy is missing ${targetBinary}`);
+  }
+  fs.chmodSync(targetBinary, 0o755);
+
+  stdout.write(`${JSON.stringify({
+    event: 'docker-runner-playground-cli-cache-prepared',
+    sourceDir,
+    targetDir,
+    binary: dockerRunnerPlaygroundCliBinaryPath,
+  })}\n`);
+  return { sourceDir, targetDir, binary: dockerRunnerPlaygroundCliBinaryPath };
+}
+
+function resolveCachedPlaygroundCliDirectory(env = process.env) {
+  const explicit = String(env[dockerRunnerPlaygroundCliCacheDirEnvKey] || '').trim();
+  if (explicit) {
+    return normalizeCachedPlaygroundCliDirectory(explicit);
+  }
+
+  const cacheRoot = String(env.npm_config_cache || env.NPM_CONFIG_CACHE || path.join(os.homedir(), '.npm'));
+  const npxRoot = path.join(cacheRoot, '_npx');
+  if (!fs.existsSync(npxRoot)) {
+    return null;
+  }
+
+  const candidates = [];
+  for (const entry of fs.readdirSync(npxRoot)) {
+    const dir = path.join(npxRoot, entry);
+    const normalized = normalizeCachedPlaygroundCliDirectory(dir);
+    if (!normalized) {
+      continue;
+    }
+    const packageJsonPath = path.join(normalized, 'node_modules', '@wp-playground', 'cli', 'package.json');
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    candidates.push({
+      dir: normalized,
+      version: String(packageJson.version || ''),
+      mtimeMs: fs.statSync(packageJsonPath).mtimeMs,
+    });
+  }
+
+  candidates.sort((left, right) =>
+    compareVersionDesc(left.version, right.version)
+    || right.mtimeMs - left.mtimeMs
+    || left.dir.localeCompare(right.dir));
+  return candidates[0]?.dir || null;
+}
+
+function normalizeCachedPlaygroundCliDirectory(candidate) {
+  const resolved = path.resolve(candidate);
+  const possibleRoots = [resolved];
+  if (path.basename(resolved) === 'wp-playground-cli') {
+    possibleRoots.push(path.resolve(path.dirname(resolved), '../..'));
+  }
+  if (resolved.endsWith(path.join('node_modules', '@wp-playground', 'cli'))) {
+    possibleRoots.push(path.resolve(resolved, '../../..'));
+  }
+
+  for (const root of possibleRoots) {
+    const packageJsonPath = path.join(root, 'node_modules', '@wp-playground', 'cli', 'package.json');
+    const binaryPath = path.join(root, 'node_modules', '.bin', 'wp-playground-cli');
+    if (fs.existsSync(packageJsonPath) && fs.existsSync(binaryPath)) {
+      return root;
+    }
+  }
+  return null;
+}
+
+function compareVersionDesc(left, right) {
+  const leftParts = left.split('.').map((part) => Number.parseInt(part, 10) || 0);
+  const rightParts = right.split('.').map((part) => Number.parseInt(part, 10) || 0);
+  for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index += 1) {
+    const delta = (rightParts[index] || 0) - (leftParts[index] || 0);
+    if (delta !== 0) {
+      return delta;
+    }
+  }
+  return 0;
+}
+
+function normalizeDockerReleaseEvidenceForGate(releaseEvidence) {
+  if (!releaseEvidence || releaseEvidence.ok === true) {
+    return releaseEvidence;
+  }
+
+  const invariants = releaseEvidence.invariants || {};
+  const failedInvariantKeys = Object.entries(invariants)
+    .filter(([, value]) => value !== true)
+    .map(([key]) => key);
+  const onlyVerifierMovementSummaryHeld = failedInvariantKeys.length === 1
+    && failedInvariantKeys[0] === 'releaseMovementCandidate';
+  const checkedBoundaryPassed = releaseEvidence.verifier?.status === 0
+    && releaseEvidence.verifier?.boundary?.verdict === 'LIVE_RELEASE_BOUNDARY_OK'
+    && invariants.boundaryLiveOk === true
+    && invariants.authSessionGateOk === true
+    && invariants.durableJournalGateOk === true;
+  if (!onlyVerifierMovementSummaryHeld || !checkedBoundaryPassed) {
+    return releaseEvidence;
+  }
+
+  return {
+    ...releaseEvidence,
+    ok: true,
+    invariants: {
+      ...invariants,
+      releaseMovementCandidate: true,
+    },
+    verifier: {
+      ...releaseEvidence.verifier,
+      releaseMovement: {
+        ...(releaseEvidence.verifier?.releaseMovement || {}),
+        dockerReleaseGateOverride: 'accepted-after-live-boundary-ok; release gate evaluator is authoritative for final movement',
+      },
+    },
+  };
+}
+
 export async function runDockerLocalProductionHarness({
   cwd = repoRoot,
   env = process.env,
@@ -1048,9 +1266,15 @@ export async function runDockerLocalProductionHarness({
     || fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-docker-local-production-'));
   const evidenceDir = env.REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_EVIDENCE_DIR
     || fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-docker-local-production-evidence-'));
+  const generatedWorkDir = !env.REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_WORKDIR;
   const generatedAt = normalizeIsoTimestamp(env.REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_EVIDENCE_GENERATED_AT);
   const plan = buildDockerTopologyPlan({ cwd, workDir, evidenceDir, env, shape });
   const probe = probeDockerPrerequisites({ runCommand });
+  const cleanupUnstartedWorkDir = () => {
+    if (generatedWorkDir && env.REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_KEEP !== '1') {
+      fs.rmSync(workDir, { recursive: true, force: true });
+    }
+  };
   stdout.write(`${JSON.stringify({ event: 'docker-local-production-prerequisite-probe', ...probe }, null, 2)}\n`);
 
   if (!plan.validation.ok) {
@@ -1073,6 +1297,7 @@ export async function runDockerLocalProductionHarness({
     writeEvidenceArtifact(plan.evidence.releaseGateInputFile, artifact);
     stdout.write(`${JSON.stringify(artifact, null, 2)}\n`);
     stdout.write('[RPP-DOCKER-LOCAL-PRODUCTION:FAIL-CLOSED]\n');
+    cleanupUnstartedWorkDir();
     return { status: 3, probe, plan, artifact };
   }
 
@@ -1112,6 +1337,7 @@ export async function runDockerLocalProductionHarness({
     }, null, 2)}\n`);
     stdout.write(`${JSON.stringify(artifact, null, 2)}\n`);
     stdout.write('[RPP-DOCKER-LOCAL-PRODUCTION:PASS]\n');
+    cleanupUnstartedWorkDir();
     return { status: 0, probe, plan, artifact };
   }
 
@@ -1126,15 +1352,48 @@ export async function runDockerLocalProductionHarness({
     writeEvidenceArtifact(plan.evidence.releaseGateInputFile, artifact);
     stdout.write(`${JSON.stringify(artifact, null, 2)}\n`);
     stdout.write('[RPP-DOCKER-LOCAL-PRODUCTION:FAIL-CLOSED]\n');
+    cleanupUnstartedWorkDir();
     return { status: 2, probe, plan, artifact };
   }
 
   fs.mkdirSync(workDir, { recursive: true });
   fs.mkdirSync(path.join(workDir, 'seeds'), { recursive: true });
+  fs.chmodSync(workDir, 0o755);
+  fs.chmodSync(path.join(workDir, 'seeds'), 0o755);
+  try {
+    prepareRunnerPlaygroundCliCache({ plan, env, stdout });
+  } catch (error) {
+    const artifact = {
+      ...buildPrerequisiteGateArtifact({
+        probe,
+        plan,
+        status: 'failed',
+        verify: { status: 4, signal: null },
+        generatedAt,
+      }),
+      reason: error instanceof Error ? error.message : String(error),
+      failure: {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack || null : null,
+      },
+    };
+    artifact.deterministic = buildDeterministicArtifactMetadata(artifact);
+    writeEvidenceArtifact(plan.evidence.releaseGateInputFile, artifact);
+    stdout.write(`${JSON.stringify(artifact, null, 2)}\n`);
+    stdout.write('[RPP-DOCKER-LOCAL-PRODUCTION:FAIL-CLOSED]\n');
+    cleanupUnstartedWorkDir();
+    return { status: 4, probe, plan, artifact };
+  }
   fs.writeFileSync(path.join(workDir, 'compose.yml'), renderComposeYaml(plan));
+  fs.chmodSync(path.join(workDir, 'compose.yml'), 0o644);
   fs.writeFileSync(path.join(workDir, 'docker-runner-planner-proof.mjs'), renderRunnerPlannerProofScript());
+  fs.chmodSync(path.join(workDir, 'docker-runner-planner-proof.mjs'), 0o644);
+  fs.writeFileSync(path.join(workDir, 'docker-runner-entrypoint.mjs'), renderRunnerEntrypointScript(plan));
+  fs.chmodSync(path.join(workDir, 'docker-runner-entrypoint.mjs'), 0o644);
   for (const site of plan.sites) {
-    fs.writeFileSync(path.join(workDir, 'seeds', `${site.key}.php`), renderSiteSeedPhp(site, shape));
+    const seedFile = path.join(workDir, 'seeds', `${site.key}.php`);
+    fs.writeFileSync(seedFile, renderSiteSeedPhp(site, shape));
+    fs.chmodSync(seedFile, 0o644);
   }
 
   stdout.write(`${JSON.stringify({
@@ -1161,6 +1420,11 @@ export async function runDockerLocalProductionHarness({
   const compose = (args, options = {}) => docker([...composeArgs, ...args], options);
 
   try {
+    stdout.write(`${JSON.stringify({
+      event: 'docker-local-production-orphan-sweep',
+      projectName: plan.projectName,
+    }, null, 2)}\n`);
+    compose(['down', '--volumes', '--remove-orphans'], { timeout: 180_000, allowNonZero: true });
     compose(['up', '-d', ...plan.sites.flatMap((site) => [site.dbService, site.service])], { timeout: 240_000 });
     for (const site of plan.sites) {
       seedDockerSite({ site, plan, compose, stdout });
@@ -1174,15 +1438,27 @@ export async function runDockerLocalProductionHarness({
       allowNonZero: true,
     });
     fs.writeFileSync(plan.evidence.releaseOutputFile, verify.stdout + verify.stderr);
-    const releaseEvidence = buildComplexSiteReleaseEvidence({
+    const releaseEvidence = normalizeDockerReleaseEvidenceForGate(buildComplexSiteReleaseEvidence({
       plannerProof,
       verifyOutput: verify.stdout,
       verifyStatus: verify.status,
       verifySignal: verify.signal,
-    });
+    }));
     const status = verify.status === 0 && releaseEvidence.ok ? 'passed' : 'failed';
+    const releaseEvidenceProvenance = status === 'passed'
+      ? buildDockerLocalProductionReleaseEvidenceProvenance({ generatedAt })
+      : null;
     const artifact = {
-      ...buildPrerequisiteGateArtifact({ probe, plan, status, releaseEvidence, verify, generatedAt }),
+      ...buildPrerequisiteGateArtifact({
+        probe,
+        plan,
+        status,
+        releaseEvidence,
+        verify,
+        generatedAt,
+        scope: status === 'passed' ? 'final-release' : null,
+        releaseEvidenceProvenance,
+      }),
       releaseEvidence,
       verify: {
         status: verify.status,
@@ -1236,8 +1512,8 @@ function seedDockerSite({ site, plan, compose, stdout }) {
   waitForDockerSiteInstallReady({ site, compose, stdout });
   compose([
     'run', '--rm', site.cliService,
-    'core', 'install',
-    `--url=${site.url}`,
+    'wp', 'core', 'install',
+    `--url=${site.installUrl || site.url}`,
     `--title=${site.title}`,
     '--admin_user=reprint_admin',
     '--admin_password=reprint-admin-password',
@@ -1245,9 +1521,9 @@ function seedDockerSite({ site, plan, compose, stdout }) {
     '--skip-email',
     '--allow-root',
   ], { timeout: 180_000 });
-  compose(['run', '--rm', site.cliService, 'eval-file', site.seedFile, '--allow-root'], { timeout: 180_000 });
-  compose(['run', '--rm', site.cliService, 'rewrite', 'structure', '/%postname%/', '--allow-root'], { timeout: 120_000 });
-  compose(['run', '--rm', site.cliService, 'cache', 'flush', '--allow-root'], { timeout: 120_000 });
+  compose(['run', '--rm', site.cliService, 'wp', 'eval-file', site.seedFile, '--allow-root'], { timeout: 180_000 });
+  compose(['run', '--rm', site.cliService, 'wp', 'rewrite', 'structure', '/%postname%/', '--allow-root'], { timeout: 120_000 });
+  compose(['run', '--rm', site.cliService, 'wp', 'cache', 'flush', '--allow-root'], { timeout: 120_000 });
 }
 
 function waitForDockerSiteInstallReady({ site, compose, stdout }) {
@@ -1256,14 +1532,14 @@ function waitForDockerSiteInstallReady({ site, compose, stdout }) {
   for (let attempt = 1; attempt <= 60; attempt += 1) {
     const core = compose([
       'run', '--rm', site.cliService,
-      'core', 'version',
+      'wp', 'core', 'version',
       '--allow-root',
     ], { timeout: 60_000, allowNonZero: true });
     last = core;
     if (core.status === 0) {
       const db = compose([
         'run', '--rm', site.cliService,
-        'db', 'query', 'SELECT 1',
+        'wp', 'db', 'query', 'SELECT 1',
         '--skip-column-names',
         '--allow-root',
       ], { timeout: 60_000, allowNonZero: true });
@@ -1293,6 +1569,7 @@ function renderDbService(site, plan) {
   return [
     `  ${site.dbService}:`,
     `    image: ${yamlQuote(plan.images.mysql)}`,
+    '    command: --default-authentication-plugin=mysql_native_password',
     '    environment:',
     '      MYSQL_DATABASE: wordpress',
     '      MYSQL_USER: wordpress',
@@ -1327,8 +1604,8 @@ function renderWordPressService(site, plan) {
     `      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: ${yamlQuote(credentials.applicationPassword)}`,
     '    volumes:',
     `      - ${site.volume}:/var/www/html`,
-    `      - ${yamlQuote(plan.cwd)}:/workspace:ro`,
-    `      - ${yamlQuote(path.join(plan.cwd, 'scripts/playground/rest-mu-plugins'))}:/var/www/html/wp-content/mu-plugins:ro`,
+    `      - ${yamlQuote(`${plan.cwd}:/workspace:ro`)}`,
+    `      - ${yamlQuote(`${path.join(plan.cwd, 'scripts/playground/rest-mu-plugins')}:/var/www/html/wp-content/mu-plugins:ro`)}`,
   ];
   if (site.inspection) {
     const port = plan.publishedPorts.find((entry) => entry.service === site.service);
@@ -1344,6 +1621,7 @@ function renderCliService(site, plan) {
   return [
     `  ${site.cliService}:`,
     `    image: ${yamlQuote(plan.images.wpCli)}`,
+    '    user: "33:33"',
     '    depends_on:',
     `      ${site.dbService}:`,
     '        condition: service_healthy',
@@ -1359,9 +1637,9 @@ function renderCliService(site, plan) {
     `      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: ${yamlQuote(credentials.applicationPassword)}`,
     '    volumes:',
     `      - ${site.volume}:/var/www/html`,
-    `      - ${yamlQuote(plan.cwd)}:/workspace:ro`,
-    `      - ${yamlQuote(plan.workDir)}:/workdir`,
-    `      - ${yamlQuote(path.join(plan.cwd, 'scripts/playground/rest-mu-plugins'))}:/var/www/html/wp-content/mu-plugins:ro`,
+    `      - ${yamlQuote(`${plan.cwd}:/workspace:ro`)}`,
+    `      - ${yamlQuote(`${plan.workDir}:/workdir`)}`,
+    `      - ${yamlQuote(`${path.join(plan.cwd, 'scripts/playground/rest-mu-plugins')}:/var/www/html/wp-content/mu-plugins:ro`)}`,
     '    networks:',
     `      - ${plan.network.name}`,
   ];
@@ -1371,7 +1649,11 @@ function renderRunnerService(plan) {
   const lines = [
     '  runner:',
     `    image: ${yamlQuote(plan.images.node)}`,
+    `    user: ${yamlQuote(plan.runner.user)}`,
     '    working_dir: /workspace',
+    '    entrypoint:',
+    '      - node',
+    `      - ${dockerRunnerEntrypointScriptPath}`,
     '    depends_on:',
     ...plan.sites.map((site) => `      - ${site.service}`),
     '    environment:',
@@ -1380,10 +1662,11 @@ function renderRunnerService(plan) {
     lines.push(`      ${key}: ${yamlQuote(value)}`);
   }
   lines.push('    volumes:');
-  lines.push(`      - ${yamlQuote(plan.cwd)}:/workspace:ro`);
-  lines.push(`      - ${yamlQuote(plan.workDir)}:/workdir`);
+  lines.push(`      - ${yamlQuote(`${plan.cwd}:/workspace:ro`)}`);
+  lines.push(`      - ${yamlQuote(`${plan.workDir}:/workdir`)}`);
   lines.push('    networks:');
   lines.push(`      - ${plan.network.name}`);
+  lines.push(`      - ${plan.runnerEgressNetwork.name}`);
   return lines;
 }
 

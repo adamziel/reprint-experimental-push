@@ -7,14 +7,20 @@ import test from 'node:test';
 import {
   brewcommerceAssumedRealSiteEnvKey,
   brewcommerceAssumedRealSiteMode,
+  buildDockerLocalProductionReleaseEvidenceProvenance,
   buildDockerTopologyPlan,
   buildPrerequisiteGateArtifact,
+  dockerRunnerAuthSessionSourceScriptPath,
+  dockerRunnerEntrypointScriptPath,
+  dockerRunnerPlaygroundCliBinaryPath,
   dockerReleaseCommand,
   dockerTopologyVariant,
   forbiddenPackagedFallbackEnvKeys,
   forbiddenTunnelBinaries,
+  prepareRunnerPlaygroundCliCache,
   probeDockerPrerequisites,
   renderComposeYaml,
+  renderRunnerEntrypointScript,
   renderRunnerPlannerProofScript,
   renderSiteSeedPhp,
   runDockerLocalProductionHarness,
@@ -114,17 +120,48 @@ test('Docker topology plan is local-only, private-networked, and release-verifie
     purpose: 'optional browser-visible inspection only; verifier traffic stays inside the private Docker network',
   }]);
   assert.equal(plan.network.internal, true);
+  assert.equal(plan.runnerEgressNetwork.internal, false);
   assert.equal(plan.externalAccounts.required, false);
-  assert.equal(plan.releaseEnv.REPRINT_PUSH_SOURCE_URL, 'http://wp-source');
-  assert.equal(plan.releaseEnv.REPRINT_PUSH_REMOTE_URL, 'http://wp-source');
-  assert.equal(plan.releaseEnv.REPRINT_PUSH_REMOTE_CHANGED_URL, 'http://wp-remote-changed');
-  assert.equal(plan.releaseEnv.REPRINT_PUSH_LOCAL_URL, 'http://wp-local-edited');
-  assert.equal(plan.releaseEnv.REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL, 'http://wp-apply-revalidation-source');
+  assert.equal(plan.releaseEnv.REPRINT_PUSH_SOURCE_URL, 'http://127.0.0.1:8080');
+  assert.equal(plan.releaseEnv.REPRINT_PUSH_REMOTE_URL, 'http://127.0.0.1:8080');
+  assert.equal(plan.releaseEnv.REPRINT_PUSH_REMOTE_CHANGED_URL, 'http://127.0.0.1:8081');
+  assert.equal(plan.releaseEnv.REPRINT_PUSH_LOCAL_URL, 'http://127.0.0.1:8082');
+  assert.equal(plan.releaseEnv.REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL, 'http://127.0.0.1:8083');
+  assert.equal(plan.releaseEnv.REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_MODE, 'after-first-read');
+  assert.equal(plan.releaseEnv.REPRINT_PUSH_PLAYGROUND_CLI_BINARY, dockerRunnerPlaygroundCliBinaryPath);
+  assert.equal(plan.releaseEnv.REPRINT_PUSH_RECOVERY_FILE_JOURNAL_TMP_ROOT, '/workdir/recovery-file-journal');
+  assert.match(
+    plan.releaseEnv.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND,
+    new RegExp(`^'node' '${escapeRegExp(dockerRunnerAuthSessionSourceScriptPath)}' '--source-url=http://127\\.0\\.0\\.1:8080' `),
+  );
+  assert.doesNotMatch(plan.releaseEnv.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND, new RegExp(escapeRegExp(process.execPath)));
+  assert.doesNotMatch(plan.releaseEnv.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND, /\/nix\/store|\/tmp\/reprint/);
   assert.equal(plan.releaseEnv.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT, '25');
   assert.equal(plan.releaseEnv.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF, '1');
   assert.equal(plan.runner.topologyVariant, dockerTopologyVariant);
+  assert.match(plan.runner.user, /^\d+:\d+$/);
   assert.deepEqual(plan.runner.releaseCommand, dockerReleaseCommand);
   assert.equal(plan.runner.packagedFallbackAllowed, false);
+  assert.equal(plan.sites.find((site) => site.key === 'source')?.url, 'http://wp-source');
+  assert.equal(plan.sites.find((site) => site.key === 'source')?.installUrl, 'http://127.0.0.1:8080');
+  assert.deepEqual(plan.runner.proxyRoutes.map(({ key, listenHost, listenPort, targetHost, targetPort }) => ({
+    key,
+    listenHost,
+    listenPort,
+    targetHost,
+    targetPort,
+  })), [
+    { key: 'source', listenHost: '127.0.0.1', listenPort: 8080, targetHost: 'wp-source', targetPort: 80 },
+    { key: 'remote-changed', listenHost: '127.0.0.1', listenPort: 8081, targetHost: 'wp-remote-changed', targetPort: 80 },
+    { key: 'local-edited', listenHost: '127.0.0.1', listenPort: 8082, targetHost: 'wp-local-edited', targetPort: 80 },
+    {
+      key: 'apply-revalidation-source',
+      listenHost: '127.0.0.1',
+      listenPort: 8083,
+      targetHost: 'wp-apply-revalidation-source',
+      targetPort: 80,
+    },
+  ]);
   for (const key of forbiddenPackagedFallbackEnvKeys) {
     assert.equal(plan.releaseEnv[key], undefined);
   }
@@ -143,14 +180,93 @@ test('Compose rendering exposes only the sandbox 8080 inspection ingress and con
   const compose = renderComposeYaml(plan);
 
   assert.match(compose, /internal: true/);
+  assert.match(compose, /reprint_runner_egress:\n    driver: bridge/);
   assert.match(compose, /condition: service_healthy/);
+  assert.match(compose, /--default-authentication-plugin=mysql_native_password/);
+  assert.match(compose, /user: "33:33"/);
+  assert.match(compose, /entrypoint:\n      - node\n      - \/workdir\/docker-runner-entrypoint\.mjs/);
+  assert.match(compose, /runner:\n    image: "node:20-bookworm"\n    user: "\d+:\d+"/);
   assert.match(compose, /mysqladmin ping -h 127\.0\.0\.1/);
   assert.match(compose, /"127\.0\.0\.1:8080:80"/);
+  assert.match(compose, /"\/repo\/reprint-push:\/workspace:ro"/);
+  assert.match(compose, /"\/tmp\/reprint-docker-local-production-test:\/workdir"/);
+  assert.match(compose, /REPRINT_PUSH_PLAYGROUND_CLI_BINARY: "\/workdir\/playground-cli\/node_modules\/@wp-playground\/cli\/wp-playground\.js"/);
+  assert.match(compose, /REPRINT_PUSH_RECOVERY_FILE_JOURNAL_TMP_ROOT: "\/workdir\/recovery-file-journal"/);
+  assert.doesNotMatch(compose, /"\/repo\/reprint-push":\/workspace:ro/);
   assert.doesNotMatch(compose, /0\.0\.0\.0:8080/);
   assert.doesNotMatch(compose, /39000|49152/);
+  assert.match(compose, /runner:[\s\S]*networks:\n      - reprint_private\n      - reprint_runner_egress/);
   for (const forbidden of forbiddenTunnelBinaries) {
     assert.doesNotMatch(compose.toLowerCase(), forbiddenTunnelPattern(forbidden));
   }
+});
+
+test('Docker WP-CLI invocations include the wp executable', () => {
+  const source = fs.readFileSync(new URL('../scripts/docker/production-complex-site-harness.mjs', import.meta.url), 'utf8');
+
+  assert.match(source, /site\.cliService,\n\s+'wp', 'core', 'version'/);
+  assert.match(source, /site\.cliService,\n\s+'wp', 'core', 'install'/);
+  assert.match(source, /site\.cliService, 'wp', 'eval-file'/);
+  assert.match(source, /site\.cliService, 'wp', 'rewrite'/);
+  assert.match(source, /site\.cliService, 'wp', 'cache'/);
+  assert.match(source, /site\.cliService,\n\s+'wp', 'db', 'query'/);
+  assert.doesNotMatch(source, /site\.cliService,\n\s+'core', 'version'/);
+});
+
+test('Docker generated workdir is made readable for container mounts', () => {
+  const source = fs.readFileSync(new URL('../scripts/docker/production-complex-site-harness.mjs', import.meta.url), 'utf8');
+
+  assert.match(source, /fs\.chmodSync\(workDir, 0o755\)/);
+  assert.match(source, /fs\.chmodSync\(path\.join\(workDir, 'seeds'\), 0o755\)/);
+  assert.match(source, /fs\.chmodSync\(seedFile, 0o644\)/);
+  assert.match(source, /fs\.chmodSync\(path\.join\(workDir, 'docker-runner-entrypoint\.mjs'\), 0o644\)/);
+});
+
+test('Docker harness sweeps stale project containers before starting a new proof', () => {
+  const source = fs.readFileSync(new URL('../scripts/docker/production-complex-site-harness.mjs', import.meta.url), 'utf8');
+  const sweepIndex = source.indexOf("event: 'docker-local-production-orphan-sweep'");
+  const downIndex = source.indexOf("compose(['down', '--volumes', '--remove-orphans']", sweepIndex);
+  const upIndex = source.indexOf("compose(['up', '-d'", sweepIndex);
+
+  assert.notEqual(sweepIndex, -1);
+  assert.ok(downIndex > sweepIndex);
+  assert.ok(upIndex > downIndex);
+});
+
+test('Docker runner prepares cached Playground CLI without a registry fetch during verify', (t) => {
+  const sourceDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-playground-cli-source-'));
+  const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-playground-cli-work-'));
+  t.after(() => {
+    fs.rmSync(sourceDir, { recursive: true, force: true });
+    fs.rmSync(workDir, { recursive: true, force: true });
+  });
+  fs.mkdirSync(path.join(sourceDir, 'node_modules', '@wp-playground', 'cli'), { recursive: true });
+  fs.mkdirSync(path.join(sourceDir, 'node_modules', '.bin'), { recursive: true });
+  fs.writeFileSync(
+    path.join(sourceDir, 'node_modules', '@wp-playground', 'cli', 'package.json'),
+    '{"name":"@wp-playground/cli","version":"3.1.36"}\n',
+  );
+  fs.writeFileSync(path.join(sourceDir, 'node_modules', '@wp-playground', 'cli', 'wp-playground.js'), '#!/usr/bin/env node\n');
+  fs.writeFileSync(path.join(sourceDir, 'node_modules', '.bin', 'wp-playground-cli'), '#!/usr/bin/env node\n');
+  const plan = buildDockerTopologyPlan({
+    cwd: '/repo/reprint-push',
+    workDir,
+    env: graphEnv,
+  });
+  let stdoutText = '';
+
+  const prepared = prepareRunnerPlaygroundCliCache({
+    plan,
+    env: { REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_PLAYGROUND_CLI_CACHE_DIR: sourceDir },
+    stdout: { write: (chunk) => { stdoutText += String(chunk); } },
+  });
+
+  assert.equal(prepared.binary, dockerRunnerPlaygroundCliBinaryPath);
+  assert.equal(
+    fs.existsSync(path.join(workDir, 'playground-cli', 'node_modules', '@wp-playground', 'cli', 'wp-playground.js')),
+    true,
+  );
+  assert.match(stdoutText, /docker-runner-playground-cli-cache-prepared/);
 });
 
 test('Topology validation rejects non-8080 ports, public hosts, and tunnel-shaped images', () => {
@@ -187,6 +303,15 @@ test('Topology validation rejects non-8080 ports, public hosts, and tunnel-shape
   });
   assert.equal(badPackagedFallback.ok, false);
   assert.ok(badPackagedFallback.failures.some((failure) => failure.code === 'DOCKER_PACKAGED_FALLBACK_ENV_ENABLED'));
+
+  const badRemoteAlias = validateTopologyPlan({
+    ...plan,
+    releaseEnv: { ...plan.releaseEnv, REPRINT_PUSH_REMOTE_URL: 'https://example.com' },
+  });
+  assert.equal(badRemoteAlias.ok, false);
+  assert.ok(badRemoteAlias.failures.some((failure) =>
+    failure.code === 'NON_DOCKER_INTERNAL_RELEASE_URL'
+    && failure.key === 'REPRINT_PUSH_REMOTE_URL'));
 });
 
 test('Site seed PHP carries complex disposable production content and graph fixtures', () => {
@@ -267,7 +392,7 @@ test('Fail-closed release gate artifact is deterministic enough for audit input'
   assert.equal(artifact.rppEvidence.dockerWordPressVerifyReleaseContract.command, 'npm run verify:release');
 });
 
-test('Passed Docker release artifact records verify:release topology without packaged fallback', () => {
+test('Passed Docker release artifact records verify:release topology without packaged fallback', (t) => {
   const plan = buildDockerTopologyPlan({
     cwd: '/repo/reprint-push',
     workDir: '/tmp/reprint-docker-local-production-test',
@@ -296,6 +421,9 @@ test('Passed Docker release artifact records verify:release topology without pac
       durableJournalGateOk: true,
     },
   };
+  const releaseEvidenceProvenance = buildDockerLocalProductionReleaseEvidenceProvenance({
+    generatedAt: '2026-05-28T00:00:00.000Z',
+  });
   const artifact = buildPrerequisiteGateArtifact({
     probe,
     plan,
@@ -303,13 +431,16 @@ test('Passed Docker release artifact records verify:release topology without pac
     releaseEvidence,
     verify: { status: 0, signal: null },
     generatedAt: '2026-05-28T00:00:00.000Z',
+    scope: 'final-release',
+    releaseEvidenceProvenance,
   });
 
   assert.equal(artifact.status, 'passed');
   assert.equal(artifact.acceptedForReleaseGate, true);
   assert.equal(artifact.packagedFallback, false);
   assert.equal(artifact.evidence.packagedFallback.observed, false);
-  assert.equal(artifact.evidence.verifyReleaseFailure, undefined);
+  assert.equal(artifact.evidence.verifyReleaseFailure.reason, 'DOCKER_LOCAL_PRODUCTION_FINAL_RELEASE_EVIDENCE');
+  assert.equal(artifact.evidence.verifyReleaseFailure.statusMarker, '[RPP-DOCKER-LOCAL-PRODUCTION:PASS]');
   assert.equal(artifact.evidence.dockerVerifyReleaseTopology.ok, true);
   assert.equal(artifact.evidence.dockerVerifyReleaseTopology.command, 'npm run verify:release');
   assert.deepEqual(artifact.evidence.dockerVerifyReleaseTopology.commandArgs, dockerReleaseCommand);
@@ -318,8 +449,43 @@ test('Passed Docker release artifact records verify:release topology without pac
   assert.equal(artifact.evidence.dockerVerifyReleaseTopology.releaseUrlsUseDockerDns, true);
   assert.equal(artifact.evidence.dockerVerifyReleaseTopology.releaseCommandIsVerifyRelease, true);
   assert.equal(artifact.evidence.dockerVerifyReleaseTopology.topologyVariant, dockerTopologyVariant);
+  assert.equal(artifact.releaseGateEvaluation.releaseMovement.allowed, true);
+  assert.equal(artifact.releaseGateEvaluation.totals.passed, 20);
+  assert.equal(artifact.releaseEvidenceProvenance.requiredProductionEvidence.length, 20);
+  assert.equal(artifact.releaseEvidenceProvenance.evidenceRows.length, 20);
   assert.equal(artifact.rppEvidence.dockerWordPressVerifyReleaseContract.packagedFallbackAllowed, false);
   assert.equal(validateReleaseGateArtifact(artifact).ok, true);
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-docker-passed-gate-artifact-'));
+  t.after(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+  const artifactFile = path.join(tempDir, 'release-gate-input.json');
+  fs.writeFileSync(artifactFile, `${JSON.stringify(artifact, null, 2)}\n`);
+  const gateResult = runReleaseGateCli([
+    '--evidence-file',
+    artifactFile,
+    '--scope',
+    'final-release',
+    '--now',
+    '2026-05-28T00:20:00.000Z',
+  ], {
+    cwd: '/repo/reprint-push',
+    env: {},
+    now: new Date('2026-05-28T00:20:00.000Z'),
+  });
+
+  assert.equal(gateResult.exitCode, 0);
+  assert.equal(gateResult.report.ok, true);
+  assert.equal(gateResult.report.releaseStatus, 'GO');
+  assert.equal(gateResult.report.releaseMovement.allowed, true);
+  assert.equal(gateResult.report.releaseEvidenceProvenance.required, true);
+  assert.equal(gateResult.report.releaseEvidenceProvenance.ready, true);
+  assert.deepEqual(gateResult.report.releaseEvidenceProvenance.summary.productionRequired, {
+    total: 20,
+    accepted: 20,
+    rejected: 0,
+  });
 });
 
 test('Release gate artifact is stable across run-local paths and can be consumed directly by the gate checker', () => {
@@ -484,6 +650,23 @@ test('Runner planner proof script preserves the docker runtime and env-shaped co
   assert.match(script, /docker-local-wordpress/);
   assert.match(script, /docker-local-production-complex-site-planner-proof/);
   assert.match(script, /REPRINT_PUSH_SOURCE_URL/);
+});
+
+test('Runner entrypoint proxies production-shaped verifier URLs through container loopback', () => {
+  const plan = buildDockerTopologyPlan({
+    cwd: '/repo/reprint-push',
+    workDir: '/tmp/reprint-docker-local-production-test',
+    env: graphEnv,
+  });
+  const script = renderRunnerEntrypointScript(plan);
+
+  assert.equal(dockerRunnerEntrypointScriptPath, '/workdir/docker-runner-entrypoint.mjs');
+  assert.match(script, /createServer/);
+  assert.match(script, /"listenHost": "127\.0\.0\.1"/);
+  assert.match(script, /"listenPort": 8080/);
+  assert.match(script, /"targetHost": "wp-source"/);
+  assert.match(script, /spawn\(command\[0\], command\.slice\(1\)/);
+  assert.doesNotMatch(script, /0\.0\.0\.0/);
 });
 
 function forbiddenTunnelPattern(value) {

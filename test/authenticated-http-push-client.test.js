@@ -7439,6 +7439,39 @@ test('production-shaped authenticated push records preserved-remote retry on the
   }
 });
 
+test('production-shaped client can defer preserved-remote retry simulation until after the planning read', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url) => {
+    seen.push(String(url));
+    return new Response(JSON.stringify({ ok: true, snapshot: { resources: [] } }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  try {
+    const client = authenticatedHttpClient({
+      sourceUrl: 'http://127.0.0.1:8080',
+      credential,
+      routeProfile: 'production-shaped',
+      simulatePreservedRemoteRetryPath: '/snapshot',
+      simulatePreservedRemoteRetryMode: 'after-first-read',
+    });
+
+    const planningRead = await client.get('/snapshot');
+    const preservedRead = await client.get('/snapshot');
+    const latestPreservedRead = await client.get('/snapshot');
+
+    assert.equal(planningRead.retryAttempts, 1);
+    assert.equal(preservedRead.retryAttempts, 2);
+    assert.equal(latestPreservedRead.retryAttempts, 2);
+    assert.equal(seen.length, 3);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed when only the planning snapshot retries before the final preserved-remote read', async () => {
   const originalFetch = global.fetch;
   let snapshotAttempts = 0;

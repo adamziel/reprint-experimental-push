@@ -56,6 +56,7 @@ export async function runAuthenticatedHttpPush({
   requireProductionAuthSession = false,
   simulateStaleClaimRetry = false,
   simulatePreservedRemoteRetryPath = '',
+  simulatePreservedRemoteRetryMode = '',
   proveDurableJournalBoundary = false,
   labAuthSessionDrift = '',
   authSessionSource = null,
@@ -92,6 +93,7 @@ export async function runAuthenticatedHttpPush({
     credential,
     routeProfile: profile.name,
     simulatePreservedRemoteRetryPath,
+    simulatePreservedRemoteRetryMode,
     requestTimeoutMs,
   });
   const summary = {
@@ -1996,6 +1998,7 @@ export function authenticatedHttpClient({
   routeProfile = 'lab-authenticated',
   requestTimeoutMs = 10_000,
   simulatePreservedRemoteRetryPath = '',
+  simulatePreservedRemoteRetryMode = '',
 }) {
   const baseUrl = normalizeBaseUrl(sourceUrl);
   const profile = resolveRouteProfile(routeProfile);
@@ -2005,6 +2008,7 @@ export function authenticatedHttpClient({
     baseUrl,
     profile.namespacePath,
     simulatePreservedRemoteRetryPath,
+    simulatePreservedRemoteRetryMode,
   );
 
   return {
@@ -4728,12 +4732,14 @@ function withConnectionClose(headers) {
   };
 }
 
-function createTransientReadFailureProbe(baseUrl, namespacePath, pathSuffix) {
+function createTransientReadFailureProbe(baseUrl, namespacePath, pathSuffix, mode = '') {
   if (!pathSuffix) {
     return null;
   }
 
   const targetPath = new URL(`${namespacePath}${pathSuffix}`, baseUrl).pathname;
+  const normalizedMode = mode === 'after-first-read' ? 'after-first-read' : 'first-read';
+  let matchingReadCount = 0;
   let pending = true;
   return ({ method, pathname, attempt }) => {
     if (!pending || method !== 'GET' || attempt !== 1) {
@@ -4743,7 +4749,13 @@ function createTransientReadFailureProbe(baseUrl, namespacePath, pathSuffix) {
     if (requestPath !== targetPath) {
       return;
     }
-    pending = false;
+    matchingReadCount += 1;
+    if (normalizedMode === 'after-first-read' && matchingReadCount === 1) {
+      return;
+    }
+    if (normalizedMode === 'first-read') {
+      pending = false;
+    }
     throw Object.assign(new TypeError(`simulated transient read failure for ${requestPath}`), {
       cause: { code: 'ECONNRESET' },
     });

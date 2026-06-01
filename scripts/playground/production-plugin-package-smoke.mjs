@@ -39,6 +39,9 @@ const serverStartupTimeoutMs = 60_000;
 const packagedDriverGuardStartupTimeoutMs = 120_000;
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
+const playgroundCliBinary = String(process.env.REPRINT_PUSH_PLAYGROUND_CLI_BINARY || '').trim();
+const playgroundCliPackage = String(process.env.REPRINT_PUSH_PLAYGROUND_CLI_PACKAGE || '@wp-playground/cli@latest').trim()
+  || '@wp-playground/cli@latest';
 
 const credentials = {
   username: 'reprint_push_admin',
@@ -994,9 +997,7 @@ function runPackagedDriverRegistryGuard(scenarioName, mountedPluginDir) {
 }
 
 function runPackagedDriverRegistryGuards(mountedPluginDir) {
-  const result = spawnSync('npx', [
-    '--yes',
-    '@wp-playground/cli@latest',
+  const result = spawnSyncPlaygroundCli([
     'php',
     '--blueprint',
     blueprintPath,
@@ -1320,9 +1321,7 @@ function runCli(args, { expectStatus = 0 } = {}) {
 }
 
 function exportSnapshot(name, blueprintPath) {
-  const result = spawnSync('npx', [
-    '--yes',
-    '@wp-playground/cli@latest',
+  const result = spawnSyncPlaygroundCli([
     'php',
     '--blueprint',
     blueprintPath,
@@ -1365,9 +1364,7 @@ async function startPlaygroundServer(name, blueprintPath, mountedPluginDir, { au
   const port = await findLocalPort();
   const baseUrl = `http://127.0.0.1:${port}`;
   const logs = [];
-  const child = spawn('npx', [
-    '--yes',
-    '@wp-playground/cli@latest',
+  const child = spawnPlaygroundCli([
     'server',
     '--blueprint',
     blueprintPath,
@@ -1406,6 +1403,23 @@ async function startPlaygroundServer(name, blueprintPath, mountedPluginDir, { au
   }
 
   return { name, port, baseUrl, child, logs };
+}
+
+function spawnSyncPlaygroundCli(args, options = {}) {
+  const invocation = playgroundCliInvocation(args);
+  return spawnSync(invocation.command, invocation.args, options);
+}
+
+function spawnPlaygroundCli(args, options = {}) {
+  const invocation = playgroundCliInvocation(args);
+  return spawn(invocation.command, invocation.args, options);
+}
+
+function playgroundCliInvocation(args) {
+  if (playgroundCliBinary) {
+    return { command: playgroundCliBinary, args };
+  }
+  return { command: 'npx', args: ['--yes', playgroundCliPackage, ...args] };
 }
 
 async function waitForServer(child, baseUrl, logs, startupTimeoutMs = serverStartupTimeoutMs) {

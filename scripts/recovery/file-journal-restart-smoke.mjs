@@ -20,7 +20,7 @@ import { inspectRecoveryJournal } from '../../src/recovery-inspect.js';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const inspectModulePath = path.join(repoRoot, 'src/recovery-inspect.js');
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
-const tmpRoot = path.join(repoRoot, '.tmp');
+const tmpRoot = path.resolve(process.env.REPRINT_PUSH_RECOVERY_FILE_JOURNAL_TMP_ROOT || path.join(repoRoot, '.tmp'));
 fs.mkdirSync(tmpRoot, { recursive: true });
 
 const workDir = fs.mkdtempSync(path.join(tmpRoot, 'recovery-file-journal-'));

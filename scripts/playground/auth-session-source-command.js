@@ -5,6 +5,7 @@ const authSessionSourceCommandScriptPath = path.resolve(path.dirname(fileURLToPa
 
 export function buildAuthSessionSourceCommand({
   nodePath = process.execPath,
+  scriptPath = authSessionSourceCommandScriptPath,
   sourceUrl,
   username,
   applicationPassword,
@@ -21,7 +22,7 @@ export function buildAuthSessionSourceCommand({
 
   return [
     shellQuote(nodePath),
-    shellQuote(authSessionSourceCommandScriptPath),
+    shellQuote(scriptPath),
     shellQuote(`--source-url=${sourceUrl}`),
     shellQuote(`--username=${username}`),
     shellQuote(`--application-password=${applicationPassword}`),
