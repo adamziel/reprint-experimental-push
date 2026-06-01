@@ -1049,7 +1049,7 @@ Focus: turn proven behavior into release discipline and operations.
 - [x] RPP-0990 (Farthest / release-ops) Carry through the release verifier for failure triage runbook, variant 5. Success: final go/no-go record names every remaining risk or closes it.
 - [x] RPP-0991 (Farthest / release-ops) Carry through the release verifier for rollback/repair runbook, variant 5. Success: audit file links exact commands and commits.
 - [x] RPP-0992 (Farthest / release-ops) Carry through the release verifier for CI required checks list, variant 5. Success: release gate status moves only with production-backed evidence.
-- [ ] RPP-0993 (Farthest / release-ops) Carry through the release verifier for GitHub Pages progress publish, variant 5. Success: CI blocks release when a required proof fails.
+- [x] RPP-0993 (Farthest / release-ops) Carry through the release verifier for GitHub Pages progress publish, variant 5. Success: CI blocks release when a required proof fails.
 - [ ] RPP-0994 (Farthest / release-ops) Carry through the release verifier for release artifact package, variant 5. Success: operator docs explain safe recovery without hidden assumptions.
 - [ ] RPP-0995 (Farthest / release-ops) Carry through the release verifier for versioned protocol docs, variant 5. Success: final go/no-go record names every remaining risk or closes it.
 - [ ] RPP-0996 (Farthest / release-ops) Carry through the release verifier for migration docs, variant 5. Success: audit file links exact commands and commits.

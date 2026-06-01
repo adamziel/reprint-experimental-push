@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:50 CEST +02:00.
+- Last update: 2026-06-01 06:54 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0992 CI required checks list release verifier v5 merge ending at
-  `d89557f45`.
+  the RPP-0993 GitHub Pages progress publish release verifier v5 merge ending
+  at `ccf78967`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 952
-  items checked and leaves 48 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 953
+  items checked and leaves 47 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 92 release-ops items.
+  harness items, 100 merge-invariant items, and 93 release-ops items.
+- GitHub Pages progress publish release verifier v5: the current lane now
+  checks `RPP-0993` with support-only release-verifier carry-through coverage
+  for GitHub Pages progress publish. The evidence carries forward the RPP-0973
+  v4 progress-publish contract, proves required progress-publish proof failures
+  and missing public artifact proof keep CI/reporting fail-closed, keeps
+  support-only publication observations from moving final release readiness, and
+  records no release-gate movement.
+  Command:
+  `node --test --test-name-pattern RPP-0993 test/rpp-0993-github-pages-progress-publish-release-verifier-v5.test.js`.
+  Caveat: progress publish verifier support evidence only; final release
+  remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0993 coverage 8/8,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  953/47; final release remains `NO-GO` until required production-backed
+  publication and final-release proof is present and accepted.
 - CI required checks list release verifier v5: the current lane now checks
   `RPP-0992` with support-only release-verifier carry-through coverage for the
   CI required checks list. The evidence carries forward the RPP-0972 v4 CI
