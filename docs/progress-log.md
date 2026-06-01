@@ -6,18 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:58 CEST +02:00.
+- Last update: 2026-06-01 04:00 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0911 rollback/repair runbook merge ending at `173a16387`.
+  the RPP-0912 CI required checks list merge ending at `55a61342e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 871
-  items checked and leaves 129 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 872
+  items checked and leaves 128 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 11 release-ops items.
+  harness items, 100 merge-invariant items, and 12 release-ops items.
+- CI required checks list: the current lane now checks `RPP-0912` with a
+  support-only required checks list. The evidence records every blocking CI
+  check, proves release-gate status can move only with production-backed
+  observations, and keeps final release `NO-GO` without those observations.
+  Command:
+  `node --test --test-name-pattern RPP-0912 test/rpp-0912-ci-required-checks-list.test.js`.
+  Caveat: CI checklist support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0912 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  872/128; final release remains `NO-GO` because required production-backed
+  CI observations are still absent.
 - Rollback/repair runbook: the current lane now checks `RPP-0911` with a
   support-only rollback and repair runbook. The evidence links exact audit
   commands to existing commits, names the stop conditions for unsafe repair,
