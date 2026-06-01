@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:07 CEST +02:00.
+- Last update: 2026-06-01 03:09 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0888 classic theme files proof merge ending at `1a2cb8d39`.
+  the RPP-0890 multisite subdomain topology proof merge ending at `7ff787584`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 853
-  items checked and leaves 147 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 854
+  items checked and leaves 146 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 53 production-topology items, 100 generated
+  100 storage/performance items, 54 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Multisite subdomain topology variant-5 release-verifier carry-through proof:
+  the current lane now checks `RPP-0890` with deterministic multisite subdomain
+  candidate-scope support evidence. The proof records candidate versus
+  release-ready topology scope, host-role surface counts, plugin/theme
+  inventory, release-verifier carry-through boundary surfaces, import/export and
+  production-readback gaps, and final `NO-GO` release posture without retaining
+  raw topology URLs or payload values.
+  Command:
+  `node --test --test-name-pattern RPP-0890 test/rpp-0890-multisite-subdomain-topology-v5.test.js`.
+  Caveat: candidate-scope support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0890 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  854/146; final release remains `NO-GO` because this is support evidence, not
+  production-backed multisite import/export survival, production credentials,
+  route receipts, durable journal behavior, live mutation proof, throughput,
+  release approval, or a production release gate.
 - Classic theme files variant-5 release-verifier carry-through proof: the
   current lane now checks `RPP-0888` with deterministic classic theme file
   support evidence. The proof captures source, local-edited, and remote-changed
