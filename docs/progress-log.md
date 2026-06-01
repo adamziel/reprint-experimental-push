@@ -6,18 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:14 CEST +02:00.
+- Last update: 2026-06-01 04:16 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0920 go/no-go release decision record merge ending at `fff56d33ba`.
+  the RPP-0921 release gate 1 final audit v2 merge ending at `50b30c6197`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 880
-  items checked and leaves 120 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 881
+  items checked and leaves 119 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 20 release-ops items.
+  harness items, 100 merge-invariant items, and 21 release-ops items.
+- Release gate 1 final audit v2: the current lane now checks `RPP-0921` with a
+  support-only GATE-1 audit refresh. The evidence links exact commands and
+  commit anchors, keeps GATE-1 at support-only, and records the missing
+  production executor/auth boundary proof.
+  Command:
+  `node --test --test-name-pattern RPP-0921 test/rpp-0921-release-gate-1-final-audit-v2.test.js`.
+  Caveat: GATE-1 audit support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0921 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  881/119; final release remains `NO-GO` because production-backed GATE-1
+  evidence is still absent.
 - Go/no-go release decision record: the current lane now checks `RPP-0920`
   with a support-only final decision record. The evidence names every remaining
   final-release risk, keeps the closed-risk count at zero, and records that no
