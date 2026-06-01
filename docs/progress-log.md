@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 02:44 CEST +02:00.
+- Last update: 2026-06-01 02:46 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0871 object-cache enabled topology proof merge ending at `99a83d2ee`.
+  the RPP-0870 multisite subdomain topology proof merge ending at `6704b7fc9`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 842
-  items checked and leaves 158 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 843
+  items checked and leaves 157 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 42 production-topology items, 100 generated
+  100 storage/performance items, 43 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Multisite subdomain topology variant-4 candidate-scope proof: the current lane
+  now checks `RPP-0870` with deterministic multisite-subdomain support
+  evidence. The proof records source, local-edited, and remote-changed host role
+  surfaces as identity hashes only, keeps subdirectory mode excluded, records
+  network and child-subdomain site counts, plugin/theme surface inventories, and
+  exact production import/export, auth/session lifecycle, durable journal,
+  live-topology readback, and release artifact gaps.
+  Command:
+  `node --test --test-name-pattern RPP-0870 test/rpp-0870-multisite-subdomain-topology-v4.test.js`.
+  Caveat: candidate-scope support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0870 coverage 4/4,
+  scoped artifact redaction scan with twelve allowed hash-evidence occurrences,
+  and diff whitespace checks. Counts are now 843/157; final release remains
+  `NO-GO` because this is support evidence, not production-backed multisite
+  import/export survival, production credentials, route receipts, durable
+  journal behavior, live mutation proof, throughput, release approval, or a
+  production release gate.
 - Object-cache enabled topology variant-4 unavailable-capability proof: the
   current lane now checks `RPP-0871` with deterministic object-cache topology
   support evidence. The proof records private cache backend requirements,
