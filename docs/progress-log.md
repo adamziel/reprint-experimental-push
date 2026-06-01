@@ -6,19 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:00 CEST +02:00.
+- Last update: 2026-06-01 03:02 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0885 WooCommerce product catalog proof merge ending at `42cc15d43`.
+  the RPP-0886 WooCommerce order safety refusal proof merge ending at
+  `8192fe41a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 850
-  items checked and leaves 150 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 851
+  items checked and leaves 149 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 50 production-topology items, 100 generated
+  100 storage/performance items, 51 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- WooCommerce order safety refusal variant-5 release-verifier carry-through
+  proof: the current lane now checks `RPP-0886` with deterministic WooCommerce
+  order safety support evidence. The proof records hash/count/surface-only
+  order, HPOS, payment, refund, subscription, stock, email, webhook, and
+  audit-side-effect refusal surfaces, rejects forged order mutations before
+  mutation-capable work, keeps packaged fallback disabled, and records exact
+  blocker `DOCKER_CLI_MISSING` when Docker cannot start the topology.
+  Commands:
+  `node --test --test-name-pattern RPP-0886 test/rpp-0886-woocommerce-order-safety-refusal-v5.test.js`
+  and `npm run verify:release:docker-local-production`.
+  Caveat: unavailable-capability support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0886
+  coverage 4/4, Docker topology command exit 2 with `DOCKER_CLI_MISSING`,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  851/149; final release remains `NO-GO` because this is support evidence, not
+  production-backed WooCommerce order execution, HPOS semantic readback,
+  production credentials, route receipts, durable journal behavior, live
+  mutation proof, throughput, release approval, or a production release gate.
 - WooCommerce product catalog variant-5 release-verifier carry-through proof:
   the current lane now checks `RPP-0885` with deterministic WooCommerce catalog
   support evidence. The proof records product, variation, taxonomy, pricing,
