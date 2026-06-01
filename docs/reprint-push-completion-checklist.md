@@ -909,7 +909,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0855 (Far / production-topology) Add generated coverage for plugin activation hooks topology, variant 3. Success: progress report records candidate versus release-ready scope.
 - [x] RPP-0856 (Far / production-topology) Add generated coverage for plugin update hooks topology, variant 3. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0857 (Far / production-topology) Add generated coverage for REST route matrix proof, variant 3. Success: verify:release passes without packaged fallback on the topology.
-- [ ] RPP-0858 (Far / production-topology) Add generated coverage for TLS/HTTPS source proof, variant 3. Success: source/local/changed URLs are captured and identity-checked.
+- [x] RPP-0858 (Far / production-topology) Add generated coverage for TLS/HTTPS source proof, variant 3. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0859 (Far / production-topology) Add generated coverage for sandbox 8080 ingress rule proof, variant 3. Success: plugin and graph evidence survive real WordPress import/export.
 - [ ] RPP-0860 (Far / production-topology) Add generated coverage for no tunnel policy proof, variant 3. Success: progress report records candidate versus release-ready scope.
 - [ ] RPP-0861 (Far / production-topology) Add focused regression coverage for three-site local production topology, variant 4. Success: topology command starts the sites or records exact unavailable capability.
