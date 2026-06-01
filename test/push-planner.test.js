@@ -6500,6 +6500,177 @@ test('rewrites comment parent thread references through explicit WordPress graph
   assert.equal(result.site.db.wp_comments['comment_ID:802'].comment_parent, 901);
 });
 
+test('explicit WordPress graph identity-map contract carries accepted proof through decisions and rewrites', () => {
+  const sourcePostResourceKey = 'row:["wp_posts","ID:2201"]';
+  const targetPostResourceKey = 'row:["wp_posts","ID:3201"]';
+  const childPostResourceKey = 'row:["wp_posts","ID:2202"]';
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [
+        {
+          contractVersion: 1,
+          contractKind: 'wordpress-graph-identity-map',
+          sourceResourceKey: sourcePostResourceKey,
+          targetResourceKey: targetPostResourceKey,
+        },
+      ],
+    },
+  };
+  local.db.wp_posts['ID:2201'] = {
+    ID: 2201,
+    post_title: 'graph-contract-private-title',
+    post_name: 'graph-contract-post',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  remote.db.wp_posts['ID:3201'] = {
+    ID: 3201,
+    post_title: 'graph-contract-private-title',
+    post_name: 'graph-contract-post',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  local.db.wp_posts['ID:2202'] = {
+    ID: 2202,
+    post_title: 'graph-contract-child-private-title',
+    post_name: 'graph-contract-child',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 2201,
+    post_author: 0,
+  };
+
+  const plan = planFor(base, local, remote);
+  const forgedPlan = cloneJson(plan);
+  const forgedRemote = cloneJson(remote);
+  const forgedRemoteBefore = JSON.stringify(forgedRemote);
+  const result = applyPlan(remote, plan);
+  const sourceDecision = decisionFor(plan, sourcePostResourceKey);
+  const childMutation = mutationFor(plan, childPostResourceKey);
+  const rewrite = childMutation.wordpressGraphIdentity.rewrites.find((entry) =>
+    entry.relationshipType === 'post-parent');
+  const contractEvidence = sourceDecision.identityMapContractValidationEvidence;
+  const evidenceJson = JSON.stringify({
+    sourceDecision,
+    rewrite,
+    graphIdentity: childMutation.wordpressGraphIdentity,
+  });
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(sourceDecision.decision, 'map-local-identity-to-remote');
+  assert.equal(sourceDecision.targetResourceKey, targetPostResourceKey);
+  assert.equal(contractEvidence.operation, 'wordpress-graph-identity-map-contract-validation');
+  assert.equal(contractEvidence.contractKind, 'wordpress-graph-identity-map');
+  assert.equal(contractEvidence.contractVersion, 1);
+  assert.equal(contractEvidence.outcome, 'accepted');
+  assert.equal(contractEvidence.reasonCode, 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_ACCEPTED');
+  assert.equal(contractEvidence.rawValuesIncluded, false);
+  assert.equal(contractEvidence.sourceResourceKey, sourcePostResourceKey);
+  assert.equal(contractEvidence.targetResourceKey, targetPostResourceKey);
+  assert.equal(rewrite.relationshipContractKind, 'wordpress-graph-relationship');
+  assert.equal(rewrite.relationshipContractVersion, 1);
+  assert.match(rewrite.relationshipContractHash, /^[a-f0-9]{64}$/);
+  assert.equal(rewrite.identityMapContractValidationHash, digest(contractEvidence));
+  assert.equal(deserializeMutationValue(childMutation).post_parent, 3201);
+  assert.equal(result.site.db.wp_posts['ID:2202'].post_parent, 3201);
+  assert.equal(evidenceJson.includes('graph-contract-private-title'), false);
+  assert.equal(evidenceJson.includes('graph-contract-child-private-title'), false);
+
+  const forgedRewrite = mutationFor(forgedPlan, childPostResourceKey)
+    .wordpressGraphIdentity.rewrites[0];
+  forgedRewrite.relationshipContractHash = '0'.repeat(64);
+  const forgedError = captureError(() => applyPlan(forgedRemote, forgedPlan));
+  const forgedIssue = forgedError.details.issues.find((issue) =>
+    issue.code === 'WORDPRESS_GRAPH_REWRITE_CONTRACT_HASH_MISMATCH');
+
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'PLAN_INVARIANT_VIOLATION');
+  assert.equal(forgedIssue.resourceKey, childPostResourceKey);
+  assert.equal(forgedIssue.relationshipType, 'post-parent');
+  assert.equal(JSON.stringify(forgedRemote), forgedRemoteBefore);
+});
+
+test('unsupported explicit WordPress graph identity-map contract version fails closed before rewrite', () => {
+  const sourcePostResourceKey = 'row:["wp_posts","ID:2201"]';
+  const targetPostResourceKey = 'row:["wp_posts","ID:3201"]';
+  const childPostResourceKey = 'row:["wp_posts","ID:2202"]';
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [
+        {
+          contractVersion: 2,
+          contractKind: 'wordpress-graph-identity-map',
+          sourceResourceKey: sourcePostResourceKey,
+          targetResourceKey: targetPostResourceKey,
+        },
+      ],
+    },
+  };
+  local.db.wp_posts['ID:2201'] = {
+    ID: 2201,
+    post_title: 'graph-contract-invalid-private-title',
+    post_name: 'graph-contract-invalid',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  remote.db.wp_posts['ID:3201'] = {
+    ID: 3201,
+    post_title: 'graph-contract-invalid-private-title',
+    post_name: 'graph-contract-invalid',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  local.db.wp_posts['ID:2202'] = {
+    ID: 2202,
+    post_title: 'graph-contract-invalid-child-private-title',
+    post_name: 'graph-contract-invalid-child',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 2201,
+    post_author: 0,
+  };
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const sourceBlocker = plan.blockers.find((blocker) => blocker.resourceKey === sourcePostResourceKey);
+  const childBlocker = plan.blockers.find((blocker) => blocker.resourceKey === childPostResourceKey);
+  const evidence = sourceBlocker.contractValidationEvidence;
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, sourcePostResourceKey), undefined);
+  assert.equal(mutationFor(plan, childPostResourceKey), undefined);
+  assert.equal(sourceBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(sourceBlocker.reasonCode, 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_UNSUPPORTED_VERSION');
+  assert.match(sourceBlocker.reason, /invalid explicit graph identity-map contract/);
+  assert.equal(evidence.outcome, 'refused-before-mutation');
+  assert.equal(evidence.reasonCode, 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_UNSUPPORTED_VERSION');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(evidence.sourceResourceKey, sourcePostResourceKey);
+  assert.equal(evidence.targetResourceKey, targetPostResourceKey);
+  assert.equal(childBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(planJson.includes('graph-contract-invalid-private-title'), false);
+  assert.equal(planJson.includes('graph-contract-invalid-child-private-title'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
 test('RPP-0306 proves stable comment parent thread targets before planning child replies', () => {
   const parentCommentResourceKey = 'row:["wp_comments","comment_ID:31"]';
   const childCommentResourceKey = 'row:["wp_comments","comment_ID:32"]';

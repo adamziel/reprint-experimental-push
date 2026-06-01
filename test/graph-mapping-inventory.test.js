@@ -36,6 +36,8 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
     'usermeta-user',
   ]);
   assert.deepEqual(inventory.identityMapCapabilities, {
+    contractKind: 'wordpress-graph-identity-map',
+    contractVersion: 1,
     explicitMapTableSuffixes: [
       'posts',
       'users',
@@ -50,6 +52,7 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
       'wp_posts.post_type+post_name',
     ],
     rewritesRequireEquivalentRemoteTarget: true,
+    explicitContractsFailClosed: true,
     rewritesRecordHashOnlyEvidence: true,
   });
   assert.deepEqual(inventory.mappedFamilyCounters, {

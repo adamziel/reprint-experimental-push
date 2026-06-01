@@ -16,6 +16,7 @@ import {
   PLUGIN_DRIVER_CONTRACT_BOUND_VALIDATOR,
   validatePluginOwnedDriverPayload,
 } from './plugin-driver-validators.js';
+import { wordpressGraphRelationshipContractForType } from './wordpress-graph-contracts.js';
 
 const JOURNAL_SCHEMA_VERSION = 1;
 const SHA256_HEX_PATTERN = /^[a-f0-9]{64}$/;
@@ -1826,6 +1827,8 @@ function validateReadyPlanEnvelope(plan) {
         });
       }
     }
+
+    issues.push(...wordpressGraphRewriteEnvelopeIssues(mutation));
   }
 
   for (const precondition of preconditions) {
@@ -1938,6 +1941,112 @@ function validateReadyPlanEnvelope(plan) {
       },
     );
   }
+}
+
+function wordpressGraphRewriteEnvelopeIssues(mutation) {
+  const identity = mutation.wordpressGraphIdentity;
+  if (!identity) {
+    return [];
+  }
+
+  const issues = [];
+  if (!Array.isArray(identity.rewrites) || identity.rewrites.length === 0) {
+    return [{
+      code: 'WORDPRESS_GRAPH_REWRITE_EVIDENCE_MISSING',
+      mutationId: mutation.id || null,
+      resourceKey: mutation.resourceKey || null,
+    }];
+  }
+
+  for (const [index, rewrite] of identity.rewrites.entries()) {
+    const issueBase = {
+      mutationId: mutation.id || null,
+      resourceKey: mutation.resourceKey || null,
+      rewriteIndex: index,
+      relationshipType: rewrite?.relationshipType || null,
+      relationshipKey: rewrite?.relationshipKey || null,
+    };
+    const contract = wordpressGraphRelationshipContractForType(rewrite?.relationshipType);
+    if (!contract) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_RELATIONSHIP_CONTRACT_MISSING',
+      });
+      continue;
+    }
+    if (contract.scalarRewriteSupported !== true) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_SCALAR_REWRITE_UNSUPPORTED',
+      });
+    }
+    if (!contract.sourceFields.includes(rewrite.field)) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_FIELD_NOT_IN_CONTRACT',
+        field: rewrite.field || null,
+        allowedFields: [...contract.sourceFields],
+      });
+    }
+    if (rewrite.relationshipContractKind !== contract.contractKind) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_CONTRACT_KIND_MISMATCH',
+        expected: contract.contractKind,
+        observed: rewrite.relationshipContractKind || null,
+      });
+    }
+    if (rewrite.relationshipContractVersion !== contract.schemaVersion) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_CONTRACT_VERSION_MISMATCH',
+        expected: contract.schemaVersion,
+        observed: rewrite.relationshipContractVersion ?? null,
+      });
+    }
+    const expectedContractHash = digest(contract);
+    if (rewrite.relationshipContractHash !== expectedContractHash) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_CONTRACT_HASH_MISMATCH',
+        expectedHash: expectedContractHash,
+        observedHash: hashEvidenceForDetails(rewrite.relationshipContractHash),
+      });
+    }
+    if (rewrite.rewrittenResourceKey && rewrite.rewrittenResourceKey !== mutation.resourceKey) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_RESOURCE_KEY_MISMATCH',
+        expectedResourceKey: mutation.resourceKey || null,
+        observedResourceKey: rewrite.rewrittenResourceKey,
+      });
+    }
+    const expectedSourceResourceKey = identity.sourceResourceKey || mutation.resourceKey || null;
+    if (
+      expectedSourceResourceKey
+      && rewrite.sourceResourceKey
+      && rewrite.sourceResourceKey !== expectedSourceResourceKey
+    ) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_SOURCE_RESOURCE_MISMATCH',
+        expectedSourceResourceKey,
+        observedSourceResourceKey: rewrite.sourceResourceKey,
+      });
+    }
+    if (
+      rewrite.identityMapContractValidationHash !== undefined
+      && hashEvidenceState(rewrite.identityMapContractValidationHash) !== 'hash'
+    ) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_CONTRACT_HASH_INVALID',
+        observedHash: hashEvidenceForDetails(rewrite.identityMapContractValidationHash),
+      });
+    }
+  }
+
+  return issues;
 }
 
 function comparableResourceKey(resource) {

@@ -9,7 +9,7 @@ planner assumptions.
 
 The version-1 graph contract lives in `src/wordpress-graph-contracts.js`.
 
-It declares:
+It declares relationship contracts:
 
 - supported relationship types
 - source table suffixes and source fields
@@ -38,6 +38,20 @@ Example relationship contract:
 }
 ```
 
+It also declares the explicit identity-map contract:
+
+```json
+{
+  "schemaVersion": 1,
+  "contractKind": "wordpress-graph-identity-map",
+  "operation": "wordpress-graph-identity-map-contract-validation",
+  "sourceResourceKey": "row:[\"wp_posts\",\"ID:2001\"]",
+  "targetResourceKey": "row:[\"wp_posts\",\"ID:3001\"]",
+  "outcome": "accepted",
+  "rawValuesIncluded": false
+}
+```
+
 ## Runtime Policy
 
 The planner can apply graph-bearing changes only when references are proven by
@@ -49,6 +63,16 @@ one of these paths:
   equivalent remote target row
 - the relationship contract allows scalar rewriting and the identity map is
   usable
+
+When planner rewrites a scalar graph reference, the mutation records the
+relationship contract kind, version, and hash. Apply recomputes that contract
+hash and rejects forged, missing, or unsupported rewrite evidence before any
+mutation.
+
+Legacy identity maps still normalize for existing local coverage, but an entry
+that declares `contractKind: "wordpress-graph-identity-map"` is strict:
+unsupported contract versions or kinds, missing row resources, or self-maps
+fail closed before rewrite.
 
 Otherwise the mutation is blocked before apply with
 `stale-wordpress-graph-identity` and
@@ -81,8 +105,8 @@ identity proof exists:
 
 `scripts/bench/graph-mapping-inventory.js` emits the contract table as
 `graphContract` evidence. The inventory records relationship contracts,
-unsupported surface contracts, identity-map suffixes, collision surfaces, and
-family coverage without raw site values.
+unsupported surface contracts, identity-map contract kind/version, identity-map
+suffixes, collision surfaces, and family coverage without raw site values.
 
 Future graph support should extend the contract first, add refusal tests for
 unsupported shapes, and only then add positive rewrite or same-plan support.

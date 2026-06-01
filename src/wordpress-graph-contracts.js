@@ -1,4 +1,5 @@
 export const WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION = 1;
+export const WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND = 'wordpress-graph-identity-map';
 
 export const WORDPRESS_GRAPH_TABLE_SUFFIXES = Object.freeze([
   'registration_log',
@@ -265,6 +266,114 @@ export function wordpressGraphRelationshipSupportsScalarRewrite(reference) {
   return reference?.rewriteSupported !== false;
 }
 
+export function normalizeWordPressGraphIdentityMapContract(entry, {
+  source = null,
+  sourceResource = null,
+  targetResource = null,
+} = {}) {
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+    return { explicit: false, valid: true, evidence: null };
+  }
+
+  const explicit = hasOwn(entry, 'contractVersion')
+    || hasOwn(entry, 'schemaVersion')
+    || hasOwn(entry, 'contractKind')
+    || entry.kind === WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND
+    || entry.contract?.kind === WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND
+    || hasOwn(entry.contract || {}, 'schemaVersion');
+
+  if (!explicit) {
+    return { explicit: false, valid: true, evidence: null };
+  }
+
+  const contractVersion = entry.contractVersion
+    ?? entry.schemaVersion
+    ?? entry.contract?.schemaVersion
+    ?? null;
+  const contractKind = entry.contractKind
+    ?? entry.kind
+    ?? entry.contract?.kind
+    ?? WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND;
+  const sourceResourceKey = sourceResource?.key
+    || entry.sourceResourceKey
+    || entry.localResourceKey
+    || entry.fromResourceKey
+    || null;
+  const targetResourceKey = targetResource?.key
+    || entry.targetResourceKey
+    || entry.remoteResourceKey
+    || entry.toResourceKey
+    || null;
+
+  const issues = [];
+  if (contractVersion !== WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION) {
+    issues.push({
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_UNSUPPORTED_VERSION',
+      field: 'contractVersion',
+      required: WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+      observed: contractVersion ?? null,
+    });
+  }
+  if (contractKind !== WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND) {
+    issues.push({
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_UNSUPPORTED_KIND',
+      field: 'contractKind',
+      required: WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+      observed: contractKind ?? null,
+    });
+  }
+  if (!sourceResource || sourceResource.type !== 'row') {
+    issues.push({
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_MISSING_SOURCE_RESOURCE',
+      field: 'sourceResourceKey',
+      required: 'row resource key',
+      observed: sourceResourceKey,
+    });
+  }
+  if (!targetResource || targetResource.type !== 'row') {
+    issues.push({
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_MISSING_TARGET_RESOURCE',
+      field: 'targetResourceKey',
+      required: 'row resource key',
+      observed: targetResourceKey,
+    });
+  }
+  if (sourceResource?.key && targetResource?.key && sourceResource.key === targetResource.key) {
+    issues.push({
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_SELF_MAPPING',
+      field: 'targetResourceKey',
+      required: 'different target resource',
+      observed: targetResource.key,
+    });
+  }
+
+  const accepted = issues.length === 0;
+  return {
+    explicit: true,
+    valid: accepted,
+    evidence: {
+      schemaVersion: 1,
+      operation: 'wordpress-graph-identity-map-contract-validation',
+      contractKind: contractKind || null,
+      contractVersion: Number.isInteger(contractVersion) ? contractVersion : null,
+      outcome: accepted ? 'accepted' : 'refused-before-mutation',
+      reasonCode: accepted
+        ? 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_ACCEPTED'
+        : issues[0].reasonCode,
+      issueCodes: issues.map((issue) => issue.reasonCode),
+      issues,
+      source,
+      rawValuesIncluded: false,
+      sourceResourceKey: sourceResource?.key || null,
+      targetResourceKey: targetResource?.key || null,
+      sourceTable: sourceResource?.table || null,
+      targetTable: targetResource?.table || null,
+      sourceId: sourceResource?.id || null,
+      targetId: targetResource?.id || null,
+    },
+  };
+}
+
 function graphRelationshipContract({
   relationshipType,
   sourceSuffix,
@@ -290,4 +399,8 @@ function graphRelationshipContract({
     resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
     rawValuesIncluded: false,
   });
+}
+
+function hasOwn(value, key) {
+  return value && Object.prototype.hasOwnProperty.call(value, key);
 }

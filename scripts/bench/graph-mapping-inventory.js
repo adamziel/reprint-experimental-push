@@ -6,6 +6,7 @@ import {
 } from './guarded-executor-benchmark.js';
 import {
   WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+  WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
   WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS,
   WORDPRESS_GRAPH_UNSUPPORTED_SURFACE_CONTRACTS,
   SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS,
@@ -21,6 +22,7 @@ export function buildGraphMappingInventory({
   supportedRelationshipTypes = SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS,
   identityMapTableSuffixes = SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES,
   failClosedCollisionSurfaces = WORDPRESS_GRAPH_IDENTITY_FAIL_CLOSED_COLLISION_SURFACES,
+  identityMapContractKind = WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
   relationshipContracts = WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS,
   unsupportedSurfaceContracts = WORDPRESS_GRAPH_UNSUPPORTED_SURFACE_CONTRACTS,
   graphContractSchemaVersion = WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
@@ -55,9 +57,12 @@ export function buildGraphMappingInventory({
       rawValuesIncluded: false,
     },
     identityMapCapabilities: {
+      contractKind: identityMapContractKind,
+      contractVersion: graphContractSchemaVersion,
       explicitMapTableSuffixes: [...identityMapTableSuffixes],
       failClosedCollisionSurfaces: [...failClosedCollisionSurfaces],
       rewritesRequireEquivalentRemoteTarget: true,
+      explicitContractsFailClosed: true,
       rewritesRecordHashOnlyEvidence: true,
     },
     mappedFamilyCounters: { ...familyCounters },

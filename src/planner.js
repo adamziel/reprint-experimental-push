@@ -20,6 +20,8 @@ import {
   UNSUPPORTED_WORDPRESS_POST_GRAPH_SURFACES as UNSUPPORTED_WORDPRESS_POST_GRAPH_SURFACE_VALUES,
   WORDPRESS_GRAPH_IDENTITY_FAIL_CLOSED_COLLISION_SURFACES,
   WORDPRESS_GRAPH_TABLE_SUFFIXES,
+  normalizeWordPressGraphIdentityMapContract,
+  wordpressGraphRelationshipContractForType,
   wordpressGraphRelationshipSupportsScalarRewrite,
 } from './wordpress-graph-contracts.js';
 
@@ -117,6 +119,9 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         targetResourceKey: mappedIdentity.targetResource.key,
         targetRemoteHash: mappedIdentity.targetRemoteHash,
         identityMapSource: mappedIdentity.source,
+        ...(mappedIdentity.contractValidationEvidence
+          ? { identityMapContractValidationEvidence: mappedIdentity.contractValidationEvidence }
+          : {}),
         change: changeEvidence(
           sourceResource,
           sourceBaseValue,
@@ -1970,12 +1975,18 @@ function normalizeWordPressGraphIdentityMapEntry(entry, source) {
   if (sourcePrimaryValue == null || targetPrimaryValue == null) {
     return null;
   }
+  const contract = normalizeWordPressGraphIdentityMapContract(entry, {
+    source,
+    sourceResource,
+    targetResource,
+  });
   return {
     source,
     sourceResource,
     targetResource,
     sourcePrimaryValue,
     targetPrimaryValue,
+    ...(contract.evidence ? { contractValidationEvidence: contract.evidence } : {}),
   };
 }
 
@@ -2055,6 +2066,17 @@ function duplicateWordPressGraphIdentityMapSupport(entry, sourceCounts, targetCo
 }
 
 function validateWordPressGraphIdentityMapEntry(entry, { base, local, remote, identityMap }) {
+  if (entry.contractValidationEvidence?.outcome === 'refused-before-mutation') {
+    return wordpressGraphIdentityMapUnsupported(
+      entry,
+      'declares an invalid explicit graph identity-map contract',
+      {
+        reasonCode: entry.contractValidationEvidence.reasonCode,
+        contractValidationEvidence: entry.contractValidationEvidence,
+      },
+    );
+  }
+
   const sourceSuffix = wordpressGraphTableSuffix(entry.sourceResource.table);
   const targetSuffix = wordpressGraphTableSuffix(entry.targetResource.table);
   if (
@@ -2099,14 +2121,22 @@ function validateWordPressGraphIdentityMapEntry(entry, { base, local, remote, id
   };
 }
 
-function wordpressGraphIdentityMapUnsupported(entry, reason) {
+function wordpressGraphIdentityMapUnsupported(entry, reason, extra = {}) {
   return {
     supported: false,
     className: 'stale-wordpress-graph-identity',
+    ...(extra.reasonCode ? { reasonCode: extra.reasonCode } : {}),
+    ...(extra.contractValidationEvidence
+      ? { contractValidationEvidence: extra.contractValidationEvidence }
+      : {}),
     reason: `WordPress graph identity map for ${entry.sourceResource.key} ${reason}.`,
     references: [
       wordpressGraphIdentityMapReferenceEvidence(entry, {
         className: 'unsupported-wordpress-graph-identity-map',
+        ...(extra.reasonCode ? { reasonCode: extra.reasonCode } : {}),
+        ...(extra.contractValidationEvidence
+          ? { contractValidationEvidence: extra.contractValidationEvidence }
+          : {}),
       }),
     ],
   };
@@ -2280,13 +2310,24 @@ function rewriteWordPressGraphMutation({ resource, localValue, identityMap }) {
       mapping.targetPrimaryValue,
     );
     rewriteByField.set(reference.field, mapping.targetPrimaryValue);
+    const relationshipContract = wordpressGraphRelationshipContractForType(reference.relationshipType);
     rewrites.push({
       relationshipKey: reference.relationshipKey,
       relationshipType: reference.relationshipType,
       field: reference.field,
+      ...(relationshipContract
+        ? {
+          relationshipContractKind: relationshipContract.contractKind,
+          relationshipContractVersion: relationshipContract.schemaVersion,
+          relationshipContractHash: digest(relationshipContract),
+        }
+        : {}),
       sourceTargetResourceKey: mapping.sourceResource.key,
       targetResourceKey: mapping.targetResource.key,
       identityMapSource: mapping.source,
+      ...(mapping.contractValidationEvidence
+        ? { identityMapContractValidationHash: digest(mapping.contractValidationEvidence) }
+        : {}),
       sourceTargetLocalHash: mapping.sourceLocalHash,
       targetRemoteHash: mapping.targetRemoteHash,
     });
@@ -3704,6 +3745,10 @@ function addWordPressGraphIdentityBlocker(plan, {
     class: support.className || 'stale-wordpress-graph-identity',
     resource,
     resourceKey: resource.key,
+    ...(support.reasonCode ? { reasonCode: support.reasonCode } : {}),
+    ...(support.contractValidationEvidence
+      ? { contractValidationEvidence: support.contractValidationEvidence }
+      : {}),
     reason: support.reason || `WordPress graph mutation ${resource.key} requires proven identity mapping and reference rewriting.`,
     resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
     baseHash,
