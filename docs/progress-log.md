@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 07:32 CEST +02:00.
+- Last update: 2026-06-01 07:42 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0807 block theme templates v1 merge ending at `7fb6286e1`.
+  the RPP-0829 multisite subdirectory topology v2 merge ending at `5c81811b1`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 967
-  items checked and leaves 33 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 968
+  items checked and leaves 32 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 67 production-topology items, 100 generated
+  100 storage/performance items, 68 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Multisite subdirectory topology v2: the current lane now checks `RPP-0829`
+  with support-only topology evidence for variant-2 multisite subdirectory
+  import/export survival proof. The artifact keeps final release `NO-GO`,
+  records exact unavailable capabilities, rejects Playground/subdomain/partial
+  survival evidence, and accepts the pass contract only for production-backed
+  real subdirectory import/export where plugin and graph evidence survive.
+  Command:
+  `node --test --test-name-pattern RPP-0829 test/rpp-0829-multisite-subdirectory-topology-v2.test.js`.
+  Caveat: multisite subdirectory topology support evidence only; final release
+  remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0829 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  968/32; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Block theme templates v1: the current lane now checks `RPP-0807` with
   support-only block-theme template topology evidence. The artifact captures
   source/local/changed URL identity scope, rejects tunnel and secret-shaped
