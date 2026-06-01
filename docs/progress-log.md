@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:49 CEST +02:00.
+- Last update: 2026-06-01 06:50 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0991 rollback/repair runbook release verifier v5 merge ending at
-  `ccafbc2ff`.
+  the RPP-0992 CI required checks list release verifier v5 merge ending at
+  `d89557f45`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 951
-  items checked and leaves 49 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 952
+  items checked and leaves 48 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 91 release-ops items.
+  harness items, 100 merge-invariant items, and 92 release-ops items.
+- CI required checks list release verifier v5: the current lane now checks
+  `RPP-0992` with support-only release-verifier carry-through coverage for the
+  CI required checks list. The evidence carries forward the RPP-0972 v4 CI
+  required checks contract, keeps every carried-forward CI check blocking and
+  production-gated, proves release-verifier movement only with
+  final-release-scoped evidence, fails closed when required proof fails, and
+  keeps the final-release evaluator held while production proof gaps remain.
+  Command:
+  `node --test --test-name-pattern RPP-0992 test/rpp-0992-ci-required-checks-list-release-verifier-v5.test.js`.
+  Caveat: CI required checks verifier support evidence only; final release
+  remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0992 coverage 7/7,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  952/48; final release remains `NO-GO` until required production-backed CI
+  proof is present and accepted.
 - Rollback/repair runbook release verifier v5: the current lane now checks
   `RPP-0991` with support-only release-verifier carry-through coverage for the
   rollback/repair runbook. The evidence carries forward the RPP-0971 v4
