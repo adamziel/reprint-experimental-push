@@ -52,6 +52,25 @@ that declares an explicit contract becomes strict:
 This lets production integrations ratchet from allowlist-shaped support toward
 stable, reviewable plugin contracts without breaking older lab fixtures.
 
+## WordPress Snapshot Export
+
+The Playground/WordPress snapshot helper emits this contract shape for
+plugin-owned row resources exported through `meta.pluginOwnedResources`.
+
+Registered PHP row drivers are exported with:
+
+- `contractVersion: 1`
+- `contractKind: "plugin-owned-row-driver"`
+- exact `resourceKey`
+- `pluginOwner`
+- `driver`
+- `table`
+- boolean `supportsDelete`
+
+The built-in `reprint-push-release-state` row driver and registered custom row
+drivers use the same policy-entry shape. Contract entries are metadata only and
+do not include row payload values.
+
 ## Production Direction
 
 The row-driver contract is the first step toward a broader plugin API. Future

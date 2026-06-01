@@ -348,3 +348,71 @@ echo json_encode([
   assert.doesNotMatch(serializedEvidence, /exportRowsCallback|applyRowCallback|validateMutationCallback/);
   assert.doesNotMatch(serializedEvidence, /rpp_driver_api_(?:export_rows|apply_row|validate_mutation)/);
 });
+
+test('registered plugin-owned row drivers export explicit row-driver contracts in snapshot policy', () => {
+  const report = runPhpDriverProbe(`
+reprint_push_register_plugin_owned_row_driver([
+    'driver' => 'fixture-contract-driver',
+    'table' => 'wp_fixture_contract_rows',
+    'pluginOwner' => 'fixture-contract-plugin',
+    'supportsDelete' => true,
+    'exportRowsCallback' => 'rpp_driver_api_export_rows',
+    'applyRowCallback' => 'rpp_driver_api_apply_row',
+    'validateMutationCallback' => 'rpp_driver_api_validate_mutation',
+]);
+$snapshot = [
+    'meta' => [],
+    'db' => [
+        'wp_options' => [],
+        'wp_postmeta' => [],
+        'wp_reprint_push_forms_lab' => [],
+        'wp_fixture_contract_rows' => [
+            'id:7' => [
+                'id' => 7,
+                '__pluginOwner' => 'fixture-contract-plugin',
+                'payload' => 'super-secret-contract-payload',
+            ],
+        ],
+        'wp_reprint_push_release_state' => [
+            'state_id:1' => [
+                'state_id' => 1,
+                'owner' => 'reprint-push',
+                'payload_json' => '{"secret":"release-state-private"}',
+            ],
+        ],
+    ],
+];
+reprint_push_add_fixture_plugin_owned_policy($snapshot);
+$by_resource = [];
+foreach ($snapshot['meta']['pluginOwnedResources']['allowedResources'] as $entry) {
+    $by_resource[$entry['resourceKey']] = $entry;
+}
+echo json_encode([
+    'custom' => $by_resource['row:["wp_fixture_contract_rows","id:7"]'] ?? null,
+    'releaseState' => $by_resource['row:["wp_reprint_push_release_state","state_id:1"]'] ?? null,
+    'entryCount' => count($snapshot['meta']['pluginOwnedResources']['allowedResources']),
+]);
+`);
+
+  assert.deepEqual(report.custom, {
+    contractVersion: 1,
+    contractKind: 'plugin-owned-row-driver',
+    resourceKey: 'row:["wp_fixture_contract_rows","id:7"]',
+    pluginOwner: 'fixture-contract-plugin',
+    driver: 'fixture-contract-driver',
+    table: 'wp_fixture_contract_rows',
+    supportsDelete: true,
+  });
+  assert.deepEqual(report.releaseState, {
+    contractVersion: 1,
+    contractKind: 'plugin-owned-row-driver',
+    resourceKey: 'row:["wp_reprint_push_release_state","state_id:1"]',
+    pluginOwner: 'reprint-push',
+    driver: 'reprint-push-release-state',
+    table: 'wp_reprint_push_release_state',
+    supportsDelete: false,
+  });
+  assert.equal(report.entryCount, 2);
+  assert.equal(JSON.stringify(report).includes('super-secret-contract-payload'), false);
+  assert.equal(JSON.stringify(report).includes('release-state-private'), false);
+});

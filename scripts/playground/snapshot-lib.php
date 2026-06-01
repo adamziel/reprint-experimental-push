@@ -11,6 +11,9 @@
  * wp-content/uploads/reprint-push.
  */
 
+const REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_VERSION = 1;
+const REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_KIND = 'plugin-owned-row-driver';
+
 function reprint_push_export_snapshot(): array
 {
     global $wpdb;
@@ -417,31 +420,36 @@ function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
         if (!in_array($option_name, reprint_push_allowed_plugin_option_names(), true)) {
             continue;
         }
-        $allowed_resources[] = [
-            'resourceKey' => 'row:' . wp_json_encode(['wp_options', $row_id], JSON_UNESCAPED_SLASHES),
-            'pluginOwner' => reprint_push_allowed_plugin_options()[$option_name] ?? 'forms',
-            'driver' => 'wp-option',
-        ];
+        $allowed_resources[] = reprint_push_plugin_owned_row_driver_policy_entry(
+            'wp_options',
+            $row_id,
+            reprint_push_allowed_plugin_options()[$option_name] ?? 'forms',
+            'wp-option',
+            false
+        );
     }
     foreach (array_keys($snapshot['db']['wp_postmeta']) as $row_id) {
         [, $meta_key] = reprint_push_parse_postmeta_row_id($row_id);
         if ($meta_key !== reprint_push_forms_schema_meta_key()) {
             continue;
         }
-        $allowed_resources[] = [
-            'resourceKey' => 'row:' . wp_json_encode(['wp_postmeta', $row_id], JSON_UNESCAPED_SLASHES),
-            'pluginOwner' => 'forms',
-            'driver' => 'wp-postmeta',
-        ];
+        $allowed_resources[] = reprint_push_plugin_owned_row_driver_policy_entry(
+            'wp_postmeta',
+            $row_id,
+            'forms',
+            'wp-postmeta',
+            false
+        );
     }
     foreach (array_keys($snapshot['db']['wp_reprint_push_forms_lab']) as $row_id) {
         reprint_push_forms_lab_row_id($row_id);
-        $allowed_resources[] = [
-            'resourceKey' => 'row:' . wp_json_encode(['wp_reprint_push_forms_lab', $row_id], JSON_UNESCAPED_SLASHES),
-            'pluginOwner' => 'forms',
-            'driver' => 'fixture-forms-lab-table',
-            'supportsDelete' => false,
-        ];
+        $allowed_resources[] = reprint_push_plugin_owned_row_driver_policy_entry(
+            'wp_reprint_push_forms_lab',
+            $row_id,
+            'forms',
+            'fixture-forms-lab-table',
+            false
+        );
     }
     foreach (reprint_push_registered_plugin_owned_row_drivers() as $driver) {
         $table = (string) ($driver['table'] ?? '');
@@ -451,13 +459,13 @@ function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
             continue;
         }
         foreach (array_keys($snapshot['db'][$table] ?? []) as $row_id) {
-            $allowed_resources[] = [
-                'resourceKey' => 'row:' . wp_json_encode([$table, $row_id], JSON_UNESCAPED_SLASHES),
-                'pluginOwner' => $plugin_owner,
-                'driver' => $driver_name,
-                'table' => $table,
-                'supportsDelete' => !empty($driver['supportsDelete']),
-            ];
+            $allowed_resources[] = reprint_push_plugin_owned_row_driver_policy_entry(
+                $table,
+                $row_id,
+                $plugin_owner,
+                $driver_name,
+                !empty($driver['supportsDelete'])
+            );
         }
     }
 
@@ -467,6 +475,24 @@ function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
 
     $snapshot['meta']['pluginOwnedResources'] = [
         'allowedResources' => $allowed_resources,
+    ];
+}
+
+function reprint_push_plugin_owned_row_driver_policy_entry(
+    string $table,
+    string $row_id,
+    string $plugin_owner,
+    string $driver,
+    bool $supports_delete
+): array {
+    return [
+        'contractVersion' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_VERSION,
+        'contractKind' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_KIND,
+        'resourceKey' => 'row:' . wp_json_encode([$table, $row_id], JSON_UNESCAPED_SLASHES),
+        'pluginOwner' => $plugin_owner,
+        'driver' => $driver,
+        'table' => $table,
+        'supportsDelete' => $supports_delete,
     ];
 }
 
