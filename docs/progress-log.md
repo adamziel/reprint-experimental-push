@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:48 CEST +02:00.
+- Last update: 2026-06-01 04:50 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0938 telemetry-free audit mode v2 merge ending at `9328bd7a8`.
+  the RPP-0939 post-release monitoring plan v2 merge ending at `a4482bd9d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 898
-  items checked and leaves 102 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 899
+  items checked and leaves 101 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 38 release-ops items.
+  harness items, 100 merge-invariant items, and 39 release-ops items.
+- Post-release monitoring plan v2: the current lane now checks `RPP-0939` with
+  a support-only monitoring plan refresh. The evidence names operator recovery
+  prerequisites, safe recovery evidence, stop conditions, rollback and
+  escalation blockers, and hidden-assumption guards before monitoring
+  activation, finalization, or release movement.
+  Command:
+  `node --test --test-name-pattern RPP-0939 test/rpp-0939-post-release-monitoring-plan-v2.test.js`.
+  Caveat: post-release monitoring support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0939 coverage 5/5,
+  scoped artifact redaction scan, diff whitespace checks, and the adjacent
+  RPP-0933 through RPP-0938 release-ops batch gate 30/30. Counts are now
+  899/101; final release remains `NO-GO` until production-backed monitoring,
+  recovery, rollback, and escalation proof is ready.
 - Telemetry-free audit mode v2: the current lane now checks `RPP-0938` with a
   support-only required-proof blocking refresh. The evidence proves missing or
   failed required proofs stay blocking without telemetry dependencies and that
