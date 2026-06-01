@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 02:13 CEST +02:00.
+- Last update: 2026-06-01 02:15 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0855 plugin activation hooks topology proof merge ending at `fcecb84da`.
+  the RPP-0850 multisite subdomain topology proof merge ending at `51193b467`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 830
-  items checked and leaves 170 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 831
+  items checked and leaves 169 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 30 production-topology items, 100 generated
+  100 storage/performance items, 31 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Multisite subdomain topology variant-3 candidate-scope proof: the current
+  lane now checks `RPP-0850` with deterministic multisite-subdomain support
+  evidence. The proof records source, local-edited, and remote-changed host role
+  surfaces as identity hashes only, keeps subdirectory mode excluded, records
+  network and child-subdomain site counts, plugin/theme surface inventories, and
+  exact production import/export, auth/session lifecycle, durable journal,
+  live-topology readback, and release artifact gaps.
+  Command:
+  `node --test --test-name-pattern RPP-0850 test/rpp-0850-multisite-subdomain-topology-v3.test.js`.
+  Caveat: candidate-scope support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0850
+  coverage 5/5, scoped artifact redaction scan with four allowed hash-evidence
+  occurrences, and diff whitespace checks. Counts are now 831/169; final
+  release remains `NO-GO` because this is support evidence, not production
+  multisite import/export proof, production auth/session readback, durable
+  journal replay, live topology readback, production storage receipts, live
+  mutation proof, throughput, release approval, or a production release gate.
 - Plugin activation hooks topology variant-3 candidate-scope proof: the current
   lane now checks `RPP-0855` with deterministic activation-hook support
   evidence. The proof records seven activation-hook surfaces, dependency and

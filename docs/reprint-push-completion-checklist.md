@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 830.
-- Remaining open: 170.
+- Verified complete: 831.
+- Remaining open: 169.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -901,7 +901,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [ ] RPP-0847 (Far / production-topology) Add generated coverage for block theme templates, variant 3. Success: verify:release passes without packaged fallback on the topology.
 - [x] RPP-0848 (Far / production-topology) Add generated coverage for classic theme files, variant 3. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0849 (Far / production-topology) Add generated coverage for multisite subdirectory topology, variant 3. Success: plugin and graph evidence survive real WordPress import/export.
-- [ ] RPP-0850 (Far / production-topology) Add generated coverage for multisite subdomain topology, variant 3. Success: progress report records candidate versus release-ready scope.
+- [x] RPP-0850 (Far / production-topology) Add generated coverage for multisite subdomain topology, variant 3. Success: progress report records candidate versus release-ready scope.
 - [ ] RPP-0851 (Far / production-topology) Add generated coverage for object cache enabled topology, variant 3. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0852 (Far / production-topology) Add generated coverage for cron activity during push, variant 3. Success: verify:release passes without packaged fallback on the topology.
 - [ ] RPP-0853 (Far / production-topology) Add generated coverage for maintenance mode interaction, variant 3. Success: source/local/changed URLs are captured and identity-checked.
