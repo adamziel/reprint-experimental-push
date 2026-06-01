@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:35 CEST +02:00.
+- Last update: 2026-06-01 06:37 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0985 objective audit update release verifier v5 merge ending at
-  `34c6aaa96`.
+  the RPP-0986 critic audit update release verifier v5 merge ending at
+  `79a6f7741`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 945
-  items checked and leaves 55 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 946
+  items checked and leaves 54 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 85 release-ops items.
+  harness items, 100 merge-invariant items, and 86 release-ops items.
+- Critic audit update release verifier v5: the current lane now checks
+  `RPP-0986` with support-only release-verifier carry-through coverage for the
+  critic audit update. The evidence carries forward the RPP-0966 v4 critic-audit
+  contract, links exact audit and validation commands, records support and lane
+  context commit anchors, records held verifier and status-row carry-through,
+  names remaining release-blocking gaps, and records no release-gate or
+  protected-file movement.
+  Command:
+  `node --test --test-name-pattern RPP-0986 test/rpp-0986-critic-audit-update-release-verifier-v5.test.js`.
+  Caveat: critic audit verifier support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0986 coverage 7/7,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  946/54; final release remains `NO-GO` until required production-backed
+  critic-audit closure proof is present and accepted.
 - Objective audit update release verifier v5: the current lane now checks
   `RPP-0985` with support-only release-verifier carry-through coverage for the
   objective audit update. The evidence carries forward the RPP-0965 v4
