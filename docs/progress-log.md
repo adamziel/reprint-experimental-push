@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 07:15 CEST +02:00.
+- Last update: 2026-06-01 07:25 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0804 BrewCommerce blueprint import v1 merge ending at `e6224cc39`.
+  the RPP-0812 cron activity during push v1 merge ending at `c1389e331`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 962
-  items checked and leaves 38 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 963
+  items checked and leaves 37 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 62 production-topology items, 100 generated
+  100 storage/performance items, 63 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Cron activity during push v1: the current lane now checks `RPP-0812` with
+  support-only topology evidence for cron activity during a push. The artifact
+  records missing real Docker WordPress capability as `NO-GO`, rejects claimed
+  cron readback when the topology did not start, rejects packaged fallback, and
+  accepts the pass contract only when real WordPress cron events are observed
+  across dry-run/apply boundaries without mutating the source unexpectedly.
+  Command:
+  `node --test --test-name-pattern RPP-0812 test/rpp-0812-cron-activity-during-push-v1.test.js`.
+  Caveat: cron activity topology support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0812 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  963/37; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - BrewCommerce blueprint import v1: the current lane now checks `RPP-0804`
   with support-only topology evidence for the BrewCommerce blueprint import
   path. The artifact records missing real WordPress import/export capability as
