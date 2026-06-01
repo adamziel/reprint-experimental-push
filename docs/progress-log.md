@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 05:09 CEST +02:00.
+- Last update: 2026-06-01 05:11 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0948 privacy/redaction review v3 merge ending at `167d9ff5d`.
+  the RPP-0949 operator runbook v3 merge ending at `db692e74a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 908
-  items checked and leaves 92 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 909
+  items checked and leaves 91 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 48 release-ops items.
+  harness items, 100 merge-invariant items, and 49 release-ops items.
+- Operator runbook v3: the current lane now checks `RPP-0949` with support-only
+  generated coverage for safe operator recovery documentation. The evidence
+  proves the runbook names safe recovery prerequisites, exact recovery evidence,
+  stop conditions, rollback/escalation paths, and hidden-assumption guards, and
+  that support observations cannot move final release readiness.
+  Command:
+  `node --test --test-name-pattern RPP-0949 test/rpp-0949-operator-runbook-v3.test.js`.
+  Caveat: operator runbook support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0949 coverage 8/8,
+  scoped artifact redaction scan, diff whitespace checks, and the RPP-0945
+  through RPP-0949 release-ops batch gate 29/29. Counts are now 909/91; final
+  release remains `NO-GO` until production-backed operator recovery proof is
+  accepted.
 - Privacy/redaction review v3: the current lane now checks `RPP-0948` with
   support-only generated coverage for redaction proof failure handling. The
   evidence proves scanner failures become blocking required proof failures,
