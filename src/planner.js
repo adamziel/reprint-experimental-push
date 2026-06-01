@@ -10,6 +10,7 @@ import {
 } from './resources.js';
 import { serializedOptionValidationEvidenceForRows } from './serialized-option-validator.js';
 import { normalizePluginOwnedRowDriverContract } from './plugin-driver-contracts.js';
+import { validatePluginOwnedDriverPayload } from './plugin-driver-validators.js';
 import {
   SERIALIZED_BLOCK_ATTACHMENT_REFERENCE_RULES,
   SUPPORTED_CORE_POST_OBJECT_TAXONOMIES as SUPPORTED_CORE_POST_OBJECT_TAXONOMY_VALUES,
@@ -379,6 +380,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         mutation.pluginOwnedResource = {
           pluginOwner: owner,
           driver: support.driver,
+          table: support.table || null,
           policySource: support.policySource,
           supportsDelete: support.supportsDelete,
           ownerContext,
@@ -577,6 +579,9 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         };
       }
 
+      const supportedTable = supported.table || PLUGIN_DATA_DRIVER_TABLES.get(supported.driver) || null;
+      const plannedValue = getResource(local, resource);
+      const action = plannedValue === ABSENT ? 'delete' : 'put';
       const serializedOptionValidationEvidence = supported.driver === 'wp-option'
         ? serializedOptionValidationEvidenceForRows({
           resourceKey: resource.key,
@@ -588,7 +593,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
           ],
         })
         : null;
-      const driverPayloadValidationEvidence = serializedOptionValidationEvidence?.serialized
+      let driverPayloadValidationEvidence = serializedOptionValidationEvidence?.serialized
         ? pluginDriverPayloadValidationEvidence(serializedOptionValidationEvidence)
         : null;
       if (serializedOptionValidationEvidence && !serializedOptionValidationEvidence.valid) {
@@ -602,6 +607,32 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
           serializedOptionValidationEvidence,
           driverPayloadValidationEvidence,
         };
+      }
+
+      const contractPayloadValidation = validatePluginOwnedDriverPayload({
+        resource,
+        owner,
+        driver: supported.driver,
+        table: supportedTable,
+        value: plannedValue,
+        action,
+        supportsDelete: supported.supportsDelete === true,
+        contractValidationEvidence: supported.contractValidationEvidence,
+      });
+      if (!contractPayloadValidation.supported) {
+        return {
+          supported: false,
+          className: contractPayloadValidation.className || 'invalid-plugin-driver-payload',
+          reasonCode: contractPayloadValidation.reasonCode,
+          driver: supported.driver,
+          table: supportedTable,
+          policySource: supported.source,
+          reason: contractPayloadValidation.reason,
+          driverPayloadValidationEvidence: contractPayloadValidation.evidence,
+        };
+      }
+      if (!driverPayloadValidationEvidence && contractPayloadValidation.evidence) {
+        driverPayloadValidationEvidence = contractPayloadValidation.evidence;
       }
 
       if (supported.driver === 'fixture-forms-lab-table') {
@@ -628,6 +659,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         return {
           supported: true,
           driver: supported.driver,
+          table: supportedTable,
           policySource: supported.source,
           evidenceScope: supported.evidenceScope,
           supportsDelete: false,
@@ -695,6 +727,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
       return {
         supported: true,
         driver: supported.driver,
+        table: supportedTable,
         policySource: supported.source,
         evidenceScope: supported.evidenceScope,
         supportsDelete: supported.supportsDelete === true,
@@ -951,6 +984,7 @@ function pluginOwnedDriverAuditEvidence({
     resourceKey: resource.key,
     pluginOwner: owner,
     driver: support.driver,
+    table: support.table || null,
     policySource: support.policySource,
     supportsDelete: support.supportsDelete === true,
     baseHash,
@@ -988,6 +1022,7 @@ function pluginOwnedDriverDecisionAuditEvidence({
     resourceKey: resource.key,
     pluginOwner: owner,
     driver: support.driver || null,
+    table: support.table || null,
     policySource: support.policySource || null,
     action,
     redaction: 'hash-only',

@@ -1,10 +1,29 @@
 import { ABSENT, digest } from './stable-json.js';
 
 export const INVALID_SERIALIZED_OPTION_PAYLOAD = 'INVALID_SERIALIZED_OPTION_PAYLOAD';
+export const PLUGIN_DRIVER_CONTRACT_BOUND_VALIDATOR = 'contract-bound-row-driver';
 
-export function validatePluginOwnedDriverPayload({ resource, driver, value }) {
+export function validatePluginOwnedDriverPayload({
+  resource,
+  owner = null,
+  driver,
+  table = null,
+  value,
+  action = value === ABSENT ? 'delete' : 'put',
+  supportsDelete = false,
+  contractValidationEvidence = null,
+}) {
   if (!isSerializedWpOptionPayload(resource, driver, value)) {
-    return { supported: true, evidence: null };
+    return validateContractBoundRowDriverPayload({
+      resource,
+      owner,
+      driver,
+      table,
+      value,
+      action,
+      supportsDelete,
+      contractValidationEvidence,
+    });
   }
 
   if (!value || value === ABSENT || typeof value !== 'object') {
@@ -29,6 +48,134 @@ export function validatePluginOwnedDriverPayload({ resource, driver, value }) {
       outcome: 'accepted',
     }),
   };
+}
+
+function validateContractBoundRowDriverPayload({
+  resource,
+  owner,
+  driver,
+  table,
+  value,
+  action,
+  supportsDelete,
+  contractValidationEvidence,
+}) {
+  if (!acceptedContractValidationEvidence(contractValidationEvidence)) {
+    return { supported: true, evidence: null };
+  }
+
+  const expectedTable = contractValidationEvidence.table || table || null;
+  const expectedOwner = contractValidationEvidence.pluginOwner || owner || null;
+  const expectedDriver = contractValidationEvidence.driver || driver || null;
+  const issues = [];
+
+  if (contractValidationEvidence.resourceKey !== resource?.key) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_RESOURCE_MISMATCH',
+      field: 'resourceKey',
+      expected: contractValidationEvidence.resourceKey || null,
+      observed: resource?.key || null,
+    });
+  }
+  if (expectedOwner && owner && expectedOwner !== owner) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_OWNER_MISMATCH',
+      field: 'pluginOwner',
+      expected: expectedOwner,
+      observed: owner,
+    });
+  }
+  if (expectedDriver && driver && expectedDriver !== driver) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_DRIVER_MISMATCH',
+      field: 'driver',
+      expected: expectedDriver,
+      observed: driver,
+    });
+  }
+  if (resource?.type !== 'row') {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_NON_ROW_RESOURCE',
+      field: 'resource.type',
+      expected: 'row',
+      observed: resource?.type || null,
+    });
+  }
+  if (expectedTable && resource?.table !== expectedTable) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_TABLE_MISMATCH',
+      field: 'table',
+      expected: expectedTable,
+      observed: resource?.table || null,
+    });
+  }
+  if (action === 'delete' && supportsDelete !== true) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_DELETE_UNSUPPORTED',
+      field: 'supportsDelete',
+      expected: true,
+      observed: false,
+    });
+  }
+  if (
+    value
+    && value !== ABSENT
+    && typeof value === 'object'
+    && typeof value.__pluginOwner === 'string'
+    && expectedOwner
+    && value.__pluginOwner !== expectedOwner
+  ) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_OWNER_MISMATCH',
+      field: '__pluginOwner',
+      expected: expectedOwner,
+      observedHash: digest(value.__pluginOwner),
+    });
+  }
+
+  const accepted = issues.length === 0;
+  const evidence = {
+    schemaVersion: 1,
+    operation: 'plugin-driver-payload-validation',
+    validator: PLUGIN_DRIVER_CONTRACT_BOUND_VALIDATOR,
+    reasonCode: accepted
+      ? 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED'
+      : issues[0].reasonCode,
+    outcome: accepted ? 'accepted' : 'refused-before-mutation',
+    issueCodes: issues.map((issue) => issue.reasonCode),
+    issues,
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    resourceKey: resource?.key || null,
+    pluginOwner: expectedOwner,
+    driver: expectedDriver,
+    table: expectedTable,
+    action,
+    supportsDelete: supportsDelete === true,
+    value: {
+      state: value === ABSENT ? 'absent' : 'present',
+      hash: digest(value),
+    },
+    contractValidationHash: digest(contractValidationEvidence),
+  };
+
+  if (accepted) {
+    return { supported: true, evidence };
+  }
+  return {
+    supported: false,
+    className: 'invalid-plugin-driver-payload',
+    reasonCode: evidence.reasonCode,
+    reason: 'Plugin-owned row driver contract-bound payload validation failed.',
+    evidence,
+  };
+}
+
+function acceptedContractValidationEvidence(evidence) {
+  return evidence?.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+    && evidence.operation === 'plugin-driver-contract-validation'
+    && evidence.outcome === 'accepted'
+    && evidence.rawValuesIncluded === false;
 }
 
 function isSerializedWpOptionPayload(resource, driver, value) {

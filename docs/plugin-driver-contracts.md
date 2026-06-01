@@ -71,6 +71,20 @@ The built-in `reprint-push-release-state` row driver and registered custom row
 drivers use the same policy-entry shape. Contract entries are metadata only and
 do not include row payload values.
 
+## Contract-Bound Validation
+
+Planner and apply treat explicit row-driver contracts as more than allowlist
+shape. For custom row drivers outside the built-in driver set, apply requires:
+
+- accepted `plugin-driver-contract-validation` evidence,
+- exact resource key, plugin owner, driver, and table binding,
+- accepted `contract-bound-row-driver` payload validation evidence,
+- hash-only value and contract evidence, with `rawValuesIncluded: false`.
+
+Legacy fixture allowlists still work for focused tests, but generic production
+custom row drivers need the explicit contract path before the executor will
+apply them.
+
 ## Production Direction
 
 The row-driver contract is the first step toward a broader plugin API. Future

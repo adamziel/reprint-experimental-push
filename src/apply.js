@@ -12,6 +12,10 @@ import {
 } from './resources.js';
 import { readRecoveryJournal } from './recovery-journal.js';
 import { serializedOptionValidationEvidenceForRows } from './serialized-option-validator.js';
+import {
+  PLUGIN_DRIVER_CONTRACT_BOUND_VALIDATOR,
+  validatePluginOwnedDriverPayload,
+} from './plugin-driver-validators.js';
 
 const JOURNAL_SCHEMA_VERSION = 1;
 const SHA256_HEX_PATTERN = /^[a-f0-9]{64}$/;
@@ -276,31 +280,13 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
     }
 
     const driver = mutation.pluginOwnedResource?.driver || null;
-    const supported = mutation.pluginOwnedResource?.pluginOwner === owner
-      && isActivePluginOwnerPresent(remote, owner, plan)
-      && isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue);
-    if (!supported) {
-      throw new PushPlanError(
-        'UNSUPPORTED_PLUGIN_OWNED_RESOURCE',
-        `Refusing to apply unsupported plugin-owned resource ${mutation.resourceKey}.`,
-        {
-          mutationId: mutation.id,
-          resourceKey: mutation.resourceKey,
-          pluginOwner: owner,
-          driver,
-          applyValidationEvidence: pluginOwnedApplyValidationEvidence({
-            remote,
-            mutation,
-            owner,
-            driver,
-            plannedValue,
-            remoteValue,
-            outcome: 'refused-before-mutation',
-          }),
-        },
-      );
-    }
-    const driverPayloadSupport = pluginOwnedDriverPayloadSupport({ mutation, plannedValue });
+    validatePluginOwnedContractValidation(mutation, owner, driver);
+    const driverPayloadSupport = pluginOwnedDriverPayloadSupport({
+      mutation,
+      plannedValue,
+      owner,
+      driver,
+    });
     if (!driverPayloadSupport.valid) {
       throw new PushPlanError(
         'INVALID_PLUGIN_DRIVER_PAYLOAD',
@@ -324,8 +310,32 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
         },
       );
     }
+
+    const supported = mutation.pluginOwnedResource?.pluginOwner === owner
+      && isActivePluginOwnerPresent(remote, owner, plan)
+      && isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue, driverPayloadSupport);
+    if (!supported) {
+      throw new PushPlanError(
+        'UNSUPPORTED_PLUGIN_OWNED_RESOURCE',
+        `Refusing to apply unsupported plugin-owned resource ${mutation.resourceKey}.`,
+        {
+          mutationId: mutation.id,
+          resourceKey: mutation.resourceKey,
+          pluginOwner: owner,
+          driver,
+          applyValidationEvidence: pluginOwnedApplyValidationEvidence({
+            remote,
+            mutation,
+            owner,
+            driver,
+            plannedValue,
+            remoteValue,
+            outcome: 'refused-before-mutation',
+          }),
+        },
+      );
+    }
     validatePluginOwnedOwnerContext(remote, mutation, owner);
-    validatePluginOwnedContractValidation(mutation, owner, driver);
     validatePluginOwnedApplyValidation(mutation, owner, driver);
   }
 }
@@ -367,9 +377,23 @@ function pluginOwnedOwner(value) {
   return value.__pluginOwner || null;
 }
 
-function pluginOwnedDriverPayloadSupport({ mutation, plannedValue }) {
+function pluginOwnedDriverPayloadSupport({ mutation, plannedValue, owner, driver }) {
   if (mutation.pluginOwnedResource?.driver !== 'wp-option') {
-    return { valid: true, evidence: null };
+    const contractPayloadValidation = validatePluginOwnedDriverPayload({
+      resource: mutation.resource,
+      owner,
+      driver,
+      table: mutation.pluginOwnedResource?.table || null,
+      value: plannedValue,
+      action: mutation.action,
+      supportsDelete: mutation.pluginOwnedResource?.supportsDelete === true,
+      contractValidationEvidence: mutation.pluginOwnedResource?.contractValidationEvidence || null,
+    });
+    return {
+      valid: contractPayloadValidation.supported,
+      reasonCode: contractPayloadValidation.supported ? null : contractPayloadValidation.reasonCode,
+      evidence: contractPayloadValidation.evidence,
+    };
   }
   if (!(mutation.resource?.type === 'row' && mutation.resource.table === 'wp_options')) {
     return { valid: true, evidence: null };
@@ -394,7 +418,7 @@ function pluginOwnedDriverPayloadSupport({ mutation, plannedValue }) {
   };
 }
 
-function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue) {
+function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue, driverPayloadSupport = null) {
   if (plannedValue === ABSENT && mutation.pluginOwnedResource?.supportsDelete !== true) {
     return false;
   }
@@ -419,7 +443,37 @@ function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, planned
       && mutation.action !== 'delete'
       && validFixtureFormsLabTableEvidence(mutation.pluginOwnedResource?.driverEvidence, remote);
   }
+  if (isContractBoundRowDriverMutation(mutation, owner, driver, plannedValue, driverPayloadSupport)) {
+    return true;
+  }
   return false;
+}
+
+function isContractBoundRowDriverMutation(mutation, owner, driver, plannedValue, driverPayloadSupport) {
+  const contract = mutation.pluginOwnedResource?.contractValidationEvidence;
+  const validation = driverPayloadSupport?.evidence;
+  const table = mutation.pluginOwnedResource?.table || contract?.table || null;
+
+  return contract?.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+    && contract.operation === 'plugin-driver-contract-validation'
+    && contract.outcome === 'accepted'
+    && contract.rawValuesIncluded === false
+    && contract.resourceKey === mutation.resourceKey
+    && contract.pluginOwner === owner
+    && contract.driver === driver
+    && typeof table === 'string'
+    && table.length > 0
+    && contract.table === table
+    && mutation.resource?.type === 'row'
+    && mutation.resource.table === table
+    && (plannedValue !== ABSENT || mutation.pluginOwnedResource?.supportsDelete === true)
+    && validation?.validator === PLUGIN_DRIVER_CONTRACT_BOUND_VALIDATOR
+    && validation.outcome === 'accepted'
+    && validation.resourceKey === mutation.resourceKey
+    && validation.pluginOwner === owner
+    && validation.driver === driver
+    && validation.table === table
+    && validation.rawValuesIncluded === false;
 }
 
 function validatePluginOwnedApplyValidation(mutation, owner, driver) {
@@ -461,20 +515,28 @@ function validatePluginOwnedContractValidation(mutation, owner, driver) {
     return;
   }
 
-  const accepted = evidence.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+  const shapeAccepted = evidence.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
     && evidence.operation === 'plugin-driver-contract-validation'
     && evidence.outcome === 'accepted'
     && evidence.resourceKey === mutation.resourceKey
     && evidence.pluginOwner === owner
     && evidence.driver === driver
     && evidence.rawValuesIncluded === false;
-  if (accepted) {
+  const bindingAccepted = shapeAccepted
+    && (!evidence.table || evidence.table === mutation.resource?.table)
+    && (!mutation.pluginOwnedResource?.table || mutation.pluginOwnedResource.table === mutation.resource?.table)
+    && (!evidence.table || !mutation.pluginOwnedResource?.table || evidence.table === mutation.pluginOwnedResource.table);
+  if (bindingAccepted) {
     return;
   }
 
-  const reasonCode = typeof evidence.reasonCode === 'string' && evidence.reasonCode
-    ? evidence.reasonCode
-    : 'PLUGIN_DRIVER_CONTRACT_INVALID';
+  const reasonCode = shapeAccepted
+    ? 'PLUGIN_DRIVER_CONTRACT_INVALID_BINDING'
+    : (
+      typeof evidence.reasonCode === 'string' && evidence.reasonCode
+        ? evidence.reasonCode
+        : 'PLUGIN_DRIVER_CONTRACT_INVALID'
+    );
   throw new PushPlanError(
     reasonCode,
     `Refusing to apply plugin-owned resource ${mutation.resourceKey} because driver contract validation did not pass.`,
@@ -676,6 +738,7 @@ function pluginOwnedApplyValidationEvidence({
     resourceKey: mutation.resourceKey,
     pluginOwner: owner,
     driver,
+    table: mutation.pluginOwnedResource?.table || mutation.resource?.table || null,
     supportsDelete: mutation.pluginOwnedResource?.supportsDelete === true,
     action: mutation.action,
     resource: pluginOwnedApplyValidationResourceEvidence(mutation.resource),

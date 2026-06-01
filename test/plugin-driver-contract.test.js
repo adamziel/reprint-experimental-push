@@ -51,6 +51,19 @@ function explicitContract(extra = {}) {
   };
 }
 
+function explicitCustomTableContract(extra = {}) {
+  return {
+    contractVersion: 1,
+    contractKind: 'plugin-owned-row-driver',
+    resourceKey: 'row:["wp_forms_contract_rows","entry_id:7"]',
+    pluginOwner: 'forms',
+    driver: 'forms-contract-row',
+    table: 'wp_forms_contract_rows',
+    supportsDelete: false,
+    ...extra,
+  };
+}
+
 function planFor(base, local, remote) {
   return createPushPlan({ base, local, remote, now: fixedNow });
 }
@@ -93,6 +106,56 @@ test('explicit plugin-owned row driver contract carries accepted proof into the 
   assert.equal(evidenceJson.includes('local-contract-accepted'), false);
   assert.equal(evidenceJson.includes('remote-preserved-contract'), false);
   assert.equal(result.site.db.wp_options['option_name:forms_settings'].option_value.mode, 'local-contract-accepted');
+});
+
+test('explicit custom row driver contract carries contract-bound validator evidence through apply', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-contract-custom', secret: 'base-contract-custom-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-contract-custom';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-contract-custom-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const payloadEvidence = mutation.pluginOwnedResource.driverPayloadValidationEvidence;
+  const result = applyPlan(remote, plan);
+  const evidenceJson = JSON.stringify({
+    mutation: mutation.pluginOwnedResource,
+    journal: result.journal,
+  });
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutation.pluginOwnedResource.driver, 'forms-contract-row');
+  assert.equal(mutation.pluginOwnedResource.table, 'wp_forms_contract_rows');
+  assert.equal(payloadEvidence.operation, 'plugin-driver-payload-validation');
+  assert.equal(payloadEvidence.validator, 'contract-bound-row-driver');
+  assert.equal(payloadEvidence.outcome, 'accepted');
+  assert.equal(payloadEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED');
+  assert.equal(payloadEvidence.rawValuesIncluded, false);
+  assert.equal(payloadEvidence.resourceKey, resourceKey);
+  assert.equal(payloadEvidence.pluginOwner, 'forms');
+  assert.equal(payloadEvidence.driver, 'forms-contract-row');
+  assert.equal(payloadEvidence.table, 'wp_forms_contract_rows');
+  assert.match(payloadEvidence.value.hash, /^[a-f0-9]{64}$/);
+  assert.match(payloadEvidence.contractValidationHash, /^[a-f0-9]{64}$/);
+  assert.equal(result.appliedMutations, 1);
+  assert.equal(result.site.db.wp_forms_contract_rows['entry_id:7'].payload.mode, 'local-contract-custom');
+  assert.equal(evidenceJson.includes('base-contract-custom-secret'), false);
+  assert.equal(evidenceJson.includes('local-contract-custom-secret'), false);
 });
 
 test('unsupported explicit plugin-owned row driver contract version fails closed before mutation', () => {
@@ -193,5 +256,45 @@ test('apply refuses forged ready plans that carry refused plugin driver contract
   assert.equal(error.details.contractValidationEvidence.rawValuesIncluded, false);
   assert.equal(JSON.stringify(error.details).includes('local-contract-forged-apply'), false);
   assert.equal(JSON.stringify(error.details).includes('remote-preserved-contract'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('apply refuses forged custom row driver contracts when table binding is changed', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-contract-binding', secret: 'base-contract-binding-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-contract-binding';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-contract-binding-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const forgedPlan = cloneJson(plan);
+  mutationFor(forgedPlan, resourceKey).pluginOwnedResource.table = 'wp_forms_contract_rows_shadow';
+
+  let error;
+  try {
+    applyPlan(remote, forgedPlan);
+  } catch (caught) {
+    error = caught;
+  }
+
+  assert.equal(error?.code, 'PLUGIN_DRIVER_CONTRACT_INVALID_BINDING');
+  assert.equal(error.details.resourceKey, resourceKey);
+  assert.equal(error.details.pluginOwner, 'forms');
+  assert.equal(error.details.driver, 'forms-contract-row');
+  assert.equal(error.details.contractValidationEvidence.table, 'wp_forms_contract_rows');
+  assert.equal(JSON.stringify(error.details).includes('base-contract-binding-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('local-contract-binding-secret'), false);
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
