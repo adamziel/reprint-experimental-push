@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 03:21 CEST +02:00.
+- Last update: 2026-06-01 03:23 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0898 TLS/HTTPS source proof merge ending at `08b762ef4`.
+  the RPP-0900 no-tunnel policy proof merge ending at `74dccf42a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 859
-  items checked and leaves 141 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 860
+  items checked and leaves 140 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 59 production-topology items, 100 generated
+  100 storage/performance items, 60 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- No-tunnel policy proof variant-5 release-verifier carry-through proof: the
+  current lane now checks `RPP-0900` with deterministic no-tunnel candidate-scope
+  support evidence. The proof records forbidden tunnel command and domain
+  surfaces, sandbox-only ingress semantics, packaged fallback refusal,
+  candidate-versus-release-ready gaps, and final `NO-GO` posture while keeping
+  evidence hash/count/surface-only and avoiding any tunnel invocation.
+  Command:
+  `node --test --test-name-pattern RPP-0900 test/rpp-0900-no-tunnel-policy-proof-v5.test.js`.
+  Caveat: candidate-scope support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0900 coverage 5/5,
+  scoped artifact redaction scan with five allowed hash-evidence occurrences,
+  and diff whitespace checks. Counts are now 860/140; final release remains
+  `NO-GO` because this is support evidence, not production-backed topology
+  execution, production credentials, route receipts, durable journal behavior,
+  live mutation proof, throughput, release approval, or a production release
+  gate.
 - TLS/HTTPS source proof variant-5 release-verifier carry-through proof: the
   current lane now checks `RPP-0898` with deterministic TLS/HTTPS URL identity
   support evidence. The proof captures source, local-edited, and remote-changed
