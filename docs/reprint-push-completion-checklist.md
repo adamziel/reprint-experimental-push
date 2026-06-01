@@ -915,7 +915,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0861 (Far / production-topology) Add focused regression coverage for three-site local production topology, variant 4. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0862 (Far / production-topology) Add focused regression coverage for Docker WordPress topology, variant 4. Success: verify:release passes without packaged fallback on the topology.
 - [x] RPP-0863 (Far / production-topology) Add focused regression coverage for external WordPress topology, variant 4. Success: source/local/changed URLs are captured and identity-checked.
-- [ ] RPP-0864 (Far / production-topology) Add focused regression coverage for BrewCommerce blueprint import, variant 4. Success: plugin and graph evidence survive real WordPress import/export.
+- [x] RPP-0864 (Far / production-topology) Add focused regression coverage for BrewCommerce blueprint import, variant 4. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0865 (Far / production-topology) Add focused regression coverage for WooCommerce product catalog, variant 4. Success: progress report records candidate versus release-ready scope.
 - [x] RPP-0866 (Far / production-topology) Add focused regression coverage for WooCommerce order safety refusal, variant 4. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0867 (Far / production-topology) Add focused regression coverage for block theme templates, variant 4. Success: verify:release passes without packaged fallback on the topology.

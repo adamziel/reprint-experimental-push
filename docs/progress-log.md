@@ -6,18 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 08:33 CEST +02:00.
+- Last update: 2026-06-01 08:35 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0859 sandbox 8080 ingress rule proof v3 merge ending at `b1a6b9a34`.
+  the RPP-0864 BrewCommerce blueprint import v4 merge ending at `c77a55704`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 984
-  items checked and leaves 16 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 985
+  items checked and leaves 15 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 84 production-topology items, 100 generated
+  100 storage/performance items, 85 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- BrewCommerce blueprint import v4: the current lane now checks `RPP-0864`
+  with support-only BrewCommerce import/export regression evidence. The
+  artifact keeps final release `NO-GO`, records exact real WordPress
+  import/export capability blockers, binds plugin and graph survival to a
+  same-artifact production topology proof, rejects split, partial, playground,
+  and unsupported production-ready substitutes, and requires production-backed
+  import/export proof before release eligibility.
+  Command:
+  `node --test --test-name-pattern RPP-0864 test/rpp-0864-brewcommerce-blueprint-import-v4.test.js`.
+  Caveat: BrewCommerce import/export support evidence only; final release
+  remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0864 coverage 5/5,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  985/15; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Sandbox 8080 ingress rule proof v3: the current lane now checks `RPP-0859`
   with support-only sandbox ingress evidence. The artifact keeps final release
   `NO-GO`, records that the only HTTP ingress allowed by this sandbox is
