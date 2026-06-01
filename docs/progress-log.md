@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 06:57 CEST +02:00.
+- Last update: 2026-06-01 06:59 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0994 release artifact package release verifier v5 merge ending at
-  `2f7d99ee`.
+  the RPP-0995 versioned protocol docs release verifier v5 merge ending at
+  `db85ee6a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 954
-  items checked and leaves 46 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 955
+  items checked and leaves 45 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 94 release-ops items.
+  harness items, 100 merge-invariant items, and 95 release-ops items.
+- Versioned protocol docs release verifier v5: the current lane now checks
+  `RPP-0995` with support-only release-verifier carry-through coverage for the
+  versioned protocol docs. The evidence carries forward the RPP-0975 v4
+  versioned protocol contract, names every remaining final-release risk, closes
+  no risk without production-backed closure proof, keeps unresolved proof gaps
+  open and fail-closed, and leaves the final-release evaluator held.
+  Command:
+  `node --test --test-name-pattern RPP-0995 test/rpp-0995-versioned-protocol-docs-release-verifier-v5.test.js`.
+  Caveat: versioned protocol verifier support evidence only; final release
+  remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0995 coverage 7/7,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  955/45; final release remains `NO-GO` until required production-backed risk
+  closure proof is present and accepted.
 - Release artifact package release verifier v5: the current lane now checks
   `RPP-0994` with support-only release-verifier carry-through coverage for the
   release artifact package. The evidence carries forward the RPP-0974 v4
