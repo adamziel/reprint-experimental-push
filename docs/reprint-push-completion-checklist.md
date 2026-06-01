@@ -868,7 +868,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [x] RPP-0814 (Far / production-topology) Implement large media library topology, variant 1. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0815 (Far / production-topology) Implement plugin activation hooks topology, variant 1. Success: progress report records candidate versus release-ready scope.
 - [x] RPP-0816 (Far / production-topology) Implement plugin update hooks topology, variant 1. Success: topology command starts the sites or records exact unavailable capability.
-- [ ] RPP-0817 (Far / production-topology) Implement REST route matrix proof, variant 1. Success: verify:release passes without packaged fallback on the topology.
+- [x] RPP-0817 (Far / production-topology) Implement REST route matrix proof, variant 1. Success: verify:release passes without packaged fallback on the topology.
 - [x] RPP-0818 (Far / production-topology) Implement TLS/HTTPS source proof, variant 1. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0819 (Far / production-topology) Implement sandbox 8080 ingress rule proof, variant 1. Success: plugin and graph evidence survive real WordPress import/export.
 - [x] RPP-0820 (Far / production-topology) Implement no tunnel policy proof, variant 1. Success: progress report records candidate versus release-ready scope.

@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 07:30 CEST +02:00.
+- Last update: 2026-06-01 07:31 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0809 multisite subdirectory topology v1 merge ending at `f16ba3736`.
+  the RPP-0817 REST route matrix proof v1 merge ending at `2a00a654c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 965
-  items checked and leaves 35 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 966
+  items checked and leaves 34 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 65 production-topology items, 100 generated
+  100 storage/performance items, 66 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- REST route matrix proof v1: the current lane now checks `RPP-0817` with
+  support-only topology evidence for the REST route matrix proof. The artifact
+  records the exact Docker topology capability gap as `NO-GO`, rejects packaged
+  fallback, keeps route receipts hash/count/surface-only, and accepts release
+  movement only when the route matrix is complete and the live topology verifier
+  passes without fallback.
+  Command:
+  `node --test --test-name-pattern RPP-0817 test/rpp-0817-rest-route-matrix-proof-v1.test.js`.
+  Caveat: REST route matrix topology support evidence only; final release
+  remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0817 coverage 4/4,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  966/34; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Multisite subdirectory topology v1: the current lane now checks `RPP-0809`
   with support-only topology evidence for multisite subdirectory import/export
   scope. The artifact records missing real multisite import/export capability as
