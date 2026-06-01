@@ -6,18 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 05:02 CEST +02:00.
+- Last update: 2026-06-01 05:04 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0944 release gate 4 final audit v3 merge ending at `7dcbe6847`.
+  the RPP-0945 objective audit update v3 merge ending at `e75aa127c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 904
-  items checked and leaves 96 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 905
+  items checked and leaves 95 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 44 release-ops items.
+  harness items, 100 merge-invariant items, and 45 release-ops items.
+- Objective audit update v3: the current lane now checks `RPP-0945` with
+  support-only generated coverage for the final go/no-go risk register. The
+  evidence names every current final-release risk, closes no risk without
+  production-backed closure proof, keeps final release `NO-GO`, and makes no
+  release-gate status movement.
+  Command:
+  `node --test --test-name-pattern RPP-0945 test/rpp-0945-objective-audit-update-v3.test.js`.
+  Caveat: objective audit update support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0945 coverage 5/5,
+  scoped artifact redaction scan, diff whitespace checks, and the RPP-0939
+  through RPP-0944 release-ops batch gate 29/29. Counts are now 905/95; final
+  release remains `NO-GO` until each named production-backed risk has closure
+  proof.
 - Release gate 4 final audit v3: the current lane now checks `RPP-0944` with
   support-only generated coverage for the gate-4 operator recovery boundary.
   The evidence proves safe-recovery docs name prerequisites, recovery evidence,
