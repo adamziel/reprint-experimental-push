@@ -6,18 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 05:11 CEST +02:00.
+- Last update: 2026-06-01 05:14 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0949 operator runbook v3 merge ending at `db692e74a`.
+  the RPP-0950 failure triage runbook v3 merge ending at `0a64287db`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 909
-  items checked and leaves 91 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 910
+  items checked and leaves 90 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 49 release-ops items.
+  harness items, 100 merge-invariant items, and 50 release-ops items.
+- Failure triage runbook v3: the current lane now checks `RPP-0950` with
+  support-only generated coverage for final-release failure triage. The evidence
+  proves the go/no-go record names every remaining final-release risk, closes no
+  risk without production-backed closure proof, maps failing proof classes to
+  non-mutating operator actions, and keeps final release held with no
+  release-gate status movement.
+  Command:
+  `node --test --test-name-pattern RPP-0950 test/rpp-0950-failure-triage-runbook-v3.test.js`.
+  Caveat: failure triage support evidence only; final release remains `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0950 coverage 7/7,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  910/90; final release remains `NO-GO` until production-backed closure proof is
+  accepted for every remaining release risk.
 - Operator runbook v3: the current lane now checks `RPP-0949` with support-only
   generated coverage for safe operator recovery documentation. The evidence
   proves the runbook names safe recovery prerequisites, exact recovery evidence,
