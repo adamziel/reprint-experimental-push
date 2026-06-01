@@ -926,7 +926,7 @@ Focus: prove the push across real WordPress shapes and plugin ecosystems.
 - [ ] RPP-0872 (Far / production-topology) Add focused regression coverage for cron activity during push, variant 4. Success: verify:release passes without packaged fallback on the topology.
 - [x] RPP-0873 (Far / production-topology) Add focused regression coverage for maintenance mode interaction, variant 4. Success: source/local/changed URLs are captured and identity-checked.
 - [ ] RPP-0874 (Far / production-topology) Add focused regression coverage for large media library topology, variant 4. Success: plugin and graph evidence survive real WordPress import/export.
-- [ ] RPP-0875 (Far / production-topology) Add focused regression coverage for plugin activation hooks topology, variant 4. Success: progress report records candidate versus release-ready scope.
+- [x] RPP-0875 (Far / production-topology) Add focused regression coverage for plugin activation hooks topology, variant 4. Success: progress report records candidate versus release-ready scope.
 - [ ] RPP-0876 (Far / production-topology) Add focused regression coverage for plugin update hooks topology, variant 4. Success: topology command starts the sites or records exact unavailable capability.
 - [ ] RPP-0877 (Far / production-topology) Add focused regression coverage for REST route matrix proof, variant 4. Success: verify:release passes without packaged fallback on the topology.
 - [ ] RPP-0878 (Far / production-topology) Add focused regression coverage for TLS/HTTPS source proof, variant 4. Success: source/local/changed URLs are captured and identity-checked.
