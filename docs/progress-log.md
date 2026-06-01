@@ -6,18 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 04:29 CEST +02:00.
+- Last update: 2026-06-01 04:32 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0928 privacy/redaction review v2 merge ending at `018b3647b`.
+  the RPP-0929 operator runbook v2 merge ending at `10a3db701`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 888
-  items checked and leaves 112 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 889
+  items checked and leaves 111 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
   100 storage/performance items, 60 production-topology items, 100 generated
-  harness items, 100 merge-invariant items, and 28 release-ops items.
+  harness items, 100 merge-invariant items, and 29 release-ops items.
+- Operator runbook v2: the current lane now checks `RPP-0929` with a
+  support-only operator runbook refresh. The evidence names production
+  prerequisites, recovery evidence, stop conditions, and hidden-assumption
+  blockers that must be satisfied before mutation, retry, finalization, or
+  release movement.
+  Command:
+  `node --test --test-name-pattern RPP-0929 test/rpp-0929-operator-runbook-v2.test.js`.
+  Caveat: operator runbook support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0929 coverage 6/6,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  889/111; final release remains `NO-GO` until production-backed recovery and
+  operator release proofs are ready.
 - Privacy/redaction review v2: the current lane now checks `RPP-0928` with a
   support-only redaction review refresh. The evidence proves raw URL,
   credential, token, cookie, serialized private option, and explicit secret-key
