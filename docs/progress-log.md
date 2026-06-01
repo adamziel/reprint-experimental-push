@@ -6,20 +6,41 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 02:50 CEST +02:00.
+- Last update: 2026-06-01 02:52 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0875 plugin activation hooks topology proof merge ending at
-  `70b1761b3`.
+  the RPP-0876 plugin update hooks topology proof merge ending at `711ce5bc2`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 845
-  items checked and leaves 155 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 846
+  items checked and leaves 154 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 45 production-topology items, 100 generated
+  100 storage/performance items, 46 production-topology items, 100 generated
   harness items, and 100 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin update hooks topology variant-4 unavailable-capability proof: the
+  current lane now checks `RPP-0876` with deterministic plugin-update topology
+  support evidence. The proof records updater transient, pre-install,
+  post-install, process-complete, version-readback, and plugin-owned schema
+  marker surfaces, requires WordPress updater runtime and Docker service DNS
+  release URLs, keeps packaged fallback disabled, and records exact blocker
+  `DOCKER_CLI_MISSING` when Docker cannot start the topology.
+  Commands:
+  `node --test --test-name-pattern RPP-0876 test/rpp-0876-plugin-update-hooks-topology-v4.test.js`,
+  representative adjacent
+  `node --test --test-name-pattern RPP-0856 test/rpp-0856-plugin-update-hooks-topology-v3.test.js`,
+  and `npm run verify:release:docker-local-production`.
+  Caveat: unavailable-capability support evidence only; final release remains
+  `NO-GO`. Validation passed with a Node syntax check, focused RPP-0876
+  coverage 6/6, representative RPP-0856 coverage 5/5, Docker topology command
+  exit 2 with `DOCKER_CLI_MISSING`, scoped artifact redaction scan with two
+  allowed hash-evidence occurrences, and diff whitespace checks. Counts are now
+  846/154; final release remains `NO-GO` because this is support evidence, not
+  production-backed plugin update hook execution, post-update side-effect
+  readback, production credentials, route receipts, durable journal behavior,
+  live mutation proof, throughput, release approval, or a production release
+  gate.
 - Plugin activation hooks topology variant-4 candidate-scope proof: the current
   lane now checks `RPP-0875` with deterministic plugin-activation support
   evidence. The proof records activation hook surfaces, dependency and
