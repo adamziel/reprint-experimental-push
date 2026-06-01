@@ -325,6 +325,7 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
       );
     }
     validatePluginOwnedOwnerContext(remote, mutation, owner);
+    validatePluginOwnedContractValidation(mutation, owner, driver);
     validatePluginOwnedApplyValidation(mutation, owner, driver);
   }
 }
@@ -452,6 +453,62 @@ function validatePluginOwnedApplyValidation(mutation, owner, driver) {
       applyValidationEvidence: redactedPluginDriverApplyValidationEvidence(evidence),
     },
   );
+}
+
+function validatePluginOwnedContractValidation(mutation, owner, driver) {
+  const evidence = mutation.pluginOwnedResource?.contractValidationEvidence;
+  if (!evidence) {
+    return;
+  }
+
+  const accepted = evidence.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+    && evidence.operation === 'plugin-driver-contract-validation'
+    && evidence.outcome === 'accepted'
+    && evidence.resourceKey === mutation.resourceKey
+    && evidence.pluginOwner === owner
+    && evidence.driver === driver
+    && evidence.rawValuesIncluded === false;
+  if (accepted) {
+    return;
+  }
+
+  const reasonCode = typeof evidence.reasonCode === 'string' && evidence.reasonCode
+    ? evidence.reasonCode
+    : 'PLUGIN_DRIVER_CONTRACT_INVALID';
+  throw new PushPlanError(
+    reasonCode,
+    `Refusing to apply plugin-owned resource ${mutation.resourceKey} because driver contract validation did not pass.`,
+    {
+      mutationId: mutation.id,
+      resourceKey: mutation.resourceKey,
+      pluginOwner: owner,
+      driver,
+      contractValidationEvidence: redactedPluginDriverContractValidationEvidence(evidence),
+    },
+  );
+}
+
+function redactedPluginDriverContractValidationEvidence(evidence) {
+  if (!evidence || typeof evidence !== 'object') {
+    return null;
+  }
+  return {
+    schemaVersion: evidence.schemaVersion,
+    operation: evidence.operation,
+    contractKind: evidence.contractKind || null,
+    contractVersion: evidence.contractVersion ?? null,
+    outcome: evidence.outcome || null,
+    reasonCode: evidence.reasonCode || null,
+    issueCodes: Array.isArray(evidence.issueCodes) ? [...evidence.issueCodes] : [],
+    source: evidence.source || null,
+    evidenceScope: evidence.evidenceScope || null,
+    rawValuesIncluded: evidence.rawValuesIncluded === true,
+    resourceKey: evidence.resourceKey || null,
+    pluginOwner: evidence.pluginOwner || null,
+    driver: evidence.driver || null,
+    table: evidence.table || null,
+    supportsDelete: evidence.supportsDelete === true,
+  };
 }
 
 function redactedPluginDriverApplyValidationEvidence(evidence) {

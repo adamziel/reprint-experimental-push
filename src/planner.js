@@ -9,6 +9,7 @@ import {
   serializeResourceValue,
 } from './resources.js';
 import { serializedOptionValidationEvidenceForRows } from './serialized-option-validator.js';
+import { normalizePluginOwnedRowDriverContract } from './plugin-driver-contracts.js';
 
 const SUPPORTED_PLUGIN_DATA_DRIVERS = new Set([
   'wp-option',
@@ -386,6 +387,9 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
             remoteHash,
           }),
           driverEvidence: support.driverEvidence,
+          ...(support.contractValidationEvidence
+            ? { contractValidationEvidence: support.contractValidationEvidence }
+            : {}),
           ...(support.driverPayloadValidationEvidence
             ? { driverPayloadValidationEvidence: support.driverPayloadValidationEvidence }
             : {}),
@@ -496,6 +500,21 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
             local,
             remote,
           }),
+        };
+      }
+
+      const invalidContract = candidates.find(
+        (entry) => entry.contractValidationEvidence?.outcome === 'refused-before-mutation',
+      );
+      if (invalidContract) {
+        return {
+          supported: false,
+          className: 'invalid-plugin-driver-contract',
+          reasonCode: invalidContract.contractValidationEvidence.reasonCode,
+          driver: invalidContract.driver,
+          policySource: invalidContract.source,
+          reason: 'Explicit plugin-owned row driver contract is invalid.',
+          contractValidationEvidence: invalidContract.contractValidationEvidence,
         };
       }
 
@@ -662,6 +681,9 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         policySource: supported.source,
         evidenceScope: supported.evidenceScope,
         supportsDelete: supported.supportsDelete === true,
+        ...(supported.contractValidationEvidence
+          ? { contractValidationEvidence: supported.contractValidationEvidence }
+          : {}),
         ...(driverEvidence ? { driverEvidence } : {}),
         ...(serializedOptionValidationEvidence?.serialized ? { serializedOptionValidationEvidence } : {}),
         ...(driverPayloadValidationEvidence ? { driverPayloadValidationEvidence } : {}),
@@ -724,15 +746,20 @@ function normalizePluginOwnedPolicyEntry(entry, source, evidenceScope = null) {
   if (!entry || typeof entry !== 'object') {
     return { source, evidenceScope: evidenceScope || 'local-candidate' };
   }
+  const contract = normalizePluginOwnedRowDriverContract(entry, { source, evidenceScope });
+  const contractFields = contract.normalized || {};
   return {
-    resourceKey: entry.resourceKey || entry.key || entry.resource?.key || null,
-    pluginOwner: entry.pluginOwner || entry.owner || entry.plugin || null,
-    driver: entry.driver || entry.supportedDriver || entry.resourceDriver || null,
-    table: entry.table || entry.resource?.table || null,
-    supportsDelete: entry.supportsDelete === true || entry.delete === true || entry.allowDelete === true,
+    resourceKey: contractFields.resourceKey || entry.resourceKey || entry.key || entry.resource?.key || null,
+    pluginOwner: contractFields.pluginOwner || entry.pluginOwner || entry.owner || entry.plugin || null,
+    driver: contractFields.driver || entry.driver || entry.supportedDriver || entry.resourceDriver || null,
+    table: contractFields.table || entry.table || entry.resource?.table || null,
+    supportsDelete: contract.explicit
+      ? contractFields.supportsDelete === true
+      : entry.supportsDelete === true || entry.delete === true || entry.allowDelete === true,
     dryRunValidation: entry.dryRunValidation || null,
     applyValidation: entry.applyValidation || null,
-    evidenceScope: entry.evidenceScope || entry.releaseGateEvidenceScope || evidenceScope || 'local-candidate',
+    evidenceScope: contractFields.evidenceScope || entry.evidenceScope || entry.releaseGateEvidenceScope || evidenceScope || 'local-candidate',
+    ...(contract.evidence ? { contractValidationEvidence: contract.evidence } : {}),
     source,
   };
 }
@@ -919,6 +946,9 @@ function pluginOwnedDriverAuditEvidence({
       : {}),
     ...(support.driverPayloadValidationEvidence
       ? { driverPayloadValidationHash: digest(support.driverPayloadValidationEvidence) }
+      : {}),
+    ...(support.contractValidationEvidence
+      ? { contractValidationHash: digest(support.contractValidationEvidence) }
       : {}),
   };
 }
@@ -3587,6 +3617,9 @@ function addPluginOwnedResourceBlocker(plan, {
       : {}),
     ...(support.driverPayloadValidationEvidence
       ? { driverPayloadValidationEvidence: support.driverPayloadValidationEvidence }
+      : {}),
+    ...(support.contractValidationEvidence
+      ? { contractValidationEvidence: support.contractValidationEvidence }
       : {}),
     ...(support.driverAuditEvidence ? { driverAuditEvidence: support.driverAuditEvidence } : {}),
     ...(support.driverEvidence ? { driverEvidence: support.driverEvidence } : {}),
