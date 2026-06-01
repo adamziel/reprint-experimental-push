@@ -6,18 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-06-01 08:41 CEST +02:00.
+- Last update: 2026-06-01 08:43 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0867 block theme templates v4 merge ending at `42eab42e1`.
+  the RPP-0869 multisite subdirectory topology v4 merge ending at `ff3f6de39`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 987
-  items checked and leaves 13 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 988
+  items checked and leaves 12 open.
 - Checked slices: 100 release-gate foundation items, 100 graph identity items,
   100 plugin-driver boundary items, 100 executor/auth items, 100 recovery items,
-  100 storage/performance items, 87 production-topology items, 100 generated
+  100 storage/performance items, 88 production-topology items, 100 generated
   harness items, 100 merge-invariant items, and 100 release-ops items.
+- Multisite subdirectory topology v4: the current lane now checks `RPP-0869`
+  with support-only multisite subdirectory topology regression evidence. The
+  artifact keeps final release `NO-GO`, records exact Docker, external
+  topology, real import/export, production topology, and release-verifier
+  capability gaps, rejects playground, subdomain, missing, partial, and
+  sequence-incomplete survival substitutes, and accepts release eligibility
+  only when production-backed subdirectory import/export survival proof is
+  supplied.
+  Command:
+  `node --test --test-name-pattern RPP-0869 test/rpp-0869-multisite-subdirectory-topology-v4.test.js`.
+  Caveat: multisite subdirectory support evidence only; final release remains
+  `NO-GO`.
+  Validation passed with a Node syntax check, focused RPP-0869 coverage 6/6,
+  scoped artifact redaction scan, and diff whitespace checks. Counts are now
+  988/12; final release remains `NO-GO` until required production-backed proof
+  is present and accepted.
 - Block theme templates v4: the current lane now checks `RPP-0867` with
   support-only block theme template regression evidence. The artifact keeps
   final release `NO-GO`, records expanded template, template part, custom
