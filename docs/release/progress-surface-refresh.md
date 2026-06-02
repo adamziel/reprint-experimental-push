@@ -32,14 +32,25 @@ The watch command repeats the same local refresh every `600000` ms, roughly
 node scripts/release/refresh-progress-surface.mjs --watch --interval-ms 300000
 ```
 
+For unattended local refreshes, use the managed watcher. It records a PID and
+log under `.tmp/` so stale loops can be inspected and stopped cleanly:
+
+```sh
+npm run refresh:progress-surface:watch:start
+npm run refresh:progress-surface:watch:status
+npm run refresh:progress-surface:watch:stop
+```
+
 ## Validation
 
 ```sh
 npm run check:progress-surface
+node --test test/progress-surface-refresh.test.js
 node --test test/progress-html-release-timestamp.test.js test/release-gate-progress-release-timestamp-focused-regression.test.js
 node scripts/release/artifact-redaction-scan.mjs progress.html docs/evidence/ao-progress-report.md docs/release/progress-surface-refresh.md
 node --check scripts/release/refresh-progress-surface.mjs
-git diff --check -- progress.html docs/evidence/ao-progress-report.md docs/release/progress-surface-refresh.md scripts/release/refresh-progress-surface.mjs package.json
+node --check scripts/release/manage-progress-surface-watch.mjs
+git diff --check -- progress.html docs/evidence/ao-progress-report.md docs/release/progress-surface-refresh.md scripts/release/refresh-progress-surface.mjs scripts/release/manage-progress-surface-watch.mjs test/progress-surface-refresh.test.js package.json
 ```
 
 `npm run publish:progress-page:dry-run` is still the separate publish-readiness

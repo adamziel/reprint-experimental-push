@@ -65,6 +65,9 @@
     "check:release-gates": "node ./scripts/release/check-release-gates.mjs",
     "refresh:progress-surface": "node ./scripts/release/refresh-progress-surface.mjs",
     "refresh:progress-surface:watch": "node ./scripts/release/refresh-progress-surface.mjs --watch --interval-ms 600000",
+    "refresh:progress-surface:watch:start": "node ./scripts/release/manage-progress-surface-watch.mjs start --interval-ms 600000",
+    "refresh:progress-surface:watch:status": "node ./scripts/release/manage-progress-surface-watch.mjs status",
+    "refresh:progress-surface:watch:stop": "node ./scripts/release/manage-progress-surface-watch.mjs stop",
     "check:progress-surface": "node ./scripts/release/refresh-progress-surface.mjs --check",
     "publish:progress-page": "node ./scripts/release/publish-progress-page.mjs",
     "publish:progress-page:dry-run": "node ./scripts/release/publish-progress-page.mjs --dry-run"

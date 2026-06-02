@@ -1,30 +1,35 @@
 # AO Progress Report
 
-Generated: 2026-06-02T22:15:49.118Z
+Generated: 2026-06-02T23:02:58.728Z
 
 Status: **NO-GO**. This surface is refreshed from local
 repository state only; it does not publish, serve, tunnel, or call remote
 services. The release evaluator remains read-only and reports
 `mutationAttempted: false`.
 
+Source of truth: `node scripts/release/check-release-gates.mjs --scope final-release`
+
 ## Current State
 
 | Signal | Value |
 | --- | --- |
 | Release status | `NO-GO` |
-| Final gates | `3/21` |
+| Final gates | `3/21` (14% backed) |
 | Candidate gates | `3/21` |
 | Primary blocker | `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` |
 | Status marker | `[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]` |
 | Blocking gates | 18 |
+| First blocker | RPP-0001 `source-url` / `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` |
 | Checklist | 1000/1000 checked, 0 open |
 | Generated harness | 620 cases: 345 ready, 201 conflict, 74 blocked |
+| Managed watcher | not-started, alive: false, cadence: 600000 ms |
 | Storage smokes | DB guarded write: passed; file guarded write: passed |
 
-The new release model has **21 gates**. In the current local evaluator snapshot,
-three non-risk gates pass (RPP-0004 packaged-fallback, RPP-0005 remote-alias, RPP-0016 release-movement-summary), while 18
-release-blocking gates remain missing. Final release is **NO-GO** until the
-missing gates are backed by production-scoped evidence.
+The release model currently has **21 gates**. In the current
+local evaluator snapshot, 3 gate(s) pass (RPP-0004 packaged-fallback, RPP-0005 remote-alias, RPP-0016 release-movement-summary)
+and 18 release-blocking gate(s) remain open. Final release is
+**NO-GO** because the evaluator reports
+`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`.
 
 ## Current Plan
 
@@ -40,14 +45,14 @@ missing gates are backed by production-scoped evidence.
 
 ## Stage Map
 
-| Stage | State | What matters |
-| --- | --- | --- |
-| Support evidence integration | Checked | Checklist is 1000/1000; support evidence is useful but not production release approval. |
-| Release-gate evaluator | Active | Current evaluator reports `3/21`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, and read-only `mutationAttempted: false`. |
-| Production binding | Blocked | Production topology, auth, identity, routes, recovery, storage CAS, and operator proof are missing. |
-| Storage smokes | Checked | DB guarded-write and file guarded-write smoke commands pass as support evidence only. |
-| Progress reporting | Active | This page/report now has a local refresh generator and a 10-minute watch mode. |
-| Public publish proof | Held | `npm run publish:progress-page:dry-run` remains a support-only publish proof and does not move release readiness. |
+| Stage | State | Snapshot | What matters |
+| --- | --- | --- | --- |
+| Support evidence inventory | checked | 1000/1000 checklist | 620 generated harness cases are cataloged (345 ready, 201 conflict, 74 blocked). This is support evidence, not release approval. |
+| Release-gate evaluator | held | 3/21 backed | The final-release evaluator is the source of truth. It is read-only, reports mutationAttempted: false, and currently names REPRINT_PUSH_LIVE_SOURCE_REQUIRED. |
+| Production binding | blocked | 13 blockers | Bind live topology, credential, identity, route, and recovery evidence to the final-release evaluator before release movement. |
+| Storage boundary CAS | blocked | STORAGE_BOUNDARY_CAS_REQUIRED | DB/file guarded-write smokes remain useful support proof, but final release needs production-backed storage-boundary CAS for every final target write. |
+| Operator proof and updates | active | 4 open | Refresh this surface locally every 600000 ms during active work, then run the focused progress checks before publishing. |
+| Final decision | held | NO-GO | The Go/No-Go record and this surface must keep final release NO-GO while the evaluator reports [release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]. |
 
 ## 21-Gate Release Model
 
@@ -114,8 +119,18 @@ Active-work loop, roughly every 10 minutes:
 npm run refresh:progress-surface:watch
 ```
 
-The loop is local-only and has no remote network or tunnel dependency. Stop it
-with Ctrl-C. For deterministic checks use:
+Managed active-work loop, also every 10 minutes:
+
+```sh
+npm run refresh:progress-surface:watch:start
+npm run refresh:progress-surface:watch:status
+npm run refresh:progress-surface:watch:stop
+```
+
+Both loops repeat every `600000` ms by default, are local-only,
+and have no remote network or tunnel dependency. Stop the foreground loop with
+Ctrl-C, or use the managed `stop` command for the detached watcher. For
+deterministic checks use:
 
 ```sh
 npm run check:progress-surface
