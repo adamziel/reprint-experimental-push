@@ -543,6 +543,14 @@ $refused_contract['pluginOwnedResource']['contractValidationEvidence']['outcome'
 $refused_contract['pluginOwnedResource']['contractValidationEvidence']['reasonCode'] = 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_VERSION';
 $forged_payload = $base_mutation;
 $forged_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['value']['hash'] = str_repeat('0', 64);
+$missing_owner_marker = $base_mutation;
+unset($missing_owner_marker['value']['value']['__pluginOwner']);
+$missing_owner_marker['pluginOwnedResource']['driverPayloadValidationEvidence']['value']['hash'] = hash(
+    'sha256',
+    reprint_push_stable_json($missing_owner_marker['value']['value'])
+);
+$ownerless_snapshot = $snapshot;
+unset($ownerless_snapshot['db']['wp_fixture_contract_bound_rows']['id:7']['__pluginOwner']);
 $forged_resource_key = $base_mutation;
 $forged_resource_key['resourceKey'] = 'row:["wp_fixture_contract_bound_rows","id:8"]';
 $forged_resource_key['pluginOwnedResource'] = rpp_contract_bound_policy(
@@ -572,6 +580,10 @@ echo json_encode([
         reprint_push_assert_supported_plugin_owned_mutation($forged_payload, $snapshot);
         return true;
     }),
+    'missingOwnerMarker' => rpp_driver_api_capture(static function () use ($missing_owner_marker, $ownerless_snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($missing_owner_marker, $ownerless_snapshot);
+        return true;
+    }),
     'forgedResourceKey' => rpp_driver_api_capture(static function () use ($forged_resource_key, $snapshot): bool {
         reprint_push_assert_supported_plugin_owned_mutation($forged_resource_key, $snapshot);
         return true;
@@ -586,6 +598,8 @@ echo json_encode([
   assert.equal(report.refusedContract.error.message, 'Unsupported plugin-owned mutation contract for row:["wp_fixture_contract_bound_rows","id:7"]');
   assert.equal(report.forgedPayload.ok, false);
   assert.equal(report.forgedPayload.error.message, 'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
+  assert.equal(report.missingOwnerMarker.ok, false);
+  assert.equal(report.missingOwnerMarker.error.message, 'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
   assert.equal(report.forgedResourceKey.ok, false);
   assert.equal(report.forgedResourceKey.error.message, 'Unsupported plugin-owned mutation contract for row:["wp_fixture_contract_bound_rows","id:8"]');
   assert.equal(JSON.stringify(report).includes('contract-bound-private-payload'), false);

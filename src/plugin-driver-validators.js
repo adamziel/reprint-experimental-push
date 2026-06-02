@@ -148,20 +148,30 @@ function validateContractBoundRowDriverPayload({
       observed: contractSupportsDelete,
     });
   }
-  if (
-    value
-    && value !== ABSENT
-    && typeof value === 'object'
-    && typeof value.__pluginOwner === 'string'
-    && expectedOwner
-    && value.__pluginOwner !== expectedOwner
-  ) {
-    issues.push({
-      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_OWNER_MISMATCH',
-      field: '__pluginOwner',
-      expected: expectedOwner,
-      observedHash: digest(value.__pluginOwner),
-    });
+  if (expectedOwner && action !== 'delete' && value !== ABSENT) {
+    if (
+      !value
+      || typeof value !== 'object'
+      || Array.isArray(value)
+      || typeof value.__pluginOwner !== 'string'
+      || value.__pluginOwner.length === 0
+    ) {
+      issues.push({
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_OWNER_MISSING',
+        field: '__pluginOwner',
+        expected: expectedOwner,
+        observed: value && typeof value === 'object' && !Array.isArray(value)
+          ? 'missing'
+          : typeof value,
+      });
+    } else if (value.__pluginOwner !== expectedOwner) {
+      issues.push({
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_OWNER_MISMATCH',
+        field: '__pluginOwner',
+        expected: expectedOwner,
+        observedHash: digest(value.__pluginOwner),
+      });
+    }
   }
 
   const accepted = issues.length === 0;

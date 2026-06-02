@@ -11518,6 +11518,13 @@ export function summarizeProductionPluginDriverBoundaryProof({
   const expectedDriverPayloadValueHash = mutation
     ? digest(plannedMutationValue)
     : null;
+  const plannedPayloadOwnerMatchesExpected = Boolean(
+    plannedMutationValue
+    && plannedMutationValue !== ABSENT
+    && typeof plannedMutationValue === 'object'
+    && !Array.isArray(plannedMutationValue)
+    && plannedMutationValue.__pluginOwner === boundary.owner,
+  );
   const driverPayloadValueEvidence =
     driverPayloadValidationEvidence?.value
     && typeof driverPayloadValidationEvidence.value === 'object'
@@ -11574,6 +11581,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && driverPayloadValidationEvidence?.supportsDelete === false
     && driverPayloadContractSupportsDeleteMatches
     && driverPayloadActionMatchesMutation
+    && plannedPayloadOwnerMatchesExpected
     && driverPayloadValidationEvidence?.contractHash === contractHash
     && bareSha256Pattern.test(driverPayloadValidationEvidence?.contractHash || '')
     && driverPayloadContractValidationHashMatchesExpected
@@ -11671,6 +11679,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
       payloadValueHashMatchesExpected: driverPayloadValueHashMatchesExpected,
       payloadValueStateMatchesExpected: driverPayloadValueStateMatchesExpected,
       payloadActionMatchesMutation: driverPayloadActionMatchesMutation,
+      payloadOwnerMatchesExpected: plannedPayloadOwnerMatchesExpected,
       payloadContractSupportsDeleteMatches: driverPayloadContractSupportsDeleteMatches,
       contractValidation: contractValidationEvidence ? {
         reasonCode: contractValidationEvidence.reasonCode || null,

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { createPushPlan } from '../src/planner.js';
 import { applyPlan, PushPlanError } from '../src/apply.js';
 import { digest } from '../src/stable-json.js';
+import { serializeResourceValue } from '../src/resources.js';
 import {
   productionPluginDriverBoundary,
   summarizeProductionPluginDriverBoundaryProof,
@@ -246,6 +247,7 @@ test('RPP-0483 release verifier carries exact custom-table allowlist through app
   assert.equal(summary.driverContractBoundary.payloadValueHashMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.payloadValueStateMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.payloadActionMatchesMutation, true);
+  assert.equal(summary.driverContractBoundary.payloadOwnerMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.payloadContractSupportsDeleteMatches, true);
   assert.match(summary.driverContractBoundary.contractHash, /^[a-f0-9]{64}$/);
   assert.match(summary.driverContractBoundary.contractValidationHash, /^[a-f0-9]{64}$/);
@@ -503,6 +505,32 @@ test('RPP-0483 release verifier blocks custom-table allowlist and apply carry-th
     assert.equal(summary.driverContractBoundary.contractBound, false);
     assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
     assertNoRawSentinels(summary, 'forged payload contract-validation hash summary');
+  });
+
+  await t.test('missing planned payload owner marker is not release-verifier eligible with matching hashes', () => {
+    const topology = releaseStateTopology();
+    const plan = releaseStatePlan(topology);
+    const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey);
+    const ownerlessValue = cloneJson(topology.localEditedSnapshot.db[boundary.table][boundary.rowId]);
+    delete ownerlessValue.__pluginOwner;
+    topology.localEditedSnapshot.db[boundary.table][boundary.rowId] = ownerlessValue;
+    mutation.value = serializeResourceValue(ownerlessValue);
+    mutation.localHash = digest(ownerlessValue);
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.value.hash = digest(ownerlessValue);
+    const summary = summarize(topology, releaseVerifierProof(plan));
+
+    assert.equal(summary.status, 'blocked');
+    assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+    assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
+    assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, false);
+    assert.equal(summary.driverContractBoundary.payloadActionMatchesMutation, true);
+    assert.equal(summary.driverContractBoundary.payloadValueHashMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.payloadValueStateMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.payloadOwnerMatchesExpected, false);
+    assert.equal(summary.driverContractBoundary.contractBound, false);
+    assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
+    assert.equal(summary.mutationBoundary.localHash, summary.localPluginStateEvidence.hash);
+    assertNoRawSentinels(summary, 'missing payload owner marker summary');
   });
 
   await t.test('extra custom-table mutation is not release-verifier eligible', () => {

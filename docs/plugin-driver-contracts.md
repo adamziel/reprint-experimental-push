@@ -94,6 +94,10 @@ shape. For custom row drivers outside the built-in driver set, apply requires:
 - accepted `plugin-driver-contract-validation` evidence,
 - exact resource key, plugin owner, driver, table, and `supportsDelete` binding
   in both the contract evidence and the mutation envelope,
+- present row payloads that carry `__pluginOwner` equal to the contract owner;
+  missing markers refuse with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_OWNER_MISSING`, and wrong markers refuse
+  with `PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_OWNER_MISMATCH`,
 - accepted `contract-bound-row-driver` payload validation evidence,
 - hash-only value and contract evidence, with `rawValuesIncluded: false`,
 - carried payload evidence that matches apply's recomputed mutation action,

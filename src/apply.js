@@ -285,7 +285,11 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
   for (const mutation of plan.mutations || []) {
     const plannedValue = deserializeResourceValue(mutation.value);
     const remoteValue = getResource(remote, mutation.resource);
-    const owner = pluginOwnedOwner(plannedValue) || pluginOwnedOwner(remoteValue);
+    const owner = pluginOwnedOwner(plannedValue)
+      || pluginOwnedOwner(remoteValue)
+      || mutation.pluginOwnedResource?.pluginOwner
+      || mutation.pluginOwnedResource?.contractValidationEvidence?.pluginOwner
+      || null;
     if (!owner) {
       continue;
     }

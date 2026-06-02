@@ -4,6 +4,25 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Contract-Bound Plugin Payload Owner Markers
+
+- Last update: 2026-06-02 06:18 CEST +02:00.
+- Contract-bound custom row-driver payload validation now requires present row
+  values to carry `__pluginOwner` equal to the accepted contract owner. Missing
+  markers fail closed with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_OWNER_MISSING`; mismatched markers
+  continue to fail closed with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_OWNER_MISMATCH`.
+- JS apply and the PHP route guard now use the explicit mutation envelope or
+  contract evidence owner as a validation fallback, so forged ready plans cannot
+  remove row owner markers and thereby skip plugin-owned validation. RPP-0483
+  also records `payloadOwnerMatchesExpected` and blocks a hash-consistent proof
+  whose planned row lacks the owner marker.
+- Caveat: this hardens the JS planner/apply, PHP route guard, and
+  production-shaped verifier boundary for contract-bound rows. Broader
+  production plugin generalization still needs generic plugin validator
+  contracts and hosted integration evidence.
+
 ## 2026-06-02 - Canonical Plugin Driver Contract Evidence
 
 - Last update: 2026-06-02 06:15 CEST +02:00.

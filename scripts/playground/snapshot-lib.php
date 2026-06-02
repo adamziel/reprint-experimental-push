@@ -3352,6 +3352,9 @@ function reprint_push_assert_supported_plugin_owned_mutation(array $mutation, ar
     }
 
     $planned = reprint_push_planned_resource_value($mutation['value'] ?? []);
+    $policy = is_array($mutation['pluginOwnedResource'] ?? null)
+        ? $mutation['pluginOwnedResource']
+        : null;
     $owner = null;
     if (($planned['exists'] ?? false) === true && is_array($planned['value'] ?? null)) {
         $owner = $planned['value']['__pluginOwner'] ?? null;
@@ -3362,11 +3365,16 @@ function reprint_push_assert_supported_plugin_owned_mutation(array $mutation, ar
             $owner = $current['value']['__pluginOwner'] ?? null;
         }
     }
+    if ($owner === null && is_array($policy)) {
+        $owner = $policy['pluginOwner'] ?? null;
+        if ($owner === null && is_array($policy['contractValidationEvidence'] ?? null)) {
+            $owner = $policy['contractValidationEvidence']['pluginOwner'] ?? null;
+        }
+    }
     if ($owner === null) {
         return;
     }
 
-    $policy = $mutation['pluginOwnedResource'] ?? null;
     $driver = is_array($policy) ? (string) ($policy['driver'] ?? '') : '';
     if ($driver === 'fixture-forms-lab-table'
         && (string) $owner === 'forms'
@@ -3525,6 +3533,12 @@ function reprint_push_plugin_driver_payload_evidence_accepted(
         ? hash('sha256', reprint_push_stable_json($planned['value']))
         : hash('sha256', '"__REPRINT_PUSH_ABSENT__"');
     $value_evidence = is_array($evidence['value'] ?? null) ? $evidence['value'] : [];
+    $planned_owner_matches = $action === 'delete'
+        || empty($planned['exists'])
+        || (
+            is_array($planned['value'] ?? null)
+            && (string) ($planned['value']['__pluginOwner'] ?? '') === $owner
+        );
 
     return ($evidence['reasonCode'] ?? null) === 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED'
         && ($evidence['schemaVersion'] ?? null) === 1
@@ -3545,7 +3559,8 @@ function reprint_push_plugin_driver_payload_evidence_accepted(
         && ($evidence['contractHash'] ?? null) === ($contract['contractHash'] ?? null)
         && ($evidence['contractValidationHash'] ?? null) === hash('sha256', reprint_push_stable_json($contract))
         && ($value_evidence['state'] ?? null) === $expected_state
-        && ($value_evidence['hash'] ?? null) === $expected_hash;
+        && ($value_evidence['hash'] ?? null) === $expected_hash
+        && $planned_owner_matches;
 }
 
 function reprint_push_valid_fixture_forms_lab_driver_evidence($evidence, array $snapshot): bool
