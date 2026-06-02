@@ -6569,6 +6569,9 @@ test('explicit WordPress graph identity-map contract carries accepted proof thro
   const forgedIdentityPlan = cloneJson(plan);
   const forgedIdentityRemote = cloneJson(remote);
   const forgedIdentityRemoteBefore = JSON.stringify(forgedIdentityRemote);
+  const forgedPayloadPlan = cloneJson(plan);
+  const forgedPayloadRemote = cloneJson(remote);
+  const forgedPayloadRemoteBefore = JSON.stringify(forgedPayloadRemote);
   const result = applyPlan(remote, plan);
   const sourceDecision = decisionFor(plan, sourcePostResourceKey);
   const childMutation = mutationFor(plan, childPostResourceKey);
@@ -6628,6 +6631,25 @@ test('explicit WordPress graph identity-map contract carries accepted proof thro
   assert.equal(forgedIdentityIssue.resourceKey, childPostResourceKey);
   assert.equal(forgedIdentityIssue.relationshipType, 'post-parent');
   assert.equal(JSON.stringify(forgedIdentityRemote), forgedIdentityRemoteBefore);
+
+  const forgedPayloadMutation = mutationFor(forgedPayloadPlan, childPostResourceKey);
+  const forgedPayloadValue = deserializeMutationValue(forgedPayloadMutation);
+  forgedPayloadValue.post_parent = 9999;
+  forgedPayloadMutation.value = serializeResourceValue(forgedPayloadValue);
+  forgedPayloadMutation.localHash = digest(forgedPayloadValue);
+  const forgedPayloadError = captureError(() => applyPlan(forgedPayloadRemote, forgedPayloadPlan));
+  const forgedPayloadIssue = forgedPayloadError.details.issues.find((issue) =>
+    issue.code === 'WORDPRESS_GRAPH_REWRITE_TARGET_VALUE_MISMATCH');
+
+  assert.ok(forgedPayloadError instanceof PushPlanError);
+  assert.equal(forgedPayloadError.code, 'PLAN_INVARIANT_VIOLATION');
+  assert.equal(forgedPayloadIssue.resourceKey, childPostResourceKey);
+  assert.equal(forgedPayloadIssue.relationshipType, 'post-parent');
+  assert.equal(forgedPayloadIssue.field, 'post_parent');
+  assert.equal(forgedPayloadIssue.targetResourceKey, targetPostResourceKey);
+  assert.match(forgedPayloadIssue.expectedTargetIdHash, /^[a-f0-9]{64}$/);
+  assert.match(forgedPayloadIssue.actualTargetValueHash, /^[a-f0-9]{64}$/);
+  assert.equal(JSON.stringify(forgedPayloadRemote), forgedPayloadRemoteBefore);
 });
 
 test('unsupported explicit WordPress graph identity-map contract version fails closed before rewrite', () => {

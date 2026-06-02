@@ -471,6 +471,10 @@ function normalizeContractResource(resource, resourceKey = null) {
   return parseRowResourceKey(resourceKey);
 }
 
+export function parseWordPressGraphRowResourceKey(resourceKey) {
+  return parseRowResourceKey(resourceKey);
+}
+
 function parseRowResourceKey(resourceKey) {
   if (!isNonEmptyString(resourceKey) || !resourceKey.startsWith('row:')) {
     return null;

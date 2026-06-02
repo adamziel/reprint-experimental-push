@@ -4,6 +4,24 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Graph Rewrite Payload Target Binding
+
+- Last update: 2026-06-02 07:15 CEST +02:00.
+- Apply-time WordPress graph rewrite validation now binds each carried rewrite
+  envelope to the actual serialized mutation field value. A plan with valid
+  relationship and identity-map hashes but a forged scalar target value now
+  refuses before mutation with
+  `WORDPRESS_GRAPH_REWRITE_TARGET_VALUE_MISMATCH`.
+- The refusal evidence records the relationship, rewritten field, target
+  resource key, expected target-id hash, and observed value hash only. It does
+  not copy raw row values, post bodies, titles, slugs, meta payloads, or block
+  content into the invariant failure details.
+- Verification: the focused explicit identity-map regression passed, and the
+  broader graph/planner suite passed 168/168.
+- Caveat: this closes an apply-side forged-payload hole for scalar graph
+  rewrites. It is not general WordPress graph completion; unsupported graph
+  surfaces and broader identity mapping remain conservative release-scope work.
+
 ## 2026-06-02 - DB Target Envelope Recovery Inspect
 
 - Last update: 2026-06-02 07:09 CEST +02:00.

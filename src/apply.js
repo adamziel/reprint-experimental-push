@@ -24,6 +24,7 @@ import {
   pluginOwnedRowDriverContractHash,
 } from './plugin-driver-contracts.js';
 import {
+  parseWordPressGraphRowResourceKey,
   wordpressGraphIdentityMapContractHash,
   wordpressGraphRelationshipContractForType,
 } from './wordpress-graph-contracts.js';
@@ -2141,6 +2142,7 @@ function wordpressGraphRewriteEnvelopeIssues(mutation) {
     }];
   }
 
+  const plannedValue = deserializeResourceValue(mutation.value);
   for (const [index, rewrite] of identity.rewrites.entries()) {
     const issueBase = {
       mutationId: mutation.id || null,
@@ -2261,9 +2263,64 @@ function wordpressGraphRewriteEnvelopeIssues(mutation) {
         });
       }
     }
+
+    const targetResource = parseWordPressGraphRowResourceKey(rewrite.targetResourceKey);
+    if (!targetResource) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_TARGET_RESOURCE_INVALID',
+        targetResourceKey: rewrite.targetResourceKey || null,
+      });
+      continue;
+    }
+    const actualTargetValue = plannedValue && typeof plannedValue === 'object'
+      ? plannedValue[rewrite.field]
+      : undefined;
+    const expectedTargetValue = wordpressGraphRewriteTargetPrimaryValue(targetResource);
+    if (!wordpressGraphRewriteScalarMatchesTarget(actualTargetValue, expectedTargetValue)) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_TARGET_VALUE_MISMATCH',
+        field: rewrite.field || null,
+        targetResourceKey: rewrite.targetResourceKey || null,
+        expectedTargetIdHash: expectedTargetValue === null ? null : digest(String(expectedTargetValue)),
+        actualTargetValueHash: actualTargetValue === undefined || actualTargetValue === null
+          ? null
+          : digest(String(actualTargetValue)),
+      });
+    }
   }
 
   return issues;
+}
+
+function wordpressGraphRewriteTargetPrimaryValue(targetResource) {
+  const id = String(targetResource?.id ?? '');
+  const table = String(targetResource?.table ?? '');
+  const primaryKeyByTable = new Map([
+    ['wp_posts', 'ID'],
+    ['wp_postmeta', 'meta_id'],
+    ['wp_terms', 'term_id'],
+    ['wp_term_taxonomy', 'term_taxonomy_id'],
+    ['wp_comments', 'comment_ID'],
+    ['wp_commentmeta', 'meta_id'],
+    ['wp_termmeta', 'meta_id'],
+    ['wp_users', 'ID'],
+    ['wp_usermeta', 'umeta_id'],
+  ]);
+  const primaryKey = primaryKeyByTable.get(table);
+  if (!primaryKey) {
+    return null;
+  }
+  const prefix = `${primaryKey}:`;
+  return id.startsWith(prefix) ? id.slice(prefix.length) : null;
+}
+
+function wordpressGraphRewriteScalarMatchesTarget(actualValue, targetId) {
+  if (actualValue === undefined || actualValue === null || targetId === null) {
+    return false;
+  }
+  return String(actualValue) === String(targetId);
 }
 
 function comparableResourceKey(resource) {

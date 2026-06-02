@@ -71,6 +71,13 @@ explicit identity map, it also records the normalized identity-map
 `contractHash`. Apply recomputes both contract hashes and rejects forged,
 missing, or unsupported rewrite evidence before any mutation.
 
+Apply also checks that each rewritten scalar field in the serialized mutation
+payload equals the primary ID from the carried `targetResourceKey`. A mutation
+whose rewrite evidence points at one row while the payload writes a different
+ID is refused before mutation with
+`WORDPRESS_GRAPH_REWRITE_TARGET_VALUE_MISMATCH`, with hash-only expected and
+observed ID evidence.
+
 Legacy identity maps still normalize for existing local coverage, but an entry
 that declares `contractKind: "wordpress-graph-identity-map"` is strict:
 unsupported contract versions, missing or unsupported contract kinds,

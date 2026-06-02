@@ -16,6 +16,11 @@ Lane: graph-identity
 - Adds generated-harness target coverage for `wp_posts.post_author` references: same-plan user/post creates remain ready with stale replay rejection, while posts that reference a remotely drifted user fail closed as `stale-wordpress-graph-identity` with hash-only target evidence.
 - Adds generated-harness evidence for `wp_comments.user_id` author references: same-plan user/comment creates remain ready with stale replay rejection, while a comment that points at a remotely drifted user fails closed as `stale-wordpress-graph-identity` with hash-only target evidence.
 - Adds RPP-0306 focused planner evidence for `wp_comments.comment_parent` thread references: stable parent comment targets remain ready without identity rewriting, explicit comment identity-map targets rewrite child replies to the proven remote parent ID, and drifted remote parent comments fail closed with hash-only target evidence.
+- Adds apply-time rewrite payload binding: each scalar rewrite envelope must
+  match the serialized mutation field value and the carried target resource
+  primary ID. Forged ready plans with valid contract hashes but a mismatched
+  rewritten payload field now refuse before mutation with hash-only
+  `WORDPRESS_GRAPH_REWRITE_TARGET_VALUE_MISMATCH` evidence.
 
 ## Verification commands
 
@@ -43,6 +48,8 @@ RPP-0306 focused worker verification commands:
 
 - `node --test --test-name-pattern=RPP-0306 test/push-planner.test.js` — 1 subtest, 0 failures. The focused planner proof plans a child `wp_comments` row whose `comment_parent` points at a parent comment that still matches the pull base on the remote, keeps the row under live-remote precondition, and needs no identity rewrite.
 - `node --test --test-name-pattern 'same-plan comment|comment parent|comment_parent|comment-parent|RPP-0306' test/push-planner.test.js` — 4 subtests, 0 failures. The broader focused run covers stable parent proof, explicit identity-map parent rewrite, same-plan parent/child closure, and fail-closed stale remote parent evidence.
+- `node --test --test-name-pattern 'explicit WordPress graph identity-map contract carries accepted proof' test/push-planner.test.js` — 1 subtest, 0 failures. The focused explicit identity-map proof now includes a forged payload variant that recomputes the mutation hash but changes the rewritten `post_parent`; apply rejects it before mutation.
+- `node --test test/push-planner.test.js test/wordpress-graph-contracts.test.js test/playground-snapshot-lib.test.js test/rpp-0400-importer-exporter-identity-map-release-verifier-v5.test.js` — 168 subtests, 0 failures, including rewrite payload target binding and the production importer/exporter identity-map verifier.
 
 A full `npm test` run was attempted for broader signal, but unrelated existing failures appeared in authenticated HTTP push client and playground snapshot/plugin-driver tests before the run was stopped; the focused graph-identity checks above passed.
 
