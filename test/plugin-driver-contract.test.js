@@ -1491,12 +1491,48 @@ test('reference-bound custom row driver rewrites identity-mapped source targets'
         forgedMutation.pluginOwnedResource.referenceTargetValidationEvidence.fields[0].referenceRewriteHash = '0'.repeat(64);
       },
     },
+    {
+      label: 'identity-decision-missing',
+      errorCode: 'PLAN_INVARIANT_VIOLATION',
+      issueCode: 'PLUGIN_DRIVER_REFERENCE_REWRITE_IDENTITY_MAP_DECISION_MISSING',
+      mutate(_forgedMutation, forgedPlan) {
+        forgedPlan.decisions = forgedPlan.decisions.filter((decision) =>
+          decision.resourceKey !== sourcePostKey);
+      },
+    },
+    {
+      label: 'rewrite-live-target-hash',
+      errorCode: 'PLAN_INVARIANT_VIOLATION',
+      issueCode: 'PLUGIN_DRIVER_REFERENCE_REWRITE_TARGET_REMOTE_HASH_MISMATCH',
+      mutate(forgedMutation, forgedPlan) {
+        const forgedHash = digest({ forged: 'plugin-reference-target-hash' });
+        forgedMutation.pluginOwnedResource.referenceFieldRewrites[0].targetRemoteHash = forgedHash;
+        const decision = forgedPlan.decisions.find((entry) =>
+          entry.resourceKey === sourcePostKey
+          && entry.targetResourceKey === targetPostKey);
+        decision.targetRemoteHash = forgedHash;
+      },
+    },
+    {
+      label: 'rewrite-target-primary-id',
+      errorCode: 'PLAN_INVARIANT_VIOLATION',
+      issueCode: 'PLUGIN_DRIVER_REFERENCE_REWRITE_TARGET_PRIMARY_ID_MISMATCH',
+      mutate(forgedMutation, forgedPlan, remoteForVariant) {
+        remoteForVariant.db.wp_posts['ID:22'].ID = 23;
+        const forgedHash = digest(remoteForVariant.db.wp_posts['ID:22']);
+        forgedMutation.pluginOwnedResource.referenceFieldRewrites[0].targetRemoteHash = forgedHash;
+        const decision = forgedPlan.decisions.find((entry) =>
+          entry.resourceKey === sourcePostKey
+          && entry.targetResourceKey === targetPostKey);
+        decision.targetRemoteHash = forgedHash;
+      },
+    },
   ]) {
     const remoteForVariant = cloneJson(remote);
-    const remoteBefore = JSON.stringify(remoteForVariant);
     const forgedPlan = cloneJson(plan);
     const forgedMutation = mutationFor(forgedPlan, resourceKey);
-    variant.mutate(forgedMutation);
+    variant.mutate(forgedMutation, forgedPlan, remoteForVariant);
+    const remoteBefore = JSON.stringify(remoteForVariant);
 
     let error;
     try {
@@ -2948,6 +2984,58 @@ test('apply refuses forged reference-bound custom row driver payloads before mut
   });
   assert.equal(JSON.stringify(error.details).includes('base-reference-apply-secret'), false);
   assert.equal(JSON.stringify(error.details).includes('local-reference-apply-secret'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('apply refuses stripped reference target evidence before mutation', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-reference-stripped-target', secret: 'base-reference-stripped-target-secret', post_id: 2 },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  addStablePost(base, 2);
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-reference-stripped-target';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-reference-stripped-target-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(referenceBoundCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const forgedPlan = cloneJson(plan);
+  const mutation = mutationFor(forgedPlan, resourceKey);
+  delete mutation.pluginOwnedResource.referenceTargetValidationEvidence;
+
+  let error;
+  try {
+    applyPlan(remote, forgedPlan);
+  } catch (caught) {
+    error = caught;
+  }
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(error?.code, 'INVALID_PLUGIN_DRIVER_REFERENCE_TARGET');
+  assert.equal(error.details.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_EVIDENCE_MISSING');
+  assert.equal(error.details.resourceKey, resourceKey);
+  assert.equal(error.details.pluginOwner, 'forms');
+  assert.equal(error.details.driver, 'forms-contract-row');
+  assert.equal(
+    error.details.applyValidationEvidence.referenceTargetValidationEvidence.reasonCode,
+    'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_EVIDENCE_MISSING',
+  );
+  assert.equal(
+    error.details.applyValidationEvidence.referenceTargetValidationEvidence.rawValuesIncluded,
+    false,
+  );
+  assert.equal(JSON.stringify(error.details).includes('base-reference-stripped-target-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('local-reference-stripped-target-secret'), false);
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 

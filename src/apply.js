@@ -2544,7 +2544,7 @@ function validateReadyPlanEnvelope(plan, remote) {
     }
 
     issues.push(...wordpressGraphRewriteEnvelopeIssues(mutation, decisions, remote));
-    issues.push(...pluginReferenceRewriteEnvelopeIssues(mutation, decisions));
+    issues.push(...pluginReferenceRewriteEnvelopeIssues(mutation, decisions, remote));
   }
 
   for (const precondition of preconditions) {
@@ -2659,7 +2659,7 @@ function validateReadyPlanEnvelope(plan, remote) {
   }
 }
 
-function pluginReferenceRewriteEnvelopeIssues(mutation, decisions = []) {
+function pluginReferenceRewriteEnvelopeIssues(mutation, decisions = [], remote = null) {
   const rewrites = mutation.pluginOwnedResource?.referenceFieldRewrites;
   if (rewrites === undefined) {
     return [];
@@ -2780,6 +2780,36 @@ function pluginReferenceRewriteEnvelopeIssues(mutation, decisions = []) {
       });
       continue;
     }
+    const targetResourceObject = {
+      type: 'row',
+      table: targetResource.table,
+      id: targetResource.id,
+      key: targetResource.key,
+    };
+    const actualTargetRemoteValue = getResource(remote, targetResourceObject);
+    const actualTargetRemoteHash = resourceHash(remote, targetResourceObject);
+    if (rewrite.targetRemoteHash !== actualTargetRemoteHash) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_TARGET_REMOTE_HASH_MISMATCH',
+        targetResourceKey: rewrite.targetResourceKey,
+        expectedHash: hashEvidenceForDetails(rewrite.targetRemoteHash),
+        actualHash: hashEvidenceForDetails(actualTargetRemoteHash),
+      });
+    }
+    if (!pluginReferenceRewriteTargetPrimaryIdMatches(
+      targetResource,
+      rewrite.targetIdField,
+      actualTargetRemoteValue,
+    )) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_TARGET_PRIMARY_ID_MISMATCH',
+        targetResourceKey: rewrite.targetResourceKey,
+        targetIdField: rewrite.targetIdField,
+        expectedTargetIdHash: digest(String(expectedTargetValue)),
+      });
+    }
     if (rewrite.sourceValueHash !== digest(String(sourceTargetValue))) {
       issues.push({
         ...rewriteIssueBase,
@@ -2852,6 +2882,18 @@ function pluginReferenceRewriteEnvelopeIssues(mutation, decisions = []) {
   }
 
   return issues;
+}
+
+function pluginReferenceRewriteTargetPrimaryIdMatches(targetResource, targetIdField, actualTargetRemoteValue) {
+  const expectedPrimaryId = referenceTargetPrimaryId(targetResource, targetIdField);
+  const actualPrimaryValue = actualTargetRemoteValue
+    && actualTargetRemoteValue !== ABSENT
+    && typeof actualTargetRemoteValue === 'object'
+    && !Array.isArray(actualTargetRemoteValue)
+    ? actualTargetRemoteValue[targetIdField]
+    : undefined;
+  return expectedPrimaryId !== null
+    && normalizePositiveInteger(actualPrimaryValue) === expectedPrimaryId;
 }
 
 function wordpressGraphRewriteEnvelopeIssues(mutation, decisions = [], remote = null) {
