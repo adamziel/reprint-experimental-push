@@ -266,6 +266,17 @@ function rpp_0481_contract_bound_policy(
         'driver' => $driver,
         'table' => $table,
         'supportsDelete' => $supports_delete,
+        'registrationProvenance' => reprint_push_plugin_owned_row_driver_registration_provenance_evidence(
+            [
+                'resourceKey' => $resource_key,
+                'pluginOwner' => $owner,
+                'driver' => $driver,
+                'table' => $table,
+                'supportsDelete' => $supports_delete,
+                'contractHash' => $contract_hash,
+            ],
+            reprint_push_plugin_owned_row_driver_by_name($driver)
+        ),
         'contractValidationEvidence' => $contract,
         'driverPayloadValidationEvidence' => [
             'schemaVersion' => 1,

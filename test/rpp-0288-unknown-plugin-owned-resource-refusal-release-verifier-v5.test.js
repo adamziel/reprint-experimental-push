@@ -5,6 +5,7 @@ import { applyPlan, PushPlanError } from '../src/apply.js';
 import { assertEvidenceHasNoRawValues } from '../src/evidence-redaction.js';
 import { createPushPlan } from '../src/planner.js';
 import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
+import { pluginOwnedRowDriverRegistrationProvenanceEvidence } from '../src/plugin-driver-validators.js';
 import { resourceHash, serializeResourceValue } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 import {
@@ -39,6 +40,18 @@ function cloneJson(value) {
 
 function sha256Evidence(value) {
   return `sha256:${digest(value)}`;
+}
+
+function registerProductionDriverEntry(entry) {
+  entry.contractHash = pluginOwnedRowDriverContractHash(entry);
+  entry.registeredDriverProvenanceEvidence = pluginOwnedRowDriverRegistrationProvenanceEvidence(
+    entry,
+    {
+      source: 'rpp-0288-production-driver-registry',
+      evidenceScope: 'release-verifier-v5',
+    },
+  );
+  return entry;
 }
 
 function captureError(fn) {
@@ -368,7 +381,7 @@ function productionDriverSnapshot(mode, version, marker, privateNote) {
     contractVersion: 1,
     contractKind: 'plugin-owned-row-driver',
   };
-  allowlistEntry.contractHash = pluginOwnedRowDriverContractHash(allowlistEntry);
+  registerProductionDriverEntry(allowlistEntry);
 
   return {
     files: {},

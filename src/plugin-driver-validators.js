@@ -11,6 +11,15 @@ import {
 
 export const INVALID_SERIALIZED_OPTION_PAYLOAD = 'INVALID_SERIALIZED_OPTION_PAYLOAD';
 export const PLUGIN_DRIVER_CONTRACT_BOUND_VALIDATOR = 'contract-bound-row-driver';
+export const PLUGIN_DRIVER_REGISTRATION_PROVENANCE_KIND = 'plugin-owned-row-driver-registration';
+export const PLUGIN_DRIVER_REGISTRATION_PROVENANCE_SCHEMA_VERSION = 1;
+export const PLUGIN_DRIVER_REGISTRATION_PROVENANCE_OPERATION =
+  'plugin-driver-registration-provenance-validation';
+export const PLUGIN_DRIVER_COMPACT_REGISTRATION_PROVENANCE_OPERATION =
+  'plugin-driver-registration-provenance';
+export const PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED =
+  'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED';
+const SHA256_HEX_PATTERN = /^[a-f0-9]{64}$/;
 
 export function validatePluginOwnedDriverPayload({
   resource,
@@ -311,6 +320,512 @@ function validateContractBoundRowDriverPayload({
     reasonCode: evidence.reasonCode,
     reason: 'Plugin-owned row driver contract-bound payload validation failed.',
     evidence,
+  };
+}
+
+export function pluginOwnedRowDriverRegistrationBindingHash(binding) {
+  const contractHash = binding?.contractHash || pluginOwnedRowDriverContractHash(binding);
+  return digest({
+    schemaVersion: 1,
+    registrationKind: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_KIND,
+    registrationVersion: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_SCHEMA_VERSION,
+    contractKind: PLUGIN_DRIVER_CONTRACT_KIND,
+    contractVersion: PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+    resourceKey: binding?.resourceKey || null,
+    pluginOwner: binding?.pluginOwner || null,
+    driver: binding?.driver || null,
+    table: binding?.table || null,
+    supportsDelete: binding?.supportsDelete === true,
+    contractHash,
+  });
+}
+
+export function pluginOwnedRowDriverRegistrationProvenanceEvidence(contract, {
+  source = 'plugin-owned-row-driver-registry',
+  evidenceScope = contract?.evidenceScope || contract?.releaseGateEvidenceScope || 'local-candidate',
+} = {}) {
+  const contractHash = contract?.contractHash || pluginOwnedRowDriverContractHash(contract);
+  const evidence = {
+    schemaVersion: 1,
+    operation: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_OPERATION,
+    registrationKind: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_KIND,
+    registrationVersion: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_SCHEMA_VERSION,
+    outcome: 'accepted',
+    reasonCode: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED,
+    issueCodes: [],
+    issues: [],
+    source,
+    evidenceScope,
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    resourceKey: contract?.resourceKey || null,
+    pluginOwner: contract?.pluginOwner || null,
+    driver: contract?.driver || null,
+    table: contract?.table || null,
+    supportsDelete: contract?.supportsDelete === true,
+    contractKind: PLUGIN_DRIVER_CONTRACT_KIND,
+    contractVersion: PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+    contractHash,
+  };
+  return {
+    ...evidence,
+    registrationHash: pluginOwnedRowDriverRegistrationBindingHash(evidence),
+  };
+}
+
+export function canonicalPluginOwnedRowDriverRegistrationProvenanceEvidence(evidence) {
+  if (!isPlainObject(evidence)) {
+    return null;
+  }
+  return {
+    schemaVersion: 1,
+    operation: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_OPERATION,
+    registrationKind: evidence.registrationKind || null,
+    registrationVersion: Number.isInteger(evidence.registrationVersion)
+      ? evidence.registrationVersion
+      : null,
+    outcome: evidence.outcome || null,
+    reasonCode: evidence.reasonCode || null,
+    issueCodes: Array.isArray(evidence.issueCodes) ? [...evidence.issueCodes] : [],
+    issues: Array.isArray(evidence.issues)
+      ? evidence.issues.map(canonicalPluginOwnedRowDriverRegistrationProvenanceIssue)
+      : [],
+    source: evidence.source || null,
+    evidenceScope: evidence.evidenceScope || null,
+    format: 'hash-only',
+    rawValuesIncluded: evidence.rawValuesIncluded === true,
+    resourceKey: evidence.resourceKey || null,
+    pluginOwner: evidence.pluginOwner || null,
+    driver: evidence.driver || null,
+    table: evidence.table || null,
+    supportsDelete: evidence.supportsDelete === true,
+    contractKind: evidence.contractKind || null,
+    contractVersion: Number.isInteger(evidence.contractVersion)
+      ? evidence.contractVersion
+      : null,
+    contractHash: evidence.contractHash || null,
+    registrationHash: pluginOwnedRowDriverRegistrationBindingHash(evidence),
+  };
+}
+
+export function pluginOwnedRowDriverRegistrationProvenanceEvidenceHash(evidence) {
+  const canonicalEvidence = canonicalPluginOwnedRowDriverRegistrationProvenanceEvidence(evidence);
+  return canonicalEvidence ? digest(canonicalEvidence) : null;
+}
+
+export function pluginOwnedRowDriverRegistrationProvenanceEvidenceMatches(evidence) {
+  const expectedEvidenceHash = pluginOwnedRowDriverRegistrationProvenanceEvidenceHash(evidence);
+  return Boolean(expectedEvidenceHash) && digest(evidence) === expectedEvidenceHash;
+}
+
+export function acceptedPluginOwnedRowDriverRegistrationProvenanceEvidence(
+  evidence,
+  contractValidationEvidence = null,
+) {
+  const expectedContractHash = contractValidationEvidence?.contractHash || evidence?.contractHash || null;
+  const expectedRegistrationHash = pluginOwnedRowDriverRegistrationBindingHash({
+    ...evidence,
+    contractHash: expectedContractHash,
+  });
+  return evidence?.reasonCode === PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED
+    && evidence.schemaVersion === 1
+    && evidence.operation === PLUGIN_DRIVER_REGISTRATION_PROVENANCE_OPERATION
+    && evidence.registrationKind === PLUGIN_DRIVER_REGISTRATION_PROVENANCE_KIND
+    && evidence.registrationVersion === PLUGIN_DRIVER_REGISTRATION_PROVENANCE_SCHEMA_VERSION
+    && evidence.outcome === 'accepted'
+    && Array.isArray(evidence.issueCodes)
+    && evidence.issueCodes.length === 0
+    && Array.isArray(evidence.issues)
+    && evidence.issues.length === 0
+    && evidence.format === 'hash-only'
+    && evidence.rawValuesIncluded === false
+    && evidence.contractKind === PLUGIN_DRIVER_CONTRACT_KIND
+    && evidence.contractVersion === PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION
+    && evidence.contractHash === expectedContractHash
+    && evidence.registrationHash === expectedRegistrationHash
+    && (!contractValidationEvidence
+      || (
+        evidence.resourceKey === contractValidationEvidence.resourceKey
+        && evidence.pluginOwner === contractValidationEvidence.pluginOwner
+        && evidence.driver === contractValidationEvidence.driver
+        && evidence.table === contractValidationEvidence.table
+        && evidence.supportsDelete === contractValidationEvidence.supportsDelete
+      ))
+    && pluginOwnedRowDriverRegistrationProvenanceEvidenceMatches(evidence);
+}
+
+export function validatePluginOwnedRowDriverRegistrationProvenance({
+  resource,
+  owner = null,
+  driver = null,
+  table = null,
+  supportsDelete = false,
+  contractValidationEvidence = null,
+  registrationProvenanceEvidence = null,
+}) {
+  const expected = {
+    resourceKey: contractValidationEvidence?.resourceKey || resource?.key || null,
+    pluginOwner: contractValidationEvidence?.pluginOwner || owner || null,
+    driver: contractValidationEvidence?.driver || driver || null,
+    table: contractValidationEvidence?.table || table || null,
+    supportsDelete: contractValidationEvidence
+      ? contractValidationEvidence.supportsDelete === true
+      : supportsDelete === true,
+    contractHash: contractValidationEvidence?.contractHash || null,
+  };
+  const issues = [];
+  if (!registrationProvenanceEvidence) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_REQUIRED',
+      field: 'registeredDriverProvenanceEvidence',
+      expected: 'accepted registered row-driver provenance evidence',
+      observed: null,
+    });
+  } else if (!isPlainObject(registrationProvenanceEvidence)) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_INVALID',
+      field: 'registeredDriverProvenanceEvidence',
+      expected: 'hash-only evidence object',
+      observed: Array.isArray(registrationProvenanceEvidence)
+        ? 'array'
+        : typeof registrationProvenanceEvidence,
+    });
+  } else if (compactPluginOwnedRowDriverRegistrationProvenanceEvidence(registrationProvenanceEvidence)) {
+    issues.push(...compactPluginOwnedRowDriverRegistrationProvenanceIssues(
+      registrationProvenanceEvidence,
+      expected,
+    ));
+  } else {
+    if (registrationProvenanceEvidence.rawValuesIncluded !== false) {
+      issues.push({
+        reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_RAW_VALUES_INCLUDED',
+        field: 'rawValuesIncluded',
+        expected: false,
+        observed: registrationProvenanceEvidence.rawValuesIncluded ?? null,
+      });
+    }
+    if (registrationProvenanceEvidence.schemaVersion !== 1) {
+      issues.push({
+        reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_UNSUPPORTED_VERSION',
+        field: 'schemaVersion',
+        expected: 1,
+        observed: registrationProvenanceEvidence.schemaVersion ?? null,
+      });
+    }
+    if (registrationProvenanceEvidence.operation !== PLUGIN_DRIVER_REGISTRATION_PROVENANCE_OPERATION) {
+      issues.push({
+        reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_INVALID_OPERATION',
+        field: 'operation',
+        expected: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_OPERATION,
+        observed: registrationProvenanceEvidence.operation || null,
+      });
+    }
+    if (registrationProvenanceEvidence.registrationKind !== PLUGIN_DRIVER_REGISTRATION_PROVENANCE_KIND) {
+      issues.push({
+        reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_UNSUPPORTED_KIND',
+        field: 'registrationKind',
+        expected: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_KIND,
+        observed: registrationProvenanceEvidence.registrationKind || null,
+      });
+    }
+    if (registrationProvenanceEvidence.outcome !== 'accepted') {
+      issues.push({
+        reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_NOT_ACCEPTED',
+        field: 'outcome',
+        expected: 'accepted',
+        observed: registrationProvenanceEvidence.outcome || null,
+      });
+    }
+    if (
+      !Array.isArray(registrationProvenanceEvidence.issueCodes)
+      || registrationProvenanceEvidence.issueCodes.length !== 0
+    ) {
+      issues.push({
+        reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ISSUES_PRESENT',
+        field: 'issueCodes',
+        expected: [],
+        observedHash: digest(registrationProvenanceEvidence.issueCodes ?? null),
+      });
+    }
+    if (registrationProvenanceEvidence.format !== 'hash-only') {
+      issues.push({
+        reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_NOT_HASH_ONLY',
+        field: 'format',
+        expected: 'hash-only',
+        observed: registrationProvenanceEvidence.format || null,
+      });
+    }
+    for (const [field, expectedValue] of Object.entries(expected)) {
+      if (expectedValue === null || expectedValue === undefined) {
+        continue;
+      }
+      const observedValue = registrationProvenanceEvidence[field];
+      if (observedValue !== expectedValue) {
+        issues.push({
+          reasonCode: `PLUGIN_DRIVER_REGISTRATION_PROVENANCE_${field === 'contractHash' ? 'CONTRACT_HASH' : field.toUpperCase()}_MISMATCH`,
+          field,
+          expected: field === 'contractHash' ? expectedValue : expectedValue,
+          ...(field === 'contractHash'
+            ? { observedHash: digest(observedValue ?? null) }
+            : { observed: observedValue ?? null }),
+        });
+      }
+    }
+    if (registrationProvenanceEvidence.contractKind !== PLUGIN_DRIVER_CONTRACT_KIND) {
+      issues.push({
+        reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_CONTRACT_KIND_MISMATCH',
+        field: 'contractKind',
+        expected: PLUGIN_DRIVER_CONTRACT_KIND,
+        observed: registrationProvenanceEvidence.contractKind || null,
+      });
+    }
+    if (registrationProvenanceEvidence.contractVersion !== PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION) {
+      issues.push({
+        reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_CONTRACT_VERSION_MISMATCH',
+        field: 'contractVersion',
+        expected: PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+        observed: registrationProvenanceEvidence.contractVersion ?? null,
+      });
+    }
+    const expectedRegistrationHash = pluginOwnedRowDriverRegistrationBindingHash({
+      ...registrationProvenanceEvidence,
+      ...expected,
+    });
+    if (registrationProvenanceEvidence.registrationHash !== expectedRegistrationHash) {
+      issues.push({
+        reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_HASH_MISMATCH',
+        field: 'registrationHash',
+        expected: expectedRegistrationHash,
+        observedHash: digest(registrationProvenanceEvidence.registrationHash ?? null),
+      });
+    }
+    if (!pluginOwnedRowDriverRegistrationProvenanceEvidenceMatches(registrationProvenanceEvidence)) {
+      issues.push({
+        reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_EVIDENCE_MISMATCH',
+        field: 'registeredDriverProvenanceEvidence',
+        expected: 'canonical hash-only evidence',
+        observedHash: digest(registrationProvenanceEvidence),
+      });
+    }
+  }
+
+  if (issues.length === 0) {
+    return {
+      supported: true,
+      evidence: registrationProvenanceEvidence,
+    };
+  }
+
+  const evidence = pluginOwnedRowDriverRegistrationProvenanceRefusalEvidence({
+    reasonCode: issues[0].reasonCode,
+    issues,
+    expected,
+    source: registrationProvenanceEvidence?.source || contractValidationEvidence?.source || null,
+    evidenceScope: registrationProvenanceEvidence?.evidenceScope
+      || contractValidationEvidence?.evidenceScope
+      || null,
+  });
+  return {
+    supported: false,
+    className: issues[0].reasonCode === 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_REQUIRED'
+      ? 'missing-plugin-driver-registration-provenance'
+      : 'invalid-plugin-driver-registration-provenance',
+    reasonCode: issues[0].reasonCode,
+    reason: 'Generic plugin-owned custom row drivers require accepted registered-driver provenance evidence.',
+    evidence,
+  };
+}
+
+function compactPluginOwnedRowDriverRegistrationProvenanceEvidence(evidence) {
+  return isPlainObject(evidence)
+    && (
+      evidence.operation === PLUGIN_DRIVER_COMPACT_REGISTRATION_PROVENANCE_OPERATION
+      || Object.prototype.hasOwnProperty.call(evidence, 'provenanceKind')
+      || Object.prototype.hasOwnProperty.call(evidence, 'bindingHash')
+      || Object.prototype.hasOwnProperty.call(evidence, 'resourceKeyHash')
+    );
+}
+
+function compactPluginOwnedRowDriverRegistrationProvenanceIssues(evidence, expected) {
+  const issues = [];
+  const expectedResourceKeyHash = expected.resourceKey ? digest(expected.resourceKey) : null;
+  const expectedBindingHash = compactPluginOwnedRowDriverRegistrationBindingHash(evidence, expected);
+  if (!hasExactKeys(evidence, [
+    'schemaVersion',
+    'operation',
+    'provenanceKind',
+    'reasonCode',
+    'outcome',
+    'format',
+    'rawValuesIncluded',
+    'resourceKeyHash',
+    'registrationHash',
+    'contractHash',
+    'bindingHash',
+  ])) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_EVIDENCE_MISMATCH',
+      field: 'registrationProvenance',
+      expected: 'exact compact hash-only evidence',
+      observedHash: digest(evidence),
+    });
+  }
+  if (evidence.schemaVersion !== PLUGIN_DRIVER_REGISTRATION_PROVENANCE_SCHEMA_VERSION) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_UNSUPPORTED_VERSION',
+      field: 'schemaVersion',
+      expected: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_SCHEMA_VERSION,
+      observed: evidence.schemaVersion ?? null,
+    });
+  }
+  if (evidence.operation !== PLUGIN_DRIVER_COMPACT_REGISTRATION_PROVENANCE_OPERATION) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_INVALID_OPERATION',
+      field: 'operation',
+      expected: PLUGIN_DRIVER_COMPACT_REGISTRATION_PROVENANCE_OPERATION,
+      observed: evidence.operation || null,
+    });
+  }
+  if (evidence.provenanceKind !== PLUGIN_DRIVER_REGISTRATION_PROVENANCE_KIND) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_UNSUPPORTED_KIND',
+      field: 'provenanceKind',
+      expected: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_KIND,
+      observed: evidence.provenanceKind || null,
+    });
+  }
+  if (evidence.reasonCode !== PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_NOT_ACCEPTED',
+      field: 'reasonCode',
+      expected: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED,
+      observed: evidence.reasonCode || null,
+    });
+  }
+  if (evidence.outcome !== 'accepted') {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_NOT_ACCEPTED',
+      field: 'outcome',
+      expected: 'accepted',
+      observed: evidence.outcome || null,
+    });
+  }
+  if (evidence.format !== 'hash-only') {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_NOT_HASH_ONLY',
+      field: 'format',
+      expected: 'hash-only',
+      observed: evidence.format || null,
+    });
+  }
+  if (evidence.rawValuesIncluded !== false) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_RAW_VALUES_INCLUDED',
+      field: 'rawValuesIncluded',
+      expected: false,
+      observed: evidence.rawValuesIncluded ?? null,
+    });
+  }
+  if (evidence.resourceKeyHash !== expectedResourceKeyHash) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_RESOURCEKEY_MISMATCH',
+      field: 'resourceKeyHash',
+      expected: expectedResourceKeyHash,
+      observedHash: digest(evidence.resourceKeyHash ?? null),
+    });
+  }
+  if (evidence.contractHash !== expected.contractHash) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_CONTRACT_HASH_MISMATCH',
+      field: 'contractHash',
+      expected: expected.contractHash,
+      observedHash: digest(evidence.contractHash ?? null),
+    });
+  }
+  if (!SHA256_HEX_PATTERN.test(evidence.registrationHash || '')) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_HASH_MISMATCH',
+      field: 'registrationHash',
+      expected: 'sha256 hex',
+      observedHash: digest(evidence.registrationHash ?? null),
+    });
+  }
+  if (evidence.bindingHash !== expectedBindingHash) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_HASH_MISMATCH',
+      field: 'bindingHash',
+      expected: expectedBindingHash,
+      observedHash: digest(evidence.bindingHash ?? null),
+    });
+  }
+  return issues;
+}
+
+function compactPluginOwnedRowDriverRegistrationBindingHash(evidence, expected) {
+  return digest({
+    schemaVersion: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_SCHEMA_VERSION,
+    provenanceKind: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_KIND,
+    resourceKeyHash: expected.resourceKey ? digest(expected.resourceKey) : null,
+    pluginOwnerHash: expected.pluginOwner ? digest(expected.pluginOwner) : null,
+    driverHash: expected.driver ? digest(expected.driver) : null,
+    tableHash: expected.table ? digest(expected.table) : null,
+    supportsDeleteHash: digest(expected.supportsDelete === true),
+    registrationHash: evidence?.registrationHash || null,
+    contractHash: expected.contractHash || null,
+  });
+}
+
+function pluginOwnedRowDriverRegistrationProvenanceRefusalEvidence({
+  reasonCode,
+  issues,
+  expected,
+  source,
+  evidenceScope,
+}) {
+  const base = {
+    schemaVersion: 1,
+    operation: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_OPERATION,
+    registrationKind: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_KIND,
+    registrationVersion: PLUGIN_DRIVER_REGISTRATION_PROVENANCE_SCHEMA_VERSION,
+    outcome: 'refused-before-mutation',
+    reasonCode,
+    issueCodes: issues.map((issue) => issue.reasonCode),
+    issues,
+    source,
+    evidenceScope,
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    resourceKey: expected.resourceKey,
+    pluginOwner: expected.pluginOwner,
+    driver: expected.driver,
+    table: expected.table,
+    supportsDelete: expected.supportsDelete === true,
+    contractKind: PLUGIN_DRIVER_CONTRACT_KIND,
+    contractVersion: PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+    contractHash: expected.contractHash,
+  };
+  return {
+    ...base,
+    registrationHash: pluginOwnedRowDriverRegistrationBindingHash(base),
+  };
+}
+
+function canonicalPluginOwnedRowDriverRegistrationProvenanceIssue(issue) {
+  if (!isPlainObject(issue)) {
+    return {
+      reasonCode: null,
+      field: null,
+      expected: null,
+      observed: null,
+      observedHash: null,
+    };
+  }
+  return {
+    reasonCode: issue.reasonCode || null,
+    field: issue.field || null,
+    expected: issue.expected ?? null,
+    observed: issue.observed ?? null,
+    observedHash: issue.observedHash ?? null,
   };
 }
 
@@ -681,6 +1196,20 @@ function acceptedContractValidationEvidence(evidence) {
 
 function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function hasExactKeys(value, keys) {
+  if (!isPlainObject(value)) {
+    return false;
+  }
+  const actual = Object.keys(value).sort();
+  const expected = [...keys].sort();
+  return actual.length === expected.length
+    && actual.every((key, index) => key === expected[index]);
 }
 
 function isSerializedWpOptionPayload(resource, driver, value) {

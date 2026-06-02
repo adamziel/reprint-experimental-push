@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 
 import { createPushPlan } from '../src/planner.js';
 import { buildComplexSiteReleaseEvidence } from '../scripts/playground/local-production-complex-site-proof.js';
+import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
+import { pluginOwnedRowDriverRegistrationProvenanceEvidence } from '../src/plugin-driver-validators.js';
 
 const fixedNow = new Date('2026-05-30T00:00:00.000Z');
 const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:72911"]';
@@ -15,6 +17,28 @@ const privateMarkers = Object.freeze([
   'RPP-0389 private category taxonomy description',
   'rpp-0389-private-termmeta',
 ]);
+
+function registeredReleaseStateDriverEntry() {
+  const entry = {
+    resourceKey: releaseStateResourceKey,
+    pluginOwner: 'reprint-push',
+    driver: 'reprint-push-release-state',
+    table: 'wp_reprint_push_release_state',
+    supportsDelete: false,
+    contractVersion: 1,
+    contractKind: 'plugin-owned-row-driver',
+    evidenceScope: 'rpp-0389-release-verifier-v5',
+  };
+  entry.contractHash = pluginOwnedRowDriverContractHash(entry);
+  entry.registeredDriverProvenanceEvidence = pluginOwnedRowDriverRegistrationProvenanceEvidence(
+    entry,
+    {
+      source: 'rpp-0389-release-state-driver-registry',
+      evidenceScope: entry.evidenceScope,
+    },
+  );
+  return entry;
+}
 
 const categoryShape = Object.freeze({
   taxonomyGraph: true,
@@ -192,13 +216,7 @@ function categorySiteSnapshot(variant) {
       pluginOwnedResources: {
         allowedResources: [
           {
-            resourceKey: releaseStateResourceKey,
-            pluginOwner: 'reprint-push',
-            driver: 'reprint-push-release-state',
-            table: 'wp_reprint_push_release_state',
-            supportsDelete: false,
-            contractVersion: 1,
-            contractKind: 'plugin-owned-row-driver',
+            ...registeredReleaseStateDriverEntry(),
           },
         ],
       },

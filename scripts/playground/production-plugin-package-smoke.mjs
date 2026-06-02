@@ -1222,6 +1222,19 @@ function buildArbitraryPluginFixturePackageProof({
   const releaseGateEvidenceScope = allowedEntry?.releaseGateEvidenceScope
     || allowedEntry?.evidenceScope
     || 'local-playground';
+  const mutation = Array.isArray(updatePlan?.mutations)
+    ? updatePlan.mutations.find((entry) => entry?.resourceKey === resourceKey)
+    : null;
+  const contractEvidence = mutation?.pluginOwnedResource?.contractValidationEvidence || null;
+  const registrationEvidence = mutation?.pluginOwnedResource?.registeredDriverProvenanceEvidence
+    || mutation?.pluginOwnedResource?.registrationProvenance
+    || null;
+  const registeredContractProvenanceAccepted = registrationEvidence?.reasonCode
+    === 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED'
+    && registrationEvidence?.outcome === 'accepted'
+    && registrationEvidence?.rawValuesIncluded === false
+    && Boolean(registrationEvidence?.registrationHash)
+    && Boolean(contractEvidence?.contractHash);
   return {
     driver: driverFixture.driver,
     pluginOwner: driverFixture.pluginOwner,
@@ -1237,6 +1250,10 @@ function buildArbitraryPluginFixturePackageProof({
       && allowedEntry?.pluginOwner === driverFixture.pluginOwner,
     planReady: updatePlan.status === 'ready',
     mutationCount: updatePlan.mutations.length,
+    registeredContractProvenanceAccepted,
+    registeredDriverProvenanceHash: registrationEvidence ? `sha256:${digest(registrationEvidence)}` : null,
+    contractHash: contractEvidence?.contractHash || registrationEvidence?.contractHash || null,
+    contractValidationHash: contractEvidence ? digest(contractEvidence) : null,
     dryRunReceiptHash: updateDryRun.body?.receipt?.receiptHash || null,
     applyRejectedCode: revokedCredentialApply.body?.code,
     applyRejectedMessage: revokedCredentialApply.body?.message,

@@ -78,6 +78,7 @@ import {
 } from '../scripts/playground/blueprint-snapshot-fixture.js';
 import { createPushPlan } from '../src/planner.js';
 import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
+import { pluginOwnedRowDriverRegistrationProvenanceEvidence } from '../src/plugin-driver-validators.js';
 import { resourceHash } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 
@@ -505,6 +506,18 @@ process.on('SIGTERM', () => {
   stopAllPlaygroundChildrenSync();
 });
 
+function registerProductionProofRowDriver(entry, source = 'production-shaped-proof-driver-registry') {
+  entry.contractHash = pluginOwnedRowDriverContractHash(entry);
+  entry.registeredDriverProvenanceEvidence = pluginOwnedRowDriverRegistrationProvenanceEvidence(
+    entry,
+    {
+      source,
+      evidenceScope: entry.evidenceScope || entry.releaseGateEvidenceScope || 'local-focused',
+    },
+  );
+  return entry;
+}
+
 function productionPluginDriverSnapshot(mode, version, marker) {
   const allowlistEntry = {
     resourceKey: productionPluginDriverBoundary.resourceKey,
@@ -515,7 +528,7 @@ function productionPluginDriverSnapshot(mode, version, marker) {
     contractKind: 'plugin-owned-row-driver',
     contractVersion: 1,
   };
-  allowlistEntry.contractHash = pluginOwnedRowDriverContractHash(allowlistEntry);
+  registerProductionProofRowDriver(allowlistEntry);
 
   return {
     files: {},
@@ -589,7 +602,7 @@ function addDriverFixtureCustomTable(snapshot, mode, version, marker) {
     contractKind: 'plugin-owned-row-driver',
     contractVersion: 1,
   };
-  allowlistEntry.contractHash = pluginOwnedRowDriverContractHash(allowlistEntry);
+  registerProductionProofRowDriver(allowlistEntry, 'production-shaped-proof-extra-custom-table-registry');
   snapshot.meta.pluginOwnedResources.allowedResources.push(allowlistEntry);
 }
 
@@ -2441,11 +2454,13 @@ test('production plugin-driver boundary proof enforces exact allowlist owner and
     pluginOwner: 'other-plugin',
     driver: 'other-release-state',
   };
+  registerProductionProofRowDriver(wrongAllowlistBase.meta.pluginOwnedResources.allowedResources[0]);
   wrongAllowlistLocal.meta.pluginOwnedResources.allowedResources[0] = {
     ...wrongAllowlistLocal.meta.pluginOwnedResources.allowedResources[0],
     pluginOwner: 'other-plugin',
     driver: 'other-release-state',
   };
+  registerProductionProofRowDriver(wrongAllowlistLocal.meta.pluginOwnedResources.allowedResources[0]);
 
   const summary = summarizeProductionPluginDriverBoundaryProof({
     proof: productionPluginDriverProof(plan, boundary),
@@ -2476,6 +2491,7 @@ test('production plugin-driver boundary proof blocks a wrong-driver allowlist ev
       ...snapshot.meta.pluginOwnedResources.allowedResources[0],
       driver: 'other-release-state',
     };
+    registerProductionProofRowDriver(snapshot.meta.pluginOwnedResources.allowedResources[0]);
   }
 
   const plan = createPushPlan({

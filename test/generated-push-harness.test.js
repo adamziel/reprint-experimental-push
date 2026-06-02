@@ -12423,6 +12423,11 @@ function generatedPluginOwnedReferenceFieldVariant3CaseEvidence(testCase, result
   const carrier = pluginOwnedReferenceFieldVariant3EvidenceCarrier({ testCase, plan, shape, staleTarget });
   const surface = pluginOwnedReferenceFieldVariant3SurfaceEvidence(testCase, shape);
   const contract = pluginOwnedReferenceFieldVariant3ContractEvidence(carrier.contractValidationEvidence, shape);
+  const registration = pluginOwnedReferenceFieldVariant3RegistrationEvidence(
+    carrier.registeredDriverProvenanceEvidence,
+    contract,
+    shape,
+  );
   const payload = pluginOwnedReferenceFieldVariant3PayloadEvidence(carrier.driverPayloadValidationEvidence, shape);
   const targetValidation = pluginOwnedReferenceFieldVariant3TargetEvidence(
     carrier.referenceTargetValidationEvidence,
@@ -12439,6 +12444,7 @@ function generatedPluginOwnedReferenceFieldVariant3CaseEvidence(testCase, result
     planSummary: plan.summary,
     surface,
     contract,
+    registration,
     payload,
     targetValidation,
   };
@@ -12482,6 +12488,7 @@ function generatedPluginOwnedReferenceFieldVariant3CaseEvidence(testCase, result
         planSummary: plan.summary,
         surface,
         contract,
+        registration,
         payload,
         targetValidation,
         tableMutation,
@@ -12509,6 +12516,7 @@ function generatedPluginOwnedReferenceFieldVariant3CaseEvidence(testCase, result
       planSummary: plan.summary,
       surface,
       contract,
+      registration,
       payload,
       targetValidation,
       blocker,
@@ -12568,6 +12576,7 @@ function pluginOwnedReferenceFieldVariant3Shape(testCase, { staleTarget }) {
   assert.equal(policy.table, 'wp_forms_contract_rows');
   assert.equal(policy.contractKind, 'plugin-owned-row-driver');
   assert.equal(policy.supportsDelete, false);
+  assert.equal(policy.registeredDriverProvenanceEvidence?.rawValuesIncluded, false);
 
   return {
     rowId,
@@ -12678,6 +12687,37 @@ function pluginOwnedReferenceFieldVariant3ContractEvidence(contractEvidence, sha
   };
 }
 
+function pluginOwnedReferenceFieldVariant3RegistrationEvidence(registrationEvidence, contract, shape) {
+  assert.equal(registrationEvidence.reasonCode, 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED');
+  assert.equal(registrationEvidence.operation, 'plugin-driver-registration-provenance-validation');
+  assert.equal(registrationEvidence.registrationKind, 'plugin-owned-row-driver-registration');
+  assert.equal(registrationEvidence.outcome, 'accepted');
+  assert.equal(registrationEvidence.format, 'hash-only');
+  assert.equal(registrationEvidence.rawValuesIncluded, false);
+  assert.equal(registrationEvidence.resourceKey, shape.resourceKey);
+  assert.equal(registrationEvidence.pluginOwner, 'forms');
+  assert.equal(registrationEvidence.driver, 'forms-reference-row');
+  assert.equal(registrationEvidence.table, 'wp_forms_contract_rows');
+  assert.equal(registrationEvidence.supportsDelete, false);
+  assert.equal(registrationEvidence.contractKind, 'plugin-owned-row-driver');
+  assert.equal(registrationEvidence.contractVersion, 1);
+  assert.equal(registrationEvidence.contractHash, contract.contractHash);
+  assert.match(registrationEvidence.registrationHash, /^[a-f0-9]{64}$/);
+
+  return {
+    reasonCode: registrationEvidence.reasonCode,
+    registrationKind: registrationEvidence.registrationKind,
+    rawValuesIncluded: registrationEvidence.rawValuesIncluded,
+    resourceKey: registrationEvidence.resourceKey,
+    pluginOwner: registrationEvidence.pluginOwner,
+    driver: registrationEvidence.driver,
+    table: registrationEvidence.table,
+    contractHash: registrationEvidence.contractHash,
+    registrationHash: registrationEvidence.registrationHash,
+    registrationEvidenceHash: `sha256:${digest(registrationEvidence)}`,
+  };
+}
+
 function pluginOwnedReferenceFieldVariant3PayloadEvidence(payloadEvidence, shape) {
   const referenceValidation = payloadEvidence.referenceValidation;
   const reference = referenceValidation.fields[0];
@@ -12783,6 +12823,15 @@ function pluginOwnedReferenceFieldVariant3ReadyMutationEvidence({ testCase, plan
   assert.equal(mutation.pluginOwnedResource?.contractValidationEvidence?.rawValuesIncluded, false);
   assert.equal(mutation.pluginOwnedResource?.driverPayloadValidationEvidence?.rawValuesIncluded, false);
   assert.equal(mutation.pluginOwnedResource?.referenceTargetValidationEvidence?.rawValuesIncluded, false);
+  assert.equal(mutation.pluginOwnedResource?.registeredDriverProvenanceEvidence?.rawValuesIncluded, false);
+  assert.equal(
+    mutation.pluginOwnedResource?.auditEvidence?.registeredDriverProvenanceHash,
+    digest(mutation.pluginOwnedResource?.registeredDriverProvenanceEvidence),
+  );
+  assert.equal(
+    mutation.pluginOwnedResource?.auditEvidence?.registeredDriverRegistrationHash,
+    mutation.pluginOwnedResource?.registeredDriverProvenanceEvidence?.registrationHash,
+  );
   assert.equal(precondition.mutationId, mutation.id);
   assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
   assert.equal(appliedHash, localHash, `${testCase.id} did not apply the local reference-field row hash`);

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { assertEvidenceHasNoRawValues, findEvidenceRedactionIssues } from '../src/evidence-redaction.js';
 import { createPushPlan } from '../src/planner.js';
 import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
+import { pluginOwnedRowDriverRegistrationProvenanceEvidence } from '../src/plugin-driver-validators.js';
 import { digest } from '../src/stable-json.js';
 import {
   directActivePluginsMutationRefusalBoundary,
@@ -515,6 +516,13 @@ function productionPluginDriverSnapshot(mode, version, marker) {
     contractVersion: 1,
   };
   allowlistEntry.contractHash = pluginOwnedRowDriverContractHash(allowlistEntry);
+  allowlistEntry.registeredDriverProvenanceEvidence = pluginOwnedRowDriverRegistrationProvenanceEvidence(
+    allowlistEntry,
+    {
+      source: 'rpp-0835-release-state-driver-registry',
+      evidenceScope: 'activation-hook-topology-v2',
+    },
+  );
 
   return {
     files: {},

@@ -176,6 +176,17 @@ function rpp_0441_contract_bound_policy(
         'driver' => $driver,
         'table' => $table,
         'supportsDelete' => $supports_delete,
+        'registrationProvenance' => reprint_push_plugin_owned_row_driver_registration_provenance_evidence(
+            [
+                'resourceKey' => $resource_key,
+                'pluginOwner' => $owner,
+                'driver' => $driver,
+                'table' => $table,
+                'supportsDelete' => $supports_delete,
+                'contractHash' => $contract_hash,
+            ],
+            reprint_push_plugin_owned_row_driver_by_name($driver)
+        ),
         'contractValidationEvidence' => $contract,
         'driverPayloadValidationEvidence' => [
             'schemaVersion' => 1,
@@ -421,17 +432,22 @@ $validation = [
     }),
     'missingContractEvidence' => rpp_0441_capture(static function () use ($validation_snapshot): bool {
         $value = ['id' => 7, 'marker' => 'accept', '__pluginOwner' => 'rpp-0441-alpha-plugin'];
+        $policy = rpp_0441_contract_bound_policy(
+            'row:["wp_rpp_0441_alpha_rows","id:7"]',
+            'wp_rpp_0441_alpha_rows',
+            'rpp-0441-alpha-plugin',
+            'rpp-0441-alpha-driver',
+            true,
+            'put',
+            $value
+        );
+        unset($policy['contractValidationEvidence']);
         reprint_push_assert_supported_plugin_owned_mutation([
             'resourceKey' => 'row:["wp_rpp_0441_alpha_rows","id:7"]',
             'resource' => ['type' => 'row', 'table' => 'wp_rpp_0441_alpha_rows', 'id' => 'id:7'],
             'action' => 'put',
             'value' => ['value' => $value],
-            'pluginOwnedResource' => [
-                'pluginOwner' => 'rpp-0441-alpha-plugin',
-                'driver' => 'rpp-0441-alpha-driver',
-                'table' => 'wp_rpp_0441_alpha_rows',
-                'supportsDelete' => true,
-            ],
+            'pluginOwnedResource' => $policy,
         ], $validation_snapshot);
         return true;
     }),
@@ -714,7 +730,28 @@ echo json_encode([
   assert.equal(report.lookups.missingByTable, null);
 
   assert.equal(report.policyAllowed.every((entry) => bareSha256Pattern.test(entry.contractHash)), true);
-  const policyAllowedWithoutHashes = report.policyAllowed.map(({ contractHash, ...entry }) => entry);
+  const policyAllowedWithoutHashes = report.policyAllowed.map(({ contractHash, registrationProvenance, ...entry }) => {
+    assert.deepEqual(Object.keys(registrationProvenance).sort(), [
+      'bindingHash',
+      'contractHash',
+      'format',
+      'operation',
+      'outcome',
+      'provenanceKind',
+      'rawValuesIncluded',
+      'reasonCode',
+      'registrationHash',
+      'resourceKeyHash',
+      'schemaVersion',
+    ]);
+    assert.equal(registrationProvenance.rawValuesIncluded, false);
+    assert.equal(registrationProvenance.format, 'hash-only');
+    assert.equal(registrationProvenance.contractHash, contractHash);
+    assert.match(registrationProvenance.resourceKeyHash, bareSha256Pattern);
+    assert.match(registrationProvenance.registrationHash, bareSha256Pattern);
+    assert.match(registrationProvenance.bindingHash, bareSha256Pattern);
+    return entry;
+  });
   assert.deepEqual(policyAllowedWithoutHashes, [
     {
       contractVersion: 1,

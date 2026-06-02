@@ -20,7 +20,10 @@ import {
   pluginOwnedRowDriverContractValidationEvidenceMatches,
   pluginOwnedRowDriverContractHash,
 } from './plugin-driver-contracts.js';
-import { validatePluginOwnedDriverPayload } from './plugin-driver-validators.js';
+import {
+  validatePluginOwnedDriverPayload,
+  validatePluginOwnedRowDriverRegistrationProvenance,
+} from './plugin-driver-validators.js';
 import {
   SERIALIZED_BLOCK_ATTACHMENT_REFERENCE_RULES,
   SUPPORTED_CORE_POST_OBJECT_TAXONOMIES as SUPPORTED_CORE_POST_OBJECT_TAXONOMY_VALUES,
@@ -467,6 +470,12 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           ...(support.contractValidationEvidence
             ? { contractValidationEvidence: support.contractValidationEvidence }
             : {}),
+          ...(support.registeredDriverProvenanceEvidence
+            ? { registeredDriverProvenanceEvidence: support.registeredDriverProvenanceEvidence }
+            : {}),
+          ...(support.registrationProvenance
+            ? { registrationProvenance: support.registrationProvenance }
+            : {}),
           ...(support.driverPayloadValidationEvidence
             ? { driverPayloadValidationEvidence: support.driverPayloadValidationEvidence }
             : {}),
@@ -674,8 +683,9 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
       plannedValue = referenceFieldRewriteSupport.plannedValue;
       const referenceFieldRewrites = referenceFieldRewriteSupport.rewrites;
       const action = plannedValue === ABSENT ? 'delete' : 'put';
+      const requiresExplicitContract = pluginOwnedPolicyEntryRequiresExplicitContract(supported);
       if (
-        pluginOwnedPolicyEntryRequiresExplicitContract(supported)
+        requiresExplicitContract
         && !acceptedPluginOwnedRowDriverContractEvidence(supported.contractValidationEvidence)
       ) {
         return {
@@ -698,6 +708,44 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
             remote,
           }),
         };
+      }
+      let registeredDriverProvenanceEvidence = null;
+      let registrationProvenance = null;
+      const requiresRegistrationProvenance = pluginOwnedPolicyEntryRequiresRegistrationProvenance(supported);
+      const carriedRegistrationProvenance =
+        supported.registeredDriverProvenanceEvidence || supported.registrationProvenance || null;
+      if (requiresRegistrationProvenance || carriedRegistrationProvenance) {
+        const registrationValidation = validatePluginOwnedRowDriverRegistrationProvenance({
+          resource,
+          owner,
+          driver: supported.driver,
+          table: supportedTable,
+          supportsDelete: supported.supportsDelete === true,
+          contractValidationEvidence: supported.contractValidationEvidence,
+          registrationProvenanceEvidence: carriedRegistrationProvenance,
+        });
+        if (!registrationValidation.supported && requiresRegistrationProvenance) {
+          return {
+            supported: false,
+            className: registrationValidation.className || 'invalid-plugin-driver-registration-provenance',
+            reasonCode: registrationValidation.reasonCode,
+            driver: supported.driver,
+            table: supportedTable,
+            policySource: supported.source,
+            plannedValue,
+            ...(referenceFieldRewrites.length > 0 ? { referenceFieldRewrites } : {}),
+            reason: registrationValidation.reason,
+            contractValidationEvidence: supported.contractValidationEvidence,
+            registeredDriverProvenanceEvidence: registrationValidation.evidence,
+          };
+        }
+        if (registrationValidation.supported) {
+          if (supported.registeredDriverProvenanceEvidence) {
+            registeredDriverProvenanceEvidence = registrationValidation.evidence;
+          } else if (compactPluginOwnedRowDriverRegistrationProvenance(registrationValidation.evidence)) {
+            registrationProvenance = registrationValidation.evidence;
+          }
+        }
       }
       const serializedOptionValidationEvidence = supported.driver === 'wp-option'
         ? serializedOptionValidationEvidenceForRows({
@@ -784,6 +832,12 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
           referenceTargetValidationEvidence: referenceTargetValidation.evidence,
           ...(supported.contractValidationEvidence
             ? { contractValidationEvidence: supported.contractValidationEvidence }
+            : {}),
+          ...(registeredDriverProvenanceEvidence
+            ? { registeredDriverProvenanceEvidence }
+            : {}),
+          ...(registrationProvenance
+            ? { registrationProvenance }
             : {}),
         };
       }
@@ -899,6 +953,12 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
         ...(supported.mergePolicy ? { mergePolicy: supported.mergePolicy } : {}),
         ...(supported.contractValidationEvidence
           ? { contractValidationEvidence: supported.contractValidationEvidence }
+          : {}),
+        ...(registeredDriverProvenanceEvidence
+          ? { registeredDriverProvenanceEvidence }
+          : {}),
+        ...(registrationProvenance
+          ? { registrationProvenance }
           : {}),
         ...(driverEvidence ? { driverEvidence } : {}),
         ...(serializedOptionValidationEvidence?.serialized ? { serializedOptionValidationEvidence } : {}),
@@ -1113,6 +1173,11 @@ function normalizePluginOwnedPolicyEntry(entry, source, evidenceScope = null) {
   }
   const contract = normalizePluginOwnedRowDriverContract(entry, { source, evidenceScope });
   const contractFields = contract.normalized || {};
+  const registeredDriverProvenanceEvidence = entry.registeredDriverProvenanceEvidence
+    || entry.driverRegistrationProvenanceEvidence
+    || entry.registrationProvenanceEvidence
+    || null;
+  const registrationProvenance = entry.registrationProvenance || null;
   return {
     resourceKey: contractFields.resourceKey || entry.resourceKey || entry.key || entry.resource?.key || null,
     pluginOwner: contractFields.pluginOwner || entry.pluginOwner || entry.owner || entry.plugin || null,
@@ -1126,6 +1191,8 @@ function normalizePluginOwnedPolicyEntry(entry, source, evidenceScope = null) {
     applyValidation: entry.applyValidation || null,
     evidenceScope: contractFields.evidenceScope || entry.evidenceScope || entry.releaseGateEvidenceScope || evidenceScope || 'local-candidate',
     ...(contract.evidence ? { contractValidationEvidence: contract.evidence } : {}),
+    ...(registeredDriverProvenanceEvidence ? { registeredDriverProvenanceEvidence } : {}),
+    ...(registrationProvenance ? { registrationProvenance } : {}),
     source,
   };
 }
@@ -1162,6 +1229,14 @@ function pluginOwnedPolicyEntryRequiresExplicitContract(entry) {
   return Boolean(entry?.driver)
     && Boolean(entry?.table)
     && !SUPPORTED_PLUGIN_DATA_DRIVERS.has(entry.driver);
+}
+
+function pluginOwnedPolicyEntryRequiresRegistrationProvenance(entry) {
+  return pluginOwnedPolicyEntryRequiresExplicitContract(entry);
+}
+
+function compactPluginOwnedRowDriverRegistrationProvenance(evidence) {
+  return evidence?.operation === 'plugin-driver-registration-provenance';
 }
 
 function acceptedPluginOwnedRowDriverContractEvidence(evidence) {
@@ -1345,6 +1420,7 @@ function pluginOwnedDriverAuditEvidence({
   remoteHash,
   ownerContext,
 }) {
+  const registrationEvidence = support.registeredDriverProvenanceEvidence || support.registrationProvenance || null;
   return {
     schemaVersion: 1,
     evidenceSource: 'planner-plugin-driver-audit',
@@ -1373,6 +1449,12 @@ function pluginOwnedDriverAuditEvidence({
     ...(support.contractValidationEvidence
       ? { contractValidationHash: digest(support.contractValidationEvidence) }
       : {}),
+    ...(registrationEvidence
+      ? {
+          registeredDriverProvenanceHash: digest(registrationEvidence),
+          registeredDriverRegistrationHash: registrationEvidence.registrationHash || null,
+        }
+      : {}),
   };
 }
 
@@ -1387,6 +1469,7 @@ function pluginOwnedDriverDecisionAuditEvidence({
   localHash,
   remoteHash,
 }) {
+  const registrationEvidence = support.registeredDriverProvenanceEvidence || support.registrationProvenance || null;
   return {
     reasonCode,
     operation: 'plugin-driver-audit',
@@ -1404,6 +1487,15 @@ function pluginOwnedDriverDecisionAuditEvidence({
       localHash,
       remoteHash,
     },
+    ...(support.contractValidationEvidence
+      ? { contractValidationHash: digest(support.contractValidationEvidence) }
+      : {}),
+    ...(registrationEvidence
+      ? {
+          registeredDriverProvenanceHash: digest(registrationEvidence),
+          registeredDriverRegistrationHash: registrationEvidence.registrationHash || null,
+        }
+      : {}),
   };
 }
 
@@ -4409,6 +4501,12 @@ function addPluginOwnedResourceBlocker(plan, {
       : {}),
     ...(support.contractValidationEvidence
       ? { contractValidationEvidence: support.contractValidationEvidence }
+      : {}),
+    ...(support.registeredDriverProvenanceEvidence
+      ? { registeredDriverProvenanceEvidence: support.registeredDriverProvenanceEvidence }
+      : {}),
+    ...(support.registrationProvenance
+      ? { registrationProvenance: support.registrationProvenance }
       : {}),
     ...(support.pluginDriverContractRequiredEvidence
       ? { pluginDriverContractRequiredEvidence: support.pluginDriverContractRequiredEvidence }

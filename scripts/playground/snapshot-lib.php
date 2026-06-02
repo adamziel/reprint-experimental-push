@@ -13,6 +13,8 @@
 
 const REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_VERSION = 1;
 const REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_KIND = 'plugin-owned-row-driver';
+const REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_REGISTRATION_PROVENANCE_VERSION = 1;
+const REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_REGISTRATION_PROVENANCE_KIND = 'plugin-owned-row-driver-registration';
 const REPRINT_PUSH_WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION = 1;
 const REPRINT_PUSH_WORDPRESS_GRAPH_RELATIONSHIP_CONTRACT_KIND = 'wordpress-graph-relationship';
 const REPRINT_PUSH_WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND = 'wordpress-graph-identity-map';
@@ -608,7 +610,8 @@ function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
                 $driver['mergePolicy'] ?? null,
                 is_array($driver['referenceFields'] ?? ($driver['rowReferences'] ?? null))
                     ? ($driver['referenceFields'] ?? $driver['rowReferences'])
-                    : null
+                    : null,
+                $driver
             );
         }
     }
@@ -630,7 +633,8 @@ function reprint_push_plugin_owned_row_driver_policy_entry(
     bool $supports_delete,
     ?array $row_schema = null,
     $merge_policy = null,
-    ?array $reference_fields = null
+    ?array $reference_fields = null,
+    ?array $registered_driver = null
 ): array {
     $resource_key = 'row:' . wp_json_encode([$table, $row_id], JSON_UNESCAPED_SLASHES);
     $normalized_schema = $row_schema !== null
@@ -670,7 +674,151 @@ function reprint_push_plugin_owned_row_driver_policy_entry(
         $normalized_merge_policy,
         $normalized_reference_fields
     );
+    if ($registered_driver !== null) {
+        $entry['registrationProvenance'] = reprint_push_plugin_owned_row_driver_registration_provenance_evidence(
+            $entry,
+            $registered_driver
+        );
+    }
     return $entry;
+}
+
+function reprint_push_plugin_owned_row_driver_registration_provenance_evidence(
+    array $policy_entry,
+    array $registered_driver
+): array {
+    $resource_key = (string) ($policy_entry['resourceKey'] ?? '');
+    $plugin_owner = (string) ($policy_entry['pluginOwner'] ?? '');
+    $driver = (string) ($policy_entry['driver'] ?? '');
+    $table = (string) ($policy_entry['table'] ?? '');
+    $supports_delete = !empty($policy_entry['supportsDelete']);
+    $contract_hash = (string) ($policy_entry['contractHash'] ?? '');
+    $resource_key_hash = hash('sha256', reprint_push_stable_json($resource_key));
+    $registration_hash = reprint_push_plugin_owned_row_driver_registration_hash($registered_driver);
+
+    return [
+        'schemaVersion' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_REGISTRATION_PROVENANCE_VERSION,
+        'operation' => 'plugin-driver-registration-provenance',
+        'provenanceKind' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_REGISTRATION_PROVENANCE_KIND,
+        'reasonCode' => 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED',
+        'outcome' => 'accepted',
+        'format' => 'hash-only',
+        'rawValuesIncluded' => false,
+        'resourceKeyHash' => $resource_key_hash,
+        'registrationHash' => $registration_hash,
+        'contractHash' => $contract_hash,
+        'bindingHash' => reprint_push_plugin_owned_row_driver_registration_binding_hash(
+            $resource_key_hash,
+            $plugin_owner,
+            $driver,
+            $table,
+            $supports_delete,
+            $registration_hash,
+            $contract_hash
+        ),
+    ];
+}
+
+function reprint_push_plugin_owned_row_driver_registration_binding_hash(
+    string $resource_key_hash,
+    string $plugin_owner,
+    string $driver,
+    string $table,
+    bool $supports_delete,
+    string $registration_hash,
+    string $contract_hash
+): string {
+    return hash('sha256', reprint_push_stable_json([
+        'schemaVersion' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_REGISTRATION_PROVENANCE_VERSION,
+        'provenanceKind' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_REGISTRATION_PROVENANCE_KIND,
+        'resourceKeyHash' => $resource_key_hash,
+        'pluginOwnerHash' => hash('sha256', reprint_push_stable_json($plugin_owner)),
+        'driverHash' => hash('sha256', reprint_push_stable_json($driver)),
+        'tableHash' => hash('sha256', reprint_push_stable_json($table)),
+        'supportsDeleteHash' => hash('sha256', reprint_push_stable_json($supports_delete)),
+        'registrationHash' => $registration_hash,
+        'contractHash' => $contract_hash,
+    ]));
+}
+
+function reprint_push_plugin_owned_row_driver_registration_hash(array $driver): string
+{
+    $normalized = reprint_push_normalize_plugin_owned_row_driver(
+        $driver,
+        is_string($driver['driver'] ?? null) ? (string) $driver['driver'] : null
+    );
+    $registration = [
+        'schemaVersion' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_REGISTRATION_PROVENANCE_VERSION,
+        'provenanceKind' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_REGISTRATION_PROVENANCE_KIND,
+        'driver' => (string) $normalized['driver'],
+        'table' => (string) $normalized['table'],
+        'pluginOwner' => (string) $normalized['pluginOwner'],
+        'supportsDelete' => !empty($normalized['supportsDelete']),
+        'callbacks' => [
+            'exportRowsCallbackHash' => reprint_push_plugin_owned_row_driver_callback_identity_hash($normalized['exportRowsCallback'] ?? null),
+            'applyRowCallbackHash' => reprint_push_plugin_owned_row_driver_callback_identity_hash($normalized['applyRowCallback'] ?? null),
+            'validateMutationCallbackHash' => reprint_push_plugin_owned_row_driver_callback_identity_hash($normalized['validateMutationCallback'] ?? null),
+        ],
+    ];
+    if (array_key_exists('rowSchema', $normalized)) {
+        $registration['rowSchema'] = reprint_push_normalize_plugin_owned_row_driver_row_schema($normalized['rowSchema']);
+    }
+    if (array_key_exists('mergePolicy', $normalized)) {
+        $registration['mergePolicy'] = reprint_push_normalize_plugin_owned_row_driver_merge_policy($normalized['mergePolicy']);
+    }
+    if (array_key_exists('referenceFields', $normalized)) {
+        $registration['referenceFields'] = reprint_push_normalize_plugin_owned_row_driver_reference_fields($normalized['referenceFields']);
+    }
+    if (array_key_exists('allowlist', $normalized)) {
+        $registration['allowlistHash'] = hash(
+            'sha256',
+            reprint_push_stable_json(reprint_push_normalize_snapshot_value($normalized['allowlist']))
+        );
+    }
+
+    return hash('sha256', reprint_push_stable_json($registration));
+}
+
+function reprint_push_plugin_owned_row_driver_callback_identity_hash($callback): string
+{
+    return hash('sha256', reprint_push_stable_json(
+        reprint_push_plugin_owned_row_driver_callback_identity($callback)
+    ));
+}
+
+function reprint_push_plugin_owned_row_driver_callback_identity($callback): array
+{
+    if (is_string($callback)) {
+        return [
+            'type' => 'function',
+            'name' => $callback,
+        ];
+    }
+    if (is_array($callback) && count($callback) === 2) {
+        $target = $callback[0];
+        return [
+            'type' => is_object($target) ? 'object-method' : 'class-method',
+            'target' => is_object($target) ? get_class($target) : (string) $target,
+            'method' => (string) $callback[1],
+            'objectHash' => is_object($target) ? spl_object_hash($target) : null,
+        ];
+    }
+    if ($callback instanceof Closure) {
+        return [
+            'type' => 'closure',
+            'objectHash' => spl_object_hash($callback),
+        ];
+    }
+    if (is_object($callback) && is_callable($callback)) {
+        return [
+            'type' => 'invokable-object',
+            'target' => get_class($callback),
+            'objectHash' => spl_object_hash($callback),
+        ];
+    }
+    return [
+        'type' => gettype($callback),
+    ];
 }
 
 function reprint_push_plugin_owned_row_driver_contract_hash(
@@ -4482,6 +4630,27 @@ function reprint_push_assert_plugin_owned_driver_contract_bound_mutation(
     $contract = is_array($policy['contractValidationEvidence'] ?? null)
         ? $policy['contractValidationEvidence']
         : null;
+    $registration_provenance = is_array($policy['registrationProvenance'] ?? null)
+        ? $policy['registrationProvenance']
+        : null;
+    $provenance_contract_hash = is_array($contract) && is_string($contract['contractHash'] ?? null)
+        ? (string) $contract['contractHash']
+        : (is_array($registration_provenance) && is_string($registration_provenance['contractHash'] ?? null)
+            ? (string) $registration_provenance['contractHash']
+            : '');
+    if (!reprint_push_plugin_driver_registration_provenance_accepted(
+        $registration_provenance,
+        $resource_key,
+        $owner,
+        $driver,
+        $table,
+        $supports_delete,
+        $registered_driver,
+        $provenance_contract_hash
+    )) {
+        throw new RuntimeException('Unsupported plugin-owned mutation registration provenance for ' . $resource_key);
+    }
+
     if (!reprint_push_plugin_driver_contract_evidence_accepted($contract, $resource_key, $owner, $driver, $table, $supports_delete)) {
         throw new RuntimeException('Unsupported plugin-owned mutation contract for ' . $resource_key);
     }
@@ -4531,6 +4700,59 @@ function reprint_push_assert_plugin_owned_driver_contract_bound_mutation(
     } elseif (array_key_exists('referenceFieldRewrites', $policy)) {
         throw new RuntimeException('Unsupported plugin-owned mutation reference target evidence for ' . $resource_key);
     }
+}
+
+function reprint_push_plugin_driver_registration_provenance_accepted(
+    ?array $evidence,
+    string $resource_key,
+    string $owner,
+    string $driver,
+    string $table,
+    bool $supports_delete,
+    array $registered_driver,
+    string $contract_hash
+): bool {
+    if (!is_array($evidence) || $contract_hash === '') {
+        return false;
+    }
+    if (!reprint_push_array_has_exact_keys($evidence, [
+        'schemaVersion',
+        'operation',
+        'provenanceKind',
+        'reasonCode',
+        'outcome',
+        'format',
+        'rawValuesIncluded',
+        'resourceKeyHash',
+        'registrationHash',
+        'contractHash',
+        'bindingHash',
+    ])) {
+        return false;
+    }
+
+    try {
+        $expected = reprint_push_plugin_owned_row_driver_registration_provenance_evidence(
+            [
+                'resourceKey' => $resource_key,
+                'pluginOwner' => $owner,
+                'driver' => $driver,
+                'table' => $table,
+                'supportsDelete' => $supports_delete,
+                'contractHash' => $contract_hash,
+            ],
+            $registered_driver
+        );
+    } catch (Throwable $error) {
+        return false;
+    }
+
+    foreach ($expected as $key => $value) {
+        if (($evidence[$key] ?? null) !== $value) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function reprint_push_plugin_driver_contract_evidence_accepted(

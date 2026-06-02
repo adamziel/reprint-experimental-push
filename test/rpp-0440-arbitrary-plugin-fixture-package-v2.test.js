@@ -9,10 +9,17 @@ import {
 } from '../scripts/playground/production-plugin-package-scenarios.js';
 
 const privateFixtureSentinel = 'RPP-0440-PRIVATE-FIXTURE-PAYLOAD-SHOULD-NOT-LEAK';
+const registeredContractProvenanceProof = Object.freeze({
+  registeredContractProvenanceAccepted: true,
+  registeredDriverProvenanceHash: `sha256:${'d'.repeat(64)}`,
+  contractHash: 'e'.repeat(64),
+  contractValidationHash: 'f'.repeat(64),
+});
 
 function completeProofSummary({
   evidenceScope = 'local-playground',
   productionBacked = undefined,
+  registeredProvenance = false,
   guard = {},
   proof = {},
 } = {}) {
@@ -35,6 +42,7 @@ function completeProofSummary({
       planReady: true,
       mutationCount: 1,
       noMutationAfterRevokedCredential: true,
+      ...(registeredProvenance ? registeredContractProvenanceProof : {}),
       rawPayload: privateFixtureSentinel,
       ...proof,
     },
@@ -100,7 +108,11 @@ test('RPP-0440 local arbitrary plugin fixture package proof is support-only and 
 
 test('RPP-0440 production-backed arbitrary plugin fixture package proof is accepted only when checks pass', () => {
   const summary = summarizeArbitraryPluginFixturePackageEvidence(
-    completeProofSummary({ evidenceScope: 'production-backed', productionBacked: true }),
+    completeProofSummary({
+      evidenceScope: 'production-backed',
+      productionBacked: true,
+      registeredProvenance: true,
+    }),
   );
 
   assert.equal(summary.checked, true);
@@ -109,6 +121,7 @@ test('RPP-0440 production-backed arbitrary plugin fixture package proof is accep
   assert.equal(summary.sourceKind, 'production-backed');
   assert.equal(summary.productionBacked, true);
   assert.equal(summary.supportOnly, false);
+  assert.equal(summary.registeredContractProvenanceAccepted, true);
   assert.equal(summary.acceptedForReleaseGate, true);
   assert.equal(summary.releaseGate.status, 'GO');
   assert.equal(summary.releaseGate.verdict, 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_PRODUCTION_BACKED');
@@ -116,6 +129,7 @@ test('RPP-0440 production-backed arbitrary plugin fixture package proof is accep
   assert.equal(summary.releaseGate.productionBacked, true);
   assert.equal(summary.releaseGate.acceptedForReleaseGate, true);
   assert.match(summary.releaseGate.note, /production-backed/);
+  assert.equal(summary.packageProof.registeredContractProvenanceAccepted, true);
   assert.doesNotMatch(summary.releaseGate.note, /local\/support-only/);
   assertNoRawFixturePayload(summary);
 });
@@ -125,6 +139,7 @@ test('RPP-0440 production-scoped fixture package evidence still fails the releas
     completeProofSummary({
       evidenceScope: 'production-backed',
       productionBacked: true,
+      registeredProvenance: true,
       guard: {
         updatedMarkerAfterReject: 'local-update',
         payloadModeAfterReject: 'local-update',

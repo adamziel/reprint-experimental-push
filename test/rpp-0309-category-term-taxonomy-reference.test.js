@@ -5,6 +5,8 @@ import {
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
 } from '../scripts/playground/local-production-complex-site-proof.js';
+import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
+import { pluginOwnedRowDriverRegistrationProvenanceEvidence } from '../src/plugin-driver-validators.js';
 
 const smallShape = Object.freeze({
   postCount: 3,
@@ -27,6 +29,28 @@ const categoryShape = Object.freeze({
 });
 
 const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:72911"]';
+
+function registeredReleaseStateDriverEntry() {
+  const entry = {
+    resourceKey: 'row:["wp_reprint_push_release_state","state_id:1"]',
+    pluginOwner: 'reprint-push',
+    driver: 'reprint-push-release-state',
+    table: 'wp_reprint_push_release_state',
+    supportsDelete: false,
+    contractVersion: 1,
+    contractKind: 'plugin-owned-row-driver',
+    evidenceScope: 'rpp-0309-local-production-proof',
+  };
+  entry.contractHash = pluginOwnedRowDriverContractHash(entry);
+  entry.registeredDriverProvenanceEvidence = pluginOwnedRowDriverRegistrationProvenanceEvidence(
+    entry,
+    {
+      source: 'rpp-0309-release-state-driver-registry',
+      evidenceScope: entry.evidenceScope,
+    },
+  );
+  return entry;
+}
 
 test('RPP-0309 planner proof records the category term_taxonomy term reference', () => {
   const proof = buildComplexSitePlannerProof({
@@ -109,13 +133,7 @@ function syntheticComplexSnapshot(variant, shape) {
             driver: 'wp-option',
           },
           {
-            resourceKey: 'row:["wp_reprint_push_release_state","state_id:1"]',
-            pluginOwner: 'reprint-push',
-            driver: 'reprint-push-release-state',
-            table: 'wp_reprint_push_release_state',
-            supportsDelete: false,
-            contractVersion: 1,
-            contractKind: 'plugin-owned-row-driver',
+            ...registeredReleaseStateDriverEntry(),
           },
         ],
       },

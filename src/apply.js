@@ -15,6 +15,7 @@ import { serializedOptionValidationEvidenceForRows } from './serialized-option-v
 import {
   PLUGIN_DRIVER_CONTRACT_BOUND_VALIDATOR,
   validatePluginOwnedDriverPayload,
+  validatePluginOwnedRowDriverRegistrationProvenance,
 } from './plugin-driver-validators.js';
 import {
   PLUGIN_DRIVER_CONTRACT_KIND,
@@ -32,6 +33,16 @@ import {
 
 const JOURNAL_SCHEMA_VERSION = 1;
 const SHA256_HEX_PATTERN = /^[a-f0-9]{64}$/;
+const PLUGIN_DRIVER_REGISTRATION_PROVENANCE_EXEMPT_DRIVERS = new Set([
+  'wp-option',
+  'wp-postmeta',
+  'wp-post-meta',
+  'wp-termmeta',
+  'wp-term-meta',
+  'wp-usermeta',
+  'wp-user-meta',
+  'fixture-forms-lab-table',
+]);
 const FIXTURE_PLUGIN_DEPENDENCIES = new Map([
   ['reprint-push-atomic-dependent-fixture', ['reprint-push-atomic-dependency-fixture']],
   ['reprint-push-atomic-failing-fixture', ['reprint-push-atomic-dependency-fixture']],
@@ -329,6 +340,7 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
 
     const driver = mutation.pluginOwnedResource?.driver || null;
     validatePluginOwnedContractValidation(mutation, owner, driver);
+    validatePluginOwnedDriverRegistrationProvenance(mutation, owner, driver);
     const driverPayloadSupport = pluginOwnedDriverPayloadSupport({
       mutation,
       plannedValue,
@@ -978,6 +990,43 @@ function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, planned
     return true;
   }
   return false;
+}
+
+function validatePluginOwnedDriverRegistrationProvenance(mutation, owner, driver) {
+  if (!pluginOwnedMutationRequiresRegistrationProvenance(mutation, driver)) {
+    return;
+  }
+  const contractValidationEvidence = mutation.pluginOwnedResource?.contractValidationEvidence || null;
+  const registrationProvenance = validatePluginOwnedRowDriverRegistrationProvenance({
+    resource: mutation.resource,
+    owner,
+    driver,
+    table: mutation.pluginOwnedResource?.table || mutation.resource?.table || null,
+    supportsDelete: mutation.pluginOwnedResource?.supportsDelete === true,
+    contractValidationEvidence,
+    registrationProvenanceEvidence: mutation.pluginOwnedResource?.registeredDriverProvenanceEvidence
+      || mutation.pluginOwnedResource?.registrationProvenance
+      || null,
+  });
+  if (registrationProvenance.supported) {
+    return;
+  }
+  throw new PushPlanError(
+    registrationProvenance.reasonCode || 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_REQUIRED',
+    `Refusing to apply plugin-owned resource ${mutation.resourceKey} without accepted registered-driver provenance.`,
+    {
+      mutationId: mutation.id,
+      resourceKey: mutation.resourceKey,
+      pluginOwner: owner,
+      driver,
+      registeredDriverProvenanceEvidence: registrationProvenance.evidence,
+    },
+  );
+}
+
+function pluginOwnedMutationRequiresRegistrationProvenance(mutation, driver) {
+  return Boolean(driver)
+    && !PLUGIN_DRIVER_REGISTRATION_PROVENANCE_EXEMPT_DRIVERS.has(driver);
 }
 
 function isContractBoundRowDriverMutation(mutation, owner, driver, plannedValue, driverPayloadSupport) {

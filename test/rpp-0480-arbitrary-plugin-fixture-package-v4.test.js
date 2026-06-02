@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createPushPlan } from '../src/planner.js';
+import {
+  pluginOwnedRowDriverRegistrationProvenanceEvidence,
+} from '../src/plugin-driver-validators.js';
 import { digest } from '../src/stable-json.js';
 import {
   arbitraryPluginFixturePackageBoundary,
@@ -66,6 +69,15 @@ function arbitraryFixturePolicy({ evidenceScope = 'local-playground', entryOverr
   if (entry.driver) {
     entry.contractVersion = 1;
     entry.contractKind = 'plugin-owned-row-driver';
+    if (!Object.prototype.hasOwnProperty.call(entry, 'registeredDriverProvenanceEvidence')) {
+      entry.registeredDriverProvenanceEvidence = pluginOwnedRowDriverRegistrationProvenanceEvidence(
+        entry,
+        {
+          source: 'rpp-0480-driver-registry',
+          evidenceScope,
+        },
+      );
+    }
   }
   return {
     pluginOwnedResources: {
@@ -121,6 +133,8 @@ function fixturePackageProofFromPlan({
   evidenceScope = allowedEntry.releaseGateEvidenceScope || allowedEntry.evidenceScope || 'local-playground',
   productionBacked = evidenceScope === 'production-backed',
 } = {}) {
+  const contractEvidence = mutation?.pluginOwnedResource?.contractValidationEvidence || null;
+  const registrationEvidence = mutation?.pluginOwnedResource?.registeredDriverProvenanceEvidence || null;
   return {
     driver: arbitraryPluginFixturePackageBoundary.driver,
     pluginOwner: ownerPlugin,
@@ -143,6 +157,14 @@ function fixturePackageProofFromPlan({
     noMutationAfterRevokedCredential: guard.rowRetainedAfterReject === true
       && guard.updatedMarkerAfterReject === 'base'
       && guard.payloadModeAfterReject === 'base',
+    registeredContractProvenanceAccepted:
+      registrationEvidence?.reasonCode === 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED'
+      && registrationEvidence?.outcome === 'accepted',
+    registeredDriverProvenanceHash: registrationEvidence
+      ? `sha256:${digest(registrationEvidence)}`
+      : null,
+    contractHash: contractEvidence?.contractHash || null,
+    contractValidationHash: contractEvidence ? digest(contractEvidence) : null,
     proofHash: `sha256:${digest({
       planId: plan.id,
       status: plan.status,
@@ -225,10 +247,17 @@ test('RPP-0480 arbitrary plugin fixture package local proof stays support-only w
   assert.equal(mutation.pluginOwnedResource.auditEvidence.format, 'hash-only');
   assert.equal(mutation.pluginOwnedResource.auditEvidence.rawValuesIncluded, false);
   assert.equal(mutation.pluginOwnedResource.driverAuditEvidence.rawValuesIncluded, false);
+  assert.equal(
+    mutation.pluginOwnedResource.registeredDriverProvenanceEvidence.reasonCode,
+    'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED',
+  );
+  assertSha256Evidence(`sha256:${mutation.pluginOwnedResource.auditEvidence.registeredDriverProvenanceHash}`);
   assert.equal(proof.allowlistExact, true);
   assert.equal(proof.planReady, true);
   assert.equal(proof.mutationCount, 1);
   assert.equal(proof.noMutationAfterRevokedCredential, true);
+  assert.equal(proof.registeredContractProvenanceAccepted, true);
+  assertSha256Evidence(proof.registeredDriverProvenanceHash);
   assertSha256Evidence(proof.proofHash);
 
   assert.equal(summary.checked, true);
@@ -243,6 +272,8 @@ test('RPP-0480 arbitrary plugin fixture package local proof stays support-only w
   assert.equal(summary.releaseGate.verdict, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
   assert.equal(summary.releaseGate.productionBacked, false);
   assert.equal(summary.releaseGate.acceptedForReleaseGate, false);
+  assert.equal(summary.packageProof.registeredContractProvenanceAccepted, true);
+  assertSha256Evidence(summary.packageProof.registeredDriverProvenanceHash);
   assert.match(summary.releaseGate.note, /local\/support-only/);
   assert.match(summary.releaseGate.note, /evidenceScope=local-playground/);
   assert.match(summary.releaseGate.note, /production-backed release gate evidence is still required/);
@@ -262,9 +293,16 @@ test('RPP-0480 production-backed arbitrary plugin fixture package proof is GO on
       payloadModeAfterReject: 'local-update',
     },
   });
+  const unregistered = summarizePackageCase({
+    evidenceScope: 'production-backed',
+    entryOverrides: {
+      registeredDriverProvenanceEvidence: null,
+    },
+  });
 
   assert.equal(accepted.plan.status, 'ready');
   assert.equal(accepted.proof.productionBacked, true);
+  assert.equal(accepted.proof.registeredContractProvenanceAccepted, true);
   assert.equal(accepted.summary.checked, true);
   assert.equal(accepted.summary.productionBacked, true);
   assert.equal(accepted.summary.supportOnly, false);
@@ -289,8 +327,22 @@ test('RPP-0480 production-backed arbitrary plugin fixture package proof is GO on
   assert.equal(incomplete.summary.releaseGate.acceptedForReleaseGate, false);
   assert.match(incomplete.summary.releaseGate.note, /production-backed/);
   assert.doesNotMatch(incomplete.summary.releaseGate.note, /local\/support-only/);
+
+  assert.equal(unregistered.plan.status, 'blocked');
+  assert.equal(blockerFor(unregistered.plan).class, 'missing-plugin-driver-registration-provenance');
+  assert.equal(unregistered.proof.registeredContractProvenanceAccepted, false);
+  assert.equal(unregistered.summary.productionBacked, false);
+  assert.equal(unregistered.summary.supportOnly, true);
+  assert.equal(unregistered.summary.acceptedForReleaseGate, false);
+  assert.equal(unregistered.summary.releaseGate.status, 'NO-GO');
+  assert.equal(
+    unregistered.summary.releaseGate.verdict,
+    'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_REGISTERED_PROVENANCE_REQUIRED',
+  );
+  assert.match(unregistered.summary.releaseGate.note, /missing registered contract provenance/);
   assertNoRawSentinels(accepted.summary, 'RPP-0480 accepted production summary');
   assertNoRawSentinels(incomplete.summary, 'RPP-0480 incomplete production summary');
+  assertNoRawSentinels(unregistered.summary, 'RPP-0480 unregistered production summary');
 });
 
 test('RPP-0480 arbitrary fixture package allowlist near misses fail closed without production release-gate credit', async (t) => {
@@ -352,11 +404,12 @@ test('RPP-0480 arbitrary fixture package allowlist near misses fail closed witho
       assert.equal(blocker.pluginOwner, ownerPlugin);
       assert.equal(blocker.driver, nearMiss.expectedDriver);
       assert.equal(summary.checked, false);
-      assert.equal(summary.productionBacked, true);
+      assert.equal(summary.productionBacked, false);
+      assert.equal(summary.supportOnly, true);
       assert.equal(summary.acceptedForReleaseGate, false);
       assert.equal(summary.releaseGate.status, 'NO-GO');
-      assert.equal(summary.releaseGate.verdict, 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_INCOMPLETE');
-      assert.match(summary.releaseGate.note, /production-backed/);
+      assert.equal(summary.releaseGate.verdict, 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_REGISTERED_PROVENANCE_REQUIRED');
+      assert.match(summary.releaseGate.note, /missing registered contract provenance/);
       assertSha256Evidence(refusalEvidence.blockerHash);
       assertNoRawSentinels(blocker, `RPP-0480 blocker ${nearMiss.name}`);
       assertNoRawSentinels(refusalEvidence, `RPP-0480 refusal proof ${nearMiss.name}`);

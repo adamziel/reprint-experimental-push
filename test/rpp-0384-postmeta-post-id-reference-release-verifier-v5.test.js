@@ -5,6 +5,8 @@ import {
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
 } from '../scripts/playground/local-production-complex-site-proof.js';
+import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
+import { pluginOwnedRowDriverRegistrationProvenanceEvidence } from '../src/plugin-driver-validators.js';
 
 const postmetaPostId = 71701;
 const postmetaMetaKey = 'reprint_push_postmeta_post_fixture';
@@ -13,6 +15,28 @@ const postmetaResourceKey = `row:["wp_postmeta","post_id:${postmetaPostId}:meta_
 const releaseStateResourceKey = 'row:["wp_reprint_push_release_state","state_id:1"]';
 const rawPostmetaPayload = 'local-private-postmeta-post-reference-rpp-0384';
 const rawPostTitle = 'RPP-0384 Local Post Target Private';
+
+function registeredReleaseStateDriverEntry() {
+  const entry = {
+    resourceKey: releaseStateResourceKey,
+    pluginOwner: 'reprint-push',
+    driver: 'reprint-push-release-state',
+    table: 'wp_reprint_push_release_state',
+    supportsDelete: false,
+    contractVersion: 1,
+    contractKind: 'plugin-owned-row-driver',
+    evidenceScope: 'rpp-0384-local-production-proof',
+  };
+  entry.contractHash = pluginOwnedRowDriverContractHash(entry);
+  entry.registeredDriverProvenanceEvidence = pluginOwnedRowDriverRegistrationProvenanceEvidence(
+    entry,
+    {
+      source: 'rpp-0384-release-state-driver-registry',
+      evidenceScope: entry.evidenceScope,
+    },
+  );
+  return entry;
+}
 
 const smallShape = Object.freeze({
   postCount: 3,
@@ -118,13 +142,7 @@ function syntheticComplexSnapshot(variant) {
             driver: 'wp-option',
           },
           {
-            resourceKey: releaseStateResourceKey,
-            pluginOwner: 'reprint-push',
-            driver: 'reprint-push-release-state',
-            table: 'wp_reprint_push_release_state',
-            supportsDelete: false,
-            contractVersion: 1,
-            contractKind: 'plugin-owned-row-driver',
+            ...registeredReleaseStateDriverEntry(),
           },
         ],
       },

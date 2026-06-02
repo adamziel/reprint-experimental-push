@@ -9,7 +9,10 @@ import {
   pluginOwnedRowDriverContractValidationEvidenceHash,
   pluginOwnedRowDriverContractHash,
 } from '../src/plugin-driver-contracts.js';
-import { validatePluginOwnedDriverPayload } from '../src/plugin-driver-validators.js';
+import {
+  pluginOwnedRowDriverRegistrationProvenanceEvidence,
+  validatePluginOwnedDriverPayload,
+} from '../src/plugin-driver-validators.js';
 import { digest } from '../src/stable-json.js';
 
 const fixedNow = new Date('2026-06-02T00:00:00.000Z');
@@ -75,7 +78,7 @@ function explicitContract(extra = {}) {
 }
 
 function explicitCustomTableContract(extra = {}) {
-  return {
+  const contract = {
     contractVersion: 1,
     contractKind: 'plugin-owned-row-driver',
     resourceKey: 'row:["wp_forms_contract_rows","entry_id:7"]',
@@ -84,6 +87,46 @@ function explicitCustomTableContract(extra = {}) {
     table: 'wp_forms_contract_rows',
     supportsDelete: false,
     ...extra,
+  };
+  if (!Object.prototype.hasOwnProperty.call(contract, 'registeredDriverProvenanceEvidence')) {
+    contract.registeredDriverProvenanceEvidence = pluginOwnedRowDriverRegistrationProvenanceEvidence(
+      contract,
+      {
+        source: 'plugin-driver-contract-test-registry',
+        evidenceScope: contract.evidenceScope || contract.releaseGateEvidenceScope || 'local-focused',
+      },
+    );
+  }
+  return contract;
+}
+
+function compactRegistrationProvenanceEvidence(contract, {
+  registrationHash = 'd'.repeat(64),
+} = {}) {
+  const contractHash = pluginOwnedRowDriverContractHash(contract);
+  const resourceKeyHash = digest(contract.resourceKey);
+  return {
+    schemaVersion: 1,
+    operation: 'plugin-driver-registration-provenance',
+    provenanceKind: 'plugin-owned-row-driver-registration',
+    reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED',
+    outcome: 'accepted',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    resourceKeyHash,
+    registrationHash,
+    contractHash,
+    bindingHash: digest({
+      schemaVersion: 1,
+      provenanceKind: 'plugin-owned-row-driver-registration',
+      resourceKeyHash,
+      pluginOwnerHash: digest(contract.pluginOwner),
+      driverHash: digest(contract.driver),
+      tableHash: digest(contract.table),
+      supportsDeleteHash: digest(contract.supportsDelete === true),
+      registrationHash,
+      contractHash,
+    }),
   };
 }
 
@@ -769,6 +812,8 @@ test('explicit custom row driver contract carries contract-bound validator evide
   const plan = planFor(base, local, remote);
   const mutation = mutationFor(plan, resourceKey);
   const payloadEvidence = mutation.pluginOwnedResource.driverPayloadValidationEvidence;
+  const registrationEvidence = mutation.pluginOwnedResource.registeredDriverProvenanceEvidence;
+  const auditEvidence = mutation.pluginOwnedResource.auditEvidence;
   const result = applyPlan(remote, plan);
   const evidenceJson = JSON.stringify({
     mutation: mutation.pluginOwnedResource,
@@ -789,6 +834,18 @@ test('explicit custom row driver contract carries contract-bound validator evide
   assert.equal(payloadEvidence.driver, 'forms-contract-row');
   assert.equal(payloadEvidence.table, 'wp_forms_contract_rows');
   assert.equal(payloadEvidence.contractHash, mutation.pluginOwnedResource.contractValidationEvidence.contractHash);
+  assert.equal(registrationEvidence.reasonCode, 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED');
+  assert.equal(registrationEvidence.outcome, 'accepted');
+  assert.equal(registrationEvidence.format, 'hash-only');
+  assert.equal(registrationEvidence.rawValuesIncluded, false);
+  assert.equal(registrationEvidence.resourceKey, resourceKey);
+  assert.equal(registrationEvidence.pluginOwner, 'forms');
+  assert.equal(registrationEvidence.driver, 'forms-contract-row');
+  assert.equal(registrationEvidence.table, 'wp_forms_contract_rows');
+  assert.equal(registrationEvidence.contractHash, mutation.pluginOwnedResource.contractValidationEvidence.contractHash);
+  assert.match(registrationEvidence.registrationHash, /^[a-f0-9]{64}$/);
+  assert.equal(auditEvidence.registeredDriverProvenanceHash, digest(registrationEvidence));
+  assert.equal(auditEvidence.registeredDriverRegistrationHash, registrationEvidence.registrationHash);
   assert.deepEqual(payloadEvidence.rowIdentity, {
     resourceId: 'entry_id:7',
     status: 'matched',
@@ -813,6 +870,152 @@ test('explicit custom row driver contract carries contract-bound validator evide
   assert.equal(result.site.db.wp_forms_contract_rows['entry_id:7'].payload.mode, 'local-contract-custom');
   assert.equal(evidenceJson.includes('base-contract-custom-secret'), false);
   assert.equal(evidenceJson.includes('local-contract-custom-secret'), false);
+});
+
+test('production-backed custom row driver contract requires registered-driver provenance before mutation', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-production-registration', secret: 'base-production-registration-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-production-registration';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-production-registration-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract({
+      evidenceScope: 'production-backed',
+      registeredDriverProvenanceEvidence: null,
+    })),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const evidence = blocker.registeredDriverProvenanceEvidence;
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'missing-plugin-driver-registration-provenance');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_REQUIRED');
+  assert.equal(evidence.reasonCode, 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_REQUIRED');
+  assert.equal(evidence.outcome, 'refused-before-mutation');
+  assert.equal(evidence.format, 'hash-only');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(evidence.resourceKey, resourceKey);
+  assert.equal(evidence.pluginOwner, 'forms');
+  assert.equal(evidence.driver, 'forms-contract-row');
+  assert.equal(evidence.table, 'wp_forms_contract_rows');
+  assert.match(evidence.contractHash, /^[a-f0-9]{64}$/);
+  assert.match(evidence.registrationHash, /^[a-f0-9]{64}$/);
+  assert.equal(blockerJson.includes('base-production-registration-secret'), false);
+  assert.equal(blockerJson.includes('local-production-registration-secret'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('apply refuses production-backed custom row driver plans with stripped registration provenance', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-stripped-registration', secret: 'base-stripped-registration-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-stripped-registration';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-stripped-registration-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract({
+      evidenceScope: 'production-backed',
+    })),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const forgedPlan = cloneJson(plan);
+  delete mutationFor(forgedPlan, resourceKey).pluginOwnedResource.registeredDriverProvenanceEvidence;
+
+  let error;
+  try {
+    applyPlan(remote, forgedPlan);
+  } catch (caught) {
+    error = caught;
+  }
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(error?.code, 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_REQUIRED');
+  assert.equal(error.details.resourceKey, resourceKey);
+  assert.equal(error.details.pluginOwner, 'forms');
+  assert.equal(error.details.driver, 'forms-contract-row');
+  assert.equal(error.details.registeredDriverProvenanceEvidence.rawValuesIncluded, false);
+  assert.equal(JSON.stringify(error.details).includes('base-stripped-registration-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('local-stripped-registration-secret'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('production-backed custom row driver accepts compact registration provenance from PHP snapshots', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-compact-registration', secret: 'base-compact-registration-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-compact-registration';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-compact-registration-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  const contract = explicitCustomTableContract({
+    evidenceScope: 'production-backed',
+    registeredDriverProvenanceEvidence: null,
+  });
+  contract.registrationProvenance = compactRegistrationProvenanceEvidence(contract);
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(contract),
+  };
+  const remote = cloneJson(base);
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const registrationProvenance = mutation.pluginOwnedResource.registrationProvenance;
+  const auditEvidence = mutation.pluginOwnedResource.auditEvidence;
+  const result = applyPlan(remote, plan);
+  const evidenceJson = JSON.stringify({
+    mutation: mutation.pluginOwnedResource,
+    journal: result.journal,
+  });
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutation.pluginOwnedResource.registeredDriverProvenanceEvidence, undefined);
+  assert.equal(registrationProvenance.reasonCode, 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED');
+  assert.equal(registrationProvenance.operation, 'plugin-driver-registration-provenance');
+  assert.equal(registrationProvenance.rawValuesIncluded, false);
+  assert.match(registrationProvenance.resourceKeyHash, /^[a-f0-9]{64}$/);
+  assert.match(registrationProvenance.registrationHash, /^[a-f0-9]{64}$/);
+  assert.match(registrationProvenance.bindingHash, /^[a-f0-9]{64}$/);
+  assert.equal(auditEvidence.registeredDriverProvenanceHash, digest(registrationProvenance));
+  assert.equal(auditEvidence.registeredDriverRegistrationHash, registrationProvenance.registrationHash);
+  assert.equal(result.appliedMutations, 1);
+  assert.equal(result.site.db.wp_forms_contract_rows['entry_id:7'].payload.mode, 'local-compact-registration');
+  assert.equal(evidenceJson.includes('base-compact-registration-secret'), false);
+  assert.equal(evidenceJson.includes('local-compact-registration-secret'), false);
 });
 
 test('contract-bound wp_postmeta row driver matches compound post_id and meta_key row ids', () => {
@@ -2505,6 +2708,107 @@ test('generic custom row driver allowlist without explicit contract blocks befor
   assert.equal(blockerJson.includes('local-missing-contract-secret'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
   assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('custom row driver registration provenance must be accepted and canonical before mutation', async (t) => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const rawSentinel = 'registration-provenance-private-raw-sentinel';
+  const cases = [
+    {
+      label: 'missing registration evidence',
+      contract: () => explicitCustomTableContract({
+        evidenceScope: 'production-backed',
+        registeredDriverProvenanceEvidence: null,
+      }),
+      expectedClass: 'missing-plugin-driver-registration-provenance',
+      expectedReason: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_REQUIRED',
+    },
+    {
+      label: 'forged registration hash',
+      contract: () => {
+        const contract = explicitCustomTableContract({ evidenceScope: 'production-backed' });
+        contract.registeredDriverProvenanceEvidence = {
+          ...contract.registeredDriverProvenanceEvidence,
+          registrationHash: '0'.repeat(64),
+        };
+        return contract;
+      },
+      expectedClass: 'invalid-plugin-driver-registration-provenance',
+      expectedReason: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_HASH_MISMATCH',
+    },
+    {
+      label: 'raw registration evidence',
+      contract: () => {
+        const contract = explicitCustomTableContract({ evidenceScope: 'production-backed' });
+        contract.registeredDriverProvenanceEvidence = {
+          ...contract.registeredDriverProvenanceEvidence,
+          rawValuesIncluded: true,
+        };
+        return contract;
+      },
+      expectedClass: 'invalid-plugin-driver-registration-provenance',
+      expectedReason: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_RAW_VALUES_INCLUDED',
+    },
+    {
+      label: 'surplus registration evidence field',
+      contract: () => {
+        const contract = explicitCustomTableContract({ evidenceScope: 'production-backed' });
+        contract.registeredDriverProvenanceEvidence = {
+          ...contract.registeredDriverProvenanceEvidence,
+          unexpectedRawPayload: rawSentinel,
+        };
+        return contract;
+      },
+      expectedClass: 'invalid-plugin-driver-registration-provenance',
+      expectedReason: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_EVIDENCE_MISMATCH',
+    },
+  ];
+
+  for (const testCase of cases) {
+    await t.test(testCase.label, () => {
+      const base = baseSite();
+      base.db.wp_forms_contract_rows = {
+        'entry_id:7': {
+          entry_id: 7,
+          payload: { mode: 'base-registration-provenance', secret: 'base-registration-private' },
+          updated_marker: 'base',
+          __pluginOwner: 'forms',
+        },
+      };
+      const local = cloneJson(base);
+      local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-registration-provenance';
+      local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-registration-private';
+      local.meta = {
+        pushPolicy: pluginOwnedResourcePolicy(testCase.contract()),
+      };
+      const remote = cloneJson(base);
+      const remoteBefore = JSON.stringify(remote);
+
+      const plan = planFor(base, local, remote);
+      const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+      const evidence = blocker.registeredDriverProvenanceEvidence;
+      const blockerJson = JSON.stringify(blocker);
+
+      assert.equal(plan.status, 'blocked');
+      assert.equal(plan.summary.mutations, 0);
+      assert.equal(mutationFor(plan, resourceKey), undefined);
+      assert.equal(blocker.class, testCase.expectedClass);
+      assert.equal(blocker.reasonCode, testCase.expectedReason);
+      assert.equal(evidence.reasonCode, testCase.expectedReason);
+      assert.equal(evidence.outcome, 'refused-before-mutation');
+      assert.equal(evidence.format, 'hash-only');
+      assert.equal(evidence.rawValuesIncluded, false);
+      assert.equal(evidence.resourceKey, resourceKey);
+      assert.equal(evidence.pluginOwner, 'forms');
+      assert.equal(evidence.driver, 'forms-contract-row');
+      assert.equal(evidence.table, 'wp_forms_contract_rows');
+      assert.equal(blockerJson.includes(rawSentinel), false);
+      assert.equal(blockerJson.includes('base-registration-private'), false);
+      assert.equal(blockerJson.includes('local-registration-private'), false);
+      assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+      assert.equal(JSON.stringify(remote), remoteBefore);
+    });
+  }
 });
 
 test('schema-bound custom row driver contract with unsupported field type fails closed before mutation', () => {

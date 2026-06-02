@@ -3,6 +3,11 @@ import { fileURLToPath } from 'node:url';
 
 import { applyPlan, PushPlanError } from '../../src/apply.js';
 import { createPushPlan } from '../../src/planner.js';
+import {
+  PLUGIN_DRIVER_CONTRACT_KIND,
+  PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+} from '../../src/plugin-driver-contracts.js';
+import { pluginOwnedRowDriverRegistrationProvenanceEvidence } from '../../src/plugin-driver-validators.js';
 import { ABSENT, deepClone, digest } from '../../src/stable-json.js';
 import {
   deserializeResourceValue,
@@ -6497,12 +6502,45 @@ function allowPluginOwned(site, resourceKey, pluginOwner, driver = 'wp-option', 
 }
 
 function allowedPluginOwnedResource(resourceKey, pluginOwner, driver = 'wp-option', extra = {}) {
-  return {
+  const entry = {
     resourceKey,
     pluginOwner,
     driver,
     ...extra,
   };
+  if (
+    generatedExplicitPluginOwnedRowDriverContract(entry)
+    && !hasRegistrationProvenance(entry)
+  ) {
+    entry.registeredDriverProvenanceEvidence = pluginOwnedRowDriverRegistrationProvenanceEvidence(
+      entry,
+      {
+        source: 'generated-push-harness-driver-registry',
+        evidenceScope: entry.evidenceScope || entry.releaseGateEvidenceScope || 'local-generated-model',
+      },
+    );
+  }
+  return entry;
+}
+
+function generatedExplicitPluginOwnedRowDriverContract(entry) {
+  return entry?.contractKind === PLUGIN_DRIVER_CONTRACT_KIND
+    && entry.contractVersion === PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION
+    && typeof entry.resourceKey === 'string'
+    && entry.resourceKey.length > 0
+    && typeof entry.pluginOwner === 'string'
+    && entry.pluginOwner.length > 0
+    && typeof entry.driver === 'string'
+    && entry.driver.length > 0
+    && typeof entry.table === 'string'
+    && entry.table.length > 0;
+}
+
+function hasRegistrationProvenance(entry) {
+  return Object.prototype.hasOwnProperty.call(entry, 'registeredDriverProvenanceEvidence')
+    || Object.prototype.hasOwnProperty.call(entry, 'driverRegistrationProvenanceEvidence')
+    || Object.prototype.hasOwnProperty.call(entry, 'registrationProvenanceEvidence')
+    || Object.prototype.hasOwnProperty.call(entry, 'registrationProvenance');
 }
 
 function rowKey(table, id) {

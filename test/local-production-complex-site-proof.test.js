@@ -12,6 +12,8 @@ import {
   extractJsonObjects,
   findReleaseVerifierSummary,
 } from '../scripts/playground/local-production-complex-site-proof.js';
+import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
+import { pluginOwnedRowDriverRegistrationProvenanceEvidence } from '../src/plugin-driver-validators.js';
 
 const smallShape = Object.freeze({
   postCount: 3,
@@ -28,6 +30,28 @@ const smallShape = Object.freeze({
   postParentGraph: false,
   commentGraph: false,
 });
+
+function registeredSyntheticReleaseStateDriverEntry() {
+  const entry = {
+    resourceKey: 'row:["wp_reprint_push_release_state","state_id:1"]',
+    pluginOwner: 'reprint-push',
+    driver: 'reprint-push-release-state',
+    table: 'wp_reprint_push_release_state',
+    supportsDelete: false,
+    contractVersion: 1,
+    contractKind: 'plugin-owned-row-driver',
+    evidenceScope: 'local-production-complex-site-proof',
+  };
+  entry.contractHash = pluginOwnedRowDriverContractHash(entry);
+  entry.registeredDriverProvenanceEvidence = pluginOwnedRowDriverRegistrationProvenanceEvidence(
+    entry,
+    {
+      source: 'local-production-complex-site-proof-driver-registry',
+      evidenceScope: entry.evidenceScope,
+    },
+  );
+  return entry;
+}
 
 test('complex-site seed PHP is bounded and variant-aware', () => {
   const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape);
@@ -534,13 +558,7 @@ function syntheticComplexSnapshot(variant, shape) {
             driver: 'wp-option',
           },
           {
-            resourceKey: 'row:["wp_reprint_push_release_state","state_id:1"]',
-            pluginOwner: 'reprint-push',
-            driver: 'reprint-push-release-state',
-            table: 'wp_reprint_push_release_state',
-            supportsDelete: false,
-            contractVersion: 1,
-            contractKind: 'plugin-owned-row-driver',
+            ...registeredSyntheticReleaseStateDriverEntry(),
           },
         ],
       },

@@ -9,6 +9,7 @@ const arbitraryPluginFixturePackageBoundary = Object.freeze({
 
 const localArbitraryPluginFixturePackageEvidenceScope = 'local-playground';
 const productionBackedEvidenceScope = 'production-backed';
+const sha256EvidencePattern = /^(?:sha256:)?[a-f0-9]{64}$/;
 
 const scenarioGroups = {
   'source-mutation-guards': [
@@ -106,16 +107,24 @@ export function summarizeArbitraryPluginFixturePackageEvidence(summary = {}) {
     ? guard.applyRejectedCode
     : null;
   const evidenceScope = resolveArbitraryPluginFixturePackageEvidenceScope(fixtureProof, summary);
-  const productionBacked = arbitraryPluginFixturePackageEvidenceIsProductionBacked(fixtureProof, evidenceScope);
-  const checked = remoteDataPreserved
+  const productionScoped = arbitraryPluginFixturePackageEvidenceIsProductionScoped(fixtureProof, evidenceScope);
+  const registeredContractProvenance =
+    arbitraryPluginFixturePackageRegisteredContractProvenance(fixtureProof);
+  const productionBacked = productionScoped && registeredContractProvenance.accepted;
+  const packageChecksComplete = remoteDataPreserved
     && Boolean(applyRejectedCode)
     && fixtureProof.planReady !== false
     && fixtureProof.allowlistExact !== false
     && fixtureProof.noMutationAfterRevokedCredential !== false;
+  const checked = packageChecksComplete
+    && (!productionScoped || registeredContractProvenance.accepted);
   const releaseGate = buildArbitraryPluginFixturePackageReleaseGate({
     checked,
+    packageChecksComplete,
     evidenceScope,
+    productionScoped,
     productionBacked,
+    registeredContractProvenanceAccepted: registeredContractProvenance.accepted,
   });
 
   return {
@@ -131,9 +140,12 @@ export function summarizeArbitraryPluginFixturePackageEvidence(summary = {}) {
       : (fixtureProof.sourceKind || localArbitraryPluginFixturePackageEvidenceScope),
     evidenceScope,
     releaseGateEvidenceScope: evidenceScope,
+    productionScoped,
     productionBacked,
     supportOnly: !productionBacked,
     checked,
+    packageChecksComplete,
+    registeredContractProvenanceAccepted: registeredContractProvenance.accepted,
     remoteDataPreserved,
     acceptedForReleaseGate: releaseGate.acceptedForReleaseGate,
     releaseGate,
@@ -142,6 +154,10 @@ export function summarizeArbitraryPluginFixturePackageEvidence(summary = {}) {
       planReady: fixtureProof.planReady === true,
       mutationCount: Number.isFinite(fixtureProof.mutationCount) ? fixtureProof.mutationCount : null,
       noMutationAfterRevokedCredential: fixtureProof.noMutationAfterRevokedCredential === true,
+      registeredContractProvenanceAccepted: registeredContractProvenance.accepted,
+      registeredDriverProvenanceHash: registeredContractProvenance.evidenceHash,
+      contractHash: registeredContractProvenance.contractHash,
+      contractValidationHash: registeredContractProvenance.contractValidationHash,
     },
     revokedCredentialGuard: {
       resourceKey: typeof guard.resourceKey === 'string' ? guard.resourceKey : arbitraryPluginFixturePackageBoundary.resourceKey,
@@ -166,11 +182,51 @@ function resolveArbitraryPluginFixturePackageEvidenceScope(proof = {}, summary =
   );
 }
 
-function arbitraryPluginFixturePackageEvidenceIsProductionBacked(proof = {}, evidenceScope = '') {
+function arbitraryPluginFixturePackageEvidenceIsProductionScoped(proof = {}, evidenceScope = '') {
   return proof.productionBacked === true
     || proof.sourceKind === productionBackedEvidenceScope
     || proof.releaseGate?.productionBacked === true
     || evidenceScope === productionBackedEvidenceScope;
+}
+
+function arbitraryPluginFixturePackageRegisteredContractProvenance(proof = {}) {
+  const nested = proof.registeredContractProvenance
+    || proof.registeredDriverProvenance
+    || {};
+  const evidenceHash = firstSha256Evidence(
+    proof.registeredDriverProvenanceHash,
+    proof.registeredContractProvenanceHash,
+    proof.registrationProvenanceHash,
+    nested.evidenceHash,
+    nested.registeredDriverProvenanceHash,
+    nested.registrationProvenanceHash,
+  );
+  const contractHash = firstSha256Evidence(
+    proof.contractHash,
+    nested.contractHash,
+  );
+  const contractValidationHash = firstSha256Evidence(
+    proof.contractValidationHash,
+    nested.contractValidationHash,
+  );
+  const acceptedClaim = proof.registeredContractProvenanceAccepted === true
+    || proof.registeredDriverProvenanceAccepted === true
+    || nested.accepted === true;
+  const accepted = acceptedClaim
+    && Boolean(evidenceHash)
+    && Boolean(contractHash)
+    && Boolean(contractValidationHash);
+  return {
+    accepted,
+    evidenceHash,
+    contractHash,
+    contractValidationHash,
+  };
+}
+
+function firstSha256Evidence(...values) {
+  return values.find((value) =>
+    typeof value === 'string' && sha256EvidencePattern.test(value)) || null;
 }
 
 function normalizeArbitraryPluginFixturePackageEvidenceScope(value) {
@@ -185,26 +241,39 @@ function normalizeArbitraryPluginFixturePackageEvidenceScope(value) {
 
 export function buildArbitraryPluginFixturePackageReleaseGate({
   checked = false,
+  packageChecksComplete = checked,
   evidenceScope = localArbitraryPluginFixturePackageEvidenceScope,
+  productionScoped = false,
   productionBacked = false,
+  registeredContractProvenanceAccepted = false,
 } = {}) {
   const normalizedScope = normalizeArbitraryPluginFixturePackageEvidenceScope(evidenceScope);
-  const productionScoped = productionBacked === true || normalizedScope === productionBackedEvidenceScope;
-  const acceptedForReleaseGate = checked === true && productionScoped;
+  const claimedProductionScope = productionScoped === true
+    || productionBacked === true
+    || normalizedScope === productionBackedEvidenceScope;
+  const acceptedForReleaseGate = checked === true
+    && productionBacked === true
+    && registeredContractProvenanceAccepted === true;
 
   return {
     status: acceptedForReleaseGate ? 'GO' : 'NO-GO',
     verdict: acceptedForReleaseGate
       ? 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_PRODUCTION_BACKED'
-      : productionScoped
-        ? 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_INCOMPLETE'
+      : claimedProductionScope
+        ? registeredContractProvenanceAccepted
+          ? 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_INCOMPLETE'
+          : 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_REGISTERED_PROVENANCE_REQUIRED'
         : 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
     evidenceScope: normalizedScope,
-    productionBacked: productionScoped,
+    productionBacked: productionBacked === true && registeredContractProvenanceAccepted === true,
     acceptedForReleaseGate,
-    note: productionScoped
-      ? 'arbitrary plugin fixture package proof is production-backed; release gate can count it only when the package checks are complete'
+    note: claimedProductionScope
+      ? registeredContractProvenanceAccepted
+        ? 'arbitrary plugin fixture package proof is production-backed with registered contract provenance; release gate can count it only when the package checks are complete'
+        : `arbitrary plugin fixture package proof claims production-backed scope but is missing registered contract provenance; evidenceScope=${normalizedScope}; release gate remains NO-GO`
       : `arbitrary plugin fixture package proof is local/support-only; evidenceScope=${normalizedScope}; production-backed release gate evidence is still required`,
+    packageChecksComplete: packageChecksComplete === true,
+    registeredContractProvenanceAccepted: registeredContractProvenanceAccepted === true,
   };
 }
 

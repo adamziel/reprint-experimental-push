@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createPushPlan } from '../src/planner.js';
+import {
+  pluginOwnedRowDriverRegistrationProvenanceEvidence,
+} from '../src/plugin-driver-validators.js';
 import { digest } from '../src/stable-json.js';
 import {
   arbitraryPluginFixturePackageBoundary,
@@ -89,21 +92,27 @@ function baseFixtureSite(testCase) {
 }
 
 function fixturePolicy() {
+  const entry = {
+    resourceKey: fixtureResourceKey,
+    pluginOwner: ownerPlugin,
+    driver: arbitraryPluginFixturePackageBoundary.driver,
+    table: fixtureTable,
+    supportsDelete: false,
+    contractVersion: 1,
+    contractKind: 'plugin-owned-row-driver',
+    releaseGateEvidenceScope: evidenceScope,
+  };
+  entry.registeredDriverProvenanceEvidence = pluginOwnedRowDriverRegistrationProvenanceEvidence(
+    entry,
+    {
+      source: 'rpp-0460-generated-driver-registry',
+      evidenceScope,
+    },
+  );
   return {
     pluginOwnedResources: {
       evidenceScope,
-      allowedResources: [
-        {
-          resourceKey: fixtureResourceKey,
-          pluginOwner: ownerPlugin,
-          driver: arbitraryPluginFixturePackageBoundary.driver,
-          table: fixtureTable,
-          supportsDelete: false,
-          contractVersion: 1,
-          contractKind: 'plugin-owned-row-driver',
-          releaseGateEvidenceScope: evidenceScope,
-        },
-      ],
+      allowedResources: [entry],
     },
   };
 }
@@ -143,6 +152,8 @@ function cleanRevokedCredentialGuard(testCase) {
 }
 
 function packageProofFromPlan(testCase, plan, mutation) {
+  const contractEvidence = mutation?.pluginOwnedResource?.contractValidationEvidence || null;
+  const registrationEvidence = mutation?.pluginOwnedResource?.registeredDriverProvenanceEvidence || null;
   return {
     driver: arbitraryPluginFixturePackageBoundary.driver,
     pluginOwner: ownerPlugin,
@@ -163,6 +174,12 @@ function packageProofFromPlan(testCase, plan, mutation) {
     planReady: plan.status === 'ready',
     mutationCount: plan.mutations.length,
     noMutationAfterRevokedCredential: true,
+    registeredContractProvenanceAccepted:
+      registrationEvidence?.reasonCode === 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED'
+      && registrationEvidence?.outcome === 'accepted',
+    registeredDriverProvenanceHash: registrationEvidence ? sha256Evidence(registrationEvidence) : null,
+    contractHash: contractEvidence?.contractHash || null,
+    contractValidationHash: contractEvidence ? digest(contractEvidence) : null,
     generatedFixtureHash: sha256Evidence({
       id: testCase.id,
       resourceKey: fixtureResourceKey,
@@ -251,12 +268,19 @@ test('RPP-0460 generated arbitrary plugin fixture package proof is hash-only loc
       assert.equal(mutation.pluginOwnedResource.auditEvidence.rawValuesIncluded, false);
       assert.equal(mutation.pluginOwnedResource.driverAuditEvidence.reasonCode, 'PLUGIN_DRIVER_DECISION_SUPPORTED');
       assert.equal(mutation.pluginOwnedResource.driverAuditEvidence.rawValuesIncluded, false);
+      assert.equal(
+        mutation.pluginOwnedResource.registeredDriverProvenanceEvidence.reasonCode,
+        'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED',
+      );
+      assertSha256Evidence(`sha256:${mutation.pluginOwnedResource.auditEvidence.registeredDriverProvenanceHash}`);
 
       assert.equal(proof.productionBacked, false);
       assert.equal(proof.allowlistExact, true);
       assert.equal(proof.planReady, true);
       assert.equal(proof.mutationCount, 1);
       assert.equal(proof.noMutationAfterRevokedCredential, true);
+      assert.equal(proof.registeredContractProvenanceAccepted, true);
+      assertSha256Evidence(proof.registeredDriverProvenanceHash);
       assertSha256Evidence(proof.generatedFixtureHash);
       assertSha256Evidence(proof.auditEvidenceHash);
       assertSha256Evidence(proof.driverAuditEvidenceHash);
@@ -282,6 +306,8 @@ test('RPP-0460 generated arbitrary plugin fixture package proof is hash-only loc
       assert.equal(summary.packageProof.planReady, true);
       assert.equal(summary.packageProof.mutationCount, 1);
       assert.equal(summary.packageProof.noMutationAfterRevokedCredential, true);
+      assert.equal(summary.packageProof.registeredContractProvenanceAccepted, true);
+      assertSha256Evidence(summary.packageProof.registeredDriverProvenanceHash);
       assert.equal(summary.revokedCredentialGuard.applyRejectedCode, 'reprint_push_lab_auth_required');
       assert.equal(summary.revokedCredentialGuard.updatedMarkerAfterReject, 'base');
       assert.equal(summary.revokedCredentialGuard.payloadModeAfterReject, 'base');

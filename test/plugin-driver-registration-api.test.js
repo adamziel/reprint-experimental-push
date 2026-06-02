@@ -41,6 +41,42 @@ function assertSha256Evidence(value) {
   assert.match(value, sha256Pattern);
 }
 
+function assertRegistrationProvenance(provenance, {
+  resourceKey,
+  pluginOwner,
+  driver,
+  table,
+  supportsDelete,
+  contractHash,
+}) {
+  assert.match(provenance.resourceKeyHash, bareSha256Pattern);
+  assert.match(provenance.registrationHash, bareSha256Pattern);
+  assert.match(provenance.bindingHash, bareSha256Pattern);
+  assert.deepEqual(provenance, {
+    schemaVersion: 1,
+    operation: 'plugin-driver-registration-provenance',
+    provenanceKind: 'plugin-owned-row-driver-registration',
+    reasonCode: 'PLUGIN_DRIVER_REGISTRATION_PROVENANCE_ACCEPTED',
+    outcome: 'accepted',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    resourceKeyHash: digest(resourceKey),
+    registrationHash: provenance.registrationHash,
+    contractHash,
+    bindingHash: digest({
+      schemaVersion: 1,
+      provenanceKind: 'plugin-owned-row-driver-registration',
+      resourceKeyHash: digest(resourceKey),
+      pluginOwnerHash: digest(pluginOwner),
+      driverHash: digest(driver),
+      tableHash: digest(table),
+      supportsDeleteHash: digest(supportsDelete),
+      registrationHash: provenance.registrationHash,
+      contractHash,
+    }),
+  });
+}
+
 function runPhpDriverProbe(body) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-plugin-driver-api-'));
   const file = path.join(dir, 'probe.php');
@@ -485,10 +521,34 @@ echo json_encode([
 
   assert.match(report.custom.contractHash, bareSha256Pattern);
   assert.match(report.releaseState.contractHash, bareSha256Pattern);
-  const { contractHash: customContractHash, ...customContract } = report.custom;
-  const { contractHash: releaseStateContractHash, ...releaseStateContract } = report.releaseState;
+  const {
+    contractHash: customContractHash,
+    registrationProvenance: customRegistrationProvenance,
+    ...customContract
+  } = report.custom;
+  const {
+    contractHash: releaseStateContractHash,
+    registrationProvenance: releaseStateRegistrationProvenance,
+    ...releaseStateContract
+  } = report.releaseState;
   assert.equal(customContractHash.length, 64);
   assert.equal(releaseStateContractHash.length, 64);
+  assertRegistrationProvenance(customRegistrationProvenance, {
+    resourceKey: 'row:["wp_fixture_contract_rows","id:7"]',
+    pluginOwner: 'fixture-contract-plugin',
+    driver: 'fixture-contract-driver',
+    table: 'wp_fixture_contract_rows',
+    supportsDelete: true,
+    contractHash: customContractHash,
+  });
+  assertRegistrationProvenance(releaseStateRegistrationProvenance, {
+    resourceKey: 'row:["wp_reprint_push_release_state","state_id:1"]',
+    pluginOwner: 'reprint-push',
+    driver: 'reprint-push-release-state',
+    table: 'wp_reprint_push_release_state',
+    supportsDelete: false,
+    contractHash: releaseStateContractHash,
+  });
   assert.deepEqual(customContract, {
     contractVersion: 1,
     contractKind: 'plugin-owned-row-driver',
@@ -566,6 +626,7 @@ echo json_encode([
   assert.equal(report.entryCount, 2);
   assert.equal(JSON.stringify(report).includes('super-secret-contract-payload'), false);
   assert.equal(JSON.stringify(report).includes('release-state-private'), false);
+  assert.doesNotMatch(JSON.stringify(report), /rpp_driver_api_(?:export_rows|apply_row|validate_mutation)/);
 });
 
 test('registered plugin-owned row driver PHP validation requires contract-bound evidence', () => {
@@ -610,6 +671,17 @@ function rpp_contract_bound_policy(
         'driver' => $driver,
         'table' => $table,
         'supportsDelete' => $supports_delete,
+        'registrationProvenance' => reprint_push_plugin_owned_row_driver_registration_provenance_evidence(
+            [
+                'resourceKey' => $resource_key,
+                'pluginOwner' => $owner,
+                'driver' => $driver,
+                'table' => $table,
+                'supportsDelete' => $supports_delete,
+                'contractHash' => $contract_hash,
+            ],
+            reprint_push_plugin_owned_row_driver_by_name($driver)
+        ),
         'contractValidationEvidence' => $contract,
         'driverPayloadValidationEvidence' => [
             'schemaVersion' => 1,
@@ -688,6 +760,18 @@ $base_mutation = [
         $value
     ),
 ];
+$missing_registration = $base_mutation;
+unset($missing_registration['pluginOwnedResource']['registrationProvenance']);
+$forged_registration_hash = $base_mutation;
+$forged_registration_hash['pluginOwnedResource']['registrationProvenance']['registrationHash'] = str_repeat('0', 64);
+$forged_registration_resource = $base_mutation;
+$forged_registration_resource['pluginOwnedResource']['registrationProvenance']['resourceKeyHash'] = str_repeat('0', 64);
+$forged_registration_contract = $base_mutation;
+$forged_registration_contract['pluginOwnedResource']['registrationProvenance']['contractHash'] = str_repeat('0', 64);
+$raw_registration = $base_mutation;
+$raw_registration['pluginOwnedResource']['registrationProvenance']['rawValuesIncluded'] = true;
+$surplus_registration = $base_mutation;
+$surplus_registration['pluginOwnedResource']['registrationProvenance']['unexpectedRawPayload'] = 'contract-bound-private-payload';
 $missing_contract = $base_mutation;
 unset($missing_contract['pluginOwnedResource']['contractValidationEvidence']);
 $refused_contract = $base_mutation;
@@ -731,6 +815,30 @@ $forged_resource_key['pluginOwnedResource'] = rpp_contract_bound_policy(
 echo json_encode([
     'accepted' => rpp_driver_api_capture(static function () use ($base_mutation, $snapshot): bool {
         reprint_push_assert_supported_plugin_owned_mutation($base_mutation, $snapshot);
+        return true;
+    }),
+    'missingRegistration' => rpp_driver_api_capture(static function () use ($missing_registration, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($missing_registration, $snapshot);
+        return true;
+    }),
+    'forgedRegistrationHash' => rpp_driver_api_capture(static function () use ($forged_registration_hash, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($forged_registration_hash, $snapshot);
+        return true;
+    }),
+    'forgedRegistrationResource' => rpp_driver_api_capture(static function () use ($forged_registration_resource, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($forged_registration_resource, $snapshot);
+        return true;
+    }),
+    'forgedRegistrationContract' => rpp_driver_api_capture(static function () use ($forged_registration_contract, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($forged_registration_contract, $snapshot);
+        return true;
+    }),
+    'rawRegistration' => rpp_driver_api_capture(static function () use ($raw_registration, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($raw_registration, $snapshot);
+        return true;
+    }),
+    'surplusRegistration' => rpp_driver_api_capture(static function () use ($surplus_registration, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($surplus_registration, $snapshot);
         return true;
     }),
     'missingContract' => rpp_driver_api_capture(static function () use ($missing_contract, $snapshot): bool {
@@ -777,6 +885,20 @@ echo json_encode([
 `);
 
   assert.deepEqual(report.accepted, { ok: true, value: true });
+  for (const key of [
+    'missingRegistration',
+    'forgedRegistrationHash',
+    'forgedRegistrationResource',
+    'forgedRegistrationContract',
+    'rawRegistration',
+    'surplusRegistration',
+  ]) {
+    assert.equal(report[key].ok, false, `${key} should fail closed`);
+    assert.equal(
+      report[key].error.message,
+      'Unsupported plugin-owned mutation registration provenance for row:["wp_fixture_contract_bound_rows","id:7"]',
+    );
+  }
   assert.equal(report.missingContract.ok, false);
   assert.equal(report.missingContract.error.message, 'Unsupported plugin-owned mutation contract for row:["wp_fixture_contract_bound_rows","id:7"]');
   assert.equal(report.refusedContract.ok, false);
@@ -846,6 +968,17 @@ function rpp_schema_bound_policy(
         'driver' => $driver,
         'table' => $table,
         'supportsDelete' => $supports_delete,
+        'registrationProvenance' => reprint_push_plugin_owned_row_driver_registration_provenance_evidence(
+            [
+                'resourceKey' => $resource_key,
+                'pluginOwner' => $owner,
+                'driver' => $driver,
+                'table' => $table,
+                'supportsDelete' => $supports_delete,
+                'contractHash' => $contract_hash,
+            ],
+            reprint_push_plugin_owned_row_driver_by_name($driver)
+        ),
         'contractValidationEvidence' => $contract,
         'driverPayloadValidationEvidence' => [
             'schemaVersion' => 1,
@@ -1244,6 +1377,17 @@ function rpp_reference_bound_policy(
         'driver' => $driver,
         'table' => $table,
         'supportsDelete' => $supports_delete,
+        'registrationProvenance' => reprint_push_plugin_owned_row_driver_registration_provenance_evidence(
+            [
+                'resourceKey' => $resource_key,
+                'pluginOwner' => $owner,
+                'driver' => $driver,
+                'table' => $table,
+                'supportsDelete' => $supports_delete,
+                'contractHash' => $contract_hash,
+            ],
+            reprint_push_plugin_owned_row_driver_by_name($driver)
+        ),
         'contractValidationEvidence' => $contract,
         'driverPayloadValidationEvidence' => $payload_evidence,
         'referenceTargetValidationEvidence' => rpp_reference_target_evidence(

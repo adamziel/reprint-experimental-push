@@ -18,10 +18,17 @@ const privateSentinels = Object.freeze([
   'RPP-0500-PRIVATE-LOCAL-PAYLOAD',
   'RPP-0500-PRIVATE-REVOKED-CREDENTIAL-MESSAGE',
 ]);
+const registeredContractProvenanceProof = Object.freeze({
+  registeredContractProvenanceAccepted: true,
+  registeredDriverProvenanceHash: `sha256:${'1'.repeat(64)}`,
+  contractHash: '2'.repeat(64),
+  contractValidationHash: '3'.repeat(64),
+});
 
 function packagedProof({
   evidenceScope = 'local-playground',
   checked = true,
+  registeredProvenance = false,
   guardOverrides = {},
   proofOverrides = {},
 } = {}) {
@@ -49,6 +56,7 @@ function packagedProof({
     planReady: checked,
     mutationCount: checked ? 1 : 0,
     noMutationAfterRevokedCredential: checked,
+    ...(registeredProvenance ? registeredContractProvenanceProof : {}),
     rawPayload: privateSentinels[1],
     ...proofOverrides,
   };
@@ -120,6 +128,7 @@ test('RPP-0500 release verifier labels local arbitrary plugin fixture package ev
 test('RPP-0500 release verifier keeps production-scoped fixture package evidence NO-GO without checked production proof', () => {
   const summary = summarizeReleaseVerifierPackage({
     evidenceScope: 'production-backed',
+    registeredProvenance: true,
   });
 
   assert.equal(summary.checked, true);
@@ -140,6 +149,7 @@ test('RPP-0500 release verifier keeps production-scoped fixture package evidence
   assert.match(summary.releaseGate.note, /release gate remains NO-GO/);
   assert.equal(summary.packagedReleaseGate.status, 'GO');
   assert.equal(summary.packagedReleaseGate.acceptedForReleaseGate, true);
+  assert.equal(summary.packageProof.registeredContractProvenanceAccepted, true);
   assertNoPrivatePayloads(summary, 'production-scoped release verifier package summary');
 });
 
@@ -147,6 +157,7 @@ test('RPP-0500 release verifier accepts checked production-backed arbitrary fixt
   const summary = summarizeReleaseVerifierPackage({
     evidenceScope: 'production-backed',
     checkedProductionEvidence: true,
+    registeredProvenance: true,
   });
 
   assert.equal(summary.checked, true);
@@ -164,6 +175,7 @@ test('RPP-0500 release verifier accepts checked production-backed arbitrary fixt
   assert.equal(summary.releaseGate.productionBacked, true);
   assert.equal(summary.releaseGate.acceptedForReleaseGate, true);
   assert.match(summary.releaseGate.note, /production-backed/);
+  assert.equal(summary.packageProof.registeredContractProvenanceAccepted, true);
   assertNoPrivatePayloads(summary, 'checked production-backed release verifier package summary');
 });
 
@@ -172,6 +184,7 @@ test('RPP-0500 release verifier blocks incomplete arbitrary fixture package chec
     evidenceScope: 'production-backed',
     checkedProductionEvidence: true,
     checked: false,
+    registeredProvenance: true,
   });
 
   assert.equal(summary.checked, false);

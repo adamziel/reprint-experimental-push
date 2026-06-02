@@ -10,6 +10,7 @@ import {
   summarizeProductionPluginDriverBoundaryProof,
 } from '../scripts/playground/production-shaped-release-verify.mjs';
 import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
+import { pluginOwnedRowDriverRegistrationProvenanceEvidence } from '../src/plugin-driver-validators.js';
 
 const fixedNow = new Date('2026-05-30T12:48:30.000Z');
 const boundary = productionPluginDriverBoundary;
@@ -87,6 +88,18 @@ const rawSentinels = Object.freeze([
   'RPP_0483_REMOTE_CHANGED_RELEASE_STATE_PRIVATE',
 ]);
 
+function registerReleaseStateAllowlistEntry(entry) {
+  entry.contractHash = pluginOwnedRowDriverContractHash(entry);
+  entry.registeredDriverProvenanceEvidence = pluginOwnedRowDriverRegistrationProvenanceEvidence(
+    entry,
+    {
+      source: 'rpp-0483-release-state-driver-registry',
+      evidenceScope: entry.evidenceScope || entry.releaseGateEvidenceScope || 'release-verifier-v5',
+    },
+  );
+  return entry;
+}
+
 function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -115,7 +128,7 @@ function releaseStateSnapshot(mode, version, marker, {
     rowSchema: releaseStateRowSchema,
     ...allowlistOverride,
   };
-  allowlistEntry.contractHash = pluginOwnedRowDriverContractHash(allowlistEntry);
+  registerReleaseStateAllowlistEntry(allowlistEntry);
 
   return {
     files: {},
