@@ -505,7 +505,27 @@ function pluginOwnedReferenceTargetApplySupport({
   driverPayloadValidationEvidence,
 }) {
   const referenceValidation = driverPayloadValidationEvidence?.referenceValidation || null;
+  const carriesReferenceTargetEvidence = Object.prototype.hasOwnProperty.call(
+    mutation.pluginOwnedResource || {},
+    'referenceTargetValidationEvidence',
+  );
   if (!referenceValidation) {
+    if (carriesReferenceTargetEvidence) {
+      return {
+        valid: false,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_EVIDENCE_UNBOUND',
+        evidence: pluginOwnedReferenceTargetApplyEvidence({
+          carried: mutation.pluginOwnedResource?.referenceTargetValidationEvidence || null,
+          referenceValidation,
+          driverPayloadValidationEvidence,
+          mutation,
+          owner,
+          driver,
+          remote,
+          issueCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_EVIDENCE_UNBOUND',
+        }),
+      };
+    }
     return { valid: true, reasonCode: null, evidence: null };
   }
 

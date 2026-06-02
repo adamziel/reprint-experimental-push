@@ -1226,11 +1226,28 @@ $reference_fields = [
         ],
     ],
 ];
+$optional_reference_fields = [
+    'fields' => [
+        [
+            'path' => 'payload.post_id',
+            'targetTable' => 'wp_posts',
+            'targetIdField' => 'ID',
+            'required' => false,
+        ],
+    ],
+];
 $value = [
     'id' => 7,
     'payload' => [
         'post_id' => 2,
         'secret' => 'reference-bound-private-payload',
+    ],
+    '__pluginOwner' => 'fixture-reference-bound-plugin',
+];
+$optional_value = [
+    'id' => 7,
+    'payload' => [
+        'secret' => 'optional-reference-bound-private-payload',
     ],
     '__pluginOwner' => 'fixture-reference-bound-plugin',
 ];
@@ -1270,6 +1287,24 @@ $base_mutation = [
         $snapshot
     ),
 ];
+$optional_missing_reference_mutation = [
+    'id' => 'mutation-optional-reference-bound',
+    'resourceKey' => $resource_key,
+    'resource' => ['type' => 'row', 'table' => 'wp_fixture_reference_bound_rows', 'id' => 'id:7'],
+    'action' => 'put',
+    'value' => ['value' => $optional_value],
+    'pluginOwnedResource' => rpp_reference_bound_policy(
+        $resource_key,
+        'wp_fixture_reference_bound_rows',
+        'fixture-reference-bound-plugin',
+        'fixture-reference-bound-driver',
+        false,
+        'put',
+        $optional_value,
+        $optional_reference_fields,
+        $snapshot
+    ),
+];
 $missing_reference_target_validation = $base_mutation;
 unset($missing_reference_target_validation['pluginOwnedResource']['referenceTargetValidationEvidence']);
 $forged_reference_target_validation = $base_mutation;
@@ -1303,6 +1338,10 @@ $forged_reference_value['pluginOwnedResource'] = rpp_reference_bound_policy(
 echo json_encode([
     'accepted' => rpp_driver_api_capture(static function () use ($base_mutation, $snapshot): bool {
         reprint_push_assert_supported_plugin_owned_mutation($base_mutation, $snapshot);
+        return true;
+    }),
+    'acceptedOptionalMissingReference' => rpp_driver_api_capture(static function () use ($optional_missing_reference_mutation, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($optional_missing_reference_mutation, $snapshot);
         return true;
     }),
     'missingReferenceTargetValidation' => rpp_driver_api_capture(static function () use ($missing_reference_target_validation, $snapshot): bool {
@@ -1343,12 +1382,16 @@ echo json_encode([
     }),
     'referenceValidation' => $base_mutation['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation'],
     'referenceTargetValidation' => $base_mutation['pluginOwnedResource']['referenceTargetValidationEvidence'],
+    'optionalReferenceValidation' => $optional_missing_reference_mutation['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation'],
+    'optionalReferenceTargetValidation' => $optional_missing_reference_mutation['pluginOwnedResource']['referenceTargetValidationEvidence'],
     'forgedValueReferenceValidation' => $forged_reference_value['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation'],
     'normalizedReferences' => $base_mutation['pluginOwnedResource']['contractValidationEvidence']['referenceFields'],
+    'normalizedOptionalReferences' => $optional_missing_reference_mutation['pluginOwnedResource']['contractValidationEvidence']['referenceFields'],
 ]);
 `);
 
   assert.deepEqual(report.accepted, { ok: true, value: true });
+  assert.deepEqual(report.acceptedOptionalMissingReference, { ok: true, value: true });
   assert.equal(report.missingReferenceTargetValidation.ok, false);
   assert.equal(report.forgedReferenceTargetValidation.ok, false);
   assert.equal(report.surplusReferenceTargetValidation.ok, false);
@@ -1407,6 +1450,19 @@ echo json_encode([
     ],
     rawValuesIncluded: false,
   });
+  assert.deepEqual(report.normalizedOptionalReferences, {
+    schemaVersion: 1,
+    fields: [
+      {
+        path: 'payload.post_id',
+        targetTable: 'wp_posts',
+        targetIdField: 'ID',
+        scalarType: 'positive-integer',
+        required: false,
+      },
+    ],
+    rawValuesIncluded: false,
+  });
   assert.deepEqual(report.referenceValidation.fields[0], {
     path: 'payload.post_id',
     targetTable: 'wp_posts',
@@ -1418,6 +1474,16 @@ echo json_encode([
     observedHash: digest('2'),
     matched: true,
     targetResourceKey: 'row:["wp_posts","ID:2"]',
+  });
+  assert.deepEqual(report.optionalReferenceValidation.fields[0], {
+    path: 'payload.post_id',
+    targetTable: 'wp_posts',
+    targetIdField: 'ID',
+    scalarType: 'positive-integer',
+    required: false,
+    state: 'missing',
+    observedType: null,
+    matched: true,
   });
   assert.equal(report.referenceTargetValidation.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED');
   assert.equal(report.referenceTargetValidation.outcome, 'accepted');
@@ -1463,6 +1529,22 @@ echo json_encode([
       }),
     },
   });
+  assert.equal(report.optionalReferenceTargetValidation.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED');
+  assert.equal(report.optionalReferenceTargetValidation.outcome, 'accepted');
+  assert.equal(report.optionalReferenceTargetValidation.rawValuesIncluded, false);
+  assert.deepEqual(report.optionalReferenceTargetValidation.fields[0], {
+    path: 'payload.post_id',
+    targetTable: 'wp_posts',
+    targetIdField: 'ID',
+    scalarType: 'positive-integer',
+    required: false,
+    state: 'missing',
+    observedType: null,
+    observedHash: null,
+    targetResourceKey: null,
+    targetStable: true,
+    reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_NOT_REQUIRED',
+  });
   assert.deepEqual(report.forgedValueReferenceValidation.fields[0], {
     path: 'payload.post_id',
     targetTable: 'wp_posts',
@@ -1475,4 +1557,5 @@ echo json_encode([
     matched: false,
   });
   assert.equal(JSON.stringify(report).includes('reference-bound-private-payload'), false);
+  assert.equal(JSON.stringify(report).includes('optional-reference-bound-private-payload'), false);
 });
