@@ -701,6 +701,11 @@ test('snapshot library exports WordPress graph contracts that match the JS plann
       contract.relationshipType === 'featured-image-attachment')?.sourceCondition,
     'meta_key:_thumbnail_id',
   );
+  assert.equal(
+    metadata.relationshipContracts.find((contract) =>
+      contract.relationshipType === 'postmeta-edit-last-user')?.sourceCondition,
+    'meta_key:_edit_last',
+  );
 
   const serialized = JSON.stringify(metadata);
   assert.doesNotMatch(serialized, /Private|example\.test|Brewcommerce|fixture-private/);

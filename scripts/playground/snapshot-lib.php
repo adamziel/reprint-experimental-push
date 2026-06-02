@@ -1124,6 +1124,7 @@ function reprint_push_wordpress_graph_relationship_contracts(): array
         reprint_push_wordpress_graph_relationship_contract('serialized-block-post', 'posts', ['post_content', 'post_excerpt'], 'posts', false, 'valid-post-row'),
         reprint_push_wordpress_graph_relationship_contract('serialized-block-reusable-block', 'posts', ['post_content', 'post_excerpt'], 'posts', false, 'post-type:wp_block'),
         reprint_push_wordpress_graph_relationship_contract('featured-image-attachment', 'postmeta', ['meta_value'], 'posts', true, 'post-type:attachment', 'meta_key:_thumbnail_id'),
+        reprint_push_wordpress_graph_relationship_contract('postmeta-edit-last-user', 'postmeta', ['meta_value'], 'users', true, 'valid-user-row', 'meta_key:_edit_last'),
         reprint_push_wordpress_graph_relationship_contract('term-relationship-object', 'term_relationships', ['object_id'], 'posts', true, 'valid-post-row'),
         reprint_push_wordpress_graph_relationship_contract('term-relationship-taxonomy', 'term_relationships', ['term_taxonomy_id'], 'term_taxonomy', true, 'valid-term-taxonomy-row'),
         reprint_push_wordpress_graph_relationship_contract('term-taxonomy-term', 'term_taxonomy', ['term_id'], 'terms', true, 'valid-term-row'),

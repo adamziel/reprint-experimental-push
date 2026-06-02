@@ -42,6 +42,8 @@ test('WordPress graph contracts mark serialized block references as detect-only'
     .filter((contract) => contract.relationshipType.startsWith('serialized-block-'));
   const featuredImage = WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS
     .find((contract) => contract.relationshipType === 'featured-image-attachment');
+  const editLastUser = WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS
+    .find((contract) => contract.relationshipType === 'postmeta-edit-last-user');
 
   assert.deepEqual(
     serializedContracts.map((contract) => contract.relationshipType),
@@ -62,10 +64,20 @@ test('WordPress graph contracts mark serialized block references as detect-only'
   }
 
   assert.equal(featuredImage.scalarRewriteSupported, true);
+  assert.equal(featuredImage.sourceCondition, 'meta_key:_thumbnail_id');
   assert.equal(featuredImage.targetValidation, 'post-type:attachment');
   assert.equal(
     wordpressGraphRelationshipSupportsScalarRewrite({
       relationshipType: 'featured-image-attachment',
+    }),
+    true,
+  );
+  assert.equal(editLastUser.scalarRewriteSupported, true);
+  assert.equal(editLastUser.sourceCondition, 'meta_key:_edit_last');
+  assert.equal(editLastUser.targetValidation, 'valid-user-row');
+  assert.equal(
+    wordpressGraphRelationshipSupportsScalarRewrite({
+      relationshipType: 'postmeta-edit-last-user',
     }),
     true,
   );
@@ -86,6 +98,7 @@ test('WordPress graph contracts bind core targets to primary-row validation', ()
     'link-owner': 'valid-user-row',
     'post-author': 'valid-user-row',
     'post-parent': 'valid-post-row',
+    'postmeta-edit-last-user': 'valid-user-row',
     'postmeta-post': 'valid-post-row',
     'registration-log-blog': 'valid-blog-row',
     'serialized-block-post': 'valid-post-row',

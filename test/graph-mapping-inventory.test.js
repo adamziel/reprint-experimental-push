@@ -28,6 +28,7 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
     'serialized-block-post',
     'serialized-block-reusable-block',
     'featured-image-attachment',
+    'postmeta-edit-last-user',
     'term-relationship-object',
     'term-relationship-taxonomy',
     'term-taxonomy-term',
@@ -57,12 +58,12 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
     identityMapRowsRecordContractHash: true,
   });
   assert.deepEqual(inventory.mappedFamilyCounters, {
-    totalFamilies: 7,
-    mappedFamilies: 6,
+    totalFamilies: 8,
+    mappedFamilies: 7,
     unmappedFamilies: 0,
     blockedFamilies: 0,
     guardedFamilies: 1,
-    mappedReferences: 31,
+    mappedReferences: 32,
     unmappedReferences: 0,
   });
   assert.equal(inventory.blockedFamilies.length, 0);
@@ -70,7 +71,7 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
     inventory.guardedFamilies.map((family) => family.id),
     ['unsupportedPluginOwnedSurfaces'],
   );
-  assert.equal(inventory.families.length, 7);
+  assert.equal(inventory.families.length, 8);
   assert.ok(
     inventory.suggestedLaneShards.some((shard) =>
       shard.shardId === 'planner:test/push-planner.test.js'
@@ -82,6 +83,11 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
       shard.shardId === 'smoke:scripts/playground/push-protocol-smoke.mjs'
       && shard.families.includes('postsParents')
       && shard.families.includes('featuredImagesAttachments')),
+  );
+  assert.ok(
+    inventory.suggestedLaneShards.some((shard) =>
+      shard.shardId === 'smoke:scripts/bench/guarded-executor-benchmark.js'
+      && shard.families.includes('postmetaEditLastUserRefs')),
   );
 });
 

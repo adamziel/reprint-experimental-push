@@ -103,7 +103,7 @@ test('RPP-0750 variant 3 projects local support-only storage performance evidenc
   assert.equal(proof.scheduler.maxObservedInFlight <= proof.scheduler.maxConcurrency, true);
   assert.equal(proof.scheduler.bounded, true);
   assert.equal(proof.hashSet.snapshotCount, 3);
-  assert.equal(proof.hashSet.resourceCount, 22);
+  assert.equal(proof.hashSet.resourceCount, 24);
   assert.equal(proof.hashSet.hashCount, proof.hashSet.expectedHashCount);
   assert.equal(proof.hashSet.parallelDigest, proof.hashSet.sequentialDigest);
   assert.equal(proof.hashSet.parallelDigest, proof.hashSet.secondRunDigest);

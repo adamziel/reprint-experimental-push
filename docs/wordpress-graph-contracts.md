@@ -94,6 +94,12 @@ including `wp_blogmeta.blog_id` and `wp_sitemeta.site_id`, plus owner-keyed
 that the serialized payload field and the rewritten row key point at the same
 carried target row.
 
+WordPress postmeta keys with known scalar graph semantics are explicit
+relationship contracts, not generic postmeta behavior. Version 1 rewrites
+`_thumbnail_id` only to a proven attachment post target and `_edit_last` only
+to a proven `wp_users.ID` target. A malformed carried user row, stale user
+identity map, or forged `_edit_last` payload is refused before mutation.
+
 Rows whose identity does not contain the rewritten field keep their row key.
 For example, `wp_links.link_owner` keeps the `link_id:<id>` row resource fixed
 while the serialized owner field rewrites to the proven remote `wp_users`

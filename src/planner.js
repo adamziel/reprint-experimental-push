@@ -3173,6 +3173,14 @@ function wordpressGraphReferences(resource, value) {
         targetId: value.meta_value,
       });
     }
+    if (value.meta_key === '_edit_last') {
+      addReference({
+        field: 'meta_value',
+        relationshipType: 'postmeta-edit-last-user',
+        targetTable: 'users',
+        targetId: value.meta_value,
+      });
+    }
   }
 
   if (suffix === 'term_relationships') {

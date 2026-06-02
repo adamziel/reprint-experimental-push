@@ -201,6 +201,14 @@ export const WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS = Object.freeze([
     targetValidation: 'post-type:attachment',
   }),
   graphRelationshipContract({
+    relationshipType: 'postmeta-edit-last-user',
+    sourceSuffix: 'postmeta',
+    sourceField: 'meta_value',
+    sourceCondition: 'meta_key:_edit_last',
+    targetSuffix: 'users',
+    targetValidation: 'valid-user-row',
+  }),
+  graphRelationshipContract({
     relationshipType: 'term-relationship-object',
     sourceSuffix: 'term_relationships',
     sourceField: 'object_id',

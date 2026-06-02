@@ -39,11 +39,13 @@ const BENCHMARK_GRAPH_ROW_IDS = Object.freeze({
   postsParents: 'ID:20001',
   featuredAttachment: 'ID:20002',
   featuredImageMeta: 'meta_id:20001',
+  editLastUserMeta: 'meta_id:20002',
   term: 'term_id:20001',
   termTaxonomy: 'term_taxonomy_id:20001',
   termRelationship: 'object_id:10000|term_taxonomy_id:20001',
   termmeta: 'meta_id:20002',
 });
+const BENCHMARK_EDIT_LAST_USER_ID = 30001;
 export const GRAPH_FAMILY_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'postsParents',
@@ -65,6 +67,13 @@ export const GRAPH_FAMILY_DEFINITIONS = Object.freeze([
     plannerOwner: 'planner:test/push-planner.test.js',
     smokeOwner: 'smoke:scripts/playground/push-protocol-smoke.mjs',
     notes: 'Benchmark covers a ready-plan attachment row plus _thumbnail_id rewrite against that same-plan attachment.',
+  }),
+  Object.freeze({
+    id: 'postmetaEditLastUserRefs',
+    label: 'postmeta/edit-last user refs',
+    plannerOwner: 'planner:test/postmeta-edit-last-user-reference.test.js',
+    smokeOwner: 'smoke:scripts/bench/guarded-executor-benchmark.js',
+    notes: 'Benchmark covers a ready-plan _edit_last row against an unchanged stable wp_users target.',
   }),
   Object.freeze({
     id: 'termsTaxonomies',
@@ -736,6 +745,7 @@ function buildBenchmarkSites(config, stagedFile) {
     db: {
       wp_posts: benchmarkStablePosts(config.rowCount),
       wp_postmeta: {},
+      wp_users: benchmarkStableUsers(),
       wp_terms: {},
       wp_term_taxonomy: {},
       wp_term_relationships: {},
@@ -826,6 +836,21 @@ function buildBenchmarkSites(config, stagedFile) {
       post_id: benchmarkPostIdForRow(2),
       meta_key: '_thumbnail_id',
       meta_value: '20002',
+    },
+  });
+
+  const editLastUserMetaResourceKey = addBenchmarkRow({
+    site: local,
+    rowResourceKeys,
+    familyFixtures,
+    familyId: 'postmetaEditLastUserRefs',
+    table: 'wp_postmeta',
+    id: BENCHMARK_GRAPH_ROW_IDS.editLastUserMeta,
+    value: {
+      meta_id: 20002,
+      post_id: benchmarkPostIdForRow(3),
+      meta_key: '_edit_last',
+      meta_value: String(BENCHMARK_EDIT_LAST_USER_ID),
     },
   });
 
@@ -936,6 +961,10 @@ function buildBenchmarkSites(config, stagedFile) {
           featuredImageMetaResourceKey,
         ],
       },
+      postmetaEditLastUserRefs: {
+        ...familyFixtures.postmetaEditLastUserRefs,
+        representativeResourceKey: editLastUserMetaResourceKey,
+      },
       termsTaxonomies: {
         ...familyFixtures.termsTaxonomies,
         representativeResourceKeys: [
@@ -961,6 +990,7 @@ function initializeFamilyFixtures() {
     postmetaPostRefs: { resourceKeys: [] },
     postsParents: { resourceKeys: [] },
     featuredImagesAttachments: { resourceKeys: [] },
+    postmetaEditLastUserRefs: { resourceKeys: [] },
     termsTaxonomies: { resourceKeys: [] },
     termRelationships: { resourceKeys: [] },
     termmeta: { resourceKeys: [] },
@@ -987,6 +1017,17 @@ function benchmarkStablePosts(rowCount) {
     };
   }
   return posts;
+}
+
+function benchmarkStableUsers() {
+  return {
+    [`ID:${BENCHMARK_EDIT_LAST_USER_ID}`]: {
+      ID: BENCHMARK_EDIT_LAST_USER_ID,
+      user_login: 'benchmark_edit_last_user',
+      user_email: 'benchmark-edit-last-user@example.test',
+      display_name: 'Benchmark Edit Last User',
+    },
+  };
 }
 
 function benchmarkPostIdForRow(index) {
