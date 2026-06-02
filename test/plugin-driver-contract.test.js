@@ -158,6 +158,18 @@ test('explicit custom row driver contract carries contract-bound validator evide
   assert.equal(payloadEvidence.driver, 'forms-contract-row');
   assert.equal(payloadEvidence.table, 'wp_forms_contract_rows');
   assert.equal(payloadEvidence.contractHash, mutation.pluginOwnedResource.contractValidationEvidence.contractHash);
+  assert.deepEqual(payloadEvidence.rowIdentity, {
+    resourceId: 'entry_id:7',
+    status: 'matched',
+    fields: [
+      {
+        field: 'entry_id',
+        expected: '7',
+        observedHash: digest('7'),
+        matched: true,
+      },
+    ],
+  });
   assert.match(payloadEvidence.value.hash, /^[a-f0-9]{64}$/);
   assert.match(payloadEvidence.contractValidationHash, /^[a-f0-9]{64}$/);
   assert.equal(
@@ -209,6 +221,57 @@ test('contract-bound custom row driver blocks present payloads without owner mar
   assert.equal(evidence.driver, 'forms-contract-row');
   assert.equal(JSON.stringify(blocker).includes('base-contract-owner-marker-secret'), false);
   assert.equal(JSON.stringify(blocker).includes('local-contract-owner-marker-secret'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('contract-bound custom row driver blocks payload row ids that do not match the resource key', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-contract-row-id', secret: 'base-contract-row-id-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].entry_id = 8;
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-contract-row-id';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-contract-row-id-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const evidence = blocker.driverPayloadValidationEvidence;
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'invalid-plugin-driver-payload');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_ID_MISMATCH');
+  assert.equal(evidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_ID_MISMATCH');
+  assert.equal(evidence.outcome, 'refused-before-mutation');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.deepEqual(evidence.rowIdentity, {
+    resourceId: 'entry_id:7',
+    status: 'mismatch',
+    fields: [
+      {
+        field: 'entry_id',
+        expected: '7',
+        observedHash: digest('8'),
+        matched: false,
+      },
+    ],
+  });
+  assert.equal(JSON.stringify(blocker).includes('base-contract-row-id-secret'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-contract-row-id-secret'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
@@ -531,6 +594,62 @@ test('apply refuses forged custom row driver payloads with missing owner markers
   assert.equal(error.details.applyValidationEvidence.driverPayloadValidationEvidence.rawValuesIncluded, false);
   assert.equal(JSON.stringify(error.details).includes('base-contract-apply-owner-secret'), false);
   assert.equal(JSON.stringify(error.details).includes('local-contract-apply-owner-secret'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('apply refuses forged custom row driver payloads with mismatched row ids before mutation', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-contract-apply-row-id', secret: 'base-contract-apply-row-id-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-contract-apply-row-id';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-contract-apply-row-id-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const forgedPlan = cloneJson(plan);
+  const mutation = mutationFor(forgedPlan, resourceKey);
+  const forgedValue = mutation.value.value;
+  forgedValue.entry_id = 8;
+  mutation.localHash = digest(forgedValue);
+
+  let error;
+  try {
+    applyPlan(remote, forgedPlan);
+  } catch (caught) {
+    error = caught;
+  }
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(error?.code, 'INVALID_PLUGIN_DRIVER_PAYLOAD');
+  assert.equal(error.details.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_ID_MISMATCH');
+  assert.equal(error.details.resourceKey, resourceKey);
+  assert.equal(error.details.pluginOwner, 'forms');
+  assert.equal(error.details.driver, 'forms-contract-row');
+  assert.deepEqual(error.details.applyValidationEvidence.driverPayloadValidationEvidence.rowIdentity, {
+    resourceId: 'entry_id:7',
+    status: 'mismatch',
+    fields: [
+      {
+        field: 'entry_id',
+        expected: '7',
+        observedHash: digest('8'),
+        matched: false,
+      },
+    ],
+  });
+  assert.equal(JSON.stringify(error.details).includes('base-contract-apply-row-id-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('local-contract-apply-row-id-secret'), false);
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 

@@ -98,10 +98,38 @@ shape. For custom row drivers outside the built-in driver set, apply requires:
   missing markers refuse with
   `PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_OWNER_MISSING`, and wrong markers refuse
   with `PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_OWNER_MISMATCH`,
+- present row payloads whose identity fields match the row resource id. For a
+  resource such as `row:["wp_forms_contract_rows","entry_id:7"]`, the payload
+  must carry `entry_id` equal to `7`; mismatches refuse with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_ID_MISMATCH`, and unparseable row identity
+  shapes refuse with `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_ID_UNSUPPORTED`,
 - accepted `contract-bound-row-driver` payload validation evidence,
 - hash-only value and contract evidence, with `rawValuesIncluded: false`,
 - carried payload evidence that matches apply's recomputed mutation action,
-  value state/hash, contract hash, and canonical `contractValidationHash`.
+  value state/hash, row identity evidence, contract hash, and canonical
+  `contractValidationHash`.
+
+Payload validation evidence now includes a hash-only `rowIdentity` object:
+
+```json
+{
+  "resourceId": "entry_id:7",
+  "status": "matched",
+  "fields": [
+    {
+      "field": "entry_id",
+      "expected": "7",
+      "observedHash": "...",
+      "matched": true
+    }
+  ]
+}
+```
+
+The verifier and apply path recompute this object from the mutation resource and
+planned payload. A forged ready plan that changes the payload's row id while
+keeping the resource key stable is rejected before mutation, even if the forged
+payload hash has been made internally consistent.
 
 Legacy fixture allowlists still work for focused tests, but generic production
 custom row drivers need the explicit contract path before the executor will

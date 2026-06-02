@@ -11618,6 +11618,19 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && !Array.isArray(driverPayloadValidationEvidence.value)
       ? driverPayloadValidationEvidence.value
       : null;
+  const driverPayloadRowIdentityEvidence =
+    driverPayloadValidationEvidence?.rowIdentity
+    && typeof driverPayloadValidationEvidence.rowIdentity === 'object'
+    && !Array.isArray(driverPayloadValidationEvidence.rowIdentity)
+      ? driverPayloadValidationEvidence.rowIdentity
+      : null;
+  const expectedDriverPayloadRowIdentity = mutation
+    ? contractBoundRowIdentityEvidence({
+      resource: mutation.resource,
+      value: plannedMutationValue,
+      action: mutation.action,
+    })
+    : null;
   const contractEvidenceAccepted = contractValidationEvidence?.schemaVersion === 1
     && contractValidationEvidence?.operation === 'plugin-driver-contract-validation'
     && contractValidationEvidence?.contractKind === 'plugin-owned-row-driver'
@@ -11651,6 +11664,11 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && driverPayloadValidationEvidence?.action === expectedDriverPayloadAction;
   const driverPayloadContractSupportsDeleteMatches =
     driverPayloadValidationEvidence?.contractSupportsDelete === contractValidationEvidence?.supportsDelete;
+  const driverPayloadRowIdentityMatchesExpected =
+    Boolean(expectedDriverPayloadRowIdentity)
+    && Boolean(driverPayloadRowIdentityEvidence)
+    && digest(driverPayloadRowIdentityEvidence) === digest(expectedDriverPayloadRowIdentity)
+    && ['matched', 'not-required'].includes(driverPayloadRowIdentityEvidence.status);
   const driverPayloadEvidenceAccepted = contractEvidenceAccepted
     && driverPayloadValidationEvidence?.schemaVersion === 1
     && driverPayloadValidationEvidence?.operation === 'plugin-driver-payload-validation'
@@ -11668,6 +11686,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && driverPayloadValidationEvidence?.supportsDelete === false
     && driverPayloadContractSupportsDeleteMatches
     && driverPayloadActionMatchesMutation
+    && driverPayloadRowIdentityMatchesExpected
     && plannedPayloadOwnerMatchesExpected
     && driverPayloadValidationEvidence?.contractHash === contractHash
     && bareSha256Pattern.test(driverPayloadValidationEvidence?.contractHash || '')
@@ -11766,6 +11785,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
       payloadValueHashMatchesExpected: driverPayloadValueHashMatchesExpected,
       payloadValueStateMatchesExpected: driverPayloadValueStateMatchesExpected,
       payloadActionMatchesMutation: driverPayloadActionMatchesMutation,
+      payloadRowIdentityMatchesExpected: driverPayloadRowIdentityMatchesExpected,
       payloadOwnerMatchesExpected: plannedPayloadOwnerMatchesExpected,
       payloadContractSupportsDeleteMatches: driverPayloadContractSupportsDeleteMatches,
       contractValidation: contractValidationEvidence ? {
@@ -11794,6 +11814,18 @@ export function summarizeProductionPluginDriverBoundaryProof({
         contractSupportsDelete: driverPayloadValidationEvidence.contractSupportsDelete === true,
         contractHash: driverPayloadValidationEvidence.contractHash || null,
         contractValidationHash: driverPayloadValidationEvidence.contractValidationHash || null,
+        rowIdentity: driverPayloadRowIdentityEvidence ? {
+          resourceId: driverPayloadRowIdentityEvidence.resourceId || null,
+          status: driverPayloadRowIdentityEvidence.status || null,
+          fields: Array.isArray(driverPayloadRowIdentityEvidence.fields)
+            ? driverPayloadRowIdentityEvidence.fields.map((field) => ({
+              field: field?.field || null,
+              expected: field?.expected || null,
+              observedHash: field?.observedHash || null,
+              matched: field?.matched === true,
+            }))
+            : [],
+        } : null,
         value: driverPayloadValueEvidence ? {
           state: driverPayloadValueEvidence.state || null,
           hash: driverPayloadValueEvidence.hash || null,
@@ -11895,6 +11927,63 @@ function summarizePluginDriverApplyCarryThrough({
     verifiedBeforeFirstMutation: verifiedBeforeFirstMutation === true,
     accepted,
   };
+}
+
+function contractBoundRowIdentityEvidence({
+  resource,
+  value,
+  action,
+} = {}) {
+  const resourceId = resource?.id || null;
+  if (action === 'delete' || value === ABSENT) {
+    return {
+      resourceId,
+      status: 'not-required',
+      fields: [],
+    };
+  }
+  const tokens = contractBoundRowIdentityTokens(resourceId);
+  if (tokens.length === 0) {
+    return {
+      resourceId,
+      status: 'unsupported',
+      fields: [],
+    };
+  }
+  const valueIsObject = value && typeof value === 'object' && !Array.isArray(value);
+  const fields = tokens.map((token) => {
+    const observed = valueIsObject ? value[token.field] : undefined;
+    const matched = observed !== undefined && String(observed) === token.expected;
+    return {
+      field: token.field,
+      expected: token.expected,
+      observedHash: observed === undefined ? null : digest(String(observed)),
+      matched,
+    };
+  });
+  return {
+    resourceId,
+    status: fields.every((field) => field.matched) ? 'matched' : 'mismatch',
+    fields,
+  };
+}
+
+function contractBoundRowIdentityTokens(resourceId) {
+  if (typeof resourceId !== 'string' || resourceId.length === 0) {
+    return [];
+  }
+  const tokens = [];
+  for (const segment of resourceId.split('|')) {
+    const separator = segment.indexOf(':');
+    if (separator <= 0 || separator === segment.length - 1) {
+      return [];
+    }
+    tokens.push({
+      field: segment.slice(0, separator),
+      expected: segment.slice(separator + 1),
+    });
+  }
+  return tokens;
 }
 
 export function summarizeArbitraryPluginFixturePackageReleaseVerifierEvidence({

@@ -3576,6 +3576,7 @@ function reprint_push_plugin_driver_payload_evidence_accepted(
         'supportsDelete',
         'contractSupportsDelete',
         'contractHash',
+        'rowIdentity',
         'value',
         'contractValidationHash',
     ])) {
@@ -3587,6 +3588,15 @@ function reprint_push_plugin_driver_payload_evidence_accepted(
         : hash('sha256', '"__REPRINT_PUSH_ABSENT__"');
     $value_evidence = is_array($evidence['value'] ?? null) ? $evidence['value'] : [];
     if (!reprint_push_array_has_exact_keys($value_evidence, ['state', 'hash'])) {
+        return false;
+    }
+    $row_identity_evidence = is_array($evidence['rowIdentity'] ?? null) ? $evidence['rowIdentity'] : [];
+    $expected_row_identity = reprint_push_plugin_driver_payload_row_identity_evidence(
+        $resource_key,
+        $action,
+        $planned
+    );
+    if (!reprint_push_plugin_driver_payload_row_identity_evidence_matches($row_identity_evidence, $expected_row_identity)) {
         return false;
     }
     $planned_owner_matches = $action === 'delete'
@@ -3616,10 +3626,108 @@ function reprint_push_plugin_driver_payload_evidence_accepted(
         && ($evidence['supportsDelete'] ?? null) === $supports_delete
         && ($evidence['contractSupportsDelete'] ?? null) === ($contract['supportsDelete'] ?? null)
         && ($evidence['contractHash'] ?? null) === ($contract['contractHash'] ?? null)
+        && ($evidence['rowIdentity'] ?? null) === $expected_row_identity
         && ($evidence['contractValidationHash'] ?? null) === hash('sha256', reprint_push_stable_json($contract))
         && ($value_evidence['state'] ?? null) === $expected_state
         && ($value_evidence['hash'] ?? null) === $expected_hash
         && $planned_owner_matches;
+}
+
+function reprint_push_plugin_driver_payload_row_identity_evidence(
+    string $resource_key,
+    string $action,
+    array $planned
+): array {
+    [, $resource_id] = reprint_push_parse_wordpress_graph_row_resource_key($resource_key);
+    if ($action === 'delete' || empty($planned['exists'])) {
+        return [
+            'resourceId' => $resource_id,
+            'status' => 'not-required',
+            'fields' => [],
+        ];
+    }
+
+    $tokens = reprint_push_plugin_driver_payload_row_identity_tokens($resource_id);
+    if (count($tokens) === 0) {
+        return [
+            'resourceId' => $resource_id,
+            'status' => 'unsupported',
+            'fields' => [],
+        ];
+    }
+
+    $value = is_array($planned['value'] ?? null) ? $planned['value'] : [];
+    $fields = [];
+    foreach ($tokens as $token) {
+        $field = $token['field'];
+        $observed_exists = array_key_exists($field, $value);
+        $observed = $observed_exists ? $value[$field] : null;
+        $fields[] = [
+            'field' => $field,
+            'expected' => $token['expected'],
+            'observedHash' => $observed_exists ? hash('sha256', reprint_push_stable_json((string) $observed)) : null,
+            'matched' => $observed_exists && (string) $observed === $token['expected'],
+        ];
+    }
+
+    $matched = true;
+    foreach ($fields as $field) {
+        if (empty($field['matched'])) {
+            $matched = false;
+            break;
+        }
+    }
+
+    return [
+        'resourceId' => $resource_id,
+        'status' => $matched ? 'matched' : 'mismatch',
+        'fields' => $fields,
+    ];
+}
+
+function reprint_push_plugin_driver_payload_row_identity_tokens(string $resource_id): array
+{
+    if ($resource_id === '') {
+        return [];
+    }
+    $segments = explode('|', $resource_id);
+    $tokens = [];
+    foreach ($segments as $segment) {
+        $separator = strpos($segment, ':');
+        if ($separator === false || $separator === 0 || $separator === strlen($segment) - 1) {
+            return [];
+        }
+        $field = substr($segment, 0, $separator);
+        $expected = substr($segment, $separator + 1);
+        if ($field === '' || $expected === '') {
+            return [];
+        }
+        $tokens[] = [
+            'field' => $field,
+            'expected' => $expected,
+        ];
+    }
+    return $tokens;
+}
+
+function reprint_push_plugin_driver_payload_row_identity_evidence_matches(
+    array $evidence,
+    array $expected
+): bool {
+    if (!reprint_push_array_has_exact_keys($evidence, ['resourceId', 'status', 'fields'])) {
+        return false;
+    }
+    if (!is_array($evidence['fields'] ?? null)) {
+        return false;
+    }
+    foreach ($evidence['fields'] as $field) {
+        if (!is_array($field)
+            || !reprint_push_array_has_exact_keys($field, ['field', 'expected', 'observedHash', 'matched'])) {
+            return false;
+        }
+    }
+    return $evidence === $expected
+        && in_array($evidence['status'], ['matched', 'not-required'], true);
 }
 
 function reprint_push_array_has_exact_keys(array $value, array $expected_keys): bool

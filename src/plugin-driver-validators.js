@@ -75,6 +75,7 @@ function validateContractBoundRowDriverPayload({
   const expectedOwner = contractValidationEvidence.pluginOwner || owner || null;
   const expectedDriver = contractValidationEvidence.driver || driver || null;
   const contractSupportsDelete = contractValidationEvidence.supportsDelete === true;
+  const rowIdentity = contractBoundRowIdentityEvidence(resource, value, action);
   const issues = [];
 
   if (contractValidationEvidence.resourceKey !== resource?.key) {
@@ -173,6 +174,28 @@ function validateContractBoundRowDriverPayload({
       });
     }
   }
+  if (rowIdentity.status === 'unsupported') {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_ID_UNSUPPORTED',
+      field: 'resource.id',
+      expected: 'parseable row identity tokens',
+      observed: resource?.id || null,
+    });
+  } else if (rowIdentity.status === 'mismatch') {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_ID_MISMATCH',
+      field: 'rowIdentity',
+      expected: rowIdentity.fields.map((field) => ({
+        field: field.field,
+        expected: field.expected,
+      })),
+      observed: rowIdentity.fields.map((field) => ({
+        field: field.field,
+        observedHash: field.observedHash,
+        matched: field.matched,
+      })),
+    });
+  }
 
   const accepted = issues.length === 0;
   const evidence = {
@@ -195,6 +218,7 @@ function validateContractBoundRowDriverPayload({
     supportsDelete: supportsDelete === true,
     contractSupportsDelete,
     contractHash: contractValidationEvidence.contractHash || null,
+    rowIdentity,
     value: {
       state: value === ABSENT ? 'absent' : 'present',
       hash: digest(value),
@@ -212,6 +236,62 @@ function validateContractBoundRowDriverPayload({
     reason: 'Plugin-owned row driver contract-bound payload validation failed.',
     evidence,
   };
+}
+
+function contractBoundRowIdentityEvidence(resource, value, action) {
+  const resourceId = resource?.id || null;
+  if (action === 'delete' || value === ABSENT) {
+    return {
+      resourceId,
+      status: 'not-required',
+      fields: [],
+    };
+  }
+  const tokens = parseContractBoundRowIdentityTokens(resourceId);
+  if (tokens.length === 0) {
+    return {
+      resourceId,
+      status: 'unsupported',
+      fields: [],
+    };
+  }
+  const valueIsObject = value && typeof value === 'object' && !Array.isArray(value);
+  const fields = tokens.map((token) => {
+    const observed = valueIsObject ? value[token.field] : undefined;
+    const matched = observed !== undefined && String(observed) === token.expected;
+    return {
+      field: token.field,
+      expected: token.expected,
+      observedHash: observed === undefined ? null : digest(String(observed)),
+      matched,
+    };
+  });
+  return {
+    resourceId,
+    status: fields.every((field) => field.matched) ? 'matched' : 'mismatch',
+    fields,
+  };
+}
+
+function parseContractBoundRowIdentityTokens(resourceId) {
+  if (!isNonEmptyString(resourceId)) {
+    return [];
+  }
+  const segments = resourceId.split('|');
+  const tokens = [];
+  for (const segment of segments) {
+    const separator = segment.indexOf(':');
+    if (separator <= 0 || separator === segment.length - 1) {
+      return [];
+    }
+    const field = segment.slice(0, separator);
+    const expected = segment.slice(separator + 1);
+    if (!isNonEmptyString(field) || !isNonEmptyString(expected)) {
+      return [];
+    }
+    tokens.push({ field, expected });
+  }
+  return tokens;
 }
 
 function acceptedContractValidationEvidence(evidence) {

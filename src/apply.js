@@ -552,9 +552,15 @@ function contractBoundPayloadValidationEvidenceAccepted({
   const valueEvidence = validation?.value && typeof validation.value === 'object' && !Array.isArray(validation.value)
     ? validation.value
     : null;
+  const rowIdentityEvidence = validation?.rowIdentity
+    && typeof validation.rowIdentity === 'object'
+    && !Array.isArray(validation.rowIdentity)
+      ? validation.rowIdentity
+      : null;
   const expectedState = plannedValue === ABSENT ? 'absent' : 'present';
   const expectedValueHash = digest(plannedValue);
   const expectedContractValidationHash = pluginOwnedRowDriverContractValidationEvidenceHash(contract);
+  const expectedRowIdentity = expectedValidation?.rowIdentity || null;
 
   return validation?.schemaVersion === 1
     && validation.operation === 'plugin-driver-payload-validation'
@@ -573,12 +579,36 @@ function contractBoundPayloadValidationEvidenceAccepted({
     && validation.supportsDelete === mutationSupportsDelete
     && validation.contractSupportsDelete === contract.supportsDelete
     && validation.contractHash === contract.contractHash
+    && contractBoundRowIdentityEvidenceAccepted({
+      rowIdentityEvidence,
+      expectedRowIdentity,
+      resourceId: mutation.resource?.id || null,
+    })
     && validation.contractValidationHash === expectedContractValidationHash
     && valueEvidence?.state === expectedState
     && valueEvidence?.hash === expectedValueHash
     && /^[a-f0-9]{64}$/.test(valueEvidence.hash || '')
     && expectedValidation
     && digest(validation) === digest(expectedValidation);
+}
+
+function contractBoundRowIdentityEvidenceAccepted({
+  rowIdentityEvidence,
+  expectedRowIdentity,
+  resourceId,
+}) {
+  if (!rowIdentityEvidence || !expectedRowIdentity) {
+    return false;
+  }
+  const fields = Array.isArray(rowIdentityEvidence.fields) ? rowIdentityEvidence.fields : null;
+  const expectedFields = Array.isArray(expectedRowIdentity.fields) ? expectedRowIdentity.fields : null;
+  return rowIdentityEvidence.resourceId === resourceId
+    && rowIdentityEvidence.resourceId === expectedRowIdentity.resourceId
+    && (rowIdentityEvidence.status === 'matched' || rowIdentityEvidence.status === 'not-required')
+    && rowIdentityEvidence.status === expectedRowIdentity.status
+    && fields !== null
+    && expectedFields !== null
+    && digest(rowIdentityEvidence) === digest(expectedRowIdentity);
 }
 
 function validatePluginOwnedApplyValidation(mutation, owner, driver) {

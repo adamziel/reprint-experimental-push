@@ -485,6 +485,14 @@ function rpp_contract_bound_policy(
             'supportsDelete' => $supports_delete,
             'contractSupportsDelete' => $supports_delete,
             'contractHash' => $contract_hash,
+            'rowIdentity' => reprint_push_plugin_driver_payload_row_identity_evidence(
+                $resource_key,
+                $action,
+                [
+                    'exists' => $action !== 'delete',
+                    'value' => $value,
+                ]
+            ),
             'value' => [
                 'state' => $action === 'delete' ? 'absent' : 'present',
                 'hash' => $action === 'delete'

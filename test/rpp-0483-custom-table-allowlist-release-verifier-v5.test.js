@@ -224,6 +224,18 @@ test('RPP-0483 release verifier carries exact custom-table allowlist through app
     mutation.pluginOwnedResource.driverPayloadValidationEvidence.contractHash,
     mutation.pluginOwnedResource.contractValidationEvidence.contractHash,
   );
+  assert.deepEqual(mutation.pluginOwnedResource.driverPayloadValidationEvidence.rowIdentity, {
+    resourceId: boundary.rowId,
+    status: 'matched',
+    fields: [
+      {
+        field: 'state_id',
+        expected: '1',
+        observedHash: digest('1'),
+        matched: true,
+      },
+    ],
+  });
   assert.equal(precondition.checkedAgainst, 'live-remote');
   assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
 
@@ -247,6 +259,7 @@ test('RPP-0483 release verifier carries exact custom-table allowlist through app
   assert.equal(summary.driverContractBoundary.payloadValueHashMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.payloadValueStateMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.payloadActionMatchesMutation, true);
+  assert.equal(summary.driverContractBoundary.payloadRowIdentityMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.payloadOwnerMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.payloadContractSupportsDeleteMatches, true);
   assert.match(summary.driverContractBoundary.contractHash, /^[a-f0-9]{64}$/);
@@ -268,6 +281,18 @@ test('RPP-0483 release verifier carries exact custom-table allowlist through app
     summary.driverContractBoundary.driverPayloadValidation.contractValidationHash,
     summary.driverContractBoundary.expectedContractValidationHash,
   );
+  assert.deepEqual(summary.driverContractBoundary.driverPayloadValidation.rowIdentity, {
+    resourceId: boundary.rowId,
+    status: 'matched',
+    fields: [
+      {
+        field: 'state_id',
+        expected: '1',
+        observedHash: digest('1'),
+        matched: true,
+      },
+    ],
+  });
   assert.equal(summary.driverContractBoundary.driverPayloadValidation.value.state, 'present');
   assert.equal(summary.driverContractBoundary.driverPayloadValidation.value.hash, mutation.localHash);
   assert.equal(summary.ownershipBoundary.exactAllowlistOwnerDriver, true);
@@ -531,6 +556,57 @@ test('RPP-0483 release verifier blocks custom-table allowlist and apply carry-th
     assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
     assert.equal(summary.mutationBoundary.localHash, summary.localPluginStateEvidence.hash);
     assertNoRawSentinels(summary, 'missing payload owner marker summary');
+  });
+
+  await t.test('forged payload row identity is not release-verifier eligible with matching hashes', () => {
+    const topology = releaseStateTopology();
+    const plan = releaseStatePlan(topology);
+    const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey);
+    const rowIdMismatchValue = cloneJson(topology.localEditedSnapshot.db[boundary.table][boundary.rowId]);
+    rowIdMismatchValue.state_id = 2;
+    topology.localEditedSnapshot.db[boundary.table][boundary.rowId] = rowIdMismatchValue;
+    mutation.value = serializeResourceValue(rowIdMismatchValue);
+    mutation.localHash = digest(rowIdMismatchValue);
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.value.hash = digest(rowIdMismatchValue);
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.rowIdentity = {
+      resourceId: boundary.rowId,
+      status: 'mismatch',
+      fields: [
+        {
+          field: 'state_id',
+          expected: '1',
+          observedHash: digest('2'),
+          matched: false,
+        },
+      ],
+    };
+    const summary = summarize(topology, releaseVerifierProof(plan));
+
+    assert.equal(summary.status, 'blocked');
+    assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+    assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
+    assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, false);
+    assert.equal(summary.driverContractBoundary.payloadActionMatchesMutation, true);
+    assert.equal(summary.driverContractBoundary.payloadValueHashMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.payloadValueStateMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.payloadOwnerMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.payloadRowIdentityMatchesExpected, false);
+    assert.deepEqual(summary.driverContractBoundary.driverPayloadValidation.rowIdentity, {
+      resourceId: boundary.rowId,
+      status: 'mismatch',
+      fields: [
+        {
+          field: 'state_id',
+          expected: '1',
+          observedHash: digest('2'),
+          matched: false,
+        },
+      ],
+    });
+    assert.equal(summary.driverContractBoundary.contractBound, false);
+    assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
+    assert.equal(summary.mutationBoundary.localHash, summary.localPluginStateEvidence.hash);
+    assertNoRawSentinels(summary, 'planned payload row id mismatch summary');
   });
 
   await t.test('extra custom-table mutation is not release-verifier eligible', () => {

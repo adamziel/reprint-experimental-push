@@ -4,6 +4,28 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Contract-Bound Plugin Row Identity
+
+- Last update: 2026-06-02 07:50 CEST +02:00.
+- Contract-bound custom row-driver payload validation now records hash-only
+  `rowIdentity` evidence derived from the mutation resource id and planned row
+  body. Present payloads whose identity fields do not match the resource id now
+  refuse before mutation with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_ID_MISMATCH`; unparseable resource identity
+  shapes refuse with `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_ID_UNSUPPORTED`.
+- Apply now recomputes and compares row identity evidence for ready plans, so a
+  forged ready plan cannot change the payload row id, recompute the value hash,
+  and still pass contract-bound plugin-driver validation.
+- The production-shaped RPP-0483 verifier now reports
+  `payloadRowIdentityMatchesExpected` and blocks a custom-table proof where the
+  payload hashes match but the body no longer belongs to the target row.
+- Verification: JS/PHP syntax checks passed; focused plugin-driver,
+  registration API, PHP parity, and RPP-0483 verifier tests passed. See
+  [ao-plugin-driver-row-identity.md](evidence/ao-plugin-driver-row-identity.md).
+- Caveat: this closes a row-identity hole for contract-bound plugin row
+  payloads. It does not complete generic plugin validators, activation/update
+  flows, broad WordPress graph identity mapping, or hosted production smoke.
+
 ## 2026-06-02 - Graph Identity Map Contract Guards
 
 - Last update: 2026-06-02 07:43 CEST +02:00.
