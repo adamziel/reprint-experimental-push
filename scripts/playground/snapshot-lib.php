@@ -13,6 +13,9 @@
 
 const REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_VERSION = 1;
 const REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_KIND = 'plugin-owned-row-driver';
+const REPRINT_PUSH_WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION = 1;
+const REPRINT_PUSH_WORDPRESS_GRAPH_RELATIONSHIP_CONTRACT_KIND = 'wordpress-graph-relationship';
+const REPRINT_PUSH_WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND = 'wordpress-graph-identity-map';
 
 function reprint_push_export_snapshot(): array
 {
@@ -81,6 +84,8 @@ function reprint_push_export_snapshot(): array
     reprint_push_export_fixture_custom_table($snapshot);
     reprint_push_export_registered_plugin_owned_rows($snapshot);
     reprint_push_add_fixture_plugin_owned_policy($snapshot);
+    reprint_push_add_wordpress_graph_contracts($snapshot);
+    reprint_push_add_wordpress_graph_identity_maps($snapshot);
 
     $fixture_root = WP_CONTENT_DIR . '/uploads/reprint-push';
     if (is_dir($fixture_root)) {
@@ -493,6 +498,321 @@ function reprint_push_plugin_owned_row_driver_policy_entry(
         'driver' => $driver,
         'table' => $table,
         'supportsDelete' => $supports_delete,
+    ];
+}
+
+function reprint_push_add_wordpress_graph_contracts(array &$snapshot): void
+{
+    $snapshot['meta']['wordpressGraphContracts'] = reprint_push_wordpress_graph_contract_metadata();
+}
+
+function reprint_push_wordpress_graph_contract_metadata(): array
+{
+    return [
+        'schemaVersion' => REPRINT_PUSH_WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+        'relationshipContracts' => reprint_push_wordpress_graph_relationship_contracts(),
+        'unsupportedSurfaceContracts' => reprint_push_wordpress_graph_unsupported_surface_contracts(),
+        'identityMapContract' => [
+            'schemaVersion' => REPRINT_PUSH_WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+            'contractKind' => REPRINT_PUSH_WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+            'explicitMapTableSuffixes' => reprint_push_wordpress_graph_identity_map_table_suffixes(),
+            'failClosedCollisionSurfaces' => reprint_push_wordpress_graph_identity_fail_closed_collision_surfaces(),
+            'rewritesRequireEquivalentRemoteTarget' => true,
+            'explicitContractsFailClosed' => true,
+            'rewritesRecordHashOnlyEvidence' => true,
+            'rawValuesIncluded' => false,
+        ],
+        'rawValuesIncluded' => false,
+    ];
+}
+
+function reprint_push_wordpress_graph_relationship_contracts(): array
+{
+    return [
+        reprint_push_wordpress_graph_relationship_contract('comment-post', 'comments', ['comment_post_ID'], 'posts'),
+        reprint_push_wordpress_graph_relationship_contract('comment-parent', 'comments', ['comment_parent'], 'comments'),
+        reprint_push_wordpress_graph_relationship_contract('comment-user', 'comments', ['user_id'], 'users', true, 'valid-user-row'),
+        reprint_push_wordpress_graph_relationship_contract('commentmeta-comment', 'commentmeta', ['comment_id'], 'comments', true, 'valid-comment-row'),
+        reprint_push_wordpress_graph_relationship_contract('link-owner', 'links', ['link_owner'], 'users'),
+        reprint_push_wordpress_graph_relationship_contract('blog-site', 'blogs', ['site_id'], 'site'),
+        reprint_push_wordpress_graph_relationship_contract('blogmeta-blog', 'blogmeta', ['blog_id'], 'blogs'),
+        reprint_push_wordpress_graph_relationship_contract('blog-version-blog', 'blog_versions', ['blog_id'], 'blogs'),
+        reprint_push_wordpress_graph_relationship_contract('sitemeta-site', 'sitemeta', ['site_id'], 'site'),
+        reprint_push_wordpress_graph_relationship_contract('registration-log-blog', 'registration_log', ['blog_id'], 'blogs'),
+        reprint_push_wordpress_graph_relationship_contract('post-parent', 'posts', ['post_parent'], 'posts'),
+        reprint_push_wordpress_graph_relationship_contract('post-author', 'posts', ['post_author'], 'users'),
+        reprint_push_wordpress_graph_relationship_contract('postmeta-post', 'postmeta', ['post_id'], 'posts'),
+        reprint_push_wordpress_graph_relationship_contract('serialized-block-attachment', 'posts', ['post_content', 'post_excerpt'], 'posts', false, 'post-type:attachment'),
+        reprint_push_wordpress_graph_relationship_contract('serialized-block-post', 'posts', ['post_content', 'post_excerpt'], 'posts', false),
+        reprint_push_wordpress_graph_relationship_contract('serialized-block-reusable-block', 'posts', ['post_content', 'post_excerpt'], 'posts', false, 'post-type:wp_block'),
+        reprint_push_wordpress_graph_relationship_contract('featured-image-attachment', 'postmeta', ['meta_value'], 'posts', true, 'post-type:attachment', 'meta_key:_thumbnail_id'),
+        reprint_push_wordpress_graph_relationship_contract('term-relationship-object', 'term_relationships', ['object_id'], 'posts'),
+        reprint_push_wordpress_graph_relationship_contract('term-relationship-taxonomy', 'term_relationships', ['term_taxonomy_id'], 'term_taxonomy'),
+        reprint_push_wordpress_graph_relationship_contract('term-taxonomy-term', 'term_taxonomy', ['term_id'], 'terms'),
+        reprint_push_wordpress_graph_relationship_contract('term-taxonomy-parent', 'term_taxonomy', ['parent'], 'terms'),
+        reprint_push_wordpress_graph_relationship_contract('termmeta-term', 'termmeta', ['term_id'], 'terms'),
+        reprint_push_wordpress_graph_relationship_contract('usermeta-user', 'usermeta', ['user_id'], 'users'),
+    ];
+}
+
+function reprint_push_wordpress_graph_relationship_contract(
+    string $relationship_type,
+    string $source_suffix,
+    array $source_fields,
+    string $target_suffix,
+    bool $scalar_rewrite_supported = true,
+    string $target_validation = 'row-present',
+    ?string $source_condition = null,
+    bool $same_plan_supported = true
+): array {
+    $contract = [
+        'schemaVersion' => REPRINT_PUSH_WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+        'contractKind' => REPRINT_PUSH_WORDPRESS_GRAPH_RELATIONSHIP_CONTRACT_KIND,
+        'relationshipType' => $relationship_type,
+        'sourceSuffix' => $source_suffix,
+        'sourceFields' => array_values($source_fields),
+        'targetSuffix' => $target_suffix,
+        'scalarRewriteSupported' => $scalar_rewrite_supported,
+        'targetValidation' => $target_validation,
+        'samePlanSupported' => $same_plan_supported,
+        'resolutionPolicy' => 'preserve-remote-wordpress-graph-and-stop',
+        'rawValuesIncluded' => false,
+    ];
+    if ($source_condition !== null) {
+        $contract['sourceCondition'] = $source_condition;
+    }
+    return $contract;
+}
+
+function reprint_push_wordpress_graph_unsupported_surface_contracts(): array
+{
+    return [
+        [
+            'surface' => 'wp_posts.post_type',
+            'unsupportedValues' => ['nav_menu_item', 'revision', 'wp_navigation'],
+            'reasonCode' => 'UNSUPPORTED_WORDPRESS_POST_GRAPH_SURFACE',
+            'resolutionPolicy' => 'preserve-remote-wordpress-graph-and-stop',
+        ],
+        [
+            'surface' => 'wp_postmeta.meta_key',
+            'unsupportedValues' => [
+                '_menu_item_object',
+                '_menu_item_object_id',
+                '_menu_item_menu_item_parent',
+                '_menu_item_type',
+                'menu_item_parent',
+            ],
+            'reasonCode' => 'UNSUPPORTED_WORDPRESS_MENU_ITEM_META_GRAPH_SURFACE',
+            'resolutionPolicy' => 'preserve-remote-wordpress-graph-and-stop',
+        ],
+        [
+            'surface' => 'wp_term_taxonomy.taxonomy',
+            'unsupportedValues' => ['nav_menu'],
+            'reasonCode' => 'UNSUPPORTED_WORDPRESS_NAV_MENU_TAXONOMY_GRAPH_SURFACE',
+            'resolutionPolicy' => 'preserve-remote-wordpress-graph-and-stop',
+        ],
+        [
+            'surface' => 'wp_term_taxonomy.taxonomy',
+            'supportedValues' => ['category', 'post_tag', 'post_format'],
+            'reasonCode' => 'UNSUPPORTED_WORDPRESS_CUSTOM_TAXONOMY_GRAPH_SURFACE',
+            'resolutionPolicy' => 'preserve-remote-wordpress-graph-and-stop',
+        ],
+    ];
+}
+
+function reprint_push_wordpress_graph_identity_map_table_suffixes(): array
+{
+    return [
+        'posts',
+        'users',
+        'comments',
+        'terms',
+        'term_taxonomy',
+        'site',
+        'blogs',
+    ];
+}
+
+function reprint_push_wordpress_graph_identity_fail_closed_collision_surfaces(): array
+{
+    return [
+        'wp_posts.guid',
+        'wp_posts.post_type+post_name',
+    ];
+}
+
+function reprint_push_add_wordpress_graph_identity_maps(array &$snapshot): void
+{
+    $rows = reprint_push_wordpress_graph_identity_map_rows();
+    if (count($rows) === 0) {
+        return;
+    }
+
+    $snapshot['meta']['wordpressGraphIdentityMap'] = [
+        'contractVersion' => REPRINT_PUSH_WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+        'contractKind' => REPRINT_PUSH_WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+        'rows' => $rows,
+        'rawValuesIncluded' => false,
+    ];
+}
+
+function reprint_push_wordpress_graph_identity_map_rows(): array
+{
+    $source_rows = [];
+    if (function_exists('get_option')) {
+        $source_rows = get_option('reprint_push_wordpress_graph_identity_map', []);
+    }
+    if (function_exists('apply_filters')) {
+        $source_rows = apply_filters('reprint_push_wordpress_graph_identity_map_rows', $source_rows);
+    }
+
+    return reprint_push_normalize_wordpress_graph_identity_map_rows($source_rows);
+}
+
+function reprint_push_normalize_wordpress_graph_identity_map_rows($source_rows): array
+{
+    if ($source_rows === null || $source_rows === false || $source_rows === '') {
+        return [];
+    }
+    if (!is_array($source_rows)) {
+        throw new RuntimeException('Unsupported WordPress graph identity map provider payload.');
+    }
+    if (array_key_exists('rows', $source_rows)) {
+        $source_rows = $source_rows['rows'];
+    } elseif (array_key_exists('resources', $source_rows)) {
+        $source_rows = $source_rows['resources'];
+    }
+    if (!is_array($source_rows) || !array_is_list($source_rows)) {
+        throw new RuntimeException('Unsupported WordPress graph identity map rows payload.');
+    }
+
+    $rows = [];
+    foreach ($source_rows as $entry) {
+        $rows[] = reprint_push_normalize_wordpress_graph_identity_map_row($entry);
+    }
+    return $rows;
+}
+
+function reprint_push_normalize_wordpress_graph_identity_map_row($entry): array
+{
+    if (!is_array($entry)) {
+        throw new RuntimeException('Unsupported WordPress graph identity map row.');
+    }
+
+    $provided_version = $entry['contractVersion'] ?? $entry['schemaVersion'] ?? null;
+    if ($provided_version !== null && (int) $provided_version !== REPRINT_PUSH_WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION) {
+        throw new RuntimeException('Unsupported WordPress graph identity map contract version.');
+    }
+    $provided_kind = $entry['contractKind'] ?? $entry['kind'] ?? null;
+    if ($provided_kind !== null && (string) $provided_kind !== REPRINT_PUSH_WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND) {
+        throw new RuntimeException('Unsupported WordPress graph identity map contract kind.');
+    }
+    if (array_key_exists('rawValuesIncluded', $entry) && $entry['rawValuesIncluded'] !== false) {
+        throw new RuntimeException('WordPress graph identity map rows must not include raw values.');
+    }
+
+    $source_resource_key = reprint_push_wordpress_graph_identity_map_entry_resource_key($entry, 'source');
+    $target_resource_key = reprint_push_wordpress_graph_identity_map_entry_resource_key($entry, 'target');
+    [$source_table] = reprint_push_parse_wordpress_graph_row_resource_key($source_resource_key);
+    [$target_table] = reprint_push_parse_wordpress_graph_row_resource_key($target_resource_key);
+    $source_suffix = reprint_push_wordpress_graph_table_suffix($source_table);
+    $target_suffix = reprint_push_wordpress_graph_table_suffix($target_table);
+
+    if ($source_resource_key === $target_resource_key) {
+        throw new RuntimeException('WordPress graph identity map source and target must differ.');
+    }
+    if ($source_suffix === null
+        || $target_suffix === null
+        || $source_suffix !== $target_suffix
+        || !in_array($source_suffix, reprint_push_wordpress_graph_identity_map_table_suffixes(), true)) {
+        throw new RuntimeException('Unsupported WordPress graph identity map table surface.');
+    }
+
+    return [
+        'contractVersion' => REPRINT_PUSH_WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+        'contractKind' => REPRINT_PUSH_WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+        'sourceResourceKey' => $source_resource_key,
+        'targetResourceKey' => $target_resource_key,
+        'rawValuesIncluded' => false,
+    ];
+}
+
+function reprint_push_wordpress_graph_identity_map_entry_resource_key(array $entry, string $side): string
+{
+    if ($side === 'source') {
+        $resource_key = $entry['sourceResourceKey']
+            ?? $entry['localResourceKey']
+            ?? $entry['fromResourceKey']
+            ?? null;
+        $table = $entry['sourceTable'] ?? $entry['localTable'] ?? $entry['fromTable'] ?? $entry['table'] ?? null;
+        $id = $entry['sourceId'] ?? $entry['localId'] ?? $entry['fromId'] ?? null;
+    } else {
+        $resource_key = $entry['targetResourceKey']
+            ?? $entry['remoteResourceKey']
+            ?? $entry['toResourceKey']
+            ?? null;
+        $table = $entry['targetTable'] ?? $entry['remoteTable'] ?? $entry['toTable'] ?? $entry['table'] ?? null;
+        $id = $entry['targetId'] ?? $entry['remoteId'] ?? $entry['toId'] ?? null;
+    }
+
+    if (is_string($resource_key) && $resource_key !== '') {
+        reprint_push_parse_wordpress_graph_row_resource_key($resource_key);
+        return $resource_key;
+    }
+    if (is_string($table) && $table !== '' && is_string($id) && $id !== '') {
+        return 'row:' . wp_json_encode([$table, $id], JSON_UNESCAPED_SLASHES);
+    }
+
+    throw new RuntimeException('WordPress graph identity map row must include source and target row resources.');
+}
+
+function reprint_push_parse_wordpress_graph_row_resource_key(string $resource_key): array
+{
+    if (!str_starts_with($resource_key, 'row:')) {
+        throw new RuntimeException('WordPress graph identity map resource key must be a row resource.');
+    }
+    $decoded = json_decode(substr($resource_key, strlen('row:')), true);
+    if (!is_array($decoded)
+        || count($decoded) !== 2
+        || !is_string($decoded[0] ?? null)
+        || !is_string($decoded[1] ?? null)
+        || $decoded[0] === ''
+        || $decoded[1] === '') {
+        throw new RuntimeException('WordPress graph identity map resource key must encode a table and row id.');
+    }
+    return [$decoded[0], $decoded[1]];
+}
+
+function reprint_push_wordpress_graph_table_suffix(string $table): ?string
+{
+    foreach (reprint_push_wordpress_graph_table_suffixes() as $suffix) {
+        if ($table === 'wp_' . $suffix || str_ends_with($table, '_' . $suffix)) {
+            return $suffix;
+        }
+    }
+    return null;
+}
+
+function reprint_push_wordpress_graph_table_suffixes(): array
+{
+    return [
+        'registration_log',
+        'blog_versions',
+        'commentmeta',
+        'sitemeta',
+        'blogmeta',
+        'comments',
+        'term_relationships',
+        'term_taxonomy',
+        'postmeta',
+        'usermeta',
+        'users',
+        'termmeta',
+        'links',
+        'blogs',
+        'site',
+        'posts',
+        'terms',
     ];
 }
 

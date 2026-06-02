@@ -108,5 +108,43 @@ identity proof exists:
 unsupported surface contracts, identity-map contract kind/version, identity-map
 suffixes, collision surfaces, and family coverage without raw site values.
 
+WordPress Playground snapshots exported by `scripts/playground/snapshot-lib.php`
+also carry the exporter-side contract under `meta.wordpressGraphContracts`.
+That metadata includes:
+
+- the same relationship contract table used by the JS planner/apply path
+- unsupported surface contracts and their fail-closed reason codes
+- the explicit identity-map contract kind/version and supported table suffixes
+- identity collision surfaces that must remain fail-closed
+- `rawValuesIncluded: false`
+
+The snapshot metadata is not a permission to widen support. It is a protocol
+declaration: production exporters must state the graph contract they are
+exporting against, and consumers must still reject unsupported or forged graph
+rewrite evidence before mutation.
+
+Snapshots may also carry explicit identity-map rows under
+`meta.wordpressGraphIdentityMap.rows`. The PHP exporter only emits those rows
+when a provider supplies them through the
+`reprint_push_wordpress_graph_identity_map_rows` filter or the
+`reprint_push_wordpress_graph_identity_map` option. Each exported row is
+normalized to:
+
+```json
+{
+  "contractVersion": 1,
+  "contractKind": "wordpress-graph-identity-map",
+  "sourceResourceKey": "row:[\"wp_posts\",\"ID:2001\"]",
+  "targetResourceKey": "row:[\"wp_posts\",\"ID:3001\"]",
+  "rawValuesIncluded": false
+}
+```
+
+The exporter does not infer maps from slugs, GUIDs, or row contents. If no
+explicit map is supplied, no identity map is exported. Malformed contract rows,
+raw-value rows, self-maps, unsupported versions/kinds, and cross-surface maps
+fail closed before snapshot export. Planner/apply still perform the stronger
+equivalence, staleness, relationship contract, and pre-mutation checks.
+
 Future graph support should extend the contract first, add refusal tests for
 unsupported shapes, and only then add positive rewrite or same-plan support.

@@ -4,6 +4,14 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES,
+  WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+  WORDPRESS_GRAPH_IDENTITY_FAIL_CLOSED_COLLISION_SURFACES,
+  WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+  WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS,
+  WORDPRESS_GRAPH_UNSUPPORTED_SURFACE_CONTRACTS,
+} from '../src/wordpress-graph-contracts.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const snapshotLib = path.join(repoRoot, 'scripts/playground/snapshot-lib.php');
@@ -311,6 +319,184 @@ echo reprint_push_probe_stable_json($evidence);
   return JSON.parse(result.stdout);
 }
 
+function runWordPressGraphContractProbe() {
+  const result = spawnSync('php', [
+    '-d',
+    'display_errors=stderr',
+    '-r',
+    `
+if (!function_exists('apply_filters')) {
+    function apply_filters($hook, $value) { return $value; }
+}
+if (!function_exists('wp_json_encode')) {
+    function wp_json_encode($value, $flags = 0) { return json_encode($value, $flags); }
+}
+require $argv[1];
+$snapshot = ['meta' => []];
+reprint_push_add_wordpress_graph_contracts($snapshot);
+echo json_encode([
+    'metadata' => reprint_push_wordpress_graph_contract_metadata(),
+    'snapshotMeta' => $snapshot['meta']['wordpressGraphContracts'],
+]);
+`,
+    snapshotLib,
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  return JSON.parse(result.stdout);
+}
+
+function runWordPressGraphIdentityMapProbe() {
+  const result = spawnSync('php', [
+    '-d',
+    'display_errors=stderr',
+    '-r',
+    `
+if (!function_exists('apply_filters')) {
+    function apply_filters($hook, $value) {
+        if ($hook === 'reprint_push_wordpress_graph_identity_map_rows'
+            && array_key_exists('rpp_graph_identity_rows', $GLOBALS)) {
+            return $GLOBALS['rpp_graph_identity_rows'];
+        }
+        return $value;
+    }
+}
+if (!function_exists('wp_json_encode')) {
+    function wp_json_encode($value, $flags = 0) { return json_encode($value, $flags); }
+}
+require $argv[1];
+
+function rpp_graph_identity_capture($rows): array {
+    $GLOBALS['rpp_graph_identity_rows'] = $rows;
+    $snapshot = ['meta' => []];
+    try {
+        reprint_push_add_wordpress_graph_identity_maps($snapshot);
+        return [
+            'ok' => true,
+            'snapshotMeta' => $snapshot['meta']['wordpressGraphIdentityMap'] ?? null,
+            'normalizedRows' => reprint_push_wordpress_graph_identity_map_rows(),
+        ];
+    } catch (Throwable $error) {
+        return [
+            'ok' => false,
+            'snapshotMeta' => $snapshot['meta']['wordpressGraphIdentityMap'] ?? null,
+            'error' => [
+                'class' => get_class($error),
+                'message' => $error->getMessage(),
+            ],
+        ];
+    } finally {
+        unset($GLOBALS['rpp_graph_identity_rows']);
+    }
+}
+
+echo json_encode([
+    'empty' => rpp_graph_identity_capture([]),
+    'accepted' => rpp_graph_identity_capture([
+        [
+            'sourceResourceKey' => 'row:["wp_posts","ID:2001"]',
+            'targetResourceKey' => 'row:["wp_posts","ID:3001"]',
+        ],
+        [
+            'table' => 'wp_users',
+            'localId' => 'ID:41',
+            'remoteId' => 'ID:82',
+            'contractVersion' => 1,
+            'contractKind' => 'wordpress-graph-identity-map',
+            'rawValuesIncluded' => false,
+        ],
+    ]),
+    'wrappedRows' => rpp_graph_identity_capture([
+        'rows' => [
+            [
+                'sourceResourceKey' => 'row:["wp_comments","comment_ID:10"]',
+                'targetResourceKey' => 'row:["wp_comments","comment_ID:20"]',
+            ],
+        ],
+    ]),
+    'failures' => [
+        'unsupportedVersion' => rpp_graph_identity_capture([
+            [
+                'sourceResourceKey' => 'row:["wp_posts","ID:2001"]',
+                'targetResourceKey' => 'row:["wp_posts","ID:3001"]',
+                'contractVersion' => 2,
+            ],
+        ]),
+        'unsupportedKind' => rpp_graph_identity_capture([
+            [
+                'sourceResourceKey' => 'row:["wp_posts","ID:2001"]',
+                'targetResourceKey' => 'row:["wp_posts","ID:3001"]',
+                'contractKind' => 'wrong-contract',
+            ],
+        ]),
+        'rawValues' => rpp_graph_identity_capture([
+            [
+                'sourceResourceKey' => 'row:["wp_posts","ID:2001"]',
+                'targetResourceKey' => 'row:["wp_posts","ID:3001"]',
+                'rawValuesIncluded' => true,
+            ],
+        ]),
+        'selfMap' => rpp_graph_identity_capture([
+            [
+                'sourceResourceKey' => 'row:["wp_posts","ID:2001"]',
+                'targetResourceKey' => 'row:["wp_posts","ID:2001"]',
+            ],
+        ]),
+        'crossSurface' => rpp_graph_identity_capture([
+            [
+                'sourceResourceKey' => 'row:["wp_posts","ID:2001"]',
+                'targetResourceKey' => 'row:["wp_users","ID:3001"]',
+            ],
+        ]),
+        'malformedResource' => rpp_graph_identity_capture([
+            [
+                'sourceResourceKey' => 'post:2001',
+                'targetResourceKey' => 'row:["wp_posts","ID:3001"]',
+            ],
+        ]),
+    ],
+]);
+`,
+    snapshotLib,
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  return JSON.parse(result.stdout);
+}
+
+function summarizeJsRelationshipContract(contract) {
+  return {
+    schemaVersion: contract.schemaVersion,
+    contractKind: contract.contractKind,
+    relationshipType: contract.relationshipType,
+    sourceSuffix: contract.sourceSuffix,
+    sourceFields: [...contract.sourceFields],
+    ...(contract.sourceCondition ? { sourceCondition: contract.sourceCondition } : {}),
+    targetSuffix: contract.targetSuffix,
+    scalarRewriteSupported: contract.scalarRewriteSupported === true,
+    targetValidation: contract.targetValidation,
+    samePlanSupported: contract.samePlanSupported === true,
+    resolutionPolicy: contract.resolutionPolicy,
+    rawValuesIncluded: contract.rawValuesIncluded === true,
+  };
+}
+
+function summarizeJsUnsupportedSurfaceContract(contract) {
+  return {
+    surface: contract.surface,
+    ...(contract.unsupportedValues ? { unsupportedValues: [...contract.unsupportedValues] } : {}),
+    ...(contract.supportedValues ? { supportedValues: [...contract.supportedValues] } : {}),
+    reasonCode: contract.reasonCode,
+    resolutionPolicy: contract.resolutionPolicy,
+  };
+}
+
 test('snapshot apply gate allows only named lab plugin resources', { skip: !hasPhp }, () => {
   assertSupported({ type: 'plugin', name: 'reprint-push-forms-fixture' });
   assertSupported({ type: 'plugin', name: 'reprint-push-atomic-dependency-fixture' });
@@ -319,6 +505,106 @@ test('snapshot apply gate allows only named lab plugin resources', { skip: !hasP
     { type: 'plugin', name: 'akismet' },
     /Unsupported fixture plugin: akismet/,
   );
+});
+
+test('snapshot library exports WordPress graph contracts that match the JS planner contract', { skip: !hasPhp }, () => {
+  const { metadata, snapshotMeta } = runWordPressGraphContractProbe();
+
+  assert.deepEqual(snapshotMeta, metadata);
+  assert.equal(metadata.schemaVersion, WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION);
+  assert.equal(metadata.rawValuesIncluded, false);
+  assert.deepEqual(
+    metadata.relationshipContracts,
+    WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS.map(summarizeJsRelationshipContract),
+  );
+  assert.deepEqual(
+    metadata.unsupportedSurfaceContracts,
+    WORDPRESS_GRAPH_UNSUPPORTED_SURFACE_CONTRACTS.map(summarizeJsUnsupportedSurfaceContract),
+  );
+  assert.deepEqual(metadata.identityMapContract, {
+    schemaVersion: WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+    contractKind: WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+    explicitMapTableSuffixes: [...SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES],
+    failClosedCollisionSurfaces: [...WORDPRESS_GRAPH_IDENTITY_FAIL_CLOSED_COLLISION_SURFACES],
+    rewritesRequireEquivalentRemoteTarget: true,
+    explicitContractsFailClosed: true,
+    rewritesRecordHashOnlyEvidence: true,
+    rawValuesIncluded: false,
+  });
+  assert.equal(
+    metadata.relationshipContracts.find((contract) =>
+      contract.relationshipType === 'serialized-block-attachment')?.scalarRewriteSupported,
+    false,
+  );
+  assert.equal(
+    metadata.relationshipContracts.find((contract) =>
+      contract.relationshipType === 'featured-image-attachment')?.sourceCondition,
+    'meta_key:_thumbnail_id',
+  );
+
+  const serialized = JSON.stringify(metadata);
+  assert.doesNotMatch(serialized, /Private|example\.test|Brewcommerce|fixture-private/);
+});
+
+test('snapshot library exports only explicit WordPress graph identity-map contract rows', { skip: !hasPhp }, () => {
+  const report = runWordPressGraphIdentityMapProbe();
+
+  assert.equal(report.empty.ok, true);
+  assert.equal(report.empty.snapshotMeta, null);
+  assert.deepEqual(report.empty.normalizedRows, []);
+
+  assert.equal(report.accepted.ok, true);
+  assert.deepEqual(report.accepted.snapshotMeta, {
+    contractVersion: WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+    contractKind: WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+    rows: [
+      {
+        contractVersion: WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+        contractKind: WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+        sourceResourceKey: 'row:["wp_posts","ID:2001"]',
+        targetResourceKey: 'row:["wp_posts","ID:3001"]',
+        rawValuesIncluded: false,
+      },
+      {
+        contractVersion: WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+        contractKind: WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+        sourceResourceKey: 'row:["wp_users","ID:41"]',
+        targetResourceKey: 'row:["wp_users","ID:82"]',
+        rawValuesIncluded: false,
+      },
+    ],
+    rawValuesIncluded: false,
+  });
+  assert.deepEqual(report.accepted.normalizedRows, report.accepted.snapshotMeta.rows);
+  assert.equal(report.wrappedRows.ok, true);
+  assert.deepEqual(report.wrappedRows.snapshotMeta.rows, [
+    {
+      contractVersion: WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+      contractKind: WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+      sourceResourceKey: 'row:["wp_comments","comment_ID:10"]',
+      targetResourceKey: 'row:["wp_comments","comment_ID:20"]',
+      rawValuesIncluded: false,
+    },
+  ]);
+
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(report.failures).map(([name, failure]) => [name, failure.ok])),
+    {
+      unsupportedVersion: false,
+      unsupportedKind: false,
+      rawValues: false,
+      selfMap: false,
+      crossSurface: false,
+      malformedResource: false,
+    },
+  );
+  for (const failure of Object.values(report.failures)) {
+    assert.equal(failure.error.class, 'RuntimeException');
+    assert.equal(failure.snapshotMeta, null);
+  }
+
+  const serialized = JSON.stringify(report);
+  assert.doesNotMatch(serialized, /Private|example\.test|Brewcommerce|fixture-private/);
 });
 
 test('RPP-0461 driver registration API focused regression emits hash-only accepted and refusal evidence', { skip: !hasPhp }, () => {
