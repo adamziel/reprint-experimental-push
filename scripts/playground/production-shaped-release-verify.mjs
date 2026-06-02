@@ -12069,6 +12069,13 @@ function contractBoundRowIdentityTokens(resourceId) {
   if (typeof resourceId !== 'string' || resourceId.length === 0) {
     return [];
   }
+  const postmetaMatch = /^post_id:([^:]+):meta_key:(.+)$/.exec(resourceId);
+  if (postmetaMatch) {
+    return [
+      { field: 'post_id', expected: postmetaMatch[1] },
+      { field: 'meta_key', expected: postmetaMatch[2] },
+    ];
+  }
   const tokens = [];
   for (const segment of resourceId.split('|')) {
     const separator = segment.indexOf(':');

@@ -148,7 +148,7 @@ evidence versus what must still be proven before release movement.
       "dependencyPluginPreserved": true,
       "dependentPluginPreserved": true,
       "targetUnchanged": true,
-      "proofHash": "sha256:afc11dbad4b10764bda84197a7fa013cf12148fa679ef8f20f938025a5f745e0"
+      "proofHash": "sha256:8899a75f1891df62f14d59f0f3005552b2e765d4607e2fcd4e1976ad3e550655"
     },
     "sideEffectBoundary": {
       "evidenceScope": "production-shaped-local-boundary-summary",
@@ -297,7 +297,7 @@ evidence versus what must still be proven before release movement.
       "integrationRecommendation"
     ]
   },
-  "scopeComparisonHash": "de9c16c9aebf7d8cf3124d2274a7252a57f2e9dacc46b3974e27e43815268630"
+  "scopeComparisonHash": "d186b36bba69de5291efbeed4aada590592211fb3d3da6e43522c463f0ad8e2c"
 }
 ```
 

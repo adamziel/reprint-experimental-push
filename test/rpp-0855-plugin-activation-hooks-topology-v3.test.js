@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { assertEvidenceHasNoRawValues, findEvidenceRedactionIssues } from '../src/evidence-redaction.js';
 import { createPushPlan } from '../src/planner.js';
+import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
 import { digest } from '../src/stable-json.js';
 import {
   directActivePluginsMutationRefusalBoundary,
@@ -504,6 +505,17 @@ function buildActivationHookSideEffectSummary({ withDriverProof }) {
 }
 
 function productionPluginDriverSnapshot(mode, version, marker) {
+  const allowlistEntry = {
+    resourceKey: productionPluginDriverBoundary.resourceKey,
+    pluginOwner: productionPluginDriverBoundary.owner,
+    driver: productionPluginDriverBoundary.driver,
+    table: productionPluginDriverBoundary.table,
+    supportsDelete: false,
+    contractKind: 'plugin-owned-row-driver',
+    contractVersion: 1,
+  };
+  allowlistEntry.contractHash = pluginOwnedRowDriverContractHash(allowlistEntry);
+
   return {
     files: {},
     plugins: {},
@@ -524,15 +536,7 @@ function productionPluginDriverSnapshot(mode, version, marker) {
     },
     meta: {
       pluginOwnedResources: {
-        allowedResources: [
-          {
-            resourceKey: productionPluginDriverBoundary.resourceKey,
-            pluginOwner: productionPluginDriverBoundary.owner,
-            driver: productionPluginDriverBoundary.driver,
-            table: productionPluginDriverBoundary.table,
-            supportsDelete: false,
-          },
-        ],
+        allowedResources: [allowlistEntry],
       },
     },
   };

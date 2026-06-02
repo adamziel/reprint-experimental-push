@@ -586,6 +586,13 @@ function parseContractBoundRowIdentityTokens(resourceId) {
   if (!isNonEmptyString(resourceId)) {
     return [];
   }
+  const postmetaMatch = /^post_id:([^:]+):meta_key:(.+)$/.exec(resourceId);
+  if (postmetaMatch) {
+    return [
+      { field: 'post_id', expected: postmetaMatch[1] },
+      { field: 'meta_key', expected: postmetaMatch[2] },
+    ];
+  }
   const segments = resourceId.split('|');
   const tokens = [];
   for (const segment of segments) {

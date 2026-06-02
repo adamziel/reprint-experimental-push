@@ -114,6 +114,8 @@ function syntheticComplexSnapshot(variant, shape) {
             driver: 'reprint-push-release-state',
             table: 'wp_reprint_push_release_state',
             supportsDelete: false,
+            contractVersion: 1,
+            contractKind: 'plugin-owned-row-driver',
           },
         ],
       },

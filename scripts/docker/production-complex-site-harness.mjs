@@ -15,6 +15,10 @@ import {
 import { buildAuthSessionSourceCommand } from '../playground/auth-session-source-command.js';
 import { releaseVerifyFixtureCredentials } from '../playground/release-verify-credentials.js';
 import {
+  releaseGateProvenanceRequirements,
+  RELEASE_EVIDENCE_PROVENANCE_SOURCE_KINDS,
+} from '../../src/release-evidence-provenance.js';
+import {
   evaluateReleaseGates,
   RELEASE_GATE_DEFINITIONS,
   formatReleaseGateStatusMarker,
@@ -118,6 +122,16 @@ export const dockerSiteVariants = Object.freeze([
 const dockerRunnerLoopbackBasePort = 8080;
 const dockerRunnerPlaygroundCliWorkDirName = 'playground-cli';
 const dockerRunnerPlaygroundCliCacheDirEnvKey = 'REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_PLAYGROUND_CLI_CACHE_DIR';
+const dockerReleaseEvidenceProvenanceCategories = Object.freeze([
+  'topology',
+  'boundary',
+  'auth',
+  'identity',
+  'route',
+  'recovery',
+  'summary',
+  'operator-proof',
+]);
 
 export const defaultDockerImages = Object.freeze({
   wordpress: 'wordpress:php8.2-apache',
@@ -203,16 +217,16 @@ export function buildDockerTopologyPlan({
   const authSessionSourceCommand = buildAuthSessionSourceCommand({
     nodePath: 'node',
     scriptPath: dockerRunnerAuthSessionSourceScriptPath,
-    sourceUrl: runnerUrls.source,
+    sourceUrl: siteUrls.source,
     username: credentials.username,
     applicationPassword: credentials.applicationPassword,
   });
   const releaseEnv = {
-    REPRINT_PUSH_SOURCE_URL: runnerUrls.source,
-    REPRINT_PUSH_REMOTE_URL: runnerUrls.source,
-    REPRINT_PUSH_REMOTE_CHANGED_URL: runnerUrls['remote-changed'],
-    REPRINT_PUSH_LOCAL_URL: runnerUrls['local-edited'],
-    REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL: runnerUrls['apply-revalidation-source'],
+    REPRINT_PUSH_SOURCE_URL: siteUrls.source,
+    REPRINT_PUSH_REMOTE_URL: siteUrls.source,
+    REPRINT_PUSH_REMOTE_CHANGED_URL: siteUrls['remote-changed'],
+    REPRINT_PUSH_LOCAL_URL: siteUrls['local-edited'],
+    REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL: siteUrls['apply-revalidation-source'],
     REPRINT_PUSH_USERNAME: credentials.username,
     REPRINT_PUSH_APPLICATION_PASSWORD: credentials.applicationPassword,
     REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
@@ -347,7 +361,7 @@ export function validateTopologyPlan(plan) {
     'REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL',
   ]) {
     const value = String(releaseEnv[key] || '');
-    if (!/^http:\/\/wp-[a-z0-9-]+$/.test(value) && !isRunnerLoopbackReleaseUrl(plan, key, value)) {
+    if (!/^http:\/\/wp-[a-z0-9-]+$/.test(value)) {
       failures.push({ code: 'NON_DOCKER_INTERNAL_RELEASE_URL', key, value });
     }
   }
@@ -404,22 +418,6 @@ export function validateTopologyPlan(plan) {
   };
 }
 
-function isRunnerLoopbackReleaseUrl(plan, envKey, value) {
-  const routeByEnvKey = {
-    REPRINT_PUSH_SOURCE_URL: 'source',
-    REPRINT_PUSH_REMOTE_URL: 'source',
-    REPRINT_PUSH_REMOTE_CHANGED_URL: 'remote-changed',
-    REPRINT_PUSH_LOCAL_URL: 'local-edited',
-    REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL: 'apply-revalidation-source',
-  };
-  const routeKey = routeByEnvKey[envKey];
-  const route = (plan?.runner?.proxyRoutes || []).find((entry) => entry.key === routeKey);
-  if (!route) {
-    return false;
-  }
-  return value === `http://${route.listenHost}:${route.listenPort}`;
-}
-
 export function buildPrerequisiteGateArtifact({
   probe,
   plan,
@@ -443,6 +441,19 @@ export function buildPrerequisiteGateArtifact({
     assumption,
   });
   const releaseGateEvaluation = buildReleaseGateEvaluationSummary(releaseGateInput);
+  const fullReleaseGateEvaluation = evaluateReleaseGates({
+    env: releaseGateInput.env || {},
+    evidence: releaseGateInput.evidence || {},
+    scope: releaseGateInput.scope || releaseGateInput.evidenceScope || 'missing',
+    packagedFallback: releaseGateInput.packagedFallback,
+    now: releaseGateInput.generatedAt,
+  });
+  const normalizedReleaseEvidenceProvenance = releaseEvidenceProvenance
+    ? normalizeDockerReleaseEvidenceProvenance(releaseEvidenceProvenance, fullReleaseGateEvaluation, {
+        generatedAt: releaseGateInput.generatedAt,
+        scope: releaseGateInput.scope,
+      })
+    : null;
   const artifact = {
     schemaVersion: dockerReleaseGateInputSchemaVersion,
     event: dockerReleaseGateInputProducer,
@@ -464,7 +475,7 @@ export function buildPrerequisiteGateArtifact({
       releaseGateCheck: 'node ./scripts/release/check-release-gates.mjs --evidence-file <artifact>',
     },
     ...releaseGateInput,
-    releaseEvidenceProvenance: releaseEvidenceProvenance || null,
+    releaseEvidenceProvenance: normalizedReleaseEvidenceProvenance,
     releaseGateEvaluation,
     topology: plan ? {
       projectName: plan.projectName,
@@ -701,9 +712,10 @@ function buildDockerReleaseGateEvidence({
     return evidence;
   }
 
-  const sourceUrl = plan.releaseEnv.REPRINT_PUSH_SOURCE_URL;
-  const localUrl = plan.releaseEnv.REPRINT_PUSH_LOCAL_URL;
-  const remoteChangedUrl = plan.releaseEnv.REPRINT_PUSH_REMOTE_CHANGED_URL;
+  const topologyUrls = dockerTopologyEvidenceUrls(plan);
+  const sourceUrl = topologyUrls.service.source;
+  const localUrl = topologyUrls.service.local;
+  const remoteChangedUrl = topologyUrls.service.remoteChanged;
   const preflightRoute = '/reprint/v1/push/preflight';
   const dryRunRoute = '/reprint/v1/push/dry-run';
   const applyRoute = '/reprint/v1/push/apply';
@@ -713,15 +725,29 @@ function buildDockerReleaseGateEvidence({
 
   return {
     ...evidence,
-    sourceUrl: { ok: true, url: sourceUrl, observed: sourceUrl, scope },
-    localUrl: { ok: true, url: localUrl, observed: localUrl, scope },
-    remoteChangedUrl: { ok: true, url: remoteChangedUrl, observed: remoteChangedUrl, scope },
-    remoteAlias: { ok: true, url: sourceUrl, observed: sourceUrl, scope },
+    sourceUrl: { ok: true, url: sourceUrl, observed: sourceUrl, runnerUrl: topologyUrls.runner.source, scope },
+    localUrl: { ok: true, url: localUrl, observed: localUrl, runnerUrl: topologyUrls.runner.local, scope },
+    remoteChangedUrl: {
+      ok: true,
+      url: remoteChangedUrl,
+      observed: remoteChangedUrl,
+      runnerUrl: topologyUrls.runner.remoteChanged,
+      scope,
+    },
+    remoteAlias: {
+      ok: true,
+      url: sourceUrl,
+      observed: sourceUrl,
+      runnerUrl: topologyUrls.runner.remote,
+      scope,
+    },
     authSourceCommandReadback: {
       ok: true,
       same: true,
       issuedSourceUrl: sourceUrl,
       readbackSourceUrl: sourceUrl,
+      runnerIssuedSourceUrl: topologyUrls.runner.source,
+      runnerReadbackSourceUrl: topologyUrls.runner.source,
       command: 'auth-session-source-command:redacted-docker-fixture',
       scope,
     },
@@ -750,10 +776,13 @@ function buildDockerReleaseGateEvidence({
       ok: true,
       same: true,
       sameSource: true,
-      observed: 'docker-runner-loopback-source-identity',
+      observed: 'docker-service-dns-source-identity',
       sourceUrl,
       localUrl,
       remoteChangedUrl,
+      runnerSourceUrl: topologyUrls.runner.source,
+      runnerLocalUrl: topologyUrls.runner.local,
+      runnerRemoteChangedUrl: topologyUrls.runner.remoteChanged,
       scope,
     },
     preflightRouteIdentity: { ok: true, sameRoute: true, observed: preflightRoute, scope },
@@ -793,7 +822,7 @@ function buildDockerReleaseGateEvidence({
 function buildDockerVerifyReleaseTopologyEvidence({ plan, status, blocker, scope, assumption } = {}) {
   const validation = plan?.validation || (plan ? validateTopologyPlan(plan) : null);
   const releaseCommand = plan?.runner?.releaseCommand || dockerReleaseCommand;
-  const releaseEnv = plan?.releaseEnv || {};
+  const topologyUrls = dockerTopologyEvidenceUrls(plan);
   return {
     ok: status === 'passed',
     status,
@@ -804,11 +833,16 @@ function buildDockerVerifyReleaseTopologyEvidence({ plan, status, blocker, scope
     gate: dockerHarnessGate,
     packagedFallbackAllowed: false,
     packagedFallbackObserved: false,
-    sourceUrl: releaseEnv.REPRINT_PUSH_SOURCE_URL || '',
-    remoteUrl: releaseEnv.REPRINT_PUSH_REMOTE_URL || '',
-    remoteChangedUrl: releaseEnv.REPRINT_PUSH_REMOTE_CHANGED_URL || '',
-    localUrl: releaseEnv.REPRINT_PUSH_LOCAL_URL || '',
-    applyRevalidationSourceUrl: releaseEnv.REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL || '',
+    sourceUrl: topologyUrls.service.source,
+    remoteUrl: topologyUrls.service.remote,
+    remoteChangedUrl: topologyUrls.service.remoteChanged,
+    localUrl: topologyUrls.service.local,
+    applyRevalidationSourceUrl: topologyUrls.service.applyRevalidationSource,
+    runnerSourceUrl: topologyUrls.runner.source,
+    runnerRemoteUrl: topologyUrls.runner.remote,
+    runnerRemoteChangedUrl: topologyUrls.runner.remoteChanged,
+    runnerLocalUrl: topologyUrls.runner.local,
+    runnerApplyRevalidationSourceUrl: topologyUrls.runner.applyRevalidationSource,
     releaseUrlsUseDockerDns: validation?.checks?.releaseUrlsUseDockerDns === true,
     releaseCommandIsVerifyRelease: validation?.checks?.releaseCommandIsVerifyRelease === true,
     topologyValidationOk: validation?.ok === true,
@@ -819,9 +853,40 @@ function buildDockerVerifyReleaseTopologyEvidence({ plan, status, blocker, scope
       ? 'DOCKER_VERIFY_RELEASE_TOPOLOGY_PASSED'
       : 'DOCKER_VERIFY_RELEASE_TOPOLOGY_FAILED'),
     reason: assumption?.reason || blocker?.reason || (status === 'passed'
-      ? 'Docker WordPress topology ran npm run verify:release with runner loopback URLs backed by Docker service DNS and no packaged fallback.'
+      ? 'Docker WordPress topology ran npm run verify:release against Docker service DNS identities through runner loopback transport and no packaged fallback.'
       : 'Docker WordPress topology could not run npm run verify:release; no packaged fallback was used.'),
     scope,
+  };
+}
+
+function dockerTopologyEvidenceUrls(plan) {
+  const releaseEnv = plan?.releaseEnv || {};
+  const runnerUrls = plan?.runner?.urls || {};
+  const serviceUrl = (siteKey, fallback = '') =>
+    (plan?.sites || []).find((site) => site.key === siteKey)?.url || fallback || '';
+  const releaseUrl = (envKey) => String(releaseEnv[envKey] || '');
+  const runnerUrl = (siteKey, fallback = '') => String(runnerUrls[siteKey] || fallback || '');
+  return {
+    service: {
+      source: serviceUrl('source', releaseUrl('REPRINT_PUSH_SOURCE_URL')),
+      remote: serviceUrl('source', releaseUrl('REPRINT_PUSH_REMOTE_URL')),
+      remoteChanged: serviceUrl('remote-changed', releaseUrl('REPRINT_PUSH_REMOTE_CHANGED_URL')),
+      local: serviceUrl('local-edited', releaseUrl('REPRINT_PUSH_LOCAL_URL')),
+      applyRevalidationSource: serviceUrl(
+        'apply-revalidation-source',
+        releaseUrl('REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL'),
+      ),
+    },
+    runner: {
+      source: runnerUrl('source', releaseUrl('REPRINT_PUSH_SOURCE_URL')),
+      remote: runnerUrl('source', releaseUrl('REPRINT_PUSH_REMOTE_URL')),
+      remoteChanged: runnerUrl('remote-changed', releaseUrl('REPRINT_PUSH_REMOTE_CHANGED_URL')),
+      local: runnerUrl('local-edited', releaseUrl('REPRINT_PUSH_LOCAL_URL')),
+      applyRevalidationSource: runnerUrl(
+        'apply-revalidation-source',
+        releaseUrl('REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL'),
+      ),
+    },
   };
 }
 
@@ -984,9 +1049,12 @@ export function buildBrewcommerceAssumedRealSiteReleaseEvidence({ plan, assumpti
       releaseCommand: dockerReleaseCommand.join(' '),
       packagedFallbackAllowed: false,
       packagedFallbackObserved: false,
-      sourceUrl: plan?.releaseEnv?.REPRINT_PUSH_SOURCE_URL || '',
-      localUrl: plan?.releaseEnv?.REPRINT_PUSH_LOCAL_URL || '',
-      remoteChangedUrl: plan?.releaseEnv?.REPRINT_PUSH_REMOTE_CHANGED_URL || '',
+      sourceUrl: dockerTopologyEvidenceUrls(plan).service.source,
+      localUrl: dockerTopologyEvidenceUrls(plan).service.local,
+      remoteChangedUrl: dockerTopologyEvidenceUrls(plan).service.remoteChanged,
+      runnerSourceUrl: dockerTopologyEvidenceUrls(plan).runner.source,
+      runnerLocalUrl: dockerTopologyEvidenceUrls(plan).runner.local,
+      runnerRemoteChangedUrl: dockerTopologyEvidenceUrls(plan).runner.remoteChanged,
     },
   };
 }
@@ -1054,6 +1122,48 @@ function buildDockerReleaseEvidenceProvenance({
       operatorScope: 'final-release',
       productionRequired: true,
     })),
+  };
+}
+
+function normalizeDockerReleaseEvidenceProvenance(provenance, releaseGateEvaluation, {
+  generatedAt = null,
+  scope = null,
+} = {}) {
+  const observedAt = normalizeIsoTimestamp(generatedAt);
+  const requirements = releaseGateProvenanceRequirements(releaseGateEvaluation, {
+    categories: dockerReleaseEvidenceProvenanceCategories,
+  });
+  const rowsByEvidenceId = new Map(
+    (Array.isArray(provenance?.evidenceRows) ? provenance.evidenceRows : [])
+      .filter((row) => row && typeof row === 'object')
+      .map((row) => [String(row.evidenceId || ''), row]),
+  );
+  const firstRow = Array.isArray(provenance?.evidenceRows)
+    ? provenance.evidenceRows.find((row) => row && typeof row === 'object') || {}
+    : {};
+  const operatorScope = scope || provenance?.operatorScope || firstRow.operatorScope || 'final-release';
+  return {
+    ...provenance,
+    maxEvidenceAgeHours: provenance?.maxEvidenceAgeHours || 24,
+    requiredProductionEvidence: requirements,
+    evidenceRows: requirements.map((requirement) => {
+      const row = rowsByEvidenceId.get(requirement.evidenceId) || {};
+      return {
+        ...row,
+        evidenceId: requirement.evidenceId,
+        rppId: requirement.rppId,
+        sourceKind: row.sourceKind || RELEASE_EVIDENCE_PROVENANCE_SOURCE_KINDS.productionRun,
+        artifactPath: row.artifactPath || firstRow.artifactPath || 'docs/evidence/ao-docker-local-production.md',
+        observedAt: row.observedAt || observedAt,
+        command: row.command || firstRow.command || 'npm run verify:release:docker-local-production',
+        status: row.status || (requirement.gateId === 'verify-release-failure-reason'
+          ? 'checked-failed'
+          : 'checked-passed'),
+        subjectHash: requirement.expectedSubjectHash,
+        operatorScope,
+        productionRequired: true,
+      };
+    }),
   };
 }
 

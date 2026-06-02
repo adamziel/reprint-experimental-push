@@ -73,6 +73,19 @@ function explicitCustomTableContract(extra = {}) {
   };
 }
 
+function explicitPostmetaContract(extra = {}) {
+  return {
+    contractVersion: 1,
+    contractKind: 'plugin-owned-row-driver',
+    resourceKey: 'row:["wp_postmeta","post_id:1001:meta_key:_forms:schema"]',
+    pluginOwner: 'forms',
+    driver: 'wp-postmeta',
+    table: 'wp_postmeta',
+    supportsDelete: false,
+    ...extra,
+  };
+}
+
 function schemaBoundCustomTableContract(extra = {}) {
   return explicitCustomTableContract({
     rowSchema: {
@@ -618,6 +631,66 @@ test('explicit custom row driver contract carries contract-bound validator evide
   assert.equal(result.site.db.wp_forms_contract_rows['entry_id:7'].payload.mode, 'local-contract-custom');
   assert.equal(evidenceJson.includes('base-contract-custom-secret'), false);
   assert.equal(evidenceJson.includes('local-contract-custom-secret'), false);
+});
+
+test('contract-bound wp_postmeta row driver matches compound post_id and meta_key row ids', () => {
+  const resourceKey = 'row:["wp_postmeta","post_id:1001:meta_key:_forms:schema"]';
+  const base = baseSite();
+  base.db.wp_posts = {
+    'ID:1001': {
+      ID: 1001,
+      post_title: 'Forms postmeta contract fixture',
+      post_status: 'publish',
+      post_type: 'post',
+    },
+  };
+  base.db.wp_postmeta = {
+    'post_id:1001:meta_key:_forms:schema': {
+      post_id: 1001,
+      meta_key: '_forms:schema',
+      meta_value: { mode: 'base-postmeta-contract', secret: 'base-postmeta-contract-secret' },
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_postmeta['post_id:1001:meta_key:_forms:schema'].meta_value.mode = 'local-postmeta-contract';
+  local.db.wp_postmeta['post_id:1001:meta_key:_forms:schema'].meta_value.secret =
+    'local-postmeta-contract-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitPostmetaContract()),
+  };
+  const remote = cloneJson(base);
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const payloadEvidence = mutation.pluginOwnedResource.driverPayloadValidationEvidence;
+  const evidenceJson = JSON.stringify(payloadEvidence);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(mutation.pluginOwnedResource.driver, 'wp-postmeta');
+  assert.equal(payloadEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED');
+  assert.deepEqual(payloadEvidence.rowIdentity, {
+    resourceId: 'post_id:1001:meta_key:_forms:schema',
+    status: 'matched',
+    fields: [
+      {
+        field: 'post_id',
+        expected: '1001',
+        observedHash: digest('1001'),
+        matched: true,
+      },
+      {
+        field: 'meta_key',
+        expected: '_forms:schema',
+        observedHash: digest('_forms:schema'),
+        matched: true,
+      },
+    ],
+  });
+  assert.equal(evidenceJson.includes('base-postmeta-contract-secret'), false);
+  assert.equal(evidenceJson.includes('local-postmeta-contract-secret'), false);
 });
 
 test('reference-bound custom row driver carries hash-only reference evidence through apply', () => {

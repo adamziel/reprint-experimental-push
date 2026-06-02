@@ -9,7 +9,7 @@ import {
 } from '../src/authenticated-http-push-client.js';
 import { digest } from '../src/stable-json.js';
 
-const sourceUrl = 'http://127.0.0.1:8080';
+const sandboxIngressPort = 8080;
 const routePrefix = '/wp-json/reprint/v1/push';
 const proofId = 'rpp-0576-same-key-same-body-replay-v4';
 const trustedDbJournalScope = 'checked live loopback endpoint surface; not production proof';
@@ -273,7 +273,7 @@ function checkedJournal(rows) {
   };
 }
 
-function createLiveReplayFixtureServer() {
+function createLiveReplayFixtureServer(sourceUrlProvider) {
   const state = {
     currentSnapshot: cloneJson(acceptedBase),
     requests: [],
@@ -286,7 +286,7 @@ function createLiveReplayFixtureServer() {
   };
 
   const server = http.createServer(async (request, response) => {
-    const url = new URL(request.url, sourceUrl);
+    const url = new URL(request.url, sourceUrlProvider());
     const rawBody = await readRequestBody(request);
     const requestRecord = {
       method: request.method,
@@ -544,15 +544,16 @@ function writeJson(response, body, status = 200) {
   response.end(JSON.stringify(body));
 }
 
-function listenOnSandboxPort(server) {
+function listenOnLoopback(server) {
   return new Promise((resolve, reject) => {
     function onError(error) {
       reject(error);
     }
     server.once('error', onError);
-    server.listen(8080, '127.0.0.1', () => {
+    server.listen(0, '127.0.0.1', () => {
       server.off('error', onError);
-      resolve();
+      const address = server.address();
+      resolve(`http://127.0.0.1:${address.port}`);
     });
   });
 }
@@ -570,6 +571,7 @@ function closeServer(server) {
 }
 
 function buildSupportEvidence({
+  sourceUrl,
   acceptedSummary,
   acceptedApplyRequests,
   rejectedApplyResponses,
@@ -596,7 +598,8 @@ function buildSupportEvidence({
       exercised: true,
       sourceUrlHash: sha256Hex(sourceUrl),
       routeProfile: 'production-shaped',
-      port: 8080,
+      port: Number(new URL(sourceUrl).port),
+      sandboxIngressPort,
       loopbackOnly: true,
       tunnelUsed: false,
     },
@@ -677,8 +680,9 @@ function assertNoRawValues(value, rawValues) {
 }
 
 test('RPP-0576 live loopback endpoint replays same-key same-body accepted and rejected results', async () => {
-  const { server, state } = createLiveReplayFixtureServer();
-  await listenOnSandboxPort(server);
+  let sourceUrl = null;
+  const { server, state } = createLiveReplayFixtureServer(() => sourceUrl);
+  sourceUrl = await listenOnLoopback(server);
 
   try {
     const acceptedSummary = await runAuthenticatedHttpPush({
@@ -792,6 +796,7 @@ test('RPP-0576 live loopback endpoint replays same-key same-body accepted and re
     );
 
     const supportEvidence = buildSupportEvidence({
+      sourceUrl,
       acceptedSummary,
       acceptedApplyRequests: state.acceptedApplyRequests,
       rejectedApplyResponses: [rejectedApplyResponse, rejectedReplayResponse],
@@ -800,7 +805,8 @@ test('RPP-0576 live loopback endpoint replays same-key same-body accepted and re
     });
 
     assert.equal(supportEvidence.liveEndpoint.exercised, true);
-    assert.equal(supportEvidence.liveEndpoint.port, 8080);
+    assert.equal(Number.isInteger(supportEvidence.liveEndpoint.port), true);
+    assert.equal(supportEvidence.liveEndpoint.sandboxIngressPort, 8080);
     assert.equal(supportEvidence.liveEndpoint.loopbackOnly, true);
     assert.equal(supportEvidence.liveEndpoint.tunnelUsed, false);
     assert.equal(supportEvidence.acceptedReplay.proved, true);

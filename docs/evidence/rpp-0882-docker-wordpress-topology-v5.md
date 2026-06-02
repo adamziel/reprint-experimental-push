@@ -54,7 +54,7 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
     "runtime": "docker-local-wordpress",
     "gate": "GATE-3",
     "releaseVerifierCommand": "npm run verify:release",
-    "blockedArtifactHash": "11c1b0a55cc60f06ebbce06b9920a3f65dfbb86df7b36480ffce0d275bdc83f2"
+    "blockedArtifactHash": "b7be30c75f07867488b6d23cd162bd623bcd9a7c0ab22c243a6ada335b0090ad"
   },
   "successContract": {
     "criterion": "verify-release-passes-without-packaged-fallback-on-docker-wordpress-topology-or-exact-unavailable-capability",
@@ -333,7 +333,7 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
     "noProductionBackedProofClaim": true,
     "supportOnlyNoGo": true
   },
-  "supportReportHash": "sha256:c75ae2369d384d824cca41df87cd209545c4fb76f5c771189335029da6bd07ca"
+  "supportReportHash": "sha256:5220acdddd624cd857b2b8806a980d69c60276ae4040b161dbfed2f4500a69ef"
 }
 ```
 

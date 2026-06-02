@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { applyPlan, PushPlanError } from '../src/apply.js';
 import { assertEvidenceHasNoRawValues } from '../src/evidence-redaction.js';
 import { createPushPlan } from '../src/planner.js';
+import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
 import { resourceHash, serializeResourceValue } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 import {
@@ -358,6 +359,17 @@ function buildUnknownPluginOwnedReleaseVerifierProof() {
 
 function productionDriverSnapshot(mode, version, marker, privateNote) {
   const boundary = productionPluginDriverBoundary;
+  const allowlistEntry = {
+    resourceKey: boundary.resourceKey,
+    pluginOwner: boundary.owner,
+    driver: boundary.driver,
+    table: boundary.table,
+    supportsDelete: false,
+    contractVersion: 1,
+    contractKind: 'plugin-owned-row-driver',
+  };
+  allowlistEntry.contractHash = pluginOwnedRowDriverContractHash(allowlistEntry);
+
   return {
     files: {},
     plugins: {},
@@ -378,15 +390,7 @@ function productionDriverSnapshot(mode, version, marker, privateNote) {
     },
     meta: {
       pluginOwnedResources: {
-        allowedResources: [
-          {
-            resourceKey: boundary.resourceKey,
-            pluginOwner: boundary.owner,
-            driver: boundary.driver,
-            table: boundary.table,
-            supportsDelete: false,
-          },
-        ],
+        allowedResources: [allowlistEntry],
       },
     },
   };

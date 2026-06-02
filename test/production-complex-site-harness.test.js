@@ -122,17 +122,17 @@ test('Docker topology plan is local-only, private-networked, and release-verifie
   assert.equal(plan.network.internal, true);
   assert.equal(plan.runnerEgressNetwork.internal, false);
   assert.equal(plan.externalAccounts.required, false);
-  assert.equal(plan.releaseEnv.REPRINT_PUSH_SOURCE_URL, 'http://127.0.0.1:8080');
-  assert.equal(plan.releaseEnv.REPRINT_PUSH_REMOTE_URL, 'http://127.0.0.1:8080');
-  assert.equal(plan.releaseEnv.REPRINT_PUSH_REMOTE_CHANGED_URL, 'http://127.0.0.1:8081');
-  assert.equal(plan.releaseEnv.REPRINT_PUSH_LOCAL_URL, 'http://127.0.0.1:8082');
-  assert.equal(plan.releaseEnv.REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL, 'http://127.0.0.1:8083');
+  assert.equal(plan.releaseEnv.REPRINT_PUSH_SOURCE_URL, 'http://wp-source');
+  assert.equal(plan.releaseEnv.REPRINT_PUSH_REMOTE_URL, 'http://wp-source');
+  assert.equal(plan.releaseEnv.REPRINT_PUSH_REMOTE_CHANGED_URL, 'http://wp-remote-changed');
+  assert.equal(plan.releaseEnv.REPRINT_PUSH_LOCAL_URL, 'http://wp-local-edited');
+  assert.equal(plan.releaseEnv.REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL, 'http://wp-apply-revalidation-source');
   assert.equal(plan.releaseEnv.REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_MODE, 'after-first-read');
   assert.equal(plan.releaseEnv.REPRINT_PUSH_PLAYGROUND_CLI_BINARY, dockerRunnerPlaygroundCliBinaryPath);
   assert.equal(plan.releaseEnv.REPRINT_PUSH_RECOVERY_FILE_JOURNAL_TMP_ROOT, '/workdir/recovery-file-journal');
   assert.match(
     plan.releaseEnv.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND,
-    new RegExp(`^'node' '${escapeRegExp(dockerRunnerAuthSessionSourceScriptPath)}' '--source-url=http://127\\.0\\.0\\.1:8080' `),
+    new RegExp(`^'node' '${escapeRegExp(dockerRunnerAuthSessionSourceScriptPath)}' '--source-url=http://wp-source' `),
   );
   assert.doesNotMatch(plan.releaseEnv.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND, new RegExp(escapeRegExp(process.execPath)));
   assert.doesNotMatch(plan.releaseEnv.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND, /\/nix\/store|\/tmp\/reprint/);
@@ -144,6 +144,12 @@ test('Docker topology plan is local-only, private-networked, and release-verifie
   assert.equal(plan.runner.packagedFallbackAllowed, false);
   assert.equal(plan.sites.find((site) => site.key === 'source')?.url, 'http://wp-source');
   assert.equal(plan.sites.find((site) => site.key === 'source')?.installUrl, 'http://127.0.0.1:8080');
+  assert.deepEqual(plan.runner.urls, {
+    source: 'http://127.0.0.1:8080',
+    'remote-changed': 'http://127.0.0.1:8081',
+    'local-edited': 'http://127.0.0.1:8082',
+    'apply-revalidation-source': 'http://127.0.0.1:8083',
+  });
   assert.deepEqual(plan.runner.proxyRoutes.map(({ key, listenHost, listenPort, targetHost, targetPort }) => ({
     key,
     listenHost,

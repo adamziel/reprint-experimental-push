@@ -10,7 +10,7 @@ import {
 import { digest } from '../src/stable-json.js';
 import { buildDurableRecoveryJournalReleaseProof } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
 
-const sourceUrl = 'http://127.0.0.1:8080';
+const sandboxIngressPort = 8080;
 const routePrefix = '/wp-json/reprint/v1/push';
 const applyEndpointPath = `${routePrefix}/apply`;
 const proofId = 'rpp-0596-same-key-same-body-release-verifier-v5';
@@ -215,7 +215,7 @@ function signedRequestEvidence(requestRecord) {
   };
 }
 
-function createLiveVerifierFixtureServer() {
+function createLiveVerifierFixtureServer(sourceUrlProvider) {
   const state = {
     currentSnapshot: cloneJson(acceptedBase),
     requests: [],
@@ -229,7 +229,7 @@ function createLiveVerifierFixtureServer() {
   };
 
   const server = http.createServer(async (request, response) => {
-    const url = new URL(request.url, sourceUrl);
+    const url = new URL(request.url, sourceUrlProvider());
     const rawBody = await readRequestBody(request);
     const requestRecord = {
       method: request.method,
@@ -605,15 +605,16 @@ function writeJson(response, body, status = 200) {
   response.end(JSON.stringify(body));
 }
 
-function listenOnSandboxPort(server) {
+function listenOnLoopback(server) {
   return new Promise((resolve, reject) => {
     function onError(error) {
       reject(error);
     }
     server.once('error', onError);
-    server.listen(8080, '127.0.0.1', () => {
+    server.listen(0, '127.0.0.1', () => {
       server.off('error', onError);
-      resolve();
+      const address = server.address();
+      resolve(`http://127.0.0.1:${address.port}`);
     });
   });
 }
@@ -630,7 +631,7 @@ function closeServer(server) {
   });
 }
 
-function releaseSummaryFromLiveProof({ acceptedSummary, state }) {
+function releaseSummaryFromLiveProof({ acceptedSummary, state, sourceUrl }) {
   const mutationCount = acceptedSummary.plan?.mutations || 1;
   const latestEvents = state.journalRows.map((row) => ({
     sequence: row.sequence,
@@ -805,6 +806,7 @@ function rejectedApplyRevalidationFromLiveProof({
 }
 
 function buildSupportEnvelope({
+  sourceUrl,
   acceptedSummary,
   rejectedApplyResponses,
   state,
@@ -829,7 +831,8 @@ function buildSupportEnvelope({
       sourceUrlHash: sha256Hex(sourceUrl),
       routeProfileHash: sha256Hex('production-shaped'),
       applyEndpointHash: sha256Hex(applyEndpointPath),
-      port: 8080,
+      port: Number(new URL(sourceUrl).port),
+      sandboxIngressPort,
       loopbackOnly: true,
       tunnelUsed: false,
     },
@@ -965,8 +968,9 @@ function assertNoRawValues(value, rawValues) {
 }
 
 test('RPP-0596 release verifier carries live same-key same-body replay envelope variant 5', async () => {
-  const { server, state } = createLiveVerifierFixtureServer();
-  await listenOnSandboxPort(server);
+  let sourceUrl = null;
+  const { server, state } = createLiveVerifierFixtureServer(() => sourceUrl);
+  sourceUrl = await listenOnLoopback(server);
 
   try {
     const acceptedSummary = await runAuthenticatedHttpPush({
@@ -1042,7 +1046,7 @@ test('RPP-0596 release verifier carries live same-key same-body replay envelope 
     assert.equal(rejectedReplay.headers['x-auth-content-hash'], sha256Hex(rejectedReplay.rawBody));
     assert.equal(rejectedApply.headers['x-auth-content-hash'], rejectedReplay.headers['x-auth-content-hash']);
 
-    const releaseSummary = releaseSummaryFromLiveProof({ acceptedSummary, state });
+    const releaseSummary = releaseSummaryFromLiveProof({ acceptedSummary, state, sourceUrl });
     const rejectedApplyRevalidation = rejectedApplyRevalidationFromLiveProof({
       rejectedApplyResponse,
       rejectedReplayResponse,
@@ -1053,6 +1057,7 @@ test('RPP-0596 release verifier carries live same-key same-body replay envelope 
       applyRevalidation: rejectedApplyRevalidation,
     });
     const supportEnvelope = buildSupportEnvelope({
+      sourceUrl,
       acceptedSummary,
       rejectedApplyResponses: [rejectedApplyResponse, rejectedReplayResponse],
       state,
@@ -1085,7 +1090,8 @@ test('RPP-0596 release verifier carries live same-key same-body replay envelope 
     assert.equal(supportEnvelope.releaseMovement.gates, '0/4');
     assert.equal(supportEnvelope.integrationRecommendation.status, 'support-only');
     assert.equal(supportEnvelope.liveEndpoint.exercised, true);
-    assert.equal(supportEnvelope.liveEndpoint.port, 8080);
+    assert.equal(Number.isInteger(supportEnvelope.liveEndpoint.port), true);
+    assert.equal(supportEnvelope.liveEndpoint.sandboxIngressPort, 8080);
     assert.equal(supportEnvelope.liveEndpoint.loopbackOnly, true);
     assert.equal(supportEnvelope.liveEndpoint.tunnelUsed, false);
     assert.equal(supportEnvelope.releaseVerifier.acceptedReplayCarried, true);

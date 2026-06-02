@@ -50,7 +50,7 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
     "dockerTopologyVariant": "RPP-0802-variant-1",
     "runtime": "docker-local-wordpress",
     "gate": "GATE-3",
-    "blockedArtifactHash": "11c1b0a55cc60f06ebbce06b9920a3f65dfbb86df7b36480ffce0d275bdc83f2"
+    "blockedArtifactHash": "b7be30c75f07867488b6d23cd162bd623bcd9a7c0ab22c243a6ada335b0090ad"
   },
   "successContract": {
     "criterion": "verify-release-passes-without-packaged-fallback-on-docker-wordpress-topology-or-exact-unavailable-capability",
@@ -283,7 +283,7 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
     "noProductionBackedProofClaim": true,
     "supportOnlyNoGo": true
   },
-  "supportReportHash": "sha256:6e27264b7dddfdc5ebecae049ae0e0e3071ec952c3aa7cac8205a609e548a463"
+  "supportReportHash": "sha256:c0db47227952b162e37eed4004a8e9786e63d472c12055517e968541019bb595"
 }
 ```
 

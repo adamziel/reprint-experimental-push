@@ -54,20 +54,23 @@ function baseFixtureSite({ payloadMode = 'base', payloadVersion = 1 } = {}) {
 }
 
 function arbitraryFixturePolicy({ evidenceScope = 'local-playground', entryOverrides = {} } = {}) {
+  const entry = {
+    resourceKey: fixtureResourceKey,
+    pluginOwner: ownerPlugin,
+    driver: arbitraryPluginFixturePackageBoundary.driver,
+    table: fixtureTable,
+    supportsDelete: false,
+    releaseGateEvidenceScope: evidenceScope,
+    ...entryOverrides,
+  };
+  if (entry.driver) {
+    entry.contractVersion = 1;
+    entry.contractKind = 'plugin-owned-row-driver';
+  }
   return {
     pluginOwnedResources: {
       evidenceScope,
-      allowedResources: [
-        {
-          resourceKey: fixtureResourceKey,
-          pluginOwner: ownerPlugin,
-          driver: arbitraryPluginFixturePackageBoundary.driver,
-          table: fixtureTable,
-          supportsDelete: false,
-          releaseGateEvidenceScope: evidenceScope,
-          ...entryOverrides,
-        },
-      ],
+      allowedResources: [entry],
     },
   };
 }

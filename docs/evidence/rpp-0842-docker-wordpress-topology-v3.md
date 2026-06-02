@@ -47,7 +47,7 @@ backing, site startup, route receipts, mutation behavior, or release movement.
     "dockerTopologyVariant": "RPP-0802-variant-1",
     "runtime": "docker-local-wordpress",
     "gate": "GATE-3",
-    "artifactHash": "11c1b0a55cc60f06ebbce06b9920a3f65dfbb86df7b36480ffce0d275bdc83f2"
+    "artifactHash": "b7be30c75f07867488b6d23cd162bd623bcd9a7c0ab22c243a6ada335b0090ad"
   },
   "successContract": {
     "criterion": "verify-release-passes-without-packaged-fallback-or-exact-unavailable-capability",
@@ -206,7 +206,7 @@ backing, site startup, route receipts, mutation behavior, or release movement.
     "noProductionBackedProofClaim": true,
     "supportOnlyNoGo": true
   },
-  "supportReportHash": "sha256:f4ea471c2e811f9fc809e460b33e7600cef0fcfc92c6f82aedca49cf6cfba2bb"
+  "supportReportHash": "sha256:f38007c471c2d46b02b8791b4ce28dfb5d5e00fd3ceacde4476e2edc7b6ffd39"
 }
 ```
 

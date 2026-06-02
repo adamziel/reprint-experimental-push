@@ -99,6 +99,8 @@ function fixturePolicy() {
           driver: arbitraryPluginFixturePackageBoundary.driver,
           table: fixtureTable,
           supportsDelete: false,
+          contractVersion: 1,
+          contractKind: 'plugin-owned-row-driver',
           releaseGateEvidenceScope: evidenceScope,
         },
       ],
