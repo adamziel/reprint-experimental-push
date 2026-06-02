@@ -1473,7 +1473,9 @@ The production ladder is fixed:
    live evidence before every batch and again at the storage boundary. Dry-run
    and apply are separate remote operations, and apply must not trust the
    dry-run receipt as a lock, a lease, or a substitute for fresh live
-   evidence. Apply-time revalidation is mandatory.
+   evidence. Apply-time revalidation is mandatory, explicit apply-side
+   evidence; receipt-derived precondition hashes are fallback diagnostics and
+   do not satisfy the production release proof.
 5. `push_journal` records durable evidence and never authorizes a write.
 6. `push_recover inspect` reads the journal and fresh live hashes before any
    mutating repair. Inspect is read-only and does not authorize mutation.

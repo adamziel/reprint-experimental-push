@@ -2454,6 +2454,13 @@ function summarizeApplyRevalidation(body) {
 
   const hasExplicitApplyRevalidation = body.applyRevalidation && typeof body.applyRevalidation === 'object';
   const applyRevalidation = hasExplicitApplyRevalidation ? body.applyRevalidation : {};
+  const fallbackSource = hasExplicitApplyRevalidation
+    ? null
+    : body.receipt
+      ? 'dry-run-receipt'
+      : Array.isArray(body.verifiedPreconditions)
+        ? 'verified-preconditions'
+        : null;
   const verifiedPreconditions = Array.isArray(body.verifiedPreconditions)
     ? body.verifiedPreconditions
     : Array.isArray(body.receipt?.preconditionHashes)
@@ -2497,6 +2504,7 @@ function summarizeApplyRevalidation(body) {
       : verifiedResourceKeys.length,
     verifiedResourceKeys,
     claim,
+    ...(fallbackSource ? { fallbackSource } : {}),
   };
 }
 
@@ -2546,6 +2554,15 @@ function resolveApplyRevalidationDrift(applyRevalidation, plan, receipt) {
       field: 'verifiedResourceKeys',
       required: expectedResourceKeys,
       observed: observedResourceKeys,
+      verdict: 'APPLY_REVALIDATION_REQUIRED',
+    };
+  }
+
+  if (applyRevalidation.fallbackSource) {
+    return {
+      field: 'applyRevalidation',
+      required: 'explicit-apply-revalidation-evidence',
+      observed: applyRevalidation.fallbackSource,
       verdict: 'APPLY_REVALIDATION_REQUIRED',
     };
   }

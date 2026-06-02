@@ -272,7 +272,13 @@ function checkedJournal() {
   };
 }
 
-function successfulApplyBody({ payload, rawBody, applyCount, includeApplyRevalidation = true }) {
+function successfulApplyBody({
+  payload,
+  rawBody,
+  applyCount,
+  includeApplyRevalidation = true,
+  includeVerifiedPreconditions = false,
+}) {
   const body = {
     ok: true,
     mode: 'apply',
@@ -301,6 +307,13 @@ function successfulApplyBody({ payload, rawBody, applyCount, includeApplyRevalid
 
   if (includeApplyRevalidation) {
     body.applyRevalidation = applyRevalidationEvidence(payload.plan, payload.receipt);
+  }
+  if (includeVerifiedPreconditions) {
+    body.verifiedPreconditions = (payload.plan.preconditions || []).map((precondition) => ({
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      actualHash: precondition.expectedHash,
+    }));
   }
 
   return body;
@@ -589,6 +602,121 @@ test('RPP-0554 v3 blocks unexpired receipts without apply-time live-source reval
     assertNoRawSupportValues({
       idempotencyKeyHash: summary.idempotencyKeyHash,
       applyRevalidation: summary.applyRevalidation,
+      boundary: summary.boundary,
+      receiptHash: dryRunReceipt.receiptHash,
+      eventOrderHash: digest(events.map(({ event }) => event)),
+    }, [idempotencyKey, credential.username, credential.password, auth.session.id, sourceUrl]);
+  } finally {
+    restore();
+  }
+});
+
+test('RPP-0554 v3 refuses receipt-derived apply revalidation even with matching verified preconditions', async () => {
+  const { base, local } = fixtureSnapshots();
+  const idempotencyKey = 'idem-rpp-0554-receipt-derived-apply-revalidation-v3';
+  const events = [];
+  let snapshotCount = 0;
+  let applyCount = 0;
+  let dryRunReceipt = null;
+  const { seen, restore } = installFetch(({ pathname, payload, rawBody }) => {
+    if (pathname.endsWith('/preflight')) {
+      return preflightResponse();
+    }
+    if (pathname.endsWith('/snapshot')) {
+      snapshotCount += 1;
+      return snapshotResponse(snapshotCount === 1 ? base : local);
+    }
+    if (pathname.endsWith('/dry-run')) {
+      dryRunReceipt = receiptForPlan(payload.plan, {
+        receiptHash: fixtureHash('receipt-derived-apply-revalidation'),
+        expiresAt: futureReceiptExpiry,
+      });
+      return jsonResponse({
+        ok: true,
+        mode: 'dry-run',
+        auth: authEnvelope(),
+        receipt: dryRunReceipt,
+      });
+    }
+    if (pathname.endsWith('/recovery/inspect')) {
+      return jsonResponse({
+        ok: true,
+        auth: authEnvelope(),
+        recovery: {
+          state: 'fully-updated-remote',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: { integrity: { status: 'ok' } },
+        },
+      });
+    }
+    if (pathname.endsWith('/db-journal')) {
+      return jsonResponse({
+        ok: true,
+        auth: authEnvelope(),
+        dbJournal: checkedJournal(),
+        storageGuard: storageGuard(),
+      });
+    }
+    if (pathname.endsWith('/apply')) {
+      applyCount += 1;
+      appendEvent(events, 'apply-started', { replayed: applyCount > 1 });
+      if (applyCount === 1) {
+        appendEvent(events, 'live-source-revalidated');
+        appendEvent(events, 'mutation-executor-entered');
+        appendEvent(events, 'mutation-applied');
+        appendEvent(events, 'apply-committed');
+      } else {
+        appendEvent(events, 'idempotency-replay-returned');
+      }
+      return successfulApplyResponse({
+        payload,
+        rawBody,
+        applyCount,
+        includeApplyRevalidation: false,
+        includeVerifiedPreconditions: true,
+      });
+    }
+    throw new Error(`unexpected fetch to ${pathname}`);
+  });
+
+  try {
+    const summary = await runPush({ base, local, idempotencyKey });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'APPLY_REVALIDATION_REQUIRED');
+    assert.equal(summary.receiptExpiry, undefined);
+    assert.equal(summary.apply.status, 200);
+    assert.equal(summary.apply.applyRevalidation.fallbackSource, 'dry-run-receipt');
+    assert.equal(summary.apply.applyRevalidation.verifiedCount, 1);
+    assert.deepEqual(summary.applyRevalidation, {
+      field: 'applyRevalidation',
+      required: 'explicit-apply-revalidation-evidence',
+      observed: 'dry-run-receipt',
+      verdict: 'APPLY_REVALIDATION_REQUIRED',
+    });
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'apply-time revalidation before first mutation on the checked release path',
+      status: 'unimplemented',
+      verdict: 'APPLY_REVALIDATION_REQUIRED',
+      applyRevalidation: {
+        field: 'applyRevalidation',
+        required: 'explicit-apply-revalidation-evidence',
+        observed: 'dry-run-receipt',
+        verdict: 'APPLY_REVALIDATION_REQUIRED',
+      },
+    });
+    assert.ok(Number.isInteger(eventSequence(events, 'live-source-revalidated')));
+    assert.ok(Number.isInteger(eventSequence(events, 'mutation-applied')));
+    assert.deepEqual(
+      seen
+        .filter(({ pathname }) => pathname.endsWith('/apply'))
+        .map(({ payload }) => payload.receipt.receiptHash),
+      [dryRunReceipt.receiptHash, dryRunReceipt.receiptHash],
+    );
+    assertNoRawSupportValues({
+      idempotencyKeyHash: summary.idempotencyKeyHash,
+      applyRevalidation: summary.applyRevalidation,
+      fallbackApplyRevalidation: summary.apply.applyRevalidation,
       boundary: summary.boundary,
       receiptHash: dryRunReceipt.receiptHash,
       eventOrderHash: digest(events.map(({ event }) => event)),

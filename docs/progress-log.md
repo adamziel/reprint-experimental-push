@@ -4,6 +4,23 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Dry-Run Receipt Fallback Apply Revalidation Refusal
+
+- Last update: 2026-06-02 05:56 CEST +02:00.
+- The authenticated HTTP push client now marks apply-revalidation summaries
+  synthesized from a dry-run receipt or `verifiedPreconditions` as fallback
+  evidence. On the production-required path, fallback evidence is refused with
+  `APPLY_REVALIDATION_REQUIRED` even when the receipt hash, plan hash,
+  mutation count, and verified resource keys all appear to match.
+- RPP-0554 now covers the near miss where apply returns matching
+  `verifiedPreconditions` but omits the explicit `applyRevalidation` envelope.
+  The proof remains `NO-GO`, records `fallbackSource: "dry-run-receipt"`, and
+  refuses release movement because dry-run receipts are eligibility evidence,
+  not write authority.
+- Caveat: this hardens the client-side production proof boundary. Final release
+  still requires the real production route to provide durable, explicit
+  apply-side revalidation evidence before mutation and storage-boundary writes.
+
 ## 2026-06-02 - Contract-Bound Plugin Payload Apply Revalidation
 
 - Last update: 2026-06-02 05:50 CEST +02:00.
