@@ -376,6 +376,27 @@ function assertDirectActivePluginsBlocker(blocker, action) {
   assertHashOnlyChange(blocker.change, `${action} active_plugins blocker`);
 }
 
+function assertActivationDriverRequirementEvidence(evidence, action) {
+  assert.ok(evidence, `${action} activation-driver requirement evidence missing`);
+  assert.equal(evidence.schemaVersion, 1);
+  assert.equal(evidence.operation, 'plugin-activation-driver-requirement');
+  assert.equal(evidence.outcome, 'refused-before-mutation');
+  assert.equal(evidence.reasonCode, 'PLUGIN_ACTIVATION_DRIVER_REQUIRED');
+  assert.equal(evidence.resourceKey, activePluginsResourceKey);
+  assert.equal(evidence.table, 'wp_options');
+  assert.equal(evidence.rowId, activePluginsRowId);
+  assert.equal(evidence.requiredDriver, 'plugin-activation-driver');
+  assert.equal(evidence.format, 'hash-only');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(evidence.action, action);
+  assert.equal(evidence.scope, 'direct-active-plugins-mutation');
+  assert.equal(evidence.supported, false);
+  assert.equal(evidence.planned.state, action === 'delete' ? 'absent' : 'present');
+  assert.match(evidence.planned.hash, sha256HexPattern);
+  assert.equal(Object.hasOwn(evidence.planned, 'raw'), false);
+  assert.match(evidence.mutationHash, sha256HexPattern);
+}
+
 function assertSupportedPluginMutation(mutation) {
   assert.ok(mutation, 'supported plugin-owned option mutation missing');
   assert.equal(mutation.action, 'put');
@@ -663,6 +684,10 @@ test('RPP-0452 stale and forged plugin-driver evidence fails closed before mutat
     assert.equal(refusal.error.details.resourceKey, activePluginsResourceKey);
     assert.equal(refusal.error.details.reasonCode, 'DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED');
     assert.equal(refusal.error.details.requiredDriver, 'plugin-activation-driver');
+    assertActivationDriverRequirementEvidence(
+      refusal.error.details.activationDriverRequirementEvidence,
+      action,
+    );
     assertRefusalPreservedRemote(refusal, forgedRemote, `${action} forged active_plugins plan`);
     assert.equal(
       forgedRemote.db.wp_options[optionRowId].option_value.mode,
@@ -674,6 +699,9 @@ test('RPP-0452 stale and forged plugin-driver evidence fails closed before mutat
       code: refusal.error.code,
       reasonCode: refusal.error.details.reasonCode,
       requiredDriver: refusal.error.details.requiredDriver,
+      activationDriverRequirementHash: sha256Evidence(
+        refusal.error.details.activationDriverRequirementEvidence,
+      ),
       detailsHash: sha256Evidence(refusal.error.details),
       refusedBeforeMutation: refusal.beforeMutationCalls === 0,
       remoteHashBefore: refusal.remoteHashBefore,

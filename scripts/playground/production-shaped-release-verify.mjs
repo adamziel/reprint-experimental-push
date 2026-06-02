@@ -2780,12 +2780,16 @@ function directActivePluginsApplyRefusalEvidence({
   activePluginsHashBefore,
   activePluginsHashAfter,
 }) {
+  const activationDriverRequirement = directActivePluginsActivationDriverRequirementEvidence(
+    error?.details?.activationDriverRequirementEvidence,
+  );
   return {
     code: error?.code || null,
     expectedCode,
     codeMatchesExpected: error?.code === expectedCode,
     reasonCode: error?.details?.reasonCode || expectedReasonCode || null,
     requiredDriver: error?.details?.requiredDriver || directActivePluginsMutationRefusalBoundary.driver,
+    activationDriverRequirement,
     beforeMutationCalls,
     preMutation: beforeMutationCalls === 0,
     remotePreserved,
@@ -2794,6 +2798,31 @@ function directActivePluginsApplyRefusalEvidence({
     activePluginsHashBefore,
     activePluginsHashAfter,
     detailsHash: sha256Evidence(error?.details || {}),
+  };
+}
+
+function directActivePluginsActivationDriverRequirementEvidence(evidence) {
+  if (!evidence || typeof evidence !== 'object') {
+    return null;
+  }
+  return {
+    schemaVersion: evidence.schemaVersion || null,
+    operation: evidence.operation || null,
+    outcome: evidence.outcome || null,
+    reasonCode: evidence.reasonCode || null,
+    resourceKey: evidence.resourceKey || null,
+    table: evidence.table || null,
+    rowId: evidence.rowId || null,
+    requiredDriver: evidence.requiredDriver || null,
+    format: evidence.format || null,
+    rawValuesIncluded: evidence.rawValuesIncluded === true,
+    action: evidence.action || null,
+    plannedState: evidence.planned?.state || null,
+    plannedHash: evidence.planned?.hash || null,
+    mutationHash: evidence.mutationHash || null,
+    scope: evidence.scope || null,
+    supported: evidence.supported === true,
+    evidenceHash: sha256Evidence(evidence),
   };
 }
 

@@ -29,6 +29,9 @@ the release verifier:
   `DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED`;
 - rejects a forged ready direct `active_plugins` mutation with
   `UNSUPPORTED_ACTIVE_PLUGINS_MUTATION` before any mutation hook runs; and
+- carries the forged apply refusal's hash-only
+  `activationDriverRequirement` summary, including required driver, resource,
+  planned value hash, mutation hash, and requirement evidence hash; and
 - records only hashes, counts, resource keys, reason codes, and proof hashes,
   with no option values or fixture strings in the emitted proof.
 

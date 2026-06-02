@@ -158,6 +158,27 @@ test('RPP-0492 release verifier proves direct active_plugins refusals before mut
   assert.equal(forged.applyRefusal.remoteBeforeHash, forged.applyRefusal.remoteAfterHash);
   assert.equal(forged.applyRefusal.activePluginsHashBefore, forged.applyRefusal.activePluginsHashAfter);
   assert.match(forged.applyRefusal.detailsHash, sha256EvidencePattern);
+  assert.equal(forged.applyRefusal.activationDriverRequirement.schemaVersion, 1);
+  assert.equal(
+    forged.applyRefusal.activationDriverRequirement.operation,
+    'plugin-activation-driver-requirement',
+  );
+  assert.equal(forged.applyRefusal.activationDriverRequirement.outcome, 'refused-before-mutation');
+  assert.equal(
+    forged.applyRefusal.activationDriverRequirement.reasonCode,
+    'PLUGIN_ACTIVATION_DRIVER_REQUIRED',
+  );
+  assert.equal(
+    forged.applyRefusal.activationDriverRequirement.resourceKey,
+    directActivePluginsMutationRefusalBoundary.resourceKey,
+  );
+  assert.equal(forged.applyRefusal.activationDriverRequirement.requiredDriver, 'plugin-activation-driver');
+  assert.equal(forged.applyRefusal.activationDriverRequirement.format, 'hash-only');
+  assert.equal(forged.applyRefusal.activationDriverRequirement.rawValuesIncluded, false);
+  assert.equal(forged.applyRefusal.activationDriverRequirement.plannedState, 'present');
+  assert.match(forged.applyRefusal.activationDriverRequirement.plannedHash, sha256HexPattern);
+  assert.match(forged.applyRefusal.activationDriverRequirement.mutationHash, sha256HexPattern);
+  assert.match(forged.applyRefusal.activationDriverRequirement.evidenceHash, sha256EvidencePattern);
 
   assertNoPrivateMarkers(blocked);
   assertNoPrivateMarkers(forged);

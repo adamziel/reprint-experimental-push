@@ -270,9 +270,40 @@ function validateNoDirectActivePluginsMutations(plan) {
         resourceKey: mutation.resourceKey,
         reasonCode: 'DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED',
         requiredDriver: 'plugin-activation-driver',
+        activationDriverRequirementEvidence: activePluginsActivationDriverRequirementEvidence(mutation),
       },
     );
   }
+}
+
+function activePluginsActivationDriverRequirementEvidence(mutation) {
+  const plannedValue = deserializeResourceValue(mutation.value);
+  return stripUndefined({
+    schemaVersion: 1,
+    operation: 'plugin-activation-driver-requirement',
+    outcome: 'refused-before-mutation',
+    reasonCode: 'PLUGIN_ACTIVATION_DRIVER_REQUIRED',
+    resourceKey: mutation.resourceKey,
+    table: mutation.resource?.table || null,
+    rowId: mutation.resource?.id || null,
+    requiredDriver: 'plugin-activation-driver',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    mutationId: mutation.id,
+    action: mutation.action || null,
+    planned: {
+      state: plannedValue === ABSENT ? 'absent' : 'present',
+      hash: digest(plannedValue),
+    },
+    mutationHash: digest({
+      resourceKey: mutation.resourceKey,
+      action: mutation.action || null,
+      value: mutation.value,
+      resource: mutation.resource,
+    }),
+    scope: 'direct-active-plugins-mutation',
+    supported: false,
+  });
 }
 
 function isActivePluginsOptionResource(resource) {

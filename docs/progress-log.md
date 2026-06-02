@@ -4,6 +4,23 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Active Plugins Apply Refusal Driver Evidence
+
+- Last update: 2026-06-02 06:28 CEST +02:00.
+- Forged ready plans that attempt direct
+  `row:["wp_options","option_name:active_plugins"]` mutations now refuse at
+  apply with hash-only `activationDriverRequirementEvidence`. The evidence
+  binds the refusal to `plugin-activation-driver`, the active_plugins resource,
+  mutation action, planned value hash, and mutation hash, with
+  `rawValuesIncluded=false`.
+- The generated direct-active-plugins harness records the activation-driver
+  requirement hash, and the RPP-0492 release-verifier proof carries a redacted
+  activation-driver requirement summary beside the existing
+  `UNSUPPORTED_ACTIVE_PLUGINS_MUTATION` refusal.
+- Caveat: this is still a conservative refusal boundary, not a production
+  plugin activation driver. Production activation/update flows still need a
+  real driver with dependency, hook, rollback, and recovery checks.
+
 ## 2026-06-02 - Strict Graph Identity Map Contract Hashes
 
 - Last update: 2026-06-02 06:23 CEST +02:00.

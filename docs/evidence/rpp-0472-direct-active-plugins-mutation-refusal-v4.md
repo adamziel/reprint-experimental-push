@@ -26,7 +26,9 @@ and proves three variants:
   `plugin-activation-driver`, zero mutations, and zero preconditions; and
 - a forged ready plan containing an `active_plugins` mutation, rejected by
   `applyPlan()` as `UNSUPPORTED_ACTIVE_PLUGINS_MUTATION` before any mutation
-  hook runs.
+  hook runs, with hash-only `activationDriverRequirementEvidence` that names
+  `plugin-activation-driver` and binds the refusal to the mutation action and
+  planned value hash.
 
 The test asserts remote hashes are unchanged for refused paths, the supported
 plugin-managed row applies exactly one mutation while preserving the

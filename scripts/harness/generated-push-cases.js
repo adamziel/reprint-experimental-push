@@ -1508,6 +1508,7 @@ export function validateDirectActivePluginsMutationRefusalCase(testCase) {
   assert.equal(error.details.resourceKey, testCase.activePluginsResourceKey);
   assert.equal(error.details.reasonCode, 'DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED');
   assert.equal(error.details.requiredDriver, 'plugin-activation-driver');
+  assertDirectActivePluginsActivationDriverRequirement(testCase, forgedMutation, error.details);
   assert.equal(beforeMutationCalls, 0);
   assert.equal(digest(remote), before, `${testCase.id} mutated a forged active_plugins remote`);
   assert.equal(
@@ -1522,12 +1523,14 @@ export function validateDirectActivePluginsMutationRefusalCase(testCase) {
   result.remotePreserved = true;
   result.rejectionCode = error.code;
   result.beforeMutationCalls = beforeMutationCalls;
+  result.activationDriverRequirementHash = digest(error.details.activationDriverRequirementEvidence);
   result.proofHash = digest({
     id: testCase.id,
     variant: testCase.variant,
     outcome: result.outcome,
     plannerBlocker: directActivePluginsBlockerSummary(activePluginsBlocker),
     forgedMutation: directActivePluginsMutationSummary(forgedMutation),
+    activationDriverRequirementHash: digest(error.details.activationDriverRequirementEvidence),
     errorDetailsHash: digest(error.details),
     activePluginsHash: resourceHash(remote, directActivePluginsResource()),
   });
@@ -3812,6 +3815,34 @@ function assertDirectActivePluginsBlocker(testCase, blocker) {
   assert.equal(blocker.change.localChange, 'update');
   assert.equal(blocker.change.remoteChange, 'unchanged');
   assertDirectActivePluginsChangeHashEvidence(blocker.change);
+}
+
+function assertDirectActivePluginsActivationDriverRequirement(testCase, mutation, details) {
+  const evidence = details.activationDriverRequirementEvidence;
+  assert.ok(evidence, `${testCase.id} missing activation-driver requirement evidence`);
+  assert.equal(evidence.schemaVersion, 1);
+  assert.equal(evidence.operation, 'plugin-activation-driver-requirement');
+  assert.equal(evidence.outcome, 'refused-before-mutation');
+  assert.equal(evidence.reasonCode, 'PLUGIN_ACTIVATION_DRIVER_REQUIRED');
+  assert.equal(evidence.resourceKey, testCase.activePluginsResourceKey);
+  assert.equal(evidence.table, 'wp_options');
+  assert.equal(evidence.rowId, 'option_name:active_plugins');
+  assert.equal(evidence.requiredDriver, 'plugin-activation-driver');
+  assert.equal(evidence.format, 'hash-only');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(evidence.mutationId, mutation.id);
+  assert.equal(evidence.action, mutation.action);
+  assert.equal(evidence.planned.state, mutation.action === 'delete' ? 'absent' : 'present');
+  assert.equal(evidence.planned.hash, digest(deserializeResourceValue(mutation.value)));
+  assert.equal(Object.hasOwn(evidence.planned, 'raw'), false);
+  assert.equal(evidence.mutationHash, digest({
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    value: mutation.value,
+    resource: mutation.resource,
+  }));
+  assert.equal(evidence.scope, 'direct-active-plugins-mutation');
+  assert.equal(evidence.supported, false);
 }
 
 function assertDirectActivePluginsChangeHashEvidence(change) {

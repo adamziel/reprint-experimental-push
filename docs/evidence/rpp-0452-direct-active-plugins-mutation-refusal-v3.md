@@ -28,7 +28,8 @@ release posture.
   before mutation; and
 - forged ready plans for direct active_plugins put/delete operations refused by
   `applyPlan()` as `UNSUPPORTED_ACTIVE_PLUGINS_MUTATION` before any mutation
-  hook runs.
+  hook runs, with hash-only `activationDriverRequirementEvidence` naming
+  `plugin-activation-driver` as the required production driver.
 
 All proof objects use hash-only summaries. The tests assert local/support-only
 labels, `productionBacked=false`, `rawValuesIncluded=false`, unchanged remote
