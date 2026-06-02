@@ -71,13 +71,35 @@ test('WordPress graph contracts mark serialized block references as detect-only'
   );
 });
 
-test('WordPress graph contracts bind user-target relationships to valid user rows', () => {
+test('WordPress graph contracts bind core targets to primary-row validation', () => {
   const contractsByType = new Map(
     WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS.map((contract) => [contract.relationshipType, contract]),
   );
+  const expectedTargetValidationByType = {
+    'blog-site': 'valid-site-row',
+    'blog-version-blog': 'valid-blog-row',
+    'blogmeta-blog': 'valid-blog-row',
+    'comment-parent': 'valid-comment-row',
+    'comment-post': 'valid-post-row',
+    'comment-user': 'valid-user-row',
+    'commentmeta-comment': 'valid-comment-row',
+    'link-owner': 'valid-user-row',
+    'post-author': 'valid-user-row',
+    'post-parent': 'valid-post-row',
+    'postmeta-post': 'valid-post-row',
+    'registration-log-blog': 'valid-blog-row',
+    'serialized-block-post': 'valid-post-row',
+    'sitemeta-site': 'valid-site-row',
+    'term-relationship-object': 'valid-post-row',
+    'term-relationship-taxonomy': 'valid-term-taxonomy-row',
+    'term-taxonomy-parent': 'valid-term-row',
+    'term-taxonomy-term': 'valid-term-row',
+    'termmeta-term': 'valid-term-row',
+    'usermeta-user': 'valid-user-row',
+  };
 
-  for (const relationshipType of ['comment-user', 'link-owner', 'post-author', 'usermeta-user']) {
-    assert.equal(contractsByType.get(relationshipType)?.targetValidation, 'valid-user-row');
+  for (const [relationshipType, targetValidation] of Object.entries(expectedTargetValidationByType)) {
+    assert.equal(contractsByType.get(relationshipType)?.targetValidation, targetValidation);
   }
 });
 

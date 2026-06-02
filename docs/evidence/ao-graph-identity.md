@@ -21,6 +21,12 @@ Lane: graph-identity
   block when the referenced `wp_users` row body does not carry the same primary
   `ID` as the target resource key. PHP snapshot contract metadata exports the
   same target-validation contract table as the JS planner.
+- Extends contract-driven primary-row target validation to the remaining core
+  graph targets for `wp_posts`, `wp_comments`, `wp_terms`,
+  `wp_term_taxonomy`, `wp_blogs`, and `wp_site`. Same-plan target rows whose
+  bodies do not match their resource-key primary IDs now fail closed before
+  dependent graph source rows can become ready, including detect-only
+  `serialized-block-post` references.
 - Adds RPP-0306 focused planner evidence for `wp_comments.comment_parent` thread references: stable parent comment targets remain ready without identity rewriting, explicit comment identity-map targets rewrite child replies to the proven remote parent ID, and drifted remote parent comments fail closed with hash-only target evidence.
 - Adds apply-time rewrite payload binding: each scalar rewrite envelope must
   match the serialized mutation field value and the carried target resource
@@ -61,13 +67,16 @@ RPP-0306 focused worker verification commands:
   check.
 - `node --test test/wordpress-graph-contracts.test.js test/playground-snapshot-lib.test.js`
   — 11 subtests, 0 failures, including JS/PHP graph contract parity.
-- `node --test test/push-planner.test.js test/wordpress-graph-contracts.test.js`
-  — 157 subtests, 0 failures, including the full planner graph surface and
-  contract inventory checks.
+- `node --test test/push-planner.test.js test/wordpress-graph-contracts.test.js test/playground-snapshot-lib.test.js`
+  — 165 subtests, 0 failures, including the full planner graph surface,
+  JS/PHP snapshot contract parity, and contract inventory checks.
 - `node --test --test-name-pattern 'user-target|post author|usermeta|link-owner|comment user|commentmeta comment|featured image|serialized block' test/push-planner.test.js test/rpp-0307-comment-user-reference.test.js test/rpp-0308-commentmeta-comment-reference.test.js test/rpp-0322-featured-image-attachment-reference-v2.test.js test/rpp-0317-serialized-block-reference-detection.test.js`
   — 14 subtests, 0 failures, including malformed user-target row refusal for
   `post-author`, `usermeta-user`, and `link-owner` plus adjacent target
   validation regressions.
+- `node --test --test-name-pattern 'primary graph targets|core primary graph targets|user-target|post author|commentmeta comment|featured image|serialized block|termmeta|term-relationship-taxonomy|postmeta-post' test/push-planner.test.js test/rpp-0307-comment-user-reference.test.js test/rpp-0308-commentmeta-comment-reference.test.js test/rpp-0322-featured-image-attachment-reference-v2.test.js test/rpp-0317-serialized-block-reference-detection.test.js test/rpp-0352-termmeta-term-reference-v3.test.js test/rpp-0354-term-relationship-taxonomy-reference-v3.test.js test/rpp-0364-postmeta-post-id-reference-v4.test.js`
+  — 18 subtests, 0 failures, including malformed primary-row target refusal
+  across post, comment, term, term-taxonomy, blog, and site graph targets.
 
 A full `npm test` run was attempted for broader signal, but unrelated existing failures appeared in authenticated HTTP push client and playground snapshot/plugin-driver tests before the run was stopped; the focused graph-identity checks above passed.
 

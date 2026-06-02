@@ -3163,21 +3163,13 @@ function wordpressGraphRelationshipTargetSupport(reference, { baseValue, localVa
     return { supported: true };
   }
 
-  if (targetValidation === 'valid-user-row') {
+  const primaryRowTargetTable = WORDPRESS_GRAPH_PRIMARY_ROW_TARGET_VALIDATIONS.get(targetValidation);
+  if (primaryRowTargetTable) {
     return wordpressGraphPrimaryRowTargetSupport(reference, {
       baseValue,
       localValue,
       remoteValue,
-      validTableName: 'wp_users',
-    });
-  }
-
-  if (targetValidation === 'valid-comment-row') {
-    return wordpressGraphPrimaryRowTargetSupport(reference, {
-      baseValue,
-      localValue,
-      remoteValue,
-      validTableName: 'wp_comments',
+      validTableName: primaryRowTargetTable,
     });
   }
 
@@ -3269,6 +3261,16 @@ function wordpressGraphPrimaryRowTargetSupport(reference, {
 
   return { supported: true };
 }
+
+const WORDPRESS_GRAPH_PRIMARY_ROW_TARGET_VALIDATIONS = new Map([
+  ['valid-blog-row', 'wp_blogs'],
+  ['valid-comment-row', 'wp_comments'],
+  ['valid-post-row', 'wp_posts'],
+  ['valid-site-row', 'wp_site'],
+  ['valid-term-row', 'wp_terms'],
+  ['valid-term-taxonomy-row', 'wp_term_taxonomy'],
+  ['valid-user-row', 'wp_users'],
+]);
 
 function wordpressGraphRelationshipTargetValue({ baseValue, localValue, remoteValue }) {
   return localValue !== ABSENT

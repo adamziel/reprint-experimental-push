@@ -7705,6 +7705,219 @@ test('blocks user-target graph references when the target row body does not matc
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks core primary graph targets when target row bodies do not match resource ids', () => {
+  const sourceExpectations = [
+    ['row:["wp_comments","comment_ID:21"]', ['comment-post', 'comment-parent']],
+    ['row:["wp_posts","ID:24"]', ['serialized-block-post']],
+    ['row:["wp_postmeta","meta_id:71"]', ['postmeta-post']],
+    ['row:["wp_term_relationships","object_id:7|term_taxonomy_id:41"]', [
+      'term-relationship-object',
+      'term-relationship-taxonomy',
+    ]],
+    ['row:["wp_term_taxonomy","term_taxonomy_id:43"]', ['term-taxonomy-term', 'term-taxonomy-parent']],
+    ['row:["wp_termmeta","meta_id:81"]', ['termmeta-term']],
+    ['row:["wp_blogs","blog_id:11"]', ['blog-site']],
+    ['row:["wp_sitemeta","meta_id:91"]', ['sitemeta-site']],
+    ['row:["wp_blogmeta","meta_id:92"]', ['blogmeta-blog']],
+    ['row:["wp_blog_versions","blog_id:9"]', ['blog-version-blog']],
+    ['row:["wp_registration_log","ID:93"]', ['registration-log-blog']],
+  ];
+  const base = baseSite();
+  base.db.wp_posts['ID:7'] = {
+    ID: 7,
+    post_title: 'base-private-primary-post-target',
+    post_status: 'publish',
+    post_parent: 0,
+    post_author: 0,
+  };
+  base.db.wp_comments = {
+    'comment_ID:22': {
+      comment_ID: 22,
+      comment_post_ID: 0,
+      comment_parent: 0,
+      user_id: 0,
+      comment_content: 'base-private-primary-comment-target',
+    },
+  };
+  base.db.wp_terms = {
+    'term_id:31': {
+      term_id: 31,
+      name: 'base-private-primary-term-target',
+      slug: 'base-private-primary-term-target',
+    },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:41': {
+      term_taxonomy_id: 41,
+      term_id: 0,
+      taxonomy: 'category',
+      parent: 0,
+    },
+  };
+  base.db.wp_blogs = {
+    'blog_id:9': {
+      blog_id: 9,
+      site_id: 0,
+      domain: 'base-private-primary-blog-target.test',
+      path: '/',
+    },
+  };
+  base.db.wp_site = {
+    'id:1': {
+      id: 1,
+      domain: 'base-private-primary-site-target.test',
+      path: '/',
+    },
+  };
+  base.db.wp_postmeta = {};
+  base.db.wp_term_relationships = {};
+  base.db.wp_termmeta = {};
+  base.db.wp_sitemeta = {};
+  base.db.wp_blogmeta = {};
+  base.db.wp_blog_versions = {};
+  base.db.wp_registration_log = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_posts['ID:7'] = {
+    ...local.db.wp_posts['ID:7'],
+    ID: 8,
+    post_title: 'local-private-wrong-primary-post-target',
+  };
+  local.db.wp_comments['comment_ID:22'] = {
+    ...local.db.wp_comments['comment_ID:22'],
+    comment_ID: 23,
+    comment_content: 'local-private-wrong-primary-comment-target',
+  };
+  local.db.wp_terms['term_id:31'] = {
+    ...local.db.wp_terms['term_id:31'],
+    term_id: 32,
+    name: 'local-private-wrong-primary-term-target',
+  };
+  local.db.wp_term_taxonomy['term_taxonomy_id:41'] = {
+    ...local.db.wp_term_taxonomy['term_taxonomy_id:41'],
+    term_taxonomy_id: 42,
+  };
+  local.db.wp_blogs['blog_id:9'] = {
+    ...local.db.wp_blogs['blog_id:9'],
+    blog_id: 10,
+    domain: 'local-private-wrong-primary-blog-target.test',
+  };
+  local.db.wp_site['id:1'] = {
+    ...local.db.wp_site['id:1'],
+    id: 2,
+    domain: 'local-private-wrong-primary-site-target.test',
+  };
+  local.db.wp_comments['comment_ID:21'] = {
+    comment_ID: 21,
+    comment_post_ID: 7,
+    comment_parent: 22,
+    user_id: 0,
+    comment_content: 'local-private-primary-source-comment',
+  };
+  local.db.wp_posts['ID:24'] = {
+    ID: 24,
+    post_title: 'local-private-primary-serialized-post-source',
+    post_content: '<!-- wp:post-featured-image {"postId":7} /-->',
+    post_status: 'draft',
+    post_type: 'post',
+    post_parent: 0,
+    post_author: 0,
+  };
+  local.db.wp_postmeta['meta_id:71'] = {
+    meta_id: 71,
+    post_id: 7,
+    meta_key: '_local_primary_post_ref',
+    meta_value: 'local-private-primary-postmeta-source',
+  };
+  local.db.wp_term_relationships['object_id:7|term_taxonomy_id:41'] = {
+    object_id: 7,
+    term_taxonomy_id: 41,
+    term_order: 0,
+  };
+  local.db.wp_term_taxonomy['term_taxonomy_id:43'] = {
+    term_taxonomy_id: 43,
+    term_id: 31,
+    taxonomy: 'category',
+    description: 'local-private-primary-taxonomy-source',
+    parent: 31,
+    count: 0,
+  };
+  local.db.wp_termmeta['meta_id:81'] = {
+    meta_id: 81,
+    term_id: 31,
+    meta_key: '_local_primary_term_ref',
+    meta_value: 'local-private-primary-termmeta-source',
+  };
+  local.db.wp_blogs['blog_id:11'] = {
+    blog_id: 11,
+    site_id: 1,
+    domain: 'local-private-primary-source-blog.test',
+    path: '/',
+  };
+  local.db.wp_sitemeta['meta_id:91'] = {
+    meta_id: 91,
+    site_id: 1,
+    meta_key: '_local_primary_site_ref',
+    meta_value: 'local-private-primary-sitemeta-source',
+  };
+  local.db.wp_blogmeta['meta_id:92'] = {
+    meta_id: 92,
+    blog_id: 9,
+    meta_key: '_local_primary_blog_ref',
+    meta_value: 'local-private-primary-blogmeta-source',
+  };
+  local.db.wp_blog_versions['blog_id:9'] = {
+    blog_id: 9,
+    db_version: 60000,
+    last_updated: '2026-06-02 00:00:00',
+  };
+  local.db.wp_registration_log['ID:93'] = {
+    ID: 93,
+    email: 'local-private-primary-registration-source@example.test',
+    IP: '127.0.0.1',
+    blog_id: 9,
+    date_registered: '2026-06-02 00:00:00',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blockersByResource = new Map(plan.blockers.map((blocker) => [blocker.resourceKey, blocker]));
+  const blockersJson = JSON.stringify(plan.blockers);
+
+  assert.equal(plan.status, 'blocked');
+  for (const [resourceKey, relationshipTypes] of sourceExpectations) {
+    const blocker = blockersByResource.get(resourceKey);
+    assert.equal(mutationFor(plan, resourceKey), undefined);
+    assert.ok(blocker, `missing primary target blocker for ${resourceKey}`);
+    for (const relationshipType of relationshipTypes) {
+      const reference = blocker.references.find((entry) => entry.relationshipType === relationshipType);
+      assert.ok(reference, `missing ${relationshipType} evidence for ${resourceKey}`);
+      assert.equal(reference.targetSupport.supported, false);
+      assert.equal(reference.targetSupport.className, 'stale-wordpress-graph-identity');
+      assert.match(reference.targetSupport.reason, /not a valid wp_/);
+    }
+  }
+  for (const rawValue of [
+    'local-private-wrong-primary-post-target',
+    'local-private-wrong-primary-comment-target',
+    'local-private-wrong-primary-term-target',
+    'local-private-wrong-primary-blog-target.test',
+    'local-private-wrong-primary-site-target.test',
+    'local-private-primary-source-comment',
+    'local-private-primary-serialized-post-source',
+    'local-private-primary-postmeta-source',
+    'local-private-primary-taxonomy-source',
+    'local-private-primary-termmeta-source',
+    'local-private-primary-source-blog.test',
+    'local-private-primary-sitemeta-source',
+    'local-private-primary-blogmeta-source',
+    'local-private-primary-registration-source@example.test',
+  ]) {
+    assert.equal(blockersJson.includes(rawValue), false, `primary target blocker leaked ${rawValue}`);
+  }
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks comment graph references when the remote post target is missing', () => {
   const commentResourceKey = 'row:["wp_comments","comment_ID:11"]';
   const targetPostResourceKey = 'row:["wp_posts","ID:2"]';
