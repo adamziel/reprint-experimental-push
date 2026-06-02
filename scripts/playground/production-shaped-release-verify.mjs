@@ -79,7 +79,10 @@ import {
   consumeProductionRecoveryJournal,
   openProductionRecoveryJournal,
 } from '../../src/recovery-journal.js';
-import { pluginOwnedRowDriverContractHash } from '../../src/plugin-driver-contracts.js';
+import {
+  pluginOwnedRowDriverContractValidationEvidenceHash,
+  pluginOwnedRowDriverContractHash,
+} from '../../src/plugin-driver-contracts.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const isMainModule = process.argv[1]
@@ -11499,8 +11502,11 @@ export function summarizeProductionPluginDriverBoundaryProof({
   const expectedContractHash = contractValidationEvidence
     ? pluginOwnedRowDriverContractHash(contractValidationEvidence)
     : null;
-  const expectedContractValidationHash = contractValidationEvidence
+  const contractValidationHash = contractValidationEvidence
     ? digest(contractValidationEvidence)
+    : null;
+  const expectedContractValidationHash = contractValidationEvidence
+    ? pluginOwnedRowDriverContractValidationEvidenceHash(contractValidationEvidence)
     : null;
   const plannedMutationValue = mutation
     ? deserializeResourceValue(mutation.value)
@@ -11533,7 +11539,9 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && contractValidationEvidence?.table === boundary.table
     && contractValidationEvidence?.supportsDelete === false
     && bareSha256Pattern.test(contractHash || '')
-    && contractHash === expectedContractHash;
+    && contractHash === expectedContractHash
+    && Boolean(expectedContractValidationHash)
+    && contractValidationHash === expectedContractValidationHash;
   const driverPayloadContractValidationHashMatchesExpected =
     Boolean(expectedContractValidationHash)
     && driverPayloadValidationEvidence?.contractValidationHash === expectedContractValidationHash;
@@ -11655,7 +11663,10 @@ export function summarizeProductionPluginDriverBoundaryProof({
         && contractHash === expectedContractHash,
       contractHashMatchesPayload: Boolean(contractHash)
         && driverPayloadValidationEvidence?.contractHash === contractHash,
+      contractValidationHash,
       expectedContractValidationHash,
+      contractValidationHashMatchesExpected: Boolean(expectedContractValidationHash)
+        && contractValidationHash === expectedContractValidationHash,
       payloadContractValidationHashMatchesExpected: driverPayloadContractValidationHashMatchesExpected,
       payloadValueHashMatchesExpected: driverPayloadValueHashMatchesExpected,
       payloadValueStateMatchesExpected: driverPayloadValueStateMatchesExpected,

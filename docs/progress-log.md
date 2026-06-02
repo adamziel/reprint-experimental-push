@@ -4,6 +4,23 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Canonical Plugin Driver Contract Evidence
+
+- Last update: 2026-06-02 06:15 CEST +02:00.
+- Accepted `plugin-driver-contract-validation` evidence is now exact, not just
+  selected-field-valid. Planner, apply, contract-bound payload validation, and
+  the RPP-0483 release verifier compare carried evidence to the canonical
+  hash-only envelope with a recomputed row-driver `contractHash`.
+- Forged ready plans that add unexpected or raw sidecar fields to otherwise
+  accepted contract evidence now refuse before mutation with
+  `PLUGIN_DRIVER_CONTRACT_VALIDATION_EVIDENCE_MISMATCH`; the release verifier
+  records `contractValidationHashMatchesExpected: false` and keeps the proof
+  blocked without leaking raw sentinels.
+- Caveat: this closes the contract-evidence exactness path for JS planner,
+  apply, and the production-shaped verifier. Broader production plugin
+  generalization still needs owner-marker enforcement, generic validator
+  contracts, and real hosted integration evidence.
+
 ## 2026-06-02 - Release Evidence Provenance Subject Binding
 
 - Last update: 2026-06-02 06:15 CEST +02:00.

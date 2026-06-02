@@ -13,6 +13,7 @@ import {
   PLUGIN_DRIVER_CONTRACT_KIND,
   PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
   normalizePluginOwnedRowDriverContract,
+  pluginOwnedRowDriverContractValidationEvidenceMatches,
   pluginOwnedRowDriverContractHash,
 } from './plugin-driver-contracts.js';
 import { validatePluginOwnedDriverPayload } from './plugin-driver-validators.js';
@@ -910,7 +911,8 @@ function acceptedPluginOwnedRowDriverContractEvidence(evidence) {
     && Array.isArray(evidence.issueCodes)
     && evidence.issueCodes.length === 0
     && evidence.rawValuesIncluded === false
-    && evidence.contractHash === expectedContractHash;
+    && evidence.contractHash === expectedContractHash
+    && pluginOwnedRowDriverContractValidationEvidenceMatches(evidence);
 }
 
 function pluginDriverContractRequiredEvidence({

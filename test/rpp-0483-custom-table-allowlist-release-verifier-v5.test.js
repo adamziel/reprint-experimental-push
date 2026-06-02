@@ -241,13 +241,19 @@ test('RPP-0483 release verifier carries exact custom-table allowlist through app
   assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, true);
   assert.equal(summary.driverContractBoundary.contractHashMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.contractHashMatchesPayload, true);
+  assert.equal(summary.driverContractBoundary.contractValidationHashMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.payloadContractValidationHashMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.payloadValueHashMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.payloadValueStateMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.payloadActionMatchesMutation, true);
   assert.equal(summary.driverContractBoundary.payloadContractSupportsDeleteMatches, true);
   assert.match(summary.driverContractBoundary.contractHash, /^[a-f0-9]{64}$/);
+  assert.match(summary.driverContractBoundary.contractValidationHash, /^[a-f0-9]{64}$/);
   assert.match(summary.driverContractBoundary.expectedContractValidationHash, /^[a-f0-9]{64}$/);
+  assert.equal(
+    summary.driverContractBoundary.contractValidationHash,
+    summary.driverContractBoundary.expectedContractValidationHash,
+  );
   assert.equal(summary.driverContractBoundary.expectedContractHash, summary.driverContractBoundary.contractHash);
   assert.equal(summary.driverContractBoundary.contractValidation.reasonCode, 'PLUGIN_DRIVER_CONTRACT_ACCEPTED');
   assert.equal(summary.driverContractBoundary.contractValidation.contractKind, 'plugin-owned-row-driver');
@@ -423,6 +429,26 @@ test('RPP-0483 release verifier blocks custom-table allowlist and apply carry-th
     assert.equal(summary.driverContractBoundary.contractBound, false);
     assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
     assertNoRawSentinels(summary, 'forged contract fingerprint summary');
+  });
+
+  await t.test('forged contract validation evidence with raw extras is not release-verifier eligible', () => {
+    const topology = releaseStateTopology();
+    const plan = releaseStatePlan(topology);
+    const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey);
+    mutation.pluginOwnedResource.contractValidationEvidence.rawFixture = rawSentinels[1];
+    mutation.pluginOwnedResource.contractValidationEvidence.rawValuesIncluded = false;
+    const summary = summarize(topology, releaseVerifierProof(plan));
+
+    assert.equal(summary.status, 'blocked');
+    assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+    assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, false);
+    assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, false);
+    assert.equal(summary.driverContractBoundary.contractHashMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.contractValidationHashMatchesExpected, false);
+    assert.equal(summary.driverContractBoundary.payloadContractValidationHashMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.contractBound, false);
+    assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
+    assertNoRawSentinels(summary, 'forged contract validation evidence summary');
   });
 
   await t.test('forged payload action is not release-verifier eligible', () => {

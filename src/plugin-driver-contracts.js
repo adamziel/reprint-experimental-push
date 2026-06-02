@@ -173,6 +173,60 @@ export function pluginOwnedRowDriverContractHash(contract) {
   });
 }
 
+export function canonicalPluginOwnedRowDriverContractValidationEvidence(evidence) {
+  if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence)) {
+    return null;
+  }
+  return {
+    schemaVersion: 1,
+    operation: 'plugin-driver-contract-validation',
+    contractKind: evidence.contractKind || null,
+    contractVersion: Number.isInteger(evidence.contractVersion) ? evidence.contractVersion : null,
+    outcome: evidence.outcome || null,
+    reasonCode: evidence.reasonCode || null,
+    issueCodes: Array.isArray(evidence.issueCodes) ? [...evidence.issueCodes] : [],
+    issues: Array.isArray(evidence.issues)
+      ? evidence.issues.map(canonicalPluginOwnedRowDriverContractValidationIssue)
+      : [],
+    source: evidence.source || null,
+    evidenceScope: evidence.evidenceScope || null,
+    rawValuesIncluded: evidence.rawValuesIncluded === true,
+    resourceKey: evidence.resourceKey || null,
+    pluginOwner: evidence.pluginOwner || null,
+    driver: evidence.driver || null,
+    table: evidence.table || null,
+    supportsDelete: evidence.supportsDelete === true,
+    contractHash: pluginOwnedRowDriverContractHash(evidence),
+  };
+}
+
+export function pluginOwnedRowDriverContractValidationEvidenceHash(evidence) {
+  const canonicalEvidence = canonicalPluginOwnedRowDriverContractValidationEvidence(evidence);
+  return canonicalEvidence ? digest(canonicalEvidence) : null;
+}
+
+export function pluginOwnedRowDriverContractValidationEvidenceMatches(evidence) {
+  const expectedEvidenceHash = pluginOwnedRowDriverContractValidationEvidenceHash(evidence);
+  return Boolean(expectedEvidenceHash) && digest(evidence) === expectedEvidenceHash;
+}
+
+function canonicalPluginOwnedRowDriverContractValidationIssue(issue) {
+  if (!issue || typeof issue !== 'object' || Array.isArray(issue)) {
+    return {
+      reasonCode: null,
+      field: null,
+      required: null,
+      observed: null,
+    };
+  }
+  return {
+    reasonCode: issue.reasonCode || null,
+    field: issue.field || null,
+    required: issue.required ?? null,
+    observed: issue.observed ?? null,
+  };
+}
+
 function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }

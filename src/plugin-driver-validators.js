@@ -2,6 +2,8 @@ import { ABSENT, digest } from './stable-json.js';
 import {
   PLUGIN_DRIVER_CONTRACT_KIND,
   PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+  pluginOwnedRowDriverContractValidationEvidenceHash,
+  pluginOwnedRowDriverContractValidationEvidenceMatches,
   pluginOwnedRowDriverContractHash,
 } from './plugin-driver-contracts.js';
 
@@ -187,7 +189,7 @@ function validateContractBoundRowDriverPayload({
       state: value === ABSENT ? 'absent' : 'present',
       hash: digest(value),
     },
-    contractValidationHash: digest(contractValidationEvidence),
+    contractValidationHash: pluginOwnedRowDriverContractValidationEvidenceHash(contractValidationEvidence),
   };
 
   if (accepted) {
@@ -213,7 +215,8 @@ function acceptedContractValidationEvidence(evidence) {
     && Array.isArray(evidence.issueCodes)
     && evidence.issueCodes.length === 0
     && evidence.rawValuesIncluded === false
-    && evidence.contractHash === expectedContractHash;
+    && evidence.contractHash === expectedContractHash
+    && pluginOwnedRowDriverContractValidationEvidenceMatches(evidence);
 }
 
 function isNonEmptyString(value) {

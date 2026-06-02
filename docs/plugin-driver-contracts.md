@@ -55,6 +55,10 @@ that declares an explicit contract becomes strict:
 - accepted contracts emit `plugin-driver-contract-validation` evidence
 - accepted contracts must carry the expected `contractHash`, and apply
   recomputes it before trusting the evidence
+- accepted contract evidence must match the canonical hash-only evidence
+  envelope. Extra fields, raw-value sidecars, stale evidence hashes, or
+  non-canonical rewrites refuse before mutation with
+  `PLUGIN_DRIVER_CONTRACT_VALIDATION_EVIDENCE_MISMATCH`.
 - contract evidence is hash-only and carries no raw plugin payload values
 - accepted contract evidence does not by itself authorize a mutation: the
   mutation envelope must still carry the same `pluginOwner`, `driver`, resource,
@@ -93,7 +97,7 @@ shape. For custom row drivers outside the built-in driver set, apply requires:
 - accepted `contract-bound-row-driver` payload validation evidence,
 - hash-only value and contract evidence, with `rawValuesIncluded: false`,
 - carried payload evidence that matches apply's recomputed mutation action,
-  value state/hash, contract hash, and `contractValidationHash`.
+  value state/hash, contract hash, and canonical `contractValidationHash`.
 
 Legacy fixture allowlists still work for focused tests, but generic production
 custom row drivers need the explicit contract path before the executor will

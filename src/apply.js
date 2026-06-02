@@ -19,6 +19,8 @@ import {
 import {
   PLUGIN_DRIVER_CONTRACT_KIND,
   PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+  pluginOwnedRowDriverContractValidationEvidenceHash,
+  pluginOwnedRowDriverContractValidationEvidenceMatches,
   pluginOwnedRowDriverContractHash,
 } from './plugin-driver-contracts.js';
 import {
@@ -476,6 +478,7 @@ function isContractBoundRowDriverMutation(mutation, owner, driver, plannedValue,
     && contract.issueCodes.length === 0
     && contract.rawValuesIncluded === false
     && contract.contractHash === expectedContractHash
+    && pluginOwnedRowDriverContractValidationEvidenceMatches(contract)
     && contract.resourceKey === mutation.resourceKey
     && contract.pluginOwner === owner
     && contract.driver === driver
@@ -515,7 +518,7 @@ function contractBoundPayloadValidationEvidenceAccepted({
     : null;
   const expectedState = plannedValue === ABSENT ? 'absent' : 'present';
   const expectedValueHash = digest(plannedValue);
-  const expectedContractValidationHash = digest(contract);
+  const expectedContractValidationHash = pluginOwnedRowDriverContractValidationEvidenceHash(contract);
 
   return validation?.schemaVersion === 1
     && validation.operation === 'plugin-driver-payload-validation'
@@ -591,7 +594,11 @@ function validatePluginOwnedContractValidation(mutation, owner, driver) {
     && evidence.issueCodes.length === 0
     && evidence.rawValuesIncluded === false;
   const expectedContractHash = pluginOwnedRowDriverContractHash(evidence);
-  const evidenceAccepted = evidenceShapeAccepted && evidence.contractHash === expectedContractHash;
+  const contractValidationEvidenceMatchesExpected =
+    evidenceShapeAccepted && pluginOwnedRowDriverContractValidationEvidenceMatches(evidence);
+  const evidenceAccepted = evidenceShapeAccepted
+    && evidence.contractHash === expectedContractHash
+    && contractValidationEvidenceMatchesExpected;
   const shapeAccepted = evidenceAccepted
     && evidence.resourceKey === mutation.resourceKey
     && evidence.pluginOwner === owner
@@ -615,6 +622,7 @@ function validatePluginOwnedContractValidation(mutation, owner, driver) {
     evidence,
     evidenceAccepted,
     evidenceShapeAccepted,
+    contractValidationEvidenceMatchesExpected,
     expectedContractHash,
     mutation,
     owner,
@@ -640,6 +648,7 @@ function pluginDriverContractApplyRefusalCode({
   evidence,
   evidenceAccepted,
   evidenceShapeAccepted,
+  contractValidationEvidenceMatchesExpected,
   expectedContractHash,
   mutation,
   owner,
@@ -651,6 +660,9 @@ function pluginDriverContractApplyRefusalCode({
   if (!evidenceAccepted) {
     if (evidenceShapeAccepted && evidence.contractHash !== expectedContractHash) {
       return 'PLUGIN_DRIVER_CONTRACT_HASH_MISMATCH';
+    }
+    if (evidenceShapeAccepted && !contractValidationEvidenceMatchesExpected) {
+      return 'PLUGIN_DRIVER_CONTRACT_VALIDATION_EVIDENCE_MISMATCH';
     }
     return typeof evidence.reasonCode === 'string' && evidence.reasonCode
       ? evidence.reasonCode

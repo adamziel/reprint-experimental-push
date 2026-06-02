@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { applyPlan } from '../src/apply.js';
 import { createPushPlan } from '../src/planner.js';
-import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
+import {
+  pluginOwnedRowDriverContractValidationEvidenceHash,
+  pluginOwnedRowDriverContractHash,
+} from '../src/plugin-driver-contracts.js';
 import { validatePluginOwnedDriverPayload } from '../src/plugin-driver-validators.js';
 
 const fixedNow = new Date('2026-06-02T00:00:00.000Z');
@@ -156,6 +159,12 @@ test('explicit custom row driver contract carries contract-bound validator evide
   assert.equal(payloadEvidence.contractHash, mutation.pluginOwnedResource.contractValidationEvidence.contractHash);
   assert.match(payloadEvidence.value.hash, /^[a-f0-9]{64}$/);
   assert.match(payloadEvidence.contractValidationHash, /^[a-f0-9]{64}$/);
+  assert.equal(
+    payloadEvidence.contractValidationHash,
+    pluginOwnedRowDriverContractValidationEvidenceHash(
+      mutation.pluginOwnedResource.contractValidationEvidence,
+    ),
+  );
   assert.equal(result.appliedMutations, 1);
   assert.equal(result.site.db.wp_forms_contract_rows['entry_id:7'].payload.mode, 'local-contract-custom');
   assert.equal(evidenceJson.includes('base-contract-custom-secret'), false);
@@ -373,6 +382,64 @@ test('apply refuses forged ready plans that carry refused plugin driver contract
   assert.equal(error.details.contractValidationEvidence.rawValuesIncluded, false);
   assert.equal(JSON.stringify(error.details).includes('local-contract-forged-apply'), false);
   assert.equal(JSON.stringify(error.details).includes('remote-preserved-contract'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('apply refuses forged custom row driver contract evidence with unexpected raw fields before mutation', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const rawSentinel = 'local-contract-raw-evidence-secret';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-contract-extra-evidence', secret: 'base-contract-extra-evidence-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-contract-extra-evidence';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-contract-extra-evidence-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const forgedPlan = cloneJson(plan);
+  const mutation = mutationFor(forgedPlan, resourceKey);
+  mutation.pluginOwnedResource.contractValidationEvidence.rawFixture = rawSentinel;
+  mutation.pluginOwnedResource.contractValidationEvidence.rawValuesIncluded = false;
+
+  const payloadValidation = validatePluginOwnedDriverPayload({
+    resource: mutation.resource,
+    owner: 'forms',
+    driver: 'forms-contract-row',
+    table: 'wp_forms_contract_rows',
+    value: local.db.wp_forms_contract_rows['entry_id:7'],
+    action: 'put',
+    supportsDelete: false,
+    contractValidationEvidence: mutation.pluginOwnedResource.contractValidationEvidence,
+  });
+  let error;
+  try {
+    applyPlan(remote, forgedPlan);
+  } catch (caught) {
+    error = caught;
+  }
+
+  assert.equal(payloadValidation.supported, true);
+  assert.equal(payloadValidation.evidence, null);
+  assert.equal(error?.code, 'PLUGIN_DRIVER_CONTRACT_VALIDATION_EVIDENCE_MISMATCH');
+  assert.equal(error.details.resourceKey, resourceKey);
+  assert.equal(error.details.pluginOwner, 'forms');
+  assert.equal(error.details.driver, 'forms-contract-row');
+  assert.equal(error.details.contractValidationEvidence.contractHash, pluginOwnedRowDriverContractHash(
+    mutation.pluginOwnedResource.contractValidationEvidence,
+  ));
+  assert.equal(JSON.stringify(error.details).includes(rawSentinel), false);
+  assert.equal(JSON.stringify(error.details).includes('base-contract-extra-evidence-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('local-contract-extra-evidence-secret'), false);
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
