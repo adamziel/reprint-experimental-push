@@ -4284,7 +4284,8 @@ function reprint_push_assert_supported_plugin_owned_mutation(array $mutation, ar
             (string) $owner,
             $driver,
             $registered_driver,
-            $planned
+            $planned,
+            $snapshot
         );
         $callback = $registered_driver['validateMutationCallback'] ?? null;
         if (!is_string($callback) || $callback === '' || !is_callable($callback)) {
@@ -4304,7 +4305,8 @@ function reprint_push_assert_plugin_owned_driver_contract_bound_mutation(
     string $owner,
     string $driver,
     array $registered_driver,
-    array $planned
+    array $planned,
+    array $snapshot
 ): void {
     $resource_key = (string) ($mutation['resourceKey'] ?? '');
     $resource = is_array($mutation['resource'] ?? null) ? $mutation['resource'] : [];
@@ -4349,6 +4351,26 @@ function reprint_push_assert_plugin_owned_driver_contract_bound_mutation(
         $planned
     )) {
         throw new RuntimeException('Unsupported plugin-owned mutation payload evidence for ' . $resource_key);
+    }
+
+    if (is_array($payload_evidence['referenceValidation'] ?? null)) {
+        $reference_target_evidence = is_array($policy['referenceTargetValidationEvidence'] ?? null)
+            ? $policy['referenceTargetValidationEvidence']
+            : null;
+        if (!reprint_push_plugin_driver_reference_target_evidence_accepted(
+            $reference_target_evidence,
+            $contract,
+            $payload_evidence,
+            $resource_key,
+            $owner,
+            $driver,
+            $table,
+            $snapshot
+        )) {
+            throw new RuntimeException('Unsupported plugin-owned mutation reference target evidence for ' . $resource_key);
+        }
+    } elseif (array_key_exists('referenceTargetValidationEvidence', $policy)) {
+        throw new RuntimeException('Unsupported plugin-owned mutation reference target evidence for ' . $resource_key);
     }
 }
 
@@ -4663,6 +4685,180 @@ function reprint_push_plugin_driver_payload_row_identity_evidence(
         'status' => $matched ? 'matched' : 'mismatch',
         'fields' => $fields,
     ];
+}
+
+function reprint_push_plugin_driver_reference_target_evidence_accepted(
+    ?array $evidence,
+    array $contract,
+    array $payload_evidence,
+    string $resource_key,
+    string $owner,
+    string $driver,
+    string $table,
+    array $snapshot
+): bool {
+    if (!is_array($evidence)) {
+        return false;
+    }
+
+    $reference_validation = is_array($payload_evidence['referenceValidation'] ?? null)
+        ? $payload_evidence['referenceValidation']
+        : null;
+    if (!is_array($reference_validation) || !is_array($reference_validation['fields'] ?? null)) {
+        return false;
+    }
+    if (!is_array($evidence['fields'] ?? null)) {
+        return false;
+    }
+
+    $expected_fields = reprint_push_plugin_driver_reference_target_expected_fields($reference_validation);
+    if (count($evidence['fields']) !== count($expected_fields)
+        || ($evidence['referenceFieldCount'] ?? null) !== count($expected_fields)) {
+        return false;
+    }
+
+    if (($evidence['schemaVersion'] ?? null) !== 1
+        || ($evidence['operation'] ?? null) !== 'plugin-driver-reference-target-validation'
+        || ($evidence['validator'] ?? null) !== 'contract-bound-row-driver-reference-targets'
+        || ($evidence['reasonCode'] ?? null) !== 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED'
+        || ($evidence['outcome'] ?? null) !== 'accepted'
+        || ($evidence['format'] ?? null) !== 'hash-only'
+        || ($evidence['rawValuesIncluded'] ?? null) !== false
+        || ($evidence['resourceKey'] ?? null) !== $resource_key
+        || ($evidence['pluginOwner'] ?? null) !== $owner
+        || ($evidence['driver'] ?? null) !== $driver
+        || ($evidence['table'] ?? null) !== $table
+        || ($evidence['contractHash'] ?? null) !== ($contract['contractHash'] ?? null)
+        || ($evidence['contractValidationHash'] ?? null) !== hash('sha256', reprint_push_stable_json($contract))
+        || ($evidence['payloadValidationHash'] ?? null) !== hash('sha256', reprint_push_stable_json($payload_evidence))
+        || ($evidence['referenceValidationHash'] ?? null) !== hash('sha256', reprint_push_stable_json($reference_validation))) {
+        return false;
+    }
+
+    foreach ($expected_fields as $expected_field) {
+        $carried_field = reprint_push_plugin_driver_reference_target_find_field(
+            $evidence['fields'],
+            $expected_field
+        );
+        if (!is_array($carried_field)
+            || !reprint_push_plugin_driver_reference_target_field_evidence_accepted(
+                $carried_field,
+                $expected_field,
+                $snapshot
+            )) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function reprint_push_plugin_driver_reference_target_expected_fields(array $reference_validation): array
+{
+    $fields = [];
+    foreach ($reference_validation['fields'] ?? [] as $field) {
+        if (!is_array($field)) {
+            continue;
+        }
+        $fields[] = [
+            'path' => $field['path'] ?? null,
+            'targetTable' => $field['targetTable'] ?? null,
+            'targetIdField' => $field['targetIdField'] ?? null,
+            'scalarType' => $field['scalarType'] ?? null,
+            'required' => $field['required'] ?? null,
+            'state' => $field['state'] ?? null,
+            'observedType' => $field['observedType'] ?? null,
+            'observedHash' => $field['observedHash'] ?? null,
+            'targetResourceKey' => $field['targetResourceKey'] ?? null,
+        ];
+    }
+    usort($fields, static function (array $left, array $right): int {
+        return strcmp(
+            (string) ($left['path'] ?? '') . ':' . (string) ($left['targetResourceKey'] ?? ''),
+            (string) ($right['path'] ?? '') . ':' . (string) ($right['targetResourceKey'] ?? '')
+        );
+    });
+    return $fields;
+}
+
+function reprint_push_plugin_driver_reference_target_find_field(array $fields, array $expected): ?array
+{
+    foreach ($fields as $field) {
+        if (!is_array($field)) {
+            continue;
+        }
+        if (($field['path'] ?? null) === ($expected['path'] ?? null)
+            && ($field['targetResourceKey'] ?? null) === ($expected['targetResourceKey'] ?? null)) {
+            return $field;
+        }
+    }
+    return null;
+}
+
+function reprint_push_plugin_driver_reference_target_field_evidence_accepted(
+    array $field,
+    array $expected,
+    array $snapshot
+): bool {
+    foreach ([
+        'path',
+        'targetTable',
+        'targetIdField',
+        'scalarType',
+        'required',
+        'state',
+        'observedType',
+        'observedHash',
+        'targetResourceKey',
+    ] as $key) {
+        if (($field[$key] ?? null) !== ($expected[$key] ?? null)) {
+            return false;
+        }
+    }
+
+    $target_resource_key = $expected['targetResourceKey'] ?? null;
+    if ($target_resource_key === null) {
+        return ($field['targetStable'] ?? null) === true
+            && ($field['required'] ?? null) !== true
+            && ($field['reasonCode'] ?? null) === 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_NOT_REQUIRED';
+    }
+    if (!is_string($target_resource_key) || $target_resource_key === '') {
+        return false;
+    }
+    if (($field['targetStable'] ?? null) !== true
+        || ($field['targetRemotePresent'] ?? null) !== true
+        || ($field['reasonCode'] ?? null) !== 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ACCEPTED') {
+        return false;
+    }
+
+    try {
+        [$target_table, $target_id] = reprint_push_parse_wordpress_graph_row_resource_key($target_resource_key);
+    } catch (Throwable $error) {
+        return false;
+    }
+    $target_resource = [
+        'type' => 'row',
+        'table' => $target_table,
+        'id' => $target_id,
+    ];
+    $target_resource_evidence = is_array($field['targetResource'] ?? null)
+        ? $field['targetResource']
+        : null;
+    if ($target_resource_evidence !== [
+        'type' => 'row',
+        'key' => $target_resource_key,
+        'table' => $target_table,
+        'id' => $target_id,
+    ]) {
+        return false;
+    }
+
+    $current = reprint_push_get_resource($snapshot, $target_resource);
+    if (($current['exists'] ?? false) !== true) {
+        return false;
+    }
+    $current_hash = reprint_push_hash_resource($snapshot, $target_resource);
+    return ($field['targetRemoteHash'] ?? null) === $current_hash;
 }
 
 function reprint_push_plugin_driver_payload_row_identity_tokens(string $resource_id): array

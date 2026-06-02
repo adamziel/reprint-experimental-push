@@ -647,6 +647,11 @@ $surplus_payload_evidence = $base_mutation;
 $surplus_payload_evidence['pluginOwnedResource']['driverPayloadValidationEvidence']['unexpectedRawPayload'] = 'contract-bound-private-payload';
 $surplus_nested_payload_evidence = $base_mutation;
 $surplus_nested_payload_evidence['pluginOwnedResource']['driverPayloadValidationEvidence']['value']['unexpectedRawPayload'] = 'contract-bound-private-payload';
+$unbound_reference_target_evidence = $base_mutation;
+$unbound_reference_target_evidence['pluginOwnedResource']['referenceTargetValidationEvidence'] = [
+    'rawValuesIncluded' => false,
+    'unexpectedRawPayload' => 'contract-bound-private-payload',
+];
 $missing_owner_marker = $base_mutation;
 unset($missing_owner_marker['value']['value']['__pluginOwner']);
 $missing_owner_marker['pluginOwnedResource']['driverPayloadValidationEvidence']['value']['hash'] = hash(
@@ -696,6 +701,10 @@ echo json_encode([
         reprint_push_assert_supported_plugin_owned_mutation($surplus_nested_payload_evidence, $snapshot);
         return true;
     }),
+    'unboundReferenceTargetEvidence' => rpp_driver_api_capture(static function () use ($unbound_reference_target_evidence, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($unbound_reference_target_evidence, $snapshot);
+        return true;
+    }),
     'missingOwnerMarker' => rpp_driver_api_capture(static function () use ($missing_owner_marker, $ownerless_snapshot): bool {
         reprint_push_assert_supported_plugin_owned_mutation($missing_owner_marker, $ownerless_snapshot);
         return true;
@@ -720,6 +729,8 @@ echo json_encode([
   assert.equal(report.surplusPayloadEvidence.error.message, 'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
   assert.equal(report.surplusNestedPayloadEvidence.ok, false);
   assert.equal(report.surplusNestedPayloadEvidence.error.message, 'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
+  assert.equal(report.unboundReferenceTargetEvidence.ok, false);
+  assert.equal(report.unboundReferenceTargetEvidence.error.message, 'Unsupported plugin-owned mutation reference target evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
   assert.equal(report.missingOwnerMarker.ok, false);
   assert.equal(report.missingOwnerMarker.error.message, 'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
   assert.equal(report.forgedResourceKey.ok, false);
@@ -1013,7 +1024,8 @@ function rpp_reference_bound_policy(
     bool $supports_delete,
     string $action,
     $value,
-    array $reference_fields
+    array $reference_fields,
+    array $snapshot
 ): array {
     $normalized_references = reprint_push_normalize_plugin_owned_row_driver_reference_fields($reference_fields);
     $contract_hash = reprint_push_plugin_owned_row_driver_contract_hash(
@@ -1046,48 +1058,142 @@ function rpp_reference_bound_policy(
         'referenceFields' => $normalized_references,
         'contractHash' => $contract_hash,
     ];
+    $payload_evidence = [
+        'schemaVersion' => 1,
+        'operation' => 'plugin-driver-payload-validation',
+        'validator' => 'contract-bound-row-driver',
+        'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED',
+        'outcome' => 'accepted',
+        'issueCodes' => [],
+        'issues' => [],
+        'format' => 'hash-only',
+        'rawValuesIncluded' => false,
+        'resourceKey' => $resource_key,
+        'pluginOwner' => $owner,
+        'driver' => $driver,
+        'table' => $table,
+        'action' => $action,
+        'supportsDelete' => $supports_delete,
+        'contractSupportsDelete' => $supports_delete,
+        'contractHash' => $contract_hash,
+        'rowIdentity' => reprint_push_plugin_driver_payload_row_identity_evidence(
+            $resource_key,
+            $action,
+            ['exists' => $action !== 'delete', 'value' => $value]
+        ),
+        'referenceValidation' => reprint_push_plugin_driver_payload_reference_fields_evidence(
+            $normalized_references,
+            $action,
+            ['exists' => $action !== 'delete', 'value' => $value]
+        ),
+        'value' => [
+            'state' => $action === 'delete' ? 'absent' : 'present',
+            'hash' => $action === 'delete'
+                ? hash('sha256', '"__REPRINT_PUSH_ABSENT__"')
+                : hash('sha256', reprint_push_stable_json($value)),
+        ],
+        'contractValidationHash' => hash('sha256', reprint_push_stable_json($contract)),
+    ];
     return [
         'pluginOwner' => $owner,
         'driver' => $driver,
         'table' => $table,
         'supportsDelete' => $supports_delete,
         'contractValidationEvidence' => $contract,
-        'driverPayloadValidationEvidence' => [
-            'schemaVersion' => 1,
-            'operation' => 'plugin-driver-payload-validation',
-            'validator' => 'contract-bound-row-driver',
-            'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED',
-            'outcome' => 'accepted',
-            'issueCodes' => [],
-            'issues' => [],
-            'format' => 'hash-only',
-            'rawValuesIncluded' => false,
-            'resourceKey' => $resource_key,
-            'pluginOwner' => $owner,
-            'driver' => $driver,
-            'table' => $table,
-            'action' => $action,
-            'supportsDelete' => $supports_delete,
-            'contractSupportsDelete' => $supports_delete,
-            'contractHash' => $contract_hash,
-            'rowIdentity' => reprint_push_plugin_driver_payload_row_identity_evidence(
-                $resource_key,
-                $action,
-                ['exists' => $action !== 'delete', 'value' => $value]
-            ),
-            'referenceValidation' => reprint_push_plugin_driver_payload_reference_fields_evidence(
-                $normalized_references,
-                $action,
-                ['exists' => $action !== 'delete', 'value' => $value]
-            ),
-            'value' => [
-                'state' => $action === 'delete' ? 'absent' : 'present',
-                'hash' => $action === 'delete'
-                    ? hash('sha256', '"__REPRINT_PUSH_ABSENT__"')
-                    : hash('sha256', reprint_push_stable_json($value)),
+        'driverPayloadValidationEvidence' => $payload_evidence,
+        'referenceTargetValidationEvidence' => rpp_reference_target_evidence(
+            $resource_key,
+            $table,
+            $owner,
+            $driver,
+            $contract,
+            $payload_evidence,
+            $snapshot
+        ),
+    ];
+}
+function rpp_reference_target_evidence(
+    string $resource_key,
+    string $table,
+    string $owner,
+    string $driver,
+    array $contract,
+    array $payload_evidence,
+    array $snapshot
+): array {
+    $reference_validation = $payload_evidence['referenceValidation'];
+    $fields = [];
+    foreach ($reference_validation['fields'] as $field) {
+        $target_resource_key = $field['targetResourceKey'] ?? null;
+        $target_field = [
+            'path' => $field['path'] ?? null,
+            'targetTable' => $field['targetTable'] ?? null,
+            'targetIdField' => $field['targetIdField'] ?? null,
+            'scalarType' => $field['scalarType'] ?? null,
+            'required' => $field['required'] ?? null,
+            'state' => $field['state'] ?? null,
+            'observedType' => $field['observedType'] ?? null,
+            'observedHash' => $field['observedHash'] ?? null,
+            'targetResourceKey' => $target_resource_key,
+        ];
+        if ($target_resource_key === null) {
+            $fields[] = array_merge($target_field, [
+                'targetStable' => ($field['required'] ?? null) !== true && ($field['state'] ?? null) === 'missing',
+                'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_NOT_REQUIRED',
+            ]);
+            continue;
+        }
+        [$target_table, $target_id] = reprint_push_parse_wordpress_graph_row_resource_key($target_resource_key);
+        $target_resource = [
+            'type' => 'row',
+            'table' => $target_table,
+            'id' => $target_id,
+        ];
+        $target_current = reprint_push_get_resource($snapshot, $target_resource);
+        $target_hash = reprint_push_hash_resource($snapshot, $target_resource);
+        $target_present = ($target_current['exists'] ?? false) === true;
+        $fields[] = array_merge($target_field, [
+            'targetResource' => [
+                'type' => 'row',
+                'key' => $target_resource_key,
+                'table' => $target_table,
+                'id' => $target_id,
             ],
-            'contractValidationHash' => hash('sha256', reprint_push_stable_json($contract)),
-        ],
+            'targetBaseHash' => $target_hash,
+            'targetLocalHash' => $target_hash,
+            'targetRemoteHash' => $target_hash,
+            'targetRemotePresent' => $target_present,
+            'targetStable' => $target_present,
+            'reasonCode' => $target_present
+                ? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ACCEPTED'
+                : 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT',
+            'targetChange' => [
+                'localChange' => 'unchanged',
+                'remoteChange' => 'unchanged',
+                'base' => ['state' => $target_present ? 'present' : 'absent', 'hash' => $target_hash],
+                'local' => ['state' => $target_present ? 'present' : 'absent', 'hash' => $target_hash],
+                'remote' => ['state' => $target_present ? 'present' : 'absent', 'hash' => $target_hash],
+            ],
+        ]);
+    }
+    return [
+        'schemaVersion' => 1,
+        'operation' => 'plugin-driver-reference-target-validation',
+        'validator' => 'contract-bound-row-driver-reference-targets',
+        'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED',
+        'outcome' => 'accepted',
+        'format' => 'hash-only',
+        'rawValuesIncluded' => false,
+        'resourceKey' => $resource_key,
+        'pluginOwner' => $owner,
+        'driver' => $driver,
+        'table' => $table,
+        'contractHash' => $contract['contractHash'],
+        'contractValidationHash' => hash('sha256', reprint_push_stable_json($contract)),
+        'payloadValidationHash' => hash('sha256', reprint_push_stable_json($payload_evidence)),
+        'referenceValidationHash' => hash('sha256', reprint_push_stable_json($reference_validation)),
+        'referenceFieldCount' => count($fields),
+        'fields' => $fields,
     ];
 }
 reprint_push_register_plugin_owned_row_driver([
@@ -1130,6 +1236,14 @@ $value = [
 ];
 $snapshot = [
     'db' => [
+        'wp_posts' => [
+            'ID:2' => [
+                'ID' => 2,
+                'post_type' => 'post',
+                'post_status' => 'publish',
+                'post_title' => 'reference target',
+            ],
+        ],
         'wp_fixture_reference_bound_rows' => [
             'id:7' => [
                 'id' => 7,
@@ -1152,9 +1266,16 @@ $base_mutation = [
         false,
         'put',
         $value,
-        $reference_fields
+        $reference_fields,
+        $snapshot
     ),
 ];
+$missing_reference_target_validation = $base_mutation;
+unset($missing_reference_target_validation['pluginOwnedResource']['referenceTargetValidationEvidence']);
+$forged_reference_target_validation = $base_mutation;
+$forged_reference_target_validation['pluginOwnedResource']['referenceTargetValidationEvidence']['fields'][0]['targetRemoteHash'] = hash('sha256', reprint_push_stable_json(['forged' => true]));
+$drifted_reference_target_snapshot = $snapshot;
+$drifted_reference_target_snapshot['db']['wp_posts']['ID:2']['post_title'] = 'reference target changed after dry run';
 $missing_reference_validation = $base_mutation;
 unset($missing_reference_validation['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation']);
 $forged_reference_validation = $base_mutation;
@@ -1169,12 +1290,25 @@ $forged_reference_value['pluginOwnedResource'] = rpp_reference_bound_policy(
     false,
     'put',
     $forged_reference_value['value']['value'],
-    $reference_fields
+    $reference_fields,
+    $snapshot
 );
 
 echo json_encode([
     'accepted' => rpp_driver_api_capture(static function () use ($base_mutation, $snapshot): bool {
         reprint_push_assert_supported_plugin_owned_mutation($base_mutation, $snapshot);
+        return true;
+    }),
+    'missingReferenceTargetValidation' => rpp_driver_api_capture(static function () use ($missing_reference_target_validation, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($missing_reference_target_validation, $snapshot);
+        return true;
+    }),
+    'forgedReferenceTargetValidation' => rpp_driver_api_capture(static function () use ($forged_reference_target_validation, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($forged_reference_target_validation, $snapshot);
+        return true;
+    }),
+    'driftedReferenceTargetValidation' => rpp_driver_api_capture(static function () use ($base_mutation, $drifted_reference_target_snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($base_mutation, $drifted_reference_target_snapshot);
         return true;
     }),
     'missingReferenceValidation' => rpp_driver_api_capture(static function () use ($missing_reference_validation, $snapshot): bool {
@@ -1190,15 +1324,31 @@ echo json_encode([
         return true;
     }),
     'referenceValidation' => $base_mutation['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation'],
+    'referenceTargetValidation' => $base_mutation['pluginOwnedResource']['referenceTargetValidationEvidence'],
     'forgedValueReferenceValidation' => $forged_reference_value['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation'],
     'normalizedReferences' => $base_mutation['pluginOwnedResource']['contractValidationEvidence']['referenceFields'],
 ]);
 `);
 
   assert.deepEqual(report.accepted, { ok: true, value: true });
+  assert.equal(report.missingReferenceTargetValidation.ok, false);
+  assert.equal(report.forgedReferenceTargetValidation.ok, false);
+  assert.equal(report.driftedReferenceTargetValidation.ok, false);
   assert.equal(report.missingReferenceValidation.ok, false);
   assert.equal(report.forgedReferenceValidation.ok, false);
   assert.equal(report.forgedReferenceValue.ok, false);
+  assert.equal(
+    report.missingReferenceTargetValidation.error.message,
+    'Unsupported plugin-owned mutation reference target evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
+  );
+  assert.equal(
+    report.forgedReferenceTargetValidation.error.message,
+    'Unsupported plugin-owned mutation reference target evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
+  );
+  assert.equal(
+    report.driftedReferenceTargetValidation.error.message,
+    'Unsupported plugin-owned mutation reference target evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
+  );
   assert.equal(
     report.missingReferenceValidation.error.message,
     'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
@@ -1235,6 +1385,50 @@ echo json_encode([
     observedHash: digest('2'),
     matched: true,
     targetResourceKey: 'row:["wp_posts","ID:2"]',
+  });
+  assert.equal(report.referenceTargetValidation.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED');
+  assert.equal(report.referenceTargetValidation.outcome, 'accepted');
+  assert.equal(report.referenceTargetValidation.rawValuesIncluded, false);
+  assert.equal(report.referenceTargetValidation.fields[0].path, 'payload.post_id');
+  assert.equal(report.referenceTargetValidation.fields[0].targetResourceKey, 'row:["wp_posts","ID:2"]');
+  assert.equal(report.referenceTargetValidation.fields[0].targetRemotePresent, true);
+  assert.equal(report.referenceTargetValidation.fields[0].targetStable, true);
+  assert.equal(report.referenceTargetValidation.fields[0].targetRemoteHash, digest({
+    ID: 2,
+    post_status: 'publish',
+    post_title: 'reference target',
+    post_type: 'post',
+  }));
+  assert.deepEqual(report.referenceTargetValidation.fields[0].targetChange, {
+    localChange: 'unchanged',
+    remoteChange: 'unchanged',
+    base: {
+      state: 'present',
+      hash: digest({
+        ID: 2,
+        post_status: 'publish',
+        post_title: 'reference target',
+        post_type: 'post',
+      }),
+    },
+    local: {
+      state: 'present',
+      hash: digest({
+        ID: 2,
+        post_status: 'publish',
+        post_title: 'reference target',
+        post_type: 'post',
+      }),
+    },
+    remote: {
+      state: 'present',
+      hash: digest({
+        ID: 2,
+        post_status: 'publish',
+        post_title: 'reference target',
+        post_type: 'post',
+      }),
+    },
   });
   assert.deepEqual(report.forgedValueReferenceValidation.fields[0], {
     path: 'payload.post_id',
