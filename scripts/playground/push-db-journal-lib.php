@@ -194,6 +194,30 @@ function reprint_push_lab_db_journal_append_event(string $event, array $context 
     return reprint_push_lab_db_journal_insert_event($event, $context);
 }
 
+function reprint_push_lab_db_journal_append_target_planned(array $context, array $started_entry, array $target): array
+{
+    $safe_target = reprint_push_lab_db_journal_sanitize_value($target);
+    $started_cursor = 'db-journal:' . (int) ($started_entry['sequence'] ?? 0);
+
+    return reprint_push_lab_db_journal_append_event('target-planned', $context + [
+        'appliedCount' => 0,
+        'resourceHashEvidence' => [
+            'schemaVersion' => 1,
+            'operation' => 'db-journal-target-planned',
+            'startedCursor' => $started_cursor,
+            'targetIndex' => (int) ($safe_target['index'] ?? 0),
+            'mutationId' => (string) ($safe_target['mutationId'] ?? ''),
+            'resourceKey' => (string) ($safe_target['resourceKey'] ?? ''),
+            'beforeHash' => (string) ($safe_target['beforeHash'] ?? ''),
+            'afterHash' => (string) ($safe_target['afterHash'] ?? ''),
+            'targetHash' => hash('sha256', reprint_push_stable_json($safe_target)),
+            'target' => $safe_target,
+            'hashOnly' => true,
+            'rawValuesIncluded' => false,
+        ],
+    ]);
+}
+
 function reprint_push_lab_db_journal_try_open_idempotency(array $context): array
 {
     global $wpdb;
@@ -398,6 +422,92 @@ function reprint_push_lab_db_journal_rows_for_key(string $idempotency_key_hash):
     ) ?: [];
 }
 
+function reprint_push_lab_db_journal_target_planned_rows_for_started_entry(array $started_entry): array
+{
+    $idempotency_key_hash = (string) ($started_entry['idempotencyKeyHash'] ?? '');
+    $request_hash = (string) ($started_entry['requestHash'] ?? '');
+    $started_sequence = (int) ($started_entry['sequence'] ?? 0);
+    if ($idempotency_key_hash === '' || $request_hash === '' || $started_sequence < 1) {
+        return [];
+    }
+
+    $started_cursor = 'db-journal:' . $started_sequence;
+    $rows = [];
+    foreach (reprint_push_lab_db_journal_rows_for_key($idempotency_key_hash) as $row) {
+        if ((string) ($row['event'] ?? '') !== 'target-planned') {
+            continue;
+        }
+        if ((string) ($row['request_hash'] ?? '') !== $request_hash) {
+            continue;
+        }
+
+        $public_row = reprint_push_lab_db_journal_public_row($row);
+        $evidence = isset($public_row['resourceHashEvidence']) && is_array($public_row['resourceHashEvidence'])
+            ? $public_row['resourceHashEvidence']
+            : [];
+        if ((string) ($evidence['startedCursor'] ?? '') !== $started_cursor) {
+            continue;
+        }
+        $rows[] = $public_row;
+    }
+
+    usort($rows, static function (array $left, array $right): int {
+        $left_evidence = isset($left['resourceHashEvidence']) && is_array($left['resourceHashEvidence'])
+            ? $left['resourceHashEvidence']
+            : [];
+        $right_evidence = isset($right['resourceHashEvidence']) && is_array($right['resourceHashEvidence'])
+            ? $right['resourceHashEvidence']
+            : [];
+        $left_index = (int) ($left_evidence['targetIndex'] ?? 0);
+        $right_index = (int) ($right_evidence['targetIndex'] ?? 0);
+        if ($left_index !== $right_index) {
+            return $left_index <=> $right_index;
+        }
+        return ((int) ($left['sequence'] ?? 0)) <=> ((int) ($right['sequence'] ?? 0));
+    });
+
+    return $rows;
+}
+
+function reprint_push_lab_db_journal_target_planned_targets_for_started_entry(array $started_entry): array
+{
+    $targets = [];
+    foreach (reprint_push_lab_db_journal_target_planned_rows_for_started_entry($started_entry) as $row) {
+        $target = reprint_push_lab_db_journal_target_planned_target_from_row($row);
+        if (is_array($target)) {
+            $targets[] = $target;
+        }
+    }
+    return $targets;
+}
+
+function reprint_push_lab_db_journal_target_planned_target_from_row(array $row): ?array
+{
+    $evidence = isset($row['resourceHashEvidence']) && is_array($row['resourceHashEvidence'])
+        ? $row['resourceHashEvidence']
+        : [];
+    $target = isset($evidence['target']) && is_array($evidence['target'])
+        ? $evidence['target']
+        : null;
+    $target_hash = (string) ($evidence['targetHash'] ?? '');
+
+    if (!is_array($target)
+        || ($evidence['schemaVersion'] ?? null) !== 1
+        || (string) ($evidence['operation'] ?? '') !== 'db-journal-target-planned'
+        || ($evidence['hashOnly'] ?? null) !== true
+        || ($evidence['rawValuesIncluded'] ?? null) !== false
+        || preg_match('/^[a-f0-9]{64}$/', $target_hash) !== 1
+        || $target_hash !== hash('sha256', reprint_push_stable_json($target))
+        || !isset($target['resource'])
+        || !is_array($target['resource'])
+        || !isset($target['mutationId'], $target['resourceKey'], $target['beforeHash'], $target['afterHash'])
+    ) {
+        return null;
+    }
+
+    return $target;
+}
+
 function reprint_push_lab_db_journal_committed_row_for_key(string $idempotency_key_hash): ?array
 {
     $rows = array_reverse(reprint_push_lab_db_journal_rows_for_key($idempotency_key_hash));
@@ -553,6 +663,8 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, ?int $before_seque
         }, $idempotency),
     ];
 
+    $summary['targetEnvelope'] = reprint_push_lab_db_journal_latest_target_envelope_summary($latest_rows);
+
     if ($package_mode) {
         $summary = reprint_push_lab_db_journal_attach_checked_contract(
             $summary,
@@ -564,6 +676,91 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, ?int $before_seque
     return $summary;
 }
 
+function reprint_push_lab_db_journal_latest_target_envelope_summary(array $rows): array
+{
+    $latest_started = null;
+    foreach ($rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        if ((string) ($row['event'] ?? '') === 'apply-started') {
+            $latest_started = $row;
+        }
+    }
+
+    if (!is_array($latest_started)) {
+        $latest_started = reprint_push_lab_db_journal_latest_apply_started_row();
+    }
+
+    if (!is_array($latest_started)) {
+        return [
+            'schemaVersion' => 1,
+            'observed' => false,
+            'required' => false,
+            'complete' => false,
+            'hashOnly' => true,
+            'rawValuesIncluded' => false,
+        ];
+    }
+
+    $started_sequence = (int) ($latest_started['sequence'] ?? 0);
+    $started_cursor = 'db-journal:' . $started_sequence;
+    $started_evidence = isset($latest_started['resourceHashEvidence']) && is_array($latest_started['resourceHashEvidence'])
+        ? $latest_started['resourceHashEvidence']
+        : [];
+    $target_envelope = isset($started_evidence['targetEnvelope']) && is_array($started_evidence['targetEnvelope'])
+        ? $started_evidence['targetEnvelope']
+        : [];
+    $expected_targets = (int) ($target_envelope['plannedTargets'] ?? $started_evidence['mutationCount'] ?? 0);
+    $required = ($target_envelope['required'] ?? false) === true;
+    $target_rows = reprint_push_lab_db_journal_target_planned_rows_for_started_entry($latest_started);
+    $valid_targets = [];
+
+    foreach ($target_rows as $row) {
+        $target = reprint_push_lab_db_journal_target_planned_target_from_row($row);
+        if (is_array($target)) {
+            $valid_targets[] = $target;
+        }
+    }
+
+    usort($valid_targets, static function (array $left, array $right): int {
+        return ((int) ($left['index'] ?? 0)) <=> ((int) ($right['index'] ?? 0));
+    });
+
+    $valid_target_count = count($valid_targets);
+    $complete = $expected_targets > 0 && $valid_target_count === $expected_targets;
+
+    return [
+        'schemaVersion' => 1,
+        'observed' => true,
+        'required' => $required,
+        'complete' => $complete,
+        'startedCursor' => $started_cursor,
+        'startedSequence' => $started_sequence,
+        'plannedTargets' => $expected_targets,
+        'targetPlannedRows' => count($target_rows),
+        'validTargetRows' => $valid_target_count,
+        'targetSetHash' => $valid_target_count > 0
+            ? hash('sha256', reprint_push_stable_json($valid_targets))
+            : '',
+        'hashOnly' => true,
+        'rawValuesIncluded' => false,
+    ];
+}
+
+function reprint_push_lab_db_journal_latest_apply_started_row(): ?array
+{
+    global $wpdb;
+
+    reprint_push_lab_db_journal_ensure_table();
+    $quoted_table = reprint_push_lab_db_journal_quoted_table_name();
+    $row = $wpdb->get_row(
+        $wpdb->prepare("SELECT * FROM {$quoted_table} WHERE event = %s ORDER BY id DESC LIMIT 1", 'apply-started'),
+        ARRAY_A
+    );
+    return is_array($row) ? reprint_push_lab_db_journal_public_row($row) : null;
+}
+
 function reprint_push_lab_db_journal_attach_checked_contract(
     array $summary,
     string $scope,
@@ -572,11 +769,14 @@ function reprint_push_lab_db_journal_attach_checked_contract(
     $claim_key_unique = reprint_push_lab_db_journal_has_claim_key_unique_index();
     $monotonic_sequence = reprint_push_lab_db_journal_rows_are_monotonic($summary['latestRows'] ?? []);
     $stale_claim_rejected = reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($summary['latestRows'] ?? []);
+    $target_envelope_restart_readable = reprint_push_lab_db_journal_target_envelope_restart_readable(
+        $summary['targetEnvelope'] ?? null
+    );
     $writer_lease = reprint_push_lab_db_journal_writer_lease_contract(
         $stale_claim_rejected,
         $claim_key_unique,
         $monotonic_sequence,
-        true
+        $target_envelope_restart_readable
     );
     $claim_rows = reprint_push_lab_db_journal_claim_rows($summary['latestRows'] ?? []);
     if (is_array($claim_rows['latestClaim'] ?? null)) {
@@ -601,9 +801,11 @@ function reprint_push_lab_db_journal_attach_checked_contract(
     $summary['scope'] = $scope;
     $summary['ownership'] = [
         'ownsJournal' => true,
-        'restartReadable' => true,
+        'restartReadable' => $target_envelope_restart_readable,
         'productionAdapter' => 'wpdb-single-statement-cas',
         'supportedSurface' => $supported_surface,
+        'targetEnvelopeComplete' => ($summary['targetEnvelope']['complete'] ?? false) === true,
+        'targetEnvelopeRequired' => ($summary['targetEnvelope']['required'] ?? false) === true,
     ];
     $summary['writerLease'] = $writer_lease;
     $summary['leaseFence'] = [
@@ -612,7 +814,7 @@ function reprint_push_lab_db_journal_attach_checked_contract(
         'claimKeyUnique' => $claim_key_unique,
         'fsyncEvidence' => true,
         'monotonicSequence' => $monotonic_sequence,
-        'restartReadable' => true,
+        'restartReadable' => $target_envelope_restart_readable,
         'staleClaimRejected' => $stale_claim_rejected,
         'writerLease' => $writer_lease,
     ];
@@ -626,6 +828,17 @@ function reprint_push_lab_db_journal_attach_checked_contract(
     }
 
     return $summary;
+}
+
+function reprint_push_lab_db_journal_target_envelope_restart_readable($target_envelope): bool
+{
+    if (!is_array($target_envelope) || ($target_envelope['observed'] ?? false) !== true) {
+        return true;
+    }
+    if (($target_envelope['required'] ?? false) !== true) {
+        return true;
+    }
+    return ($target_envelope['complete'] ?? false) === true;
 }
 
 function reprint_push_lab_db_journal_cursor_sequence($cursor): ?int

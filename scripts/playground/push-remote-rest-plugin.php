@@ -3217,6 +3217,13 @@ function reprint_push_lab_rest_run_db_journal_apply(
         ],
         'verifiedPreconditions' => reprint_push_lab_db_journal_sanitize_value($accepted['verifiedPreconditions']),
         'recoveryTargets' => $accepted['recoveryTargets'],
+        'targetEnvelope' => [
+            'required' => true,
+            'event' => 'target-planned',
+            'plannedTargets' => count($accepted['recoveryTargets']),
+            'hashOnly' => true,
+            'rawValuesIncluded' => false,
+        ],
         'plannedMutations' => reprint_push_lab_db_journal_planned_mutation_evidence($mutations, $accepted['preconditions']),
         'resourceKeys' => array_values(array_map(
             static fn (array $mutation): string => (string) ($mutation['resourceKey'] ?? ''),
@@ -3236,6 +3243,13 @@ function reprint_push_lab_rest_run_db_journal_apply(
     $started_entry = reprint_push_lab_db_journal_append_event('apply-started', $context + [
         'resourceHashEvidence' => $started_evidence,
     ]);
+    if (!reprint_push_lab_rest_should_omit_db_journal_target_planned_rows($payload)) {
+        foreach ($accepted['recoveryTargets'] as $target) {
+            if (is_array($target)) {
+                reprint_push_lab_db_journal_append_target_planned($context, $started_entry, $target);
+            }
+        }
+    }
     reprint_push_lab_rest_delay_after_db_journal_started($payload);
 
     if (reprint_push_lab_rest_should_simulate_stale_claim_all_old($payload) && !is_array($stale_claim_retry)) {
@@ -4029,9 +4043,21 @@ function reprint_push_lab_rest_abandoned_entry_for_started_entry(
 
 function reprint_push_lab_rest_planned_targets_from_started_entry(array $started_entry): array
 {
+    $db_targets = reprint_push_lab_db_journal_target_planned_targets_for_started_entry($started_entry);
+    if (count($db_targets) > 0) {
+        return $db_targets;
+    }
+
     $evidence = isset($started_entry['resourceHashEvidence']) && is_array($started_entry['resourceHashEvidence'])
         ? $started_entry['resourceHashEvidence']
         : [];
+    $target_envelope = isset($evidence['targetEnvelope']) && is_array($evidence['targetEnvelope'])
+        ? $evidence['targetEnvelope']
+        : [];
+    if (($target_envelope['required'] ?? false) === true) {
+        return [];
+    }
+
     $targets = isset($evidence['recoveryTargets']) && is_array($evidence['recoveryTargets'])
         ? $evidence['recoveryTargets']
         : [];
@@ -4049,7 +4075,7 @@ function reprint_push_lab_rest_validate_started_targets(array $started_targets, 
     if (count($started_targets) === 0 || count($started_targets) !== count($request_targets)) {
         return [
             'ok' => false,
-            'reason' => 'missing or incomplete DB apply-started recoveryTargets evidence',
+            'reason' => 'missing or incomplete DB target-planned recovery envelope',
         ];
     }
 
@@ -4060,7 +4086,7 @@ function reprint_push_lab_rest_validate_started_targets(array $started_targets, 
         ) {
             return [
                 'ok' => false,
-                'reason' => 'DB apply-started target evidence does not match the retried canonical request',
+                'reason' => 'DB target-planned recovery envelope does not match the retried canonical request',
             ];
         }
     }
@@ -6252,6 +6278,16 @@ function reprint_push_lab_rest_should_simulate_stale_retry_after_claim(array $pa
     return $payload['labSimulateStaleRetryAfterClaim'] === true
         || $payload['labSimulateStaleRetryAfterClaim'] === 1
         || $payload['labSimulateStaleRetryAfterClaim'] === '1';
+}
+
+function reprint_push_lab_rest_should_omit_db_journal_target_planned_rows(array $payload): bool
+{
+    if (!array_key_exists('labOmitDbJournalTargetPlannedRows', $payload)) {
+        return false;
+    }
+    return $payload['labOmitDbJournalTargetPlannedRows'] === true
+        || $payload['labOmitDbJournalTargetPlannedRows'] === 1
+        || $payload['labOmitDbJournalTargetPlannedRows'] === '1';
 }
 
 function reprint_push_lab_rest_delay_after_stale_retry_claim(array $payload): void

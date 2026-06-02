@@ -14,6 +14,7 @@ const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 const serverStartupTimeoutMs = 120_000;
 const idempotencyHeader = 'X-Reprint-Push-Idempotency-Key';
 const idempotencyKey = 'db-journal-stale-claim-all-old-001';
+const hashPattern = /^[a-f0-9]{64}$/;
 
 const fixtures = {
   base: 'fixtures/playground/remote-base.blueprint.json',
@@ -61,7 +62,7 @@ const summary = {
   retryClaimGuard: {},
   retryStartNegative: {},
   proven: [
-    'the lab hook leaves opened/started/abandoned DB rows with no terminal or mutation evidence',
+    'the lab hook leaves opened/started/target-planned/abandoned DB rows with no terminal or mutation evidence',
     'same key with different body still conflicts before stale retry work',
     'same key/body retry requires explicit abandonment evidence and all-old live hashes before fresh mutation work',
     'later exact replay is committed replay only and adds no mutation rows',
@@ -99,8 +100,11 @@ await withPlaygroundServer('db-journal-stale-claim-all-old', path.join(repoRoot,
 
   const dbJournalAfterHook = await getDbJournal(server);
   const hookEntries = journalEntries(dbJournalAfterHook.body);
-  assertJournalEvents(hookEntries, ['idempotency-opened', 'apply-started', 'stale-claim-abandoned']);
+  assertJournalEvents(hookEntries, ['idempotency-opened', 'apply-started', 'target-planned', 'stale-claim-abandoned']);
   assert.equal(countJournalEvents(hookEntries, 'apply-started'), 1, 'first hook must append exactly one apply-started');
+  assertTargetPlannedEnvelope(hookEntries, readyPlan, 1, 'first stale-claim hook');
+  assertEventBefore(hookEntries, 'apply-started', 'target-planned');
+  assertLatestEventBefore(hookEntries, 'target-planned', 'stale-claim-abandoned');
   assert.equal(countJournalEvents(hookEntries, 'stale-claim-abandoned'), 1, 'first hook must append abandonment evidence');
   assert.equal(countJournalEvents(hookEntries, 'mutation-prepared'), 0, 'hook must not write mutation-prepared rows');
   assert.equal(countJournalEvents(hookEntries, 'mutation-applied'), 0, 'hook must not write mutation-applied rows');
@@ -153,6 +157,8 @@ await withPlaygroundServer('db-journal-stale-claim-all-old', path.join(repoRoot,
   assert.equal(countJournalEvents(retryEntries, 'stale-claim-abandoned'), 1, 'retry must not append another abandoned event');
   assert.equal(countJournalEvents(retryEntries, 'stale-claim-retry-started'), 1, 'retry must append one stale retry evidence row');
   assert.equal(countJournalEvents(retryEntries, 'apply-started'), 2, 'retry must append one normal apply-started after the stale start');
+  assertTargetPlannedEnvelope(retryEntries, readyPlan, 2, 'stale-claim retry');
+  assertLatestEventBefore(retryEntries, 'target-planned', 'mutation-applied');
   assert.equal(countJournalEvents(retryEntries, 'mutation-applied'), readyPlan.mutations.length, 'retry must apply exactly one mutation set');
   assert.equal(countJournalEvents(retryEntries, 'mutation-precondition-failed'), 0, 'retry must not record failed preconditions');
   assert.equal(countJournalEvents(retryEntries, 'apply-committed'), 1, 'retry must append one commit');
@@ -177,6 +183,7 @@ await withPlaygroundServer('db-journal-stale-claim-all-old', path.join(repoRoot,
     status: firstApply.status,
     code: firstApply.body.code,
     dbEvents: hookEntries.map(journalEvent),
+    targetPlannedRows: countJournalEvents(hookEntries, 'target-planned'),
     targetStillOld: true,
   };
   summary.conflict = {
@@ -188,6 +195,7 @@ await withPlaygroundServer('db-journal-stale-claim-all-old', path.join(repoRoot,
     status: retry.status,
     freshMutationWork: retry.body.idempotency?.freshMutationWork,
     staleClaimRetry: retry.body.idempotency?.staleClaimRetry,
+    targetPlannedRows: countJournalEvents(retryEntries, 'target-planned'),
     mutationRows: countJournalEvents(retryEntries, 'mutation-applied'),
     committedRows: countJournalEvents(retryEntries, 'apply-committed'),
   };
@@ -239,6 +247,8 @@ await withPlaygroundServer('db-journal-stale-claim-retry-claim-guard', path.join
   assert.equal(countJournalEvents(guardEntries, 'stale-claim-retry-started'), 1, 'guard must have one successful retry claim');
   assert.equal(countJournalEvents(guardEntries, 'stale-claim-retry-in-progress'), 1, 'guard loser must append only in-progress evidence');
   assert.equal(countJournalEvents(guardEntries, 'apply-started'), 1, 'guard must not append retry apply-started');
+  assertTargetPlannedEnvelope(guardEntries, readyPlan, 1, 'stale retry claim guard');
+  assertLatestEventBefore(guardEntries, 'target-planned', 'stale-claim-abandoned');
   assert.equal(countJournalEvents(guardEntries, 'mutation-prepared'), 0, 'guard must not prepare mutations');
   assert.equal(countJournalEvents(guardEntries, 'mutation-applied'), 0, 'guard must not mutate');
   assert.equal(countJournalEvents(guardEntries, 'apply-committed'), 0, 'guard must not commit');
@@ -252,6 +262,7 @@ await withPlaygroundServer('db-journal-stale-claim-retry-claim-guard', path.join
     retryStartedRows: countJournalEvents(guardEntries, 'stale-claim-retry-started'),
     retryInProgressRows: countJournalEvents(guardEntries, 'stale-claim-retry-in-progress'),
     retryApplyStartedRows: countJournalEvents(guardEntries, 'apply-started') - 1,
+    targetPlannedRows: countJournalEvents(guardEntries, 'target-planned'),
     mutationRows: countJournalEvents(guardEntries, 'mutation-applied'),
   };
 });
@@ -294,6 +305,8 @@ await withPlaygroundServer('db-journal-stale-claim-retry-start-negative', path.j
   assert.equal(countJournalEvents(negativeEntries, 'stale-claim-abandoned'), 1, 'negative must keep only original abandonment');
   assert.equal(countJournalEvents(negativeEntries, 'stale-claim-retry-started'), 1, 'negative must not reopen stale retry against older abandonment');
   assert.equal(countJournalEvents(negativeEntries, 'apply-started'), 2, 'negative must have original start and one retry start only');
+  assertTargetPlannedEnvelope(negativeEntries, readyPlan, 2, 'stale retry started negative');
+  assertLatestEventBefore(negativeEntries, 'target-planned', 'recovery-blocked');
   assert.equal(countJournalEvents(negativeEntries, 'mutation-prepared'), 0, 'negative must not prepare mutations');
   assert.equal(countJournalEvents(negativeEntries, 'mutation-applied'), 0, 'negative must not mutate');
   assert.equal(countJournalEvents(negativeEntries, 'apply-committed'), 0, 'negative must not commit');
@@ -306,6 +319,7 @@ await withPlaygroundServer('db-journal-stale-claim-retry-start-negative', path.j
     laterStatus: blocked.status,
     laterCode: blocked.body.code,
     retryStartedRows: countJournalEvents(negativeEntries, 'stale-claim-retry-started'),
+    targetPlannedRows: countJournalEvents(negativeEntries, 'target-planned'),
     mutationRows: countJournalEvents(negativeEntries, 'mutation-applied'),
   };
 });
@@ -643,6 +657,73 @@ function assertEventBefore(entries, beforeEvent, afterEvent) {
   assert.ok(before > 0, `DB journal missing ${beforeEvent}`);
   assert.ok(after > 0, `DB journal missing ${afterEvent}`);
   assert.ok(before < after, `${beforeEvent} must be before ${afterEvent}`);
+}
+
+function assertLatestEventBefore(entries, beforeEvent, afterEvent) {
+  const beforeSequences = entries
+    .filter((entry) => journalEvent(entry) === beforeEvent)
+    .map((entry) => entry.sequence);
+  const afterSequences = entries
+    .filter((entry) => journalEvent(entry) === afterEvent)
+    .map((entry) => entry.sequence);
+  assert.ok(beforeSequences.length > 0, `DB journal missing ${beforeEvent}`);
+  assert.ok(afterSequences.length > 0, `DB journal missing ${afterEvent}`);
+  assert.ok(Math.max(...beforeSequences) < Math.min(...afterSequences), `${beforeEvent} rows must be before ${afterEvent}`);
+}
+
+function assertTargetPlannedEnvelope(entries, plan, expectedApplyStarts, label) {
+  const startedRows = entries.filter((entry) => journalEvent(entry) === 'apply-started');
+  const targetRows = entries.filter((entry) => journalEvent(entry) === 'target-planned');
+  assert.equal(startedRows.length, expectedApplyStarts, `${label}: apply-started rows`);
+  assert.equal(targetRows.length, plan.mutations.length * expectedApplyStarts, `${label}: target-planned rows`);
+
+  const expected = expectedTargetEvidence(plan);
+  for (const started of startedRows) {
+    const envelope = started.resourceHashEvidence?.targetEnvelope || {};
+    assert.equal(envelope.required, true, `${label}: target envelope must be required`);
+    assert.equal(envelope.event, 'target-planned', `${label}: target envelope event`);
+    assert.equal(envelope.plannedTargets, plan.mutations.length, `${label}: planned target count`);
+    assert.equal(envelope.hashOnly, true, `${label}: target envelope hash-only`);
+    assert.equal(envelope.rawValuesIncluded, false, `${label}: target envelope raw values`);
+
+    const startedCursor = `db-journal:${started.sequence}`;
+    const rowsForStart = targetRows.filter((row) => row.resourceHashEvidence?.startedCursor === startedCursor);
+    assert.equal(rowsForStart.length, plan.mutations.length, `${label}: target rows for ${startedCursor}`);
+    for (const row of rowsForStart) {
+      assert.ok(started.sequence < row.sequence, `${label}: target-planned must follow apply-started`);
+      assertTargetPlannedRow(row, expected, label);
+    }
+  }
+}
+
+function assertTargetPlannedRow(row, expected, label) {
+  const evidence = row.resourceHashEvidence || {};
+  const target = evidence.target || {};
+  const expectedTarget = expected.get(target.mutationId);
+  assert.ok(expectedTarget, `${label}: unexpected target-planned mutation`);
+  assert.equal(evidence.schemaVersion, 1, `${label}: target row schema`);
+  assert.equal(evidence.operation, 'db-journal-target-planned', `${label}: target row operation`);
+  assert.equal(evidence.hashOnly, true, `${label}: target row hash-only`);
+  assert.equal(evidence.rawValuesIncluded, false, `${label}: target row raw values`);
+  assert.match(evidence.beforeHash, hashPattern, `${label}: target row before hash`);
+  assert.match(evidence.afterHash, hashPattern, `${label}: target row after hash`);
+  assert.match(evidence.targetHash, hashPattern, `${label}: target row target hash`);
+  assert.equal(evidence.targetHash, digest(target), `${label}: target hash mismatch`);
+  assert.equal(evidence.beforeHash, expectedTarget.beforeHash, `${label}: target before hash mismatch`);
+  assert.equal(evidence.afterHash, expectedTarget.afterHash, `${label}: target after hash mismatch`);
+  assert.equal(target.resourceKey, expectedTarget.resourceKey, `${label}: target resource key mismatch`);
+  assertNoForbiddenEvidence(evidence, `${label} target-planned evidence`);
+}
+
+function expectedTargetEvidence(plan) {
+  const beforeHashByMutationId = new Map(
+    plan.preconditions.map((precondition) => [precondition.mutationId, precondition.expectedHash]),
+  );
+  return new Map(plan.mutations.map((mutation) => [mutation.id, {
+    resourceKey: mutation.resourceKey,
+    beforeHash: beforeHashByMutationId.get(mutation.id) ?? mutation.remoteBeforeHash,
+    afterHash: mutation.localHash,
+  }]));
 }
 
 function assertHashOnlyStaleEvidence(entries) {

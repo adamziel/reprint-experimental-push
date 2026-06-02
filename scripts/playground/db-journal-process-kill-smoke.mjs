@@ -22,6 +22,7 @@ const crashMutationCount = 160;
 const crashFileBytes = 32 * 1024;
 const restartDbJournalPageLimit = 10;
 const maxRestartDbJournalPages = 100;
+const hashPattern = /^[a-f0-9]{64}$/;
 
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-db-journal-process-kill-'));
 const wpDir = path.join(tmpRoot, 'wordpress');
@@ -46,7 +47,7 @@ const summary = {
     'real SIGKILL of the local Playground server process group during an in-flight DB-journaled REST apply',
     'host-mounted WordPress directory preserves DB rows and target data across restart',
     'DB journal rows after restart show opened/started and no committed state',
-    'DB-native planned/pre-write/post-write hash evidence plus live target hashes classify every planned target as old or new, with no silent divergence',
+    'DB-native target-planned/pre-write/post-write hash evidence plus live target hashes classify every planned target as old or new, with no silent divergence',
     'retry after missing commit is blocked and does not overwrite partial/ambiguous state',
   ],
   residualRisks: [
@@ -106,6 +107,7 @@ try {
     .catch((error) => ({ settled: true, error: error.message }));
 
   await waitForDbJournalEvent(server, 'apply-started', evidenceTimeoutMs);
+  await waitForDbJournalEvent(server, 'target-planned', evidenceTimeoutMs);
   const preKillMutationEvidence = await waitForDbJournalEvent(server, 'mutation-applied', evidenceTimeoutMs);
   const preKillPagedThresholdEvidence = await waitForDbJournalRowCount(server, restartDbJournalPageLimit + 1, evidenceTimeoutMs);
   const preKillOptionEvidence = await getOptionMutationEvidence(server);
@@ -113,9 +115,12 @@ try {
   const preKillDbEvents = journalEntries(preKillDbJournal.body).map(journalEvent);
   assert.ok(preKillDbEvents.includes('idempotency-opened'), 'pre-kill DB journal missing idempotency-opened');
   assert.ok(preKillDbEvents.includes('apply-started'), 'pre-kill DB journal missing apply-started');
+  assert.ok(preKillDbEvents.includes('target-planned'), 'pre-kill DB journal missing target-planned');
   assert.ok(preKillDbEvents.includes('mutation-prepared'), 'pre-kill DB journal missing mutation-prepared');
   assert.ok(preKillDbEvents.includes('mutation-applied'), 'pre-kill DB journal missing mutation-applied');
   assert.ok(!preKillDbEvents.includes('apply-committed'), 'apply committed before SIGKILL could be issued');
+  assertTargetPlannedEnvelope(journalEntries(preKillDbJournal.body), crashPlan, 1, 'pre-kill DB journal');
+  assertLatestEventBefore(journalEntries(preKillDbJournal.body), 'target-planned', 'mutation-applied');
 
   const killResult = await killPlaygroundServer(server, 'SIGKILL');
   assert.equal(killResult.signal, 'SIGKILL', 'Playground server child must report SIGKILL exit signal');
@@ -126,6 +131,7 @@ try {
     exitCode: killResult.exitCode,
     portClosed: !(await isPortAccepting(server.port)),
     optionMutationEvidenceBeforeKill: preKillOptionEvidence.count,
+    dbTargetPlannedRowsBeforeKill: countJournalEvents(journalEntries(preKillDbJournal.body), 'target-planned'),
     dbMutationEvidenceBeforeKill: countJournalEvents(preKillMutationEvidence.entries, 'mutation-applied'),
     dbRowsBeforeKill: preKillPagedThresholdEvidence.entries.length,
     dbPageLimitForRestartReadback: restartDbJournalPageLimit,
@@ -162,11 +168,15 @@ try {
   const dbEventsAfterRestart = dbRowsAfterRestart.map(journalEvent);
   assert.ok(dbEventsAfterRestart.includes('idempotency-opened'), 'restarted DB journal missing idempotency-opened');
   assert.ok(dbEventsAfterRestart.includes('apply-started'), 'restarted DB journal missing apply-started');
+  assert.ok(dbEventsAfterRestart.includes('target-planned'), 'restarted DB journal missing target-planned');
   assert.ok(!dbEventsAfterRestart.includes('apply-committed'), 'restarted DB journal falsely reports apply-committed');
   assert.ok(!dbEventsAfterRestart.includes('apply-replayed'), 'restarted DB journal falsely reports replay');
   assert.ok(dbEventsAfterRestart.includes('mutation-prepared'), 'restarted DB journal missing pre-write mutation evidence');
+  assertTargetPlannedEnvelope(dbRowsAfterRestart, crashPlan, 1, 'restarted DB journal');
+  assertLatestEventBefore(dbRowsAfterRestart, 'target-planned', 'mutation-applied');
   const dbMutationRowsAfterRestart = countJournalEvents(dbRowsAfterRestart, 'mutation-applied');
   const dbPreparedRowsAfterRestart = countJournalEvents(dbRowsAfterRestart, 'mutation-prepared');
+  const dbTargetPlannedRowsAfterRestart = countJournalEvents(dbRowsAfterRestart, 'target-planned');
   assert.ok(
     dbMutationRowsAfterRestart <= restartClassifications.new,
     'DB mutation evidence cannot exceed live new target count after SIGKILL',
@@ -204,6 +214,7 @@ try {
     dbEventsAfterRestart,
     dbJournalReadback: summarizePagedDbJournal(dbJournalAfterRestart),
     optionEventsAfterRestart,
+    dbTargetPlannedRowsAfterRestart,
     dbMutationRowsAfterRestart,
     dbPreparedRowsAfterRestart,
     dbOnlyRecovery,
@@ -237,6 +248,7 @@ try {
   assert.equal(dbJournalAfterRetry.truncated, false, 'paged DB journal readback after retry must not be truncated');
   assert.ok(dbJournalAfterRetry.pages.length > 1, 'retry proof must cross more than one DB journal page');
   const dbEventsAfterRetry = dbJournalAfterRetry.rows.map(journalEvent);
+  assertTargetPlannedEnvelope(dbJournalAfterRetry.rows, crashPlan, 1, 'retry DB journal');
   assert.ok(
     dbEventsAfterRetry.includes('apply-rejected')
       || dbEventsAfterRetry.includes('idempotency-in-progress')
@@ -250,6 +262,7 @@ try {
     code: retry.body.code,
     targetSnapshotUnchanged: true,
     liveClassifications: publicCounts(afterRetryClassifications),
+    dbTargetPlannedRowsAfterRetry: countJournalEvents(dbJournalAfterRetry.rows, 'target-planned'),
     dbJournalReadback: summarizePagedDbJournal(dbJournalAfterRetry),
     dbEventsAfterRetry,
   };
@@ -731,6 +744,62 @@ function countJournalEvents(entries, event) {
   return entries.filter((entry) => journalEvent(entry) === event).length;
 }
 
+function assertLatestEventBefore(entries, beforeEvent, afterEvent) {
+  const beforeSequences = entries
+    .filter((entry) => journalEvent(entry) === beforeEvent)
+    .map((entry) => entry.sequence);
+  const afterSequences = entries
+    .filter((entry) => journalEvent(entry) === afterEvent)
+    .map((entry) => entry.sequence);
+  assert.ok(beforeSequences.length > 0, `DB journal missing ${beforeEvent}`);
+  assert.ok(afterSequences.length > 0, `DB journal missing ${afterEvent}`);
+  assert.ok(Math.max(...beforeSequences) < Math.min(...afterSequences), `${beforeEvent} rows must be before ${afterEvent}`);
+}
+
+function assertTargetPlannedEnvelope(entries, plan, expectedApplyStarts, label) {
+  const startedRows = entries.filter((entry) => journalEvent(entry) === 'apply-started');
+  const targetRows = entries.filter((entry) => journalEvent(entry) === 'target-planned');
+  assert.equal(startedRows.length, expectedApplyStarts, `${label}: apply-started rows`);
+  assert.equal(targetRows.length, plan.mutations.length * expectedApplyStarts, `${label}: target-planned rows`);
+
+  const expected = expectedTargetEvidence(plan);
+  for (const started of startedRows) {
+    const envelope = started.resourceHashEvidence?.targetEnvelope || {};
+    assert.equal(envelope.required, true, `${label}: target envelope must be required`);
+    assert.equal(envelope.event, 'target-planned', `${label}: target envelope event`);
+    assert.equal(envelope.plannedTargets, plan.mutations.length, `${label}: planned target count`);
+    assert.equal(envelope.hashOnly, true, `${label}: target envelope hash-only`);
+    assert.equal(envelope.rawValuesIncluded, false, `${label}: target envelope raw values`);
+
+    const startedCursor = `db-journal:${started.sequence}`;
+    const rowsForStart = targetRows.filter((row) => row.resourceHashEvidence?.startedCursor === startedCursor);
+    assert.equal(rowsForStart.length, plan.mutations.length, `${label}: target rows for ${startedCursor}`);
+    for (const row of rowsForStart) {
+      assert.ok(started.sequence < row.sequence, `${label}: target-planned must follow apply-started`);
+      const evidence = normalizeDbTargetPlannedEvidence(row);
+      const expectedTarget = expected.get(evidence.mutationId);
+      assert.ok(expectedTarget, `${label}: unexpected target-planned mutation`);
+      assert.equal(evidence.beforeHash, expectedTarget.beforeHash, `${label}: target before hash mismatch`);
+      assert.equal(evidence.plannedAfterHash, expectedTarget.afterHash, `${label}: target after hash mismatch`);
+      assert.equal(evidence.resourceKey, expectedTarget.resourceKey, `${label}: target resource key mismatch`);
+      assert.equal(evidence.resourceType, expectedTarget.resourceType, `${label}: target resource type mismatch`);
+      assertTargetPlannedEvidenceHashOnly(evidence, label);
+    }
+  }
+}
+
+function expectedTargetEvidence(plan) {
+  const beforeHashByMutationId = new Map(
+    plan.preconditions.map((precondition) => [precondition.mutationId, precondition.expectedHash]),
+  );
+  return new Map(plan.mutations.map((mutation) => [mutation.id, {
+    resourceKey: mutation.resourceKey,
+    resourceType: mutation.resource.type,
+    beforeHash: beforeHashByMutationId.get(mutation.id) ?? mutation.remoteBeforeHash,
+    afterHash: mutation.localHash,
+  }]));
+}
+
 function classifyTargets(plan, snapshot) {
   const byResourceKey = {};
   const counts = {
@@ -773,7 +842,7 @@ function classifyTargets(plan, snapshot) {
 
 function classifyTargetsFromDbJournal(plan, snapshot, rows) {
   const plannedEvidence = dbPlannedMutationEvidence(rows);
-  assert.equal(plannedEvidence.size, plan.mutations.length, 'DB apply-started planned mutation evidence must cover every target');
+  assert.equal(plannedEvidence.size, plan.mutations.length, 'DB target-planned rows must cover every target');
 
   const counts = {
     old: 0,
@@ -788,6 +857,7 @@ function classifyTargetsFromDbJournal(plan, snapshot, rows) {
     assert.ok(evidence, `missing DB planned evidence for ${mutation.id}`);
     assert.equal(evidence.resourceKey, mutation.resourceKey, `DB resource key mismatch for ${mutation.id}`);
     assert.equal(evidence.resourceType, mutation.resource.type, `DB resource type mismatch for ${mutation.id}`);
+    assertTargetPlannedEvidenceHashOnly(evidence, `DB target-planned evidence for ${mutation.id}`);
 
     const currentHash = resourceHash(snapshot, mutation.resource);
     let classification = 'blockedUnknown';
@@ -835,28 +905,83 @@ function classifyTargetsFromDbJournal(plan, snapshot, rows) {
 function dbPlannedMutationEvidence(rows) {
   const planned = new Map();
   for (const row of rows) {
-    const evidence = row.resourceHashEvidence || {};
-    const plannedMutations = Array.isArray(evidence.plannedMutations) ? evidence.plannedMutations : [];
-    for (const item of plannedMutations) {
-      const mutation = normalizeDbMutationEvidence(item);
-      if (mutation.mutationId) {
-        planned.set(mutation.mutationId, mutation);
-      }
+    if (journalEvent(row) !== 'target-planned') {
+      continue;
+    }
+    const mutation = normalizeDbTargetPlannedEvidence(row);
+    if (mutation.mutationId) {
+      planned.set(mutation.mutationId, mutation);
     }
   }
   return planned;
 }
 
-function normalizeDbMutationEvidence(item) {
-  const mutation = item?.mutation && typeof item.mutation === 'object' ? item.mutation : item;
+function normalizeDbTargetPlannedEvidence(row) {
+  const evidence = row?.resourceHashEvidence && typeof row.resourceHashEvidence === 'object'
+    ? row.resourceHashEvidence
+    : {};
+  const target = evidence.target && typeof evidence.target === 'object' ? evidence.target : {};
   return {
-    mutationOrder: Number(mutation?.mutationOrder ?? mutation?.index ?? 0),
-    mutationId: String(mutation?.mutationId ?? mutation?.id ?? ''),
-    resourceKey: String(mutation?.resourceKey ?? ''),
-    resourceType: String(mutation?.resourceType ?? mutation?.resource?.type ?? ''),
-    beforeHash: String(mutation?.beforeHash ?? mutation?.expectedBeforeHash ?? ''),
-    plannedAfterHash: String(mutation?.plannedAfterHash ?? mutation?.afterHash ?? ''),
+    mutationOrder: Number(target.index ?? evidence.targetIndex ?? 0),
+    mutationId: String(target.mutationId ?? evidence.mutationId ?? ''),
+    resourceKey: String(target.resourceKey ?? evidence.resourceKey ?? ''),
+    resourceType: String(target.resource?.type ?? evidence.resourceType ?? ''),
+    beforeHash: String(target.beforeHash ?? evidence.beforeHash ?? ''),
+    plannedAfterHash: String(target.afterHash ?? evidence.afterHash ?? ''),
+    operation: String(evidence.operation ?? ''),
+    targetHash: String(evidence.targetHash ?? ''),
+    target,
+    hashOnly: evidence.hashOnly === true,
+    rawValuesIncluded: evidence.rawValuesIncluded === true,
   };
+}
+
+function assertTargetPlannedEvidenceHashOnly(evidence, label) {
+  assert.equal(evidence.operation, 'db-journal-target-planned', `${label}: operation`);
+  assert.equal(evidence.hashOnly, true, `${label}: hash-only`);
+  assert.equal(evidence.rawValuesIncluded, false, `${label}: raw values included`);
+  assert.match(evidence.beforeHash, hashPattern, `${label}: before hash`);
+  assert.match(evidence.plannedAfterHash, hashPattern, `${label}: after hash`);
+  assert.match(evidence.targetHash, hashPattern, `${label}: target hash`);
+  assert.equal(evidence.targetHash, digest(evidence.target), `${label}: target hash mismatch`);
+  assertNoForbiddenTargetEvidence(evidence, label);
+}
+
+function assertNoForbiddenTargetEvidence(value, label) {
+  const forbidden = new Set([
+    'value',
+    'content',
+    'payload',
+    'payloads',
+    'post_content',
+    'option_value',
+    'meta_value',
+    'currentSnapshot',
+    'afterSnapshot',
+    'beforeSnapshot',
+  ]);
+  visit(value, (key, innerValue) => {
+    assert.ok(!forbidden.has(key), `${label} leaked forbidden key ${key}`);
+    if (typeof innerValue === 'string') {
+      assert.ok(!innerValue.includes(repoRoot), `${label} leaked host repo path`);
+    }
+  });
+}
+
+function visit(value, callback, key = '') {
+  callback(key, value);
+  if (!value || typeof value !== 'object') {
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      visit(item, callback, key);
+    }
+    return;
+  }
+  for (const [childKey, childValue] of Object.entries(value)) {
+    visit(childValue, callback, childKey);
+  }
 }
 
 function assertClassifications(actual, expected) {

@@ -77,9 +77,65 @@ function journalLeaseFence() {
   };
 }
 
+function generatedTargetPlannedTargets() {
+  return [
+    {
+      index: 0,
+      mutationId: 'rpp-0585-generated-mutation-a',
+      resourceKey: 'option:rpp-0585-generated-a',
+      resource: {
+        type: 'option',
+        keyHash: sha256Hex('rpp-0585-generated-a'),
+      },
+      beforeHash: sha256Hex(`${rawOptionValue}:before:a`),
+      afterHash: sha256Hex(`${rawOptionValue}:after:a`),
+    },
+    {
+      index: 1,
+      mutationId: 'rpp-0585-generated-mutation-b',
+      resourceKey: 'option:rpp-0585-generated-b',
+      resource: {
+        type: 'option',
+        keyHash: sha256Hex('rpp-0585-generated-b'),
+      },
+      beforeHash: sha256Hex(`${rawOptionValue}:before:b`),
+      afterHash: sha256Hex(`${rawOptionValue}:after:b`),
+    },
+  ];
+}
+
+function generatedTargetPlannedRow({ sequence, target, keyHash, requestHash, planHash, startedSequence }) {
+  return {
+    schemaVersion: 1,
+    sequence,
+    event: 'target-planned',
+    idempotencyKeyHash: keyHash,
+    requestHash,
+    planHash,
+    appliedCount: 0,
+    resourceHashEvidence: {
+      schemaVersion: 1,
+      operation: 'db-journal-target-planned',
+      startedCursor: `db-journal:${startedSequence}`,
+      targetIndex: target.index,
+      mutationId: target.mutationId,
+      resourceKey: target.resourceKey,
+      beforeHash: target.beforeHash,
+      afterHash: target.afterHash,
+      targetHash: digest(target),
+      target,
+      hashOnly: true,
+      rawValuesIncluded: false,
+    },
+  };
+}
+
 function generatedJournalRows() {
   const requestHash = sha256Hex(rawPayload);
   const keyHash = sha256Hex(idempotencyKey);
+  const planHash = sha256Hex('rpp-0585-generated-plan');
+  const startedSequence = 82;
+  const targets = generatedTargetPlannedTargets();
   return [
     {
       schemaVersion: 1,
@@ -87,6 +143,7 @@ function generatedJournalRows() {
       event: 'idempotency-opened',
       idempotencyKeyHash: keyHash,
       requestHash,
+      planHash,
       resourceHashEvidence: {
         beforeHash: sha256Hex(rawOptionValue),
       },
@@ -94,23 +151,120 @@ function generatedJournalRows() {
     {
       schemaVersion: 1,
       sequence: 82,
+      event: 'apply-started',
+      idempotencyKeyHash: keyHash,
+      requestHash,
+      planHash,
+      resourceHashEvidence: {
+        mutationCount: targets.length,
+        targetEnvelope: {
+          required: true,
+          event: 'target-planned',
+          plannedTargets: targets.length,
+          hashOnly: true,
+          rawValuesIncluded: false,
+        },
+      },
+    },
+    ...targets.map((target, index) => generatedTargetPlannedRow({
+      sequence: 83 + index,
+      target,
+      keyHash,
+      requestHash,
+      planHash,
+      startedSequence,
+    })),
+    {
+      schemaVersion: 1,
+      sequence: 85,
       event: 'mutation-applied',
       idempotencyKeyHash: keyHash,
       requestHash,
-      appliedCount: 1,
+      planHash,
+      appliedCount: targets.length,
       resourceHashEvidence: {
         afterHash: sha256Hex(`${rawOptionValue}:after`),
       },
     },
     {
       schemaVersion: 1,
-      sequence: 83,
+      sequence: 86,
       event: 'apply-committed',
       idempotencyKeyHash: keyHash,
       requestHash,
-      appliedCount: 1,
+      planHash,
+      appliedCount: targets.length,
     },
   ];
+}
+
+function targetPlannedRows(rows) {
+  return rows.filter((row) => row.event === 'target-planned');
+}
+
+function targetEnvelopeSummaryFromRows(rows) {
+  const targetRows = targetPlannedRows(rows);
+  const targets = targetRows
+    .map((row) => {
+      const evidence = row.resourceHashEvidence || {};
+      const target = evidence.target && typeof evidence.target === 'object' ? evidence.target : null;
+      const targetHash = evidence.targetHash || null;
+      const validTargetHash = target && targetHash === digest(target);
+      return {
+        sequence: row.sequence,
+        startedCursor: evidence.startedCursor || null,
+        targetIndex: Number.isInteger(evidence.targetIndex) ? evidence.targetIndex : null,
+        mutationIdHash: target?.mutationId ? sha256Hex(target.mutationId) : null,
+        resourceKeyHash: target?.resourceKey ? sha256Hex(target.resourceKey) : null,
+        resourceTypeHash: target?.resource?.type ? sha256Hex(target.resource.type) : null,
+        beforeHash: target?.beforeHash || evidence.beforeHash || null,
+        afterHash: target?.afterHash || evidence.afterHash || null,
+        targetHash,
+        validTargetHash,
+        hashOnly: evidence.hashOnly === true,
+        rawValuesIncluded: evidence.rawValuesIncluded === true,
+      };
+    })
+    .sort((left, right) => (left.targetIndex ?? 0) - (right.targetIndex ?? 0));
+  const allTargetsHaveHashes = targets.every((target) => (
+    hashPattern.test(target.mutationIdHash || '')
+      && hashPattern.test(target.resourceKeyHash || '')
+      && hashPattern.test(target.resourceTypeHash || '')
+      && hashPattern.test(target.beforeHash || '')
+      && hashPattern.test(target.afterHash || '')
+      && hashPattern.test(target.targetHash || '')
+      && target.validTargetHash === true
+      && target.hashOnly === true
+      && target.rawValuesIncluded === false
+  ));
+  const core = {
+    schemaVersion: 1,
+    observed: targetRows.length > 0,
+    required: true,
+    complete: targetRows.length > 0 && targetRows.length === targets.length && allTargetsHaveHashes,
+    plannedTargets: targets.length,
+    targetPlannedRows: targetRows.length,
+    validTargetRows: allTargetsHaveHashes ? targets.length : 0,
+    targetSetHash: digest(targets.map((target) => ({
+      mutationIdHash: target.mutationIdHash,
+      resourceKeyHash: target.resourceKeyHash,
+      resourceTypeHash: target.resourceTypeHash,
+      beforeHash: target.beforeHash,
+      afterHash: target.afterHash,
+      targetHash: target.targetHash,
+    }))),
+    hashOnly: true,
+    rawValuesIncluded: false,
+    summaryOnly: true,
+  };
+  return {
+    ...core,
+    targetEnvelopeHash: digest(core),
+  };
+}
+
+function generatedTargetEnvelopeSummary() {
+  return targetEnvelopeSummaryFromRows(generatedJournalRows());
 }
 
 function eventSummaries(rows) {
@@ -238,6 +392,7 @@ function createLocalProductionJournalRoute() {
           rowCount: state.rows.length,
           latestRows: state.rows,
           eventSummaries: eventSummaries(state.rows),
+          targetEnvelope: targetEnvelopeSummaryFromRows(state.rows),
           ownership: journalOwnership(),
           leaseFence: journalLeaseFence(),
           writerLease: {
@@ -256,6 +411,7 @@ function createLocalProductionJournalRoute() {
 }
 
 function trustedDbJournalSummary(overrides = {}) {
+  const rows = generatedJournalRows();
   return {
     status: 200,
     ok: true,
@@ -265,15 +421,17 @@ function trustedDbJournalSummary(overrides = {}) {
     paginationComplete: true,
     paginationTruncated: false,
     oldestSequence: 81,
-    newestSequence: 83,
-    rows: 3,
-    rowCount: 3,
+    newestSequence: 86,
+    rows: rows.length,
+    rowCount: rows.length,
     eventCounts: {
       'idempotency-opened': 1,
+      'apply-started': 1,
+      'target-planned': 2,
       'mutation-applied': 1,
       'apply-committed': 1,
     },
-    latestEvents: generatedJournalRows().map((row) => ({
+    latestEvents: rows.map((row) => ({
       sequence: row.sequence,
       event: row.event,
       claimId: null,
@@ -284,6 +442,7 @@ function trustedDbJournalSummary(overrides = {}) {
     })),
     idempotencyEvidence: [],
     claim: null,
+    targetEnvelope: targetEnvelopeSummaryFromRows(rows),
     scope: trustedDbJournalScope,
     storageGuard: storageGuard(),
     ownership: journalOwnership(),
@@ -299,6 +458,7 @@ function trustedDbJournalSummary(overrides = {}) {
 function buildJournalRouteReceipt({
   journalRequest = null,
   dbJournal = null,
+  targetEnvelope = null,
   source = sourceUrl,
   rowsBefore = null,
   rowsAfter = null,
@@ -316,7 +476,15 @@ function buildJournalRouteReceipt({
   const routeReadOnly = method === 'GET' && !idempotencyKeyPresent;
   const journalOk = dbJournal?.status === 200 && dbJournal?.ok === true;
   const stableRows = rowsBefore !== null && rowsAfter !== null && rowsBefore === rowsAfter;
-  const ok = Boolean(journalOk && signed && sessionHeader && routeReadOnly && stableRows);
+  const targetEnvelopeSummary = targetEnvelope || dbJournal?.targetEnvelope || null;
+  const targetEnvelopeHash = targetEnvelopeSummary?.targetEnvelopeHash || null;
+  const targetEnvelopeOk = targetEnvelopeSummary?.observed === true
+    && targetEnvelopeSummary?.required === true
+    && targetEnvelopeSummary?.complete === true
+    && targetEnvelopeSummary?.hashOnly === true
+    && targetEnvelopeSummary?.rawValuesIncluded === false
+    && hashPattern.test(targetEnvelopeHash || '');
+  const ok = Boolean(journalOk && signed && sessionHeader && routeReadOnly && stableRows && targetEnvelopeOk);
   const routeEvidence = {
     method,
     endpointPath,
@@ -345,6 +513,7 @@ function buildJournalRouteReceipt({
       signed,
       sessionBound: Boolean(sessionHeader),
       idempotencyKeyPresent,
+      targetEnvelopeHash,
     }),
   };
   const journalSummary = {
@@ -366,6 +535,8 @@ function buildJournalRouteReceipt({
     ownershipHash: dbJournal?.ownership ? digest(dbJournal.ownership) : null,
     writerLeaseHash: dbJournal?.writerLease ? digest(dbJournal.writerLease) : null,
     leaseFenceHash: dbJournal?.leaseFence ? digest(dbJournal.leaseFence) : null,
+    targetEnvelope: targetEnvelopeSummary,
+    targetEnvelopeHash,
   };
   const receiptCore = {
     schemaVersion: 1,
@@ -395,6 +566,7 @@ function buildJournalRouteReceipt({
     },
     routeEvidence,
     journalSummary,
+    targetEnvelope: targetEnvelopeSummary,
     readOnlyReceipt: {
       method,
       checkedRoute,
@@ -440,6 +612,7 @@ function buildVerifyReleaseStyleSummary(journalRouteReceipt) {
       receiptHash: journalRouteReceipt.receiptHash,
       routeEvidence: journalRouteReceipt.routeEvidence,
       journalSummary: journalRouteReceipt.journalSummary,
+      targetEnvelope: journalRouteReceipt.targetEnvelope,
       readOnlyReceipt: journalRouteReceipt.readOnlyReceipt,
       redaction: journalRouteReceipt.redaction,
       required: [
@@ -447,6 +620,7 @@ function buildVerifyReleaseStyleSummary(journalRouteReceipt) {
         'session-bound read',
         'no mutating idempotency key',
         'stable journal row count across read',
+        'complete target-planned envelope coverage',
         'hash-only receipt evidence',
       ],
       scope: journalRouteReceipt.evidenceScope,
@@ -470,6 +644,7 @@ function expectedRouteProofHashFromSummary(summary) {
   const route = summary?.routeEvidence || {};
   const journal = summary?.journalSummary || {};
   const readOnly = summary?.readOnlyReceipt || {};
+  const targetEnvelope = summary?.targetEnvelope || journal?.targetEnvelope || {};
   return digest({
     method: route.method ?? null,
     endpointPath: route.endpointPath ?? null,
@@ -482,6 +657,28 @@ function expectedRouteProofHashFromSummary(summary) {
     signed: route.signedRead === true,
     sessionBound: route.sessionBound === true,
     idempotencyKeyPresent: route.idempotencyKeyPresent === true,
+    targetEnvelopeHash: targetEnvelope.targetEnvelopeHash ?? null,
+  });
+}
+
+function expectedTargetEnvelopeHashFromSummary(summary) {
+  const journal = summary?.journalSummary || {};
+  const targetEnvelope = summary?.targetEnvelope || journal?.targetEnvelope || null;
+  if (!targetEnvelope || typeof targetEnvelope !== 'object') {
+    return null;
+  }
+  return digest({
+    schemaVersion: targetEnvelope.schemaVersion ?? null,
+    observed: targetEnvelope.observed === true,
+    required: targetEnvelope.required === true,
+    complete: targetEnvelope.complete === true,
+    plannedTargets: targetEnvelope.plannedTargets ?? null,
+    targetPlannedRows: targetEnvelope.targetPlannedRows ?? null,
+    validTargetRows: targetEnvelope.validTargetRows ?? null,
+    targetSetHash: targetEnvelope.targetSetHash ?? null,
+    hashOnly: targetEnvelope.hashOnly === true,
+    rawValuesIncluded: targetEnvelope.rawValuesIncluded === true,
+    summaryOnly: targetEnvelope.summaryOnly === true,
   });
 }
 
@@ -540,6 +737,11 @@ function validateProductionJournalRouteCarryThrough(verifyReleaseSummary) {
       journalRowsAfter: null,
       routeProofHash: null,
       expectedRouteProofHash: null,
+      targetEnvelopeHash: null,
+      expectedTargetEnvelopeHash: null,
+      plannedTargets: null,
+      targetPlannedRows: null,
+      targetEnvelopeMatchesJournal: false,
       receiptHash: null,
     };
   }
@@ -548,10 +750,30 @@ function validateProductionJournalRouteCarryThrough(verifyReleaseSummary) {
   const route = summary.routeEvidence || {};
   const journal = summary.journalSummary || {};
   const readOnly = summary.readOnlyReceipt || {};
+  const targetEnvelope = summary.targetEnvelope || journal.targetEnvelope || null;
   const expectedRouteProofHash = expectedRouteProofHashFromSummary(summary);
+  const expectedTargetEnvelopeHash = expectedTargetEnvelopeHashFromSummary(summary);
   const hashOnly = summary.redaction?.format === 'hash-only'
     && summary.redaction?.rawValuesIncluded === false;
   const routeStable = route.proofHash === expectedRouteProofHash;
+  const targetEnvelopePresent = Boolean(targetEnvelope && typeof targetEnvelope === 'object');
+  const targetEnvelopeStable = targetEnvelopePresent
+    && targetEnvelope.targetEnvelopeHash === expectedTargetEnvelopeHash;
+  const targetEnvelopeMatchesJournal = targetEnvelopeStable
+    && targetEnvelope.observed === true
+    && targetEnvelope.required === true
+    && targetEnvelope.complete === true
+    && targetEnvelope.hashOnly === true
+    && targetEnvelope.rawValuesIncluded === false
+    && targetEnvelope.summaryOnly === true
+    && hashPattern.test(targetEnvelope.targetEnvelopeHash || '')
+    && hashPattern.test(targetEnvelope.targetSetHash || '')
+    && Number.isInteger(targetEnvelope.plannedTargets)
+    && targetEnvelope.plannedTargets > 0
+    && targetEnvelope.targetPlannedRows === targetEnvelope.plannedTargets
+    && targetEnvelope.validTargetRows === targetEnvelope.plannedTargets
+    && journal.eventCounts?.['target-planned'] === targetEnvelope.plannedTargets
+    && journal.targetEnvelopeHash === targetEnvelope.targetEnvelopeHash;
   const ok = Boolean(
     summary.ok === true
     && summary.summaryPath === 'productionJournalRoute'
@@ -575,8 +797,14 @@ function validateProductionJournalRouteCarryThrough(verifyReleaseSummary) {
     && journal.status === 200
     && journal.ok === true
     && journal.requestedLimit === 80
-    && journal.rowCount === 3
-    && journal.rows === 3
+    && journal.rowCount === 6
+    && journal.rows === 6
+    && journal.eventCounts?.['idempotency-opened'] === 1
+    && journal.eventCounts?.['apply-started'] === 1
+    && journal.eventCounts?.['target-planned'] === 2
+    && journal.eventCounts?.['mutation-applied'] === 1
+    && journal.eventCounts?.['apply-committed'] === 1
+    && targetEnvelopeMatchesJournal
     && readOnly.method === 'GET'
     && readOnly.checkedRoute === checkedRoute
     && readOnly.signedSessionBound === true
@@ -589,9 +817,13 @@ function validateProductionJournalRouteCarryThrough(verifyReleaseSummary) {
   );
   const observed = ok
     ? 'journal-read-only'
-    : routeStable
-      ? 'journal-route-proof-malformed'
-      : 'journal-route-proof-drift';
+    : !targetEnvelopePresent
+      ? 'journal-target-envelope-missing'
+      : !targetEnvelopeMatchesJournal
+        ? 'journal-target-envelope-mismatch'
+        : routeStable
+          ? 'journal-route-proof-malformed'
+          : 'journal-route-proof-drift';
 
   return {
     ok,
@@ -608,6 +840,11 @@ function validateProductionJournalRouteCarryThrough(verifyReleaseSummary) {
     journalRowsAfter: readOnly.journalRowsAfter ?? null,
     routeProofHash: route.proofHash ?? null,
     expectedRouteProofHash,
+    targetEnvelopeHash: targetEnvelope?.targetEnvelopeHash ?? null,
+    expectedTargetEnvelopeHash,
+    plannedTargets: targetEnvelope?.plannedTargets ?? null,
+    targetPlannedRows: targetEnvelope?.targetPlannedRows ?? null,
+    targetEnvelopeMatchesJournal,
     receiptHash: summary.receiptHash ?? null,
   };
 }
@@ -630,6 +867,11 @@ function journalRouteGateEvidenceFromValidation(validation, overrides = {}) {
     journalRowsAfter: validation.journalRowsAfter,
     routeProofHash: validation.routeProofHash,
     expectedRouteProofHash: validation.expectedRouteProofHash,
+    targetEnvelopeHash: validation.targetEnvelopeHash,
+    expectedTargetEnvelopeHash: validation.expectedTargetEnvelopeHash,
+    plannedTargets: validation.plannedTargets,
+    targetPlannedRows: validation.targetPlannedRows,
+    targetEnvelopeMatchesJournal: validation.targetEnvelopeMatchesJournal,
     receiptHash: validation.receiptHash,
     summaryCount: validation.summaryCount,
     code: validation.code,
@@ -859,6 +1101,7 @@ test('RPP-0585 v5 verify:release summary carries one read-only production journa
     const receipt = buildJournalRouteReceipt({
       journalRequest,
       dbJournal: pushSummary.dbJournal,
+      targetEnvelope: targetEnvelopeSummaryFromRows(route.state.rows),
       rowsBefore: journalRequest.rowsBefore,
       rowsAfter: journalRequest.rowsAfter,
     });
@@ -905,13 +1148,25 @@ test('RPP-0585 v5 verify:release summary carries one read-only production journa
     assert.equal(receipt.routeEvidence.idempotencyKeyPresent, false);
     assert.equal(receipt.routeEvidence.idempotencyKeyHash, null);
     assert.equal(receipt.readOnlyReceipt.rowsStableAcrossRead, true);
-    assert.equal(receipt.readOnlyReceipt.journalRowsBefore, 3);
-    assert.equal(receipt.readOnlyReceipt.journalRowsAfter, 3);
+    assert.equal(receipt.readOnlyReceipt.journalRowsBefore, 6);
+    assert.equal(receipt.readOnlyReceipt.journalRowsAfter, 6);
     assert.deepEqual(receipt.journalSummary.eventCounts, {
       'idempotency-opened': 1,
+      'apply-started': 1,
+      'target-planned': 2,
       'mutation-applied': 1,
       'apply-committed': 1,
     });
+    assert.equal(receipt.targetEnvelope.observed, true);
+    assert.equal(receipt.targetEnvelope.required, true);
+    assert.equal(receipt.targetEnvelope.complete, true);
+    assert.equal(receipt.targetEnvelope.plannedTargets, 2);
+    assert.equal(receipt.targetEnvelope.targetPlannedRows, 2);
+    assert.equal(receipt.targetEnvelope.validTargetRows, 2);
+    assert.equal(receipt.targetEnvelope.hashOnly, true);
+    assert.equal(receipt.targetEnvelope.rawValuesIncluded, false);
+    assert.equal(receipt.targetEnvelope.summaryOnly, true);
+    assertHashOnlyFields(receipt.targetEnvelope, ['targetSetHash', 'targetEnvelopeHash']);
 
     assert.equal(verifyReleaseSummary.ok, false);
     assert.equal(verifyReleaseSummary.releaseStatus, 'NO-GO');
@@ -925,6 +1180,10 @@ test('RPP-0585 v5 verify:release summary carries one read-only production journa
     assert.equal(validation.observed, 'journal-read-only');
     assert.equal(validation.summaryCount, 1);
     assert.equal(validation.routeProofHash, validation.expectedRouteProofHash);
+    assert.equal(validation.targetEnvelopeHash, validation.expectedTargetEnvelopeHash);
+    assert.equal(validation.targetEnvelopeMatchesJournal, true);
+    assert.equal(validation.plannedTargets, 2);
+    assert.equal(validation.targetPlannedRows, 2);
     assert.equal(productionSummaries.length, 1);
     assert.equal(routeEvidenceBlocks.length, 1);
     assert.deepEqual(productionSummaries[0], verifyReleaseSummary.productionJournalRoute);
@@ -945,6 +1204,7 @@ test('RPP-0585 v5 verify:release summary carries one read-only production journa
       'ownershipHash',
       'writerLeaseHash',
       'leaseFenceHash',
+      'targetEnvelopeHash',
     ]);
     assert.match(receipt.receiptHash, hashPattern);
     assert.equal(receipt.redaction.rawValuesIncluded, false);
@@ -967,8 +1227,8 @@ test('RPP-0585 v5 missing malformed duplicated or drifted journal route proof bl
   const validReceipt = buildJournalRouteReceipt({
     journalRequest: signedJournalRead(),
     dbJournal: trustedDbJournalSummary(),
-    rowsBefore: 3,
-    rowsAfter: 3,
+    rowsBefore: 6,
+    rowsAfter: 6,
   });
   const validSummary = buildVerifyReleaseStyleSummary(validReceipt);
   const malformedReceipt = buildJournalRouteReceipt({
@@ -976,8 +1236,8 @@ test('RPP-0585 v5 missing malformed duplicated or drifted journal route proof bl
       'x-reprint-push-idempotency-key': idempotencyKey,
     }),
     dbJournal: trustedDbJournalSummary(),
-    rowsBefore: 3,
-    rowsAfter: 3,
+    rowsBefore: 6,
+    rowsAfter: 6,
   });
   const malformedSummary = buildVerifyReleaseStyleSummary(malformedReceipt);
   const missingSummary = {
@@ -998,11 +1258,37 @@ test('RPP-0585 v5 missing malformed duplicated or drifted journal route proof bl
       },
     },
   };
+  const missingTargetEnvelopeSummary = {
+    ...validSummary,
+    productionJournalRoute: {
+      ...validSummary.productionJournalRoute,
+      targetEnvelope: undefined,
+      journalSummary: {
+        ...validSummary.productionJournalRoute.journalSummary,
+        targetEnvelope: null,
+        targetEnvelopeHash: null,
+      },
+    },
+  };
+  const mismatchedTargetEnvelopeSummary = {
+    ...validSummary,
+    productionJournalRoute: {
+      ...validSummary.productionJournalRoute,
+      targetEnvelope: {
+        ...validSummary.productionJournalRoute.targetEnvelope,
+        plannedTargets: 1,
+        targetPlannedRows: 1,
+        validTargetRows: 1,
+      },
+    },
+  };
   const cases = [
     ['missing', missingSummary, 'missing-production-journal-route-summary'],
     ['malformed', malformedSummary, 'journal-route-proof-malformed'],
     ['duplicated', duplicatedSummary, 'duplicated-production-journal-route-summary'],
     ['drifted', driftedSummary, 'journal-route-proof-drift'],
+    ['missing-target-envelope', missingTargetEnvelopeSummary, 'journal-target-envelope-missing'],
+    ['mismatched-target-envelope', mismatchedTargetEnvelopeSummary, 'journal-target-envelope-mismatch'],
   ];
 
   assert.equal(validReceipt.ok, true);
@@ -1044,6 +1330,8 @@ test('RPP-0585 v5 missing malformed duplicated or drifted journal route proof bl
         'idempotencyKeyHash',
         'routeProofHash',
         'expectedRouteProofHash',
+        'targetEnvelopeHash',
+        'expectedTargetEnvelopeHash',
         'receiptHash',
       ]);
     }
@@ -1054,6 +1342,8 @@ test('RPP-0585 v5 missing malformed duplicated or drifted journal route proof bl
     missingSummary,
     duplicatedSummary,
     driftedSummary,
+    missingTargetEnvelopeSummary,
+    mismatchedTargetEnvelopeSummary,
   ], [
     sourceUrl,
     credential.username,

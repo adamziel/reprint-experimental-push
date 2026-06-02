@@ -7,30 +7,36 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const routeSourcePath = path.join(repoRoot, 'scripts/playground/push-remote-rest-plugin.php');
 const routeSource = readFileSync(routeSourcePath, 'utf8');
+const dbJournalLibSourcePath = path.join(repoRoot, 'scripts/playground/push-db-journal-lib.php');
+const dbJournalLibSource = readFileSync(dbJournalLibSourcePath, 'utf8');
 const liveSmokeSourcePath = path.join(repoRoot, 'scripts/playground/production-apply-route-live-smoke.mjs');
 const liveSmokeSource = readFileSync(liveSmokeSourcePath, 'utf8');
 
-function functionBody(name) {
+function functionBodyFromSource(source, name) {
   const declaration = `function ${name}`;
-  const start = routeSource.indexOf(declaration);
+  const start = source.indexOf(declaration);
   assert.notEqual(start, -1, `missing ${declaration}`);
-  const open = routeSource.indexOf('{', start);
+  const open = source.indexOf('{', start);
   assert.notEqual(open, -1, `missing body for ${declaration}`);
 
   let depth = 0;
-  for (let index = open; index < routeSource.length; index += 1) {
-    const char = routeSource[index];
+  for (let index = open; index < source.length; index += 1) {
+    const char = source[index];
     if (char === '{') {
       depth += 1;
     } else if (char === '}') {
       depth -= 1;
       if (depth === 0) {
-        return routeSource.slice(open + 1, index);
+        return source.slice(open + 1, index);
       }
     }
   }
 
   assert.fail(`unterminated body for ${declaration}`);
+}
+
+function functionBody(name) {
+  return functionBodyFromSource(routeSource, name);
 }
 
 function routeRegistration(namespace, route) {
@@ -94,6 +100,10 @@ test('production apply revalidates live source hashes after claim start and befo
   const applyWithJournal = functionBody('reprint_push_lab_rest_run_db_journal_apply');
   const liveRevalidation = functionBody('reprint_push_lab_rest_revalidate_apply_live_source_before_mutation');
   const revalidationEvidence = functionBody('reprint_push_lab_rest_apply_revalidation_evidence');
+  const targetPlannedAppend = functionBodyFromSource(
+    dbJournalLibSource,
+    'reprint_push_lab_db_journal_append_target_planned',
+  );
 
   assertBefore(
     applyWithJournal,
@@ -105,6 +115,22 @@ test('production apply revalidates live source hashes after claim start and befo
     'reprint_push_lab_rest_revalidate_apply_live_source_before_mutation',
     "reprint_push_protocol_run_payload('apply'",
   );
+  assertBefore(
+    applyWithJournal,
+    "reprint_push_lab_db_journal_append_event('apply-started'",
+    'reprint_push_lab_db_journal_append_target_planned',
+  );
+  assertBefore(
+    applyWithJournal,
+    'reprint_push_lab_db_journal_append_target_planned',
+    'reprint_push_lab_rest_revalidate_apply_live_source_before_mutation',
+  );
+  assertBefore(
+    applyWithJournal,
+    'reprint_push_lab_db_journal_append_target_planned',
+    "reprint_push_protocol_run_payload('apply'",
+  );
+  assert.match(applyWithJournal, /foreach\s*\(\s*\$accepted\['recoveryTargets'\]\s+as\s+\$target\s*\)/);
 
   assert.match(liveRevalidation, /\$current\s*=\s*reprint_push_export_snapshot\(\)/);
   assert.match(liveRevalidation, /reprint_push_protocol_validate_fixture_atomic_dependencies\(\$plan,\s*\$current,\s*\$mutations,\s*\$live_context\)/);
@@ -130,6 +156,13 @@ test('production apply revalidates live source hashes after claim start and befo
   assert.match(revalidationEvidence, /'phase'\s*=>\s*\(string\) \(\$live_revalidation\['phase'\]/);
   assert.match(revalidationEvidence, /'checkedAgainst'\s*=>\s*\(string\) \(\$live_revalidation\['checkedAgainst'\]/);
   assert.match(revalidationEvidence, /'liveSource'\s*=>\s*\[/);
+
+  assert.match(targetPlannedAppend, /reprint_push_lab_db_journal_append_event\('target-planned'/);
+  assert.match(targetPlannedAppend, /'operation'\s*=>\s*'db-journal-target-planned'/);
+  assert.match(targetPlannedAppend, /'startedCursor'\s*=>\s*\$started_cursor/);
+  assert.match(targetPlannedAppend, /'targetHash'\s*=>\s*hash\('sha256',\s*reprint_push_stable_json\(\$safe_target\)\)/);
+  assert.match(targetPlannedAppend, /'hashOnly'\s*=>\s*true/);
+  assert.match(targetPlannedAppend, /'rawValuesIncluded'\s*=>\s*false/);
 });
 
 test('RPP-0524 apply proof uses the real production-shaped route over sandbox-local loopback', () => {

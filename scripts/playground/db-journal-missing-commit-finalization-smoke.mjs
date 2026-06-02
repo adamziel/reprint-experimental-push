@@ -14,6 +14,7 @@ const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 const serverStartupTimeoutMs = 120_000;
 const idempotencyHeader = 'X-Reprint-Push-Idempotency-Key';
 const idempotencyKey = 'db-journal-missing-commit-finalize-001';
+const hashPattern = /^[a-f0-9]{64}$/;
 
 const fixtures = {
   base: 'fixtures/playground/remote-base.blueprint.json',
@@ -59,12 +60,14 @@ const summary = {
   firstApply: {},
   conflict: {},
   recovery: {},
+  missingEnvelope: {},
   proven: [
     'the first apply response is an intentional lab failure and is not used as success evidence',
-    'DB rows persist idempotency-opened/apply-started/mutation-applied without apply-committed',
+    'DB rows persist idempotency-opened/apply-started/target-planned/mutation-applied without apply-committed',
     'live target hashes all equal durable planned after hashes before finalization',
     'same key with a different body rejects before finalization and does not mutate',
     'same key with the same body appends DB apply-committed with zero fresh mutation work',
+    'missing target-planned rows block missing-commit finalization even when live target hashes are all new',
   ],
   residualRisks: [
     'this is a lab-only deterministic hook, not proof of production durability, rollback, or exactly-once semantics',
@@ -102,7 +105,10 @@ await withPlaygroundServer('db-journal-missing-commit-finalization', path.join(r
 
   const dbJournalAfterHook = await getDbJournal(server);
   const hookEntries = journalEntries(dbJournalAfterHook.body);
-  assertJournalEvents(hookEntries, ['idempotency-opened', 'apply-started', 'mutation-applied']);
+  assertJournalEvents(hookEntries, ['idempotency-opened', 'apply-started', 'target-planned', 'mutation-applied']);
+  assertTargetPlannedEnvelope(hookEntries, readyPlan, 1, 'missing-commit hook');
+  assertEventBefore(hookEntries, 'apply-started', 'target-planned');
+  assertLatestEventBefore(hookEntries, 'target-planned', 'mutation-applied');
   assert.equal(countJournalEvents(hookEntries, 'mutation-applied'), readyPlan.mutations.length);
   assert.equal(countJournalEvents(hookEntries, 'apply-committed'), 0, 'lab hook must leave DB apply-committed missing');
   assert.equal(countJournalEvents(hookEntries, 'apply-rejected'), 0, 'lab hook must not create a terminal rejection');
@@ -124,6 +130,11 @@ await withPlaygroundServer('db-journal-missing-commit-finalization', path.join(r
   assert.equal(digest(visibleSurface(conflictAfter.body.snapshot)), digest(visibleSurface(conflictBefore.body.snapshot)), 'conflict changed target data');
   const dbJournalAfterConflict = await getDbJournal(server);
   assert.equal(countJournalEvents(journalEntries(dbJournalAfterConflict.body), 'apply-committed'), 0, 'conflict must not finalize missing commit');
+  assert.equal(
+    countJournalEvents(journalEntries(dbJournalAfterConflict.body), 'target-planned'),
+    readyPlan.mutations.length,
+    'different-body conflict must not append target-planned rows',
+  );
 
   const finalized = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: idempotencyKey });
   assert.equal(finalized.status, 200);
@@ -146,6 +157,11 @@ await withPlaygroundServer('db-journal-missing-commit-finalization', path.join(r
   const finalizedEntries = journalEntries(dbJournalAfterFinalize.body);
   assert.equal(countJournalEvents(finalizedEntries, 'apply-committed'), 1, 'finalization must append exactly one DB commit');
   assert.equal(
+    countJournalEvents(finalizedEntries, 'target-planned'),
+    readyPlan.mutations.length,
+    'finalization must not duplicate target-planned rows',
+  );
+  assert.equal(
     countJournalEvents(finalizedEntries, 'mutation-applied'),
     readyPlan.mutations.length,
     'finalization must not rerun or re-record target mutations',
@@ -163,6 +179,7 @@ await withPlaygroundServer('db-journal-missing-commit-finalization', path.join(r
     code: firstApply.body.code,
     targetHashesAllAfter: true,
     dbEventsBeforeRecovery: hookEntries.map(journalEvent),
+    targetPlannedRows: countJournalEvents(hookEntries, 'target-planned'),
     dbCommitMissing: true,
   };
   summary.conflict = {
@@ -176,9 +193,82 @@ await withPlaygroundServer('db-journal-missing-commit-finalization', path.join(r
     finalizeCode: finalized.body.code,
     freshMutationWork: finalized.body.idempotency?.freshMutationWork,
     recoveryState: finalized.body.recovery?.state,
+    targetPlannedRows: countJournalEvents(finalizedEntries, 'target-planned'),
     dbCommitRows: countJournalEvents(finalizedEntries, 'apply-committed'),
     mutationRowsUnchanged: true,
     replayCode: replay.body.code,
+  };
+});
+
+await withPlaygroundServer('db-journal-missing-target-envelope-negative', path.join(repoRoot, fixtures.base), async (server) => {
+  summary.transport.servers.push(server.summary);
+
+  const dryRun = await postLab(server, '/dry-run', { plan: readyPlan });
+  assert.equal(dryRun.status, 200);
+  assert.equal(dryRun.body.ok, true);
+
+  const applyBody = {
+    plan: readyPlan,
+    receipt: dryRun.body.receipt,
+    labSimulateMissingDbCommit: true,
+    labOmitDbJournalTargetPlannedRows: true,
+  };
+
+  const firstApply = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: `${idempotencyKey}-missing-envelope` });
+  assert.equal(firstApply.status, 500);
+  assert.equal(firstApply.body.ok, false);
+  assert.equal(firstApply.body.code, 'LAB_SIMULATED_MISSING_DB_COMMIT');
+  assert.equal(firstApply.body.idempotency?.freshMutationWork, true);
+
+  const afterFirst = await getSnapshot(server);
+  assertVisibleSurfaceEqual(afterFirst.body.snapshot, snapshots.local, 'missing-envelope first apply final visible surface');
+  assertAppliedHashes(readyPlan, afterFirst.body.snapshot);
+  const firstDigest = digest(visibleSurface(afterFirst.body.snapshot));
+
+  const dbJournalAfterHook = await getDbJournal(server);
+  const hookEntries = journalEntries(dbJournalAfterHook.body);
+  assertJournalEvents(hookEntries, ['idempotency-opened', 'apply-started', 'mutation-applied']);
+  assert.equal(countJournalEvents(hookEntries, 'target-planned'), 0, 'omission hook must leave target envelope empty');
+  assert.equal(countJournalEvents(hookEntries, 'mutation-applied'), readyPlan.mutations.length);
+  assert.equal(countJournalEvents(hookEntries, 'apply-committed'), 0, 'omission hook must leave DB apply-committed missing');
+  const started = hookEntries.find((entry) => journalEvent(entry) === 'apply-started');
+  assert.equal(started?.resourceHashEvidence?.targetEnvelope?.required, true, 'started row must still require target envelope');
+  assert.equal(started?.resourceHashEvidence?.targetEnvelope?.plannedTargets, readyPlan.mutations.length);
+
+  const blocked = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: `${idempotencyKey}-missing-envelope` });
+  assert.equal(blocked.status, 409);
+  assert.equal(blocked.body.ok, false);
+  assert.equal(blocked.body.code, 'RECOVERY_BLOCKED');
+  assert.equal(blocked.body.idempotency?.freshMutationWork, false);
+  assert.equal(blocked.body.idempotency?.finalizedMissingCommit, false);
+  assert.equal(blocked.body.recovery?.state, 'blocked-recovery');
+  assert.equal(blocked.body.recovery?.blockedReason, 'missing or incomplete DB target-planned recovery envelope');
+  assert.deepEqual(blocked.body.recovery?.counts, {
+    old: 0,
+    new: 0,
+    blockedUnknown: 0,
+    total: 0,
+  });
+
+  const afterBlocked = await getSnapshot(server);
+  assert.equal(digest(visibleSurface(afterBlocked.body.snapshot)), firstDigest, 'missing-envelope recovery block changed target data');
+
+  const dbJournalAfterBlocked = await getDbJournal(server);
+  const blockedEntries = journalEntries(dbJournalAfterBlocked.body);
+  assert.equal(countJournalEvents(blockedEntries, 'target-planned'), 0, 'blocked recovery must not synthesize target-planned rows');
+  assert.equal(countJournalEvents(blockedEntries, 'apply-committed'), 0, 'blocked recovery must not finalize missing commit');
+  assert.equal(countJournalEvents(blockedEntries, 'recovery-blocked'), 1, 'blocked recovery must append one refusal row');
+
+  summary.missingEnvelope = {
+    firstStatus: firstApply.status,
+    firstCode: firstApply.body.code,
+    targetPlannedRows: countJournalEvents(blockedEntries, 'target-planned'),
+    blockedStatus: blocked.status,
+    blockedCode: blocked.body.code,
+    recoveryState: blocked.body.recovery?.state,
+    blockedReason: blocked.body.recovery?.blockedReason,
+    dbCommitRows: countJournalEvents(blockedEntries, 'apply-committed'),
+    targetSnapshotUnchanged: true,
   };
 });
 
@@ -504,6 +594,26 @@ function assertJournalEvents(entries, events) {
   }
 }
 
+function assertEventBefore(entries, beforeEvent, afterEvent) {
+  const before = entries.find((entry) => journalEvent(entry) === beforeEvent)?.sequence ?? -1;
+  const after = entries.find((entry) => journalEvent(entry) === afterEvent)?.sequence ?? -1;
+  assert.ok(before > 0, `DB journal missing ${beforeEvent}`);
+  assert.ok(after > 0, `DB journal missing ${afterEvent}`);
+  assert.ok(before < after, `${beforeEvent} must be before ${afterEvent}`);
+}
+
+function assertLatestEventBefore(entries, beforeEvent, afterEvent) {
+  const beforeSequences = entries
+    .filter((entry) => journalEvent(entry) === beforeEvent)
+    .map((entry) => entry.sequence);
+  const afterSequences = entries
+    .filter((entry) => journalEvent(entry) === afterEvent)
+    .map((entry) => entry.sequence);
+  assert.ok(beforeSequences.length > 0, `DB journal missing ${beforeEvent}`);
+  assert.ok(afterSequences.length > 0, `DB journal missing ${afterEvent}`);
+  assert.ok(Math.max(...beforeSequences) < Math.min(...afterSequences), `${beforeEvent} rows must be before ${afterEvent}`);
+}
+
 function assertStartedEvidence(entries) {
   const started = entries.find((entry) => journalEvent(entry) === 'apply-started');
   assert.ok(started, 'DB journal missing apply-started row');
@@ -513,6 +623,102 @@ function assertStartedEvidence(entries) {
     assert.match(target.beforeHash, /^[a-f0-9]{64}$/, `target before hash missing for ${target.resourceKey}`);
     assert.match(target.afterHash, /^[a-f0-9]{64}$/, `target after hash missing for ${target.resourceKey}`);
     assert.ok(target.resource && typeof target.resource === 'object', `target resource missing for ${target.resourceKey}`);
+  }
+}
+
+function assertTargetPlannedEnvelope(entries, plan, expectedApplyStarts, label) {
+  const startedRows = entries.filter((entry) => journalEvent(entry) === 'apply-started');
+  const targetRows = entries.filter((entry) => journalEvent(entry) === 'target-planned');
+  assert.equal(startedRows.length, expectedApplyStarts, `${label}: apply-started rows`);
+  assert.equal(targetRows.length, plan.mutations.length * expectedApplyStarts, `${label}: target-planned rows`);
+
+  const expected = expectedTargetEvidence(plan);
+  for (const started of startedRows) {
+    const envelope = started.resourceHashEvidence?.targetEnvelope || {};
+    assert.equal(envelope.required, true, `${label}: target envelope must be required`);
+    assert.equal(envelope.event, 'target-planned', `${label}: target envelope event`);
+    assert.equal(envelope.plannedTargets, plan.mutations.length, `${label}: planned target count`);
+    assert.equal(envelope.hashOnly, true, `${label}: target envelope hash-only`);
+    assert.equal(envelope.rawValuesIncluded, false, `${label}: target envelope raw values`);
+
+    const startedCursor = `db-journal:${started.sequence}`;
+    const rowsForStart = targetRows.filter((row) => row.resourceHashEvidence?.startedCursor === startedCursor);
+    assert.equal(rowsForStart.length, plan.mutations.length, `${label}: target rows for ${startedCursor}`);
+    for (const row of rowsForStart) {
+      assert.ok(started.sequence < row.sequence, `${label}: target-planned must follow apply-started`);
+      assertTargetPlannedRow(row, expected, label);
+    }
+  }
+}
+
+function assertTargetPlannedRow(row, expected, label) {
+  const evidence = row.resourceHashEvidence || {};
+  const target = evidence.target || {};
+  const expectedTarget = expected.get(target.mutationId);
+  assert.ok(expectedTarget, `${label}: unexpected target-planned mutation`);
+  assert.equal(evidence.schemaVersion, 1, `${label}: target row schema`);
+  assert.equal(evidence.operation, 'db-journal-target-planned', `${label}: target row operation`);
+  assert.equal(evidence.hashOnly, true, `${label}: target row hash-only`);
+  assert.equal(evidence.rawValuesIncluded, false, `${label}: target row raw values`);
+  assert.match(evidence.beforeHash, hashPattern, `${label}: target row before hash`);
+  assert.match(evidence.afterHash, hashPattern, `${label}: target row after hash`);
+  assert.match(evidence.targetHash, hashPattern, `${label}: target row target hash`);
+  assert.equal(evidence.targetHash, digest(target), `${label}: target hash mismatch`);
+  assert.equal(evidence.beforeHash, expectedTarget.beforeHash, `${label}: target before hash mismatch`);
+  assert.equal(evidence.afterHash, expectedTarget.afterHash, `${label}: target after hash mismatch`);
+  assert.equal(target.resourceKey, expectedTarget.resourceKey, `${label}: target resource key mismatch`);
+  assertNoForbiddenTargetEvidence(evidence, label);
+}
+
+function expectedTargetEvidence(plan) {
+  const beforeHashByMutationId = new Map(
+    plan.preconditions.map((precondition) => [precondition.mutationId, precondition.expectedHash]),
+  );
+  return new Map(plan.mutations.map((mutation) => [mutation.id, {
+    resourceKey: mutation.resourceKey,
+    beforeHash: beforeHashByMutationId.get(mutation.id) ?? mutation.remoteBeforeHash,
+    afterHash: mutation.localHash,
+  }]));
+}
+
+function assertNoForbiddenTargetEvidence(evidence, label) {
+  assertNoForbiddenKeys(evidence, label);
+}
+
+function assertNoForbiddenKeys(value, label) {
+  const forbidden = new Set([
+    'value',
+    'content',
+    'payload',
+    'payloads',
+    'post_content',
+    'option_value',
+    'meta_value',
+    'currentSnapshot',
+    'afterSnapshot',
+    'beforeSnapshot',
+  ]);
+  visit(value, (key, innerValue) => {
+    assert.ok(!forbidden.has(key), `${label} leaked forbidden key ${key}`);
+    if (typeof innerValue === 'string') {
+      assert.ok(!innerValue.includes(repoRoot), `${label} leaked host repo path`);
+    }
+  });
+}
+
+function visit(value, callback, key = '') {
+  callback(key, value);
+  if (!value || typeof value !== 'object') {
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      visit(item, callback, key);
+    }
+    return;
+  }
+  for (const [childKey, childValue] of Object.entries(value)) {
+    visit(childValue, callback, childKey);
   }
 }
 

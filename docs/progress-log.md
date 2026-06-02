@@ -7178,6 +7178,25 @@ linked implementation artifacts.
   remain 514/486; final release remains `NO-GO` because this is local
   recovery-classifier and SQLite recovery-table evidence, not external
   production-backed durability proof.
+- DB journal target-planned recovery envelope: the current lane now writes one
+  durable `target-planned` DB journal row for every accepted recovery target
+  immediately after `apply-started` and before live revalidation or apply
+  mutation execution in `scripts/playground/push-remote-rest-plugin.php`.
+  Recovery now prefers those DB rows for missing-commit finalization and
+  all-old stale-claim retry classification; new `apply-started` rows that mark
+  the envelope as required refuse to fall back to the embedded legacy
+  `recoveryTargets` blob when the durable rows are missing. The DB journal
+  summary in `scripts/playground/push-db-journal-lib.php` reports full-journal
+  target-envelope completeness for the latest apply-started row so pagination
+  cannot hide an incomplete envelope. Validation passed PHP syntax checks,
+  JS syntax checks for the changed tests and smokes, focused static route and
+  RPP-0585 coverage 8/8, the stale-claim all-old smoke with target rows on
+  abandoned and retry starts, the missing-commit smoke including a missing
+  target-envelope `RECOVERY_BLOCKED` negative, and the real process-kill smoke
+  with 160 restart-read `target-planned` rows and mixed-state retry blocking.
+  Counts remain 514/486; final release remains `NO-GO` because this is a
+  production-shaped DB journal recovery envelope proof in the local Playground
+  route, not external hosted production durability evidence.
 - Contract-bound plugin payload release-verifier hardening: the current lane
   now strengthens `RPP-0483` in
   `scripts/playground/production-shaped-release-verify.mjs` and
