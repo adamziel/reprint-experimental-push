@@ -12,6 +12,8 @@ import { digest } from '../src/stable-json.js';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const routeSourcePath = path.join(repoRoot, 'scripts/playground/push-remote-rest-plugin.php');
 const routeSource = readFileSync(routeSourcePath, 'utf8');
+const protocolSourcePath = path.join(repoRoot, 'scripts/playground/push-remote-lib.php');
+const protocolSource = readFileSync(protocolSourcePath, 'utf8');
 const sourceUrl = 'https://source.example.test/wp';
 const routePrefix = '/wp-json/reprint/v1/push';
 const endpointPath = `${routePrefix}/apply`;
@@ -53,21 +55,29 @@ function basicAuth(value = credential) {
 }
 
 function functionBody(name) {
+  return functionBodyFrom(routeSource, name);
+}
+
+function protocolFunctionBody(name) {
+  return functionBodyFrom(protocolSource, name);
+}
+
+function functionBodyFrom(source, name) {
   const declaration = `function ${name}`;
-  const start = routeSource.indexOf(declaration);
+  const start = source.indexOf(declaration);
   assert.notEqual(start, -1, `missing ${declaration}`);
-  const open = routeSource.indexOf('{', start);
+  const open = source.indexOf('{', start);
   assert.notEqual(open, -1, `missing body for ${declaration}`);
 
   let depth = 0;
-  for (let index = open; index < routeSource.length; index += 1) {
-    const char = routeSource[index];
+  for (let index = open; index < source.length; index += 1) {
+    const char = source[index];
     if (char === '{') {
       depth += 1;
     } else if (char === '}') {
       depth -= 1;
       if (depth === 0) {
-        return routeSource.slice(open + 1, index);
+        return source.slice(open + 1, index);
       }
     }
   }
@@ -1051,6 +1061,50 @@ test('RPP-0584 v5 pins production apply live-source revalidation before mutation
   ]) {
     assert.doesNotMatch(
       liveRevalidation,
+      new RegExp(forbiddenMutationCall.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    );
+  }
+});
+
+test('RPP-0584 v5 names unsupported WordPress network-row mutations before apply work', () => {
+  const validateMutations = protocolFunctionBody('reprint_push_protocol_validate_mutations_and_preconditions');
+  const supportedResource = protocolFunctionBody('reprint_push_protocol_assert_supported_mutation_resource');
+  const networkClassifier = protocolFunctionBody('reprint_push_protocol_is_wordpress_network_row_resource');
+
+  assertBefore(
+    validateMutations,
+    'reprint_push_protocol_validate_mutation_shape($mutation);',
+    "reprint_push_protocol_assert_supported_mutation_resource($mutation['resource']);",
+  );
+  assertBefore(
+    validateMutations,
+    "reprint_push_protocol_assert_supported_mutation_resource($mutation['resource']);",
+    'reprint_push_assert_supported_plugin_owned_mutation($mutation, $current_snapshot);',
+  );
+  assert.match(supportedResource, /'code'\s*=>\s*'INVALID_PLAN'/);
+  assert.match(supportedResource, /UNSUPPORTED_WORDPRESS_NETWORK_ROW_MUTATION/);
+  for (const table of [
+    'wp_blogs',
+    'wp_blogmeta',
+    'wp_site',
+    'wp_sitemeta',
+    'wp_blog_versions',
+    'wp_registration_log',
+  ]) {
+    assert.match(networkClassifier, new RegExp(`'${table}'`));
+  }
+  for (const forbiddenMutationCall of [
+    'reprint_push_apply_resource',
+    'reprint_push_apply_resource_with_storage_guard',
+    'wp_insert_post',
+    'wp_update_post',
+    'update_option',
+    '$wpdb->insert',
+    '$wpdb->update',
+    '$wpdb->delete',
+  ]) {
+    assert.doesNotMatch(
+      supportedResource,
       new RegExp(forbiddenMutationCall.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
     );
   }

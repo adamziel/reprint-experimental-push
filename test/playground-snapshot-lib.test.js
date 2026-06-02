@@ -55,6 +55,107 @@ function runSupportCheck(resource) {
   });
 }
 
+function runMultisiteGraphExportProbe() {
+  const result = spawnSync('php', [
+    '-d',
+    'display_errors=stderr',
+    '-r',
+    `
+if (!defined('ARRAY_A')) {
+    define('ARRAY_A', 'ARRAY_A');
+}
+if (!function_exists('apply_filters')) {
+    function apply_filters($hook, $value) { return $value; }
+}
+if (!function_exists('is_multisite')) {
+    function is_multisite() { return true; }
+}
+if (!function_exists('maybe_unserialize')) {
+    function maybe_unserialize($value) { return $value; }
+}
+if (!function_exists('wp_json_encode')) {
+    function wp_json_encode($value, $flags = 0) { return json_encode($value, $flags); }
+}
+
+class ReprintPushFakeWpdb {
+    public string $prefix = 'wp_';
+    public string $base_prefix = 'wp_';
+    public string $last_error = '';
+    private array $tables = ['wp_site', 'wp_blogs', 'wp_blogmeta'];
+
+    public function prepare($query, ...$args) {
+        return ['query' => $query, 'args' => $args];
+    }
+
+    public function get_var($query) {
+        if (is_array($query) && str_contains($query['query'], 'SHOW TABLES LIKE')) {
+            $table = (string) ($query['args'][0] ?? '');
+            return in_array($table, $this->tables, true) ? $table : null;
+        }
+        return null;
+    }
+
+    public function get_results($query, $format = null) {
+        $sql = is_array($query) ? $query['query'] : (string) $query;
+        $args = is_array($query) ? $query['args'] : [];
+        if (str_contains($sql, 'SELECT DISTINCT b.blog_id')) {
+            return [
+                [
+                    'blog_id' => '101',
+                    'site_id' => '1',
+                    'domain' => 'mapped.example.test',
+                    'path' => '/mapped/',
+                    'registered' => '2026-06-02 00:00:00',
+                    'last_updated' => '2026-06-02 00:01:00',
+                    'public' => '1',
+                    'archived' => '0',
+                    'mature' => '0',
+                    'spam' => '0',
+                    'deleted' => '0',
+                ],
+            ];
+        }
+        if (str_contains($sql, 'SELECT id, domain, path')) {
+            return [
+                ['id' => '1', 'domain' => 'network.example.test', 'path' => '/'],
+            ];
+        }
+        if (str_contains($sql, 'SELECT blog_id, meta_key, meta_value')) {
+            $allowedKeys = array_slice($args, 1);
+            $rows = [
+                ['blog_id' => '101', 'meta_key' => 'reprint_push_blog_fixture', 'meta_value' => 'shared'],
+                ['blog_id' => '101', 'meta_key' => '_rpp0901_blog_id_reference_v6', 'meta_value' => 'portable-blog-payload'],
+                ['blog_id' => '101', 'meta_key' => '_private_unexported_blogmeta', 'meta_value' => 'do-not-export'],
+            ];
+            return array_values(array_filter($rows, static function ($row) use ($allowedKeys) {
+                return in_array($row['meta_key'], $allowedKeys, true);
+            }));
+        }
+        return [];
+    }
+}
+
+$GLOBALS['wpdb'] = new ReprintPushFakeWpdb();
+require $argv[1];
+$snapshot = [
+    'db' => [
+        'wp_site' => [],
+        'wp_blogs' => [],
+        'wp_blogmeta' => [],
+    ],
+];
+reprint_push_export_fixture_multisite_graph($snapshot);
+echo json_encode($snapshot, JSON_UNESCAPED_SLASHES);
+    `,
+    snapshotLib,
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  assert.equal(result.status, 0, result.stderr);
+  return JSON.parse(result.stdout);
+}
+
 function stableJson(value) {
   if (Array.isArray(value)) {
     return `[${value.map(stableJson).join(',')}]`;
@@ -524,6 +625,47 @@ test('snapshot apply gate allows only named lab plugin resources', { skip: !hasP
   );
 });
 
+test('snapshot library exports fixture-scoped multisite graph identity rows', { skip: !hasPhp }, () => {
+  const snapshot = runMultisiteGraphExportProbe();
+
+  assert.deepEqual(snapshot.db.wp_site, {
+    'id:1': {
+      id: 1,
+      domain: 'network.example.test',
+      path: '/',
+    },
+  });
+  assert.deepEqual(snapshot.db.wp_blogs, {
+    'blog_id:101': {
+      blog_id: 101,
+      site_id: 1,
+      domain: 'mapped.example.test',
+      path: '/mapped/',
+      registered: '2026-06-02 00:00:00',
+      last_updated: '2026-06-02 00:01:00',
+      public: 1,
+      archived: 0,
+      mature: 0,
+      spam: 0,
+      deleted: 0,
+    },
+  });
+  assert.deepEqual(snapshot.db.wp_blogmeta, {
+    'blog_id:101:meta_key:_rpp0901_blog_id_reference_v6': {
+      blog_id: 101,
+      meta_key: '_rpp0901_blog_id_reference_v6',
+      meta_value: 'portable-blog-payload',
+    },
+    'blog_id:101:meta_key:reprint_push_blog_fixture': {
+      blog_id: 101,
+      meta_key: 'reprint_push_blog_fixture',
+      meta_value: 'shared',
+    },
+  });
+  assert.equal(JSON.stringify(snapshot).includes('_private_unexported_blogmeta'), false);
+  assert.equal(JSON.stringify(snapshot).includes('do-not-export'), false);
+});
+
 test('snapshot library exports WordPress graph contracts that match the JS planner contract', { skip: !hasPhp }, () => {
   const { metadata, snapshotMeta } = runWordPressGraphContractProbe();
 
@@ -902,5 +1044,35 @@ test('snapshot apply gate allows only exact forms lab custom table rows', { skip
   assertRejected(
     { type: 'row', table: 'wp_forms_entries', id: 'entry_id:9' },
     /Unsupported apply table/,
+  );
+});
+
+test('snapshot apply gate supports only composite fixture blogmeta rows', { skip: !hasPhp }, () => {
+  assertSupported({
+    type: 'row',
+    table: 'wp_blogmeta',
+    id: 'blog_id:101:meta_key:_rpp0901_blog_id_reference_v6',
+  });
+  assertSupported({
+    type: 'row',
+    table: 'wp_blogmeta',
+    id: 'blog_id:101:meta_key:reprint_push_blog_fixture',
+  });
+
+  assertRejected(
+    { type: 'row', table: 'wp_blogs', id: 'blog_id:101' },
+    /Unsupported apply table: wp_blogs/,
+  );
+  assertRejected(
+    { type: 'row', table: 'wp_blogmeta', id: 'meta_id:44' },
+    /Unsupported blogmeta id/,
+  );
+  assertRejected(
+    { type: 'row', table: 'wp_blogmeta', id: 'blog_id:0:meta_key:_rpp0901_blog_id_reference_v6' },
+    /Unsupported blogmeta id/,
+  );
+  assertRejected(
+    { type: 'row', table: 'wp_blogmeta', id: 'blog_id:101:meta_key:_private_unexported_blogmeta' },
+    /Unsupported blogmeta id/,
   );
 });

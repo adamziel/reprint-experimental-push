@@ -35,22 +35,59 @@ matches the mapped local source blog after identity rewriting, the source blog
 and dependent blogmeta row both stop as `stale-wordpress-graph-identity` with
 hash-only target evidence.
 
+## PHP Production Boundary
+
+The PHP snapshot exporter now includes fixture-marked multisite topology rows
+from the network base-prefix tables:
+
+- `wp_site` rows for referenced networks.
+- `wp_blogs` rows as read-only identity targets.
+- `wp_blogmeta` rows with composite IDs shaped as
+  `blog_id:<id>:meta_key:<key>`.
+
+The writable PHP surface remains intentionally narrower than the exported
+identity context. `wp_blogs` mutations are refused as unsupported network-row
+mutations; blog creation, deletion, and lifecycle updates are not modeled as
+row writes. `wp_blogmeta` accepts only allowlisted fixture keys and validates
+the row ID against the payload `blog_id` and `meta_key`.
+
+Production-shaped apply uses a storage boundary for `wp_blogmeta`: existing
+rows update through a single-statement compare-and-swap against the physical
+network `blogmeta` row and parent fixture marker, while absent rows require a
+MySQL named lock before verifying the parent fixture marker and zero matching
+rows. Deletes and duplicate physical rows remain refused.
+
+The snapshot-hashes route advertises the same boundary. `wp_blogs`, `wp_site`,
+`wp_sitemeta`, `wp_blog_versions`, and `wp_registration_log` are read-only
+network identity resources. `wp_blogmeta` advertises guarded `put`, not generic
+`delete`.
+
 ## Verification
 
 Focused checks:
 
 ```bash
+php -l scripts/playground/snapshot-lib.php
+php -l scripts/playground/push-remote-lib.php
+php -l scripts/playground/push-remote-rest-plugin.php
+node --test test/playground-snapshot-lib.test.js
+node --test test/production-snapshot-hashes-route.test.js
+node --test test/rpp-0584-production-apply-route-v5.test.js
 node --check src/planner.js
 node --check src/apply.js
 node --check test/rpp-0901-blogmeta-blog-id-reference-v6.test.js
 node --test test/rpp-0901-blogmeta-blog-id-reference-v6.test.js
+node --test test/wordpress-graph-contracts.test.js
 ```
 
-The focused test passed with 3 subtests and 0 failures.
+The focused tests passed with the PHP snapshot/apply, route metadata,
+production apply-route source, blogmeta graph rewrite, and graph contract
+suites all green.
 
 ## Caveat
 
 This proves explicit identity-map rewriting for a declared scalar multisite
-reference and its composite row key. It does not infer blog identity from
-domains, paths, or content, and it does not make unsupported multisite or
-plugin-owned graph surfaces safe without explicit contracts.
+reference and its composite row key, plus a narrow PHP production-shaped
+storage boundary for allowlisted blogmeta rows. It does not infer blog identity
+from domains, paths, or content, and it does not make unsupported multisite,
+blog lifecycle, or plugin-owned graph surfaces safe without explicit contracts.

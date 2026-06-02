@@ -2257,22 +2257,48 @@ function reprint_push_lab_rest_snapshot_hash_resource_owner(array $resource, arr
 
 function reprint_push_lab_rest_snapshot_hash_resource_capabilities(array $resource): array
 {
-    return match ((string) ($resource['type'] ?? '')) {
-        'file' => ['put', 'delete', 'stage'],
-        'row' => ['put', 'delete', 'transaction'],
-        'plugin' => ['activate', 'deactivate', 'validate'],
-        default => [],
-    };
+    $type = (string) ($resource['type'] ?? '');
+    if ($type === 'file') {
+        return ['put', 'delete', 'stage'];
+    }
+    if ($type === 'plugin') {
+        return ['activate', 'deactivate', 'validate'];
+    }
+    if ($type !== 'row') {
+        return [];
+    }
+
+    $table = (string) ($resource['table'] ?? '');
+    if (in_array($table, ['wp_blogs', 'wp_site', 'wp_sitemeta', 'wp_blog_versions', 'wp_registration_log'], true)) {
+        return ['read', 'identity-target'];
+    }
+    if ($table === 'wp_blogmeta') {
+        return ['read', 'put', 'storage-guard'];
+    }
+    return ['put', 'delete', 'transaction'];
 }
 
 function reprint_push_lab_rest_snapshot_hash_resource_storage_guard(array $resource): string
 {
-    return match ((string) ($resource['type'] ?? '')) {
-        'file' => 'filesystem-compare-rename',
-        'row' => 'mysql-transaction-row-lock',
-        'plugin' => 'semantic-driver',
-        default => 'unknown',
-    };
+    $type = (string) ($resource['type'] ?? '');
+    if ($type === 'file') {
+        return 'filesystem-compare-rename';
+    }
+    if ($type === 'plugin') {
+        return 'semantic-driver';
+    }
+    if ($type !== 'row') {
+        return 'unknown';
+    }
+
+    $table = (string) ($resource['table'] ?? '');
+    if (in_array($table, ['wp_blogs', 'wp_site', 'wp_sitemeta', 'wp_blog_versions', 'wp_registration_log'], true)) {
+        return 'read-only-network-identity';
+    }
+    if ($table === 'wp_blogmeta') {
+        return 'mysql-blogmeta-cas-or-named-lock';
+    }
+    return 'mysql-transaction-row-lock';
 }
 
 function reprint_push_lab_rest_snapshot_hash_resource_proof(array $entry): array

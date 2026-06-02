@@ -128,6 +128,20 @@ test('negative snapshot hashes auth and signature cases fail before JSON parsing
   }
 });
 
+test('snapshot hashes route advertises exact network-row capabilities', () => {
+  const capabilities = functionBody('reprint_push_lab_rest_snapshot_hash_resource_capabilities');
+  const storageGuard = functionBody('reprint_push_lab_rest_snapshot_hash_resource_storage_guard');
+
+  assert.match(capabilities, /in_array\(\$table,\s*\['wp_blogs', 'wp_site', 'wp_sitemeta', 'wp_blog_versions', 'wp_registration_log'\], true\)/);
+  assert.match(capabilities, /return \['read', 'identity-target'\];/);
+  assert.match(capabilities, /if \(\$table === 'wp_blogmeta'\)/);
+  assert.match(capabilities, /return \['read', 'put', 'storage-guard'\];/);
+  assert.doesNotMatch(capabilities, /'row'\s*=>\s*\['put', 'delete', 'transaction'\]/);
+
+  assert.match(storageGuard, /return 'read-only-network-identity';/);
+  assert.match(storageGuard, /return 'mysql-blogmeta-cas-or-named-lock';/);
+});
+
 test('snapshot hashes receipts bind hash evidence without credential material', () => {
   const snapshotReceipt = functionBody('reprint_push_lab_rest_snapshot_hashes_receipt');
   assert.match(snapshotReceipt, /'type'\s*=>\s*'snapshot-hashes'/);
@@ -157,7 +171,7 @@ test('snapshot hashes receipts bind hash evidence without credential material', 
 
 test('signed request and auth lifecycle explicitly include snapshot hashes', () => {
   const signedVerifier = functionBody('reprint_push_lab_rest_verify_signed_request');
-  assert.match(signedVerifier, /signed dry-run, snapshot hashes, apply, recovery inspect, recovery mutate, and journal inspect requests/);
+  assert.match(signedVerifier, /signed dry-run, snapshot hashes, chunk manifest, chunk upload, apply, recovery inspect, recovery mutate, and journal inspect requests/);
 
   const lifecycle = functionBody('reprint_push_lab_rest_auth_session_lifecycle_step');
   assertBefore(lifecycle, "str_ends_with($route, '/snapshot-hashes')", "str_ends_with($route, '/dry-run')");

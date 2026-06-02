@@ -1400,7 +1400,7 @@ function reprint_push_protocol_validate_mutations_and_preconditions(
 
     foreach ($mutations as $mutation) {
         reprint_push_protocol_validate_mutation_shape($mutation);
-        reprint_push_assert_supported_apply_resource($mutation['resource']);
+        reprint_push_protocol_assert_supported_mutation_resource($mutation['resource']);
         try {
             reprint_push_assert_supported_plugin_owned_mutation($mutation, $current_snapshot);
         } catch (Throwable $error) {
@@ -1430,7 +1430,7 @@ function reprint_push_protocol_validate_mutations_and_preconditions(
         }
 
         reprint_push_protocol_validate_precondition_shape($preconditions[$mutation_id]);
-        reprint_push_assert_supported_apply_resource($preconditions[$mutation_id]['resource']);
+        reprint_push_protocol_assert_supported_mutation_resource($preconditions[$mutation_id]['resource']);
         reprint_push_protocol_assert_precondition_binds_to_mutation($preconditions[$mutation_id], $mutation);
     }
 
@@ -1443,8 +1443,39 @@ function reprint_push_protocol_validate_mutations_and_preconditions(
                 'message' => 'Precondition references unknown mutation: ' . (string) $precondition['mutationId'],
             ]);
         }
-        reprint_push_assert_supported_apply_resource($precondition['resource']);
+        reprint_push_protocol_assert_supported_mutation_resource($precondition['resource']);
     }
+}
+
+function reprint_push_protocol_assert_supported_mutation_resource(array $resource): void
+{
+    try {
+        reprint_push_assert_supported_apply_resource($resource);
+    } catch (Throwable $error) {
+        $prefix = reprint_push_protocol_is_wordpress_network_row_resource($resource)
+            ? 'UNSUPPORTED_WORDPRESS_NETWORK_ROW_MUTATION: '
+            : '';
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_PLAN',
+            'message' => $prefix . $error->getMessage(),
+        ]);
+    }
+}
+
+function reprint_push_protocol_is_wordpress_network_row_resource(array $resource): bool
+{
+    if (($resource['type'] ?? null) !== 'row') {
+        return false;
+    }
+    return in_array((string) ($resource['table'] ?? ''), [
+        'wp_blogs',
+        'wp_blogmeta',
+        'wp_site',
+        'wp_sitemeta',
+        'wp_blog_versions',
+        'wp_registration_log',
+    ], true);
 }
 
 function reprint_push_protocol_validate_fixture_atomic_dependencies(
