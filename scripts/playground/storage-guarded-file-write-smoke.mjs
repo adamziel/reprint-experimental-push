@@ -20,6 +20,7 @@ const laterPath = 'wp-content/uploads/reprint-push/zz-storage-guard-later.txt';
 const createDriftPath = 'wp-content/uploads/reprint-push/zz-storage-guard-create-drift-a.txt';
 const createDriftLaterPath = 'wp-content/uploads/reprint-push/zz-storage-guard-create-drift-z.txt';
 const deleteDriftLaterPath = 'wp-content/uploads/reprint-push/zz-storage-guard-delete-later.txt';
+const pluginPath = 'wp-content/plugins/reprint-push-forms-fixture/reprint-push-forms-fixture.php';
 const plannedContent = 'storage guarded file planned content';
 const positiveContent = 'storage guarded file positive content';
 const driftContent = 'storage guarded file drift content';
@@ -33,9 +34,38 @@ const deleteDriftContent = 'storage guarded file delete drift content';
 const deleteConflictDriftContent = 'storage guarded file delete conflict drift content';
 const deleteDriftLaterContent = 'storage guarded file delete later content';
 const laterContent = 'storage guarded file later content';
+const pluginPositiveContent = `<?php
+/*
+Plugin Name: Reprint Push Forms Fixture
+Version: 1.0.0
+*/
+// Storage guard plugin positive update.
+`;
+const pluginPlannedContent = `<?php
+/*
+Plugin Name: Reprint Push Forms Fixture
+Version: 1.0.0
+*/
+// Storage guard plugin planned update.
+`;
+const pluginDriftContent = `<?php
+/*
+Plugin Name: Reprint Push Forms Fixture
+Version: 1.0.0
+*/
+// Storage guard plugin drift update.
+`;
+const pluginConflictDriftContent = `<?php
+/*
+Plugin Name: Reprint Push Forms Fixture
+Version: 1.0.0
+*/
+// Storage guard plugin conflict drift update.
+`;
 
 const base = exportSnapshot('base', baseBlueprint);
 assert.ok(base.files[targetPath], `base fixture missing ${targetPath}`);
+assert.ok(base.files[pluginPath], `base fixture missing ${pluginPath}`);
 
 const positiveLocal = clone(base);
 positiveLocal.files[targetPath] = positiveContent;
@@ -51,6 +81,18 @@ const positiveUpdate = mutationForPath(positivePlan, targetPath);
 const positiveCreate = mutationForPath(positivePlan, createPath);
 assert.ok(positiveUpdate, 'positive plan missing existing file update');
 assert.ok(positiveCreate, 'positive plan missing file create');
+
+const pluginPositiveLocal = clone(base);
+pluginPositiveLocal.files[pluginPath] = pluginPositiveContent;
+const pluginPositivePlan = createPushPlan({
+  base,
+  local: pluginPositiveLocal,
+  remote: base,
+  now: fixedNow,
+});
+assert.equal(pluginPositivePlan.status, 'ready');
+const pluginPositiveUpdate = mutationForPath(pluginPositivePlan, pluginPath);
+assert.ok(pluginPositiveUpdate, 'plugin positive plan missing fixture plugin file update');
 
 const failureLocal = clone(base);
 failureLocal.files[targetPath] = plannedContent;
@@ -71,6 +113,27 @@ const laterIndex = failurePlan.mutations.findIndex((mutation) => mutation.id ===
 assert.ok(laterIndex > failureIndex, 'later mutation must be after drift target');
 const preconditionsByMutation = new Map(
   failurePlan.preconditions.map((precondition) => [precondition.mutationId, precondition]),
+);
+
+const pluginFailureLocal = clone(base);
+pluginFailureLocal.files[pluginPath] = pluginPlannedContent;
+pluginFailureLocal.files[laterPath] = laterContent;
+const pluginFailurePlan = createPushPlan({
+  base,
+  local: pluginFailureLocal,
+  remote: base,
+  now: fixedNow,
+});
+assert.equal(pluginFailurePlan.status, 'ready');
+const pluginFailureMutation = mutationForPath(pluginFailurePlan, pluginPath);
+const pluginFailureLaterMutation = mutationForPath(pluginFailurePlan, laterPath);
+assert.ok(pluginFailureMutation, 'plugin failure plan missing fixture plugin file update');
+assert.ok(pluginFailureLaterMutation, 'plugin failure plan missing later mutation');
+const pluginFailureIndex = pluginFailurePlan.mutations.findIndex((mutation) => mutation.id === pluginFailureMutation.id);
+const pluginFailureLaterIndex = pluginFailurePlan.mutations.findIndex((mutation) => mutation.id === pluginFailureLaterMutation.id);
+assert.ok(pluginFailureLaterIndex > pluginFailureIndex, 'plugin file later mutation must be after drift target');
+const pluginPreconditionsByMutation = new Map(
+  pluginFailurePlan.preconditions.map((precondition) => [precondition.mutationId, precondition]),
 );
 
 const createDriftLocal = clone(base);
@@ -129,12 +192,15 @@ const deletePreconditionsByMutation = new Map(
 
 const summary = {
   positive: {},
+  pluginPositive: {},
   delete: {},
   updateFailure: {},
+  pluginFailure: {},
   createFailure: {},
   deleteFailure: {},
   deleteMissingFailure: {},
   idempotency: {},
+  pluginIdempotency: {},
   redaction: {},
 };
 
@@ -142,6 +208,7 @@ await withPlaygroundServer('storage-guard-file-positive', baseBlueprint, async (
   const dryRun = await postLab(server, '/dry-run', { plan: positivePlan });
   assert.equal(dryRun.status, 200);
   assert.equal(dryRun.body.ok, true);
+  assertPublicDryRunReceiptBinding(dryRun.body.receipt, positivePlan, { plan: positivePlan });
 
   const apply = await postLab(server, '/apply', {
     plan: positivePlan,
@@ -195,6 +262,49 @@ await withPlaygroundServer('storage-guard-file-positive', baseBlueprint, async (
     applied: apply.body.applied,
     updateBoundary: updateEvidence.storageGuard.boundary,
     createBoundary: createEvidence.storageGuard.boundary,
+  };
+});
+
+await withPlaygroundServer('storage-guard-plugin-file-positive', baseBlueprint, async (server) => {
+  const dryRun = await postLab(server, '/dry-run', { plan: pluginPositivePlan });
+  assert.equal(dryRun.status, 200);
+  assert.equal(dryRun.body.ok, true);
+
+  const apply = await postLab(server, '/apply', {
+    plan: pluginPositivePlan,
+    receipt: dryRun.body.receipt,
+  }, { [idempotencyHeader]: 'storage-guard-plugin-file-positive-001' });
+  assert.equal(apply.status, 200, JSON.stringify(apply.body, null, 2));
+  assert.equal(apply.body.ok, true);
+  assert.equal(apply.body.applied, pluginPositivePlan.mutations.length);
+
+  const after = await getSnapshot(server);
+  assert.equal(after.body.snapshot.files[pluginPath], pluginPositiveContent);
+
+  const dbJournal = await getLab(server, '/db-journal?limit=100');
+  const entries = journalEntries(dbJournal.body);
+  const applied = entries.filter((entry) => journalEvent(entry) === 'mutation-applied').map(mutationEvidence);
+  const updateEvidence = applied.find((evidence) => evidence.mutationId === pluginPositiveUpdate.id);
+  assert.ok(updateEvidence, 'missing applied evidence for guarded fixture plugin file update');
+  assert.equal(updateEvidence.preconditionCheck, 'storage-boundary-cas');
+  assert.equal(updateEvidence.preWriteExpectedHash, updateEvidence.preWriteActualHash);
+  assert.equal(updateEvidence.storageGuard?.boundary, 'filesystem-compare-rename');
+  assert.equal(updateEvidence.storageGuard?.driver, 'fixture-plugin-file');
+  assert.equal(updateEvidence.storageGuard?.operation, 'update');
+  assert.equal(updateEvidence.storageGuard?.logicalPath, pluginPath);
+  assert.equal(updateEvidence.storageGuard?.outcome, 'applied');
+  assert.match(updateEvidence.storageGuard?.expectedResourceHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(updateEvidence.storageGuard?.expectedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(updateEvidence.storageGuard?.actualStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(updateEvidence.storageGuard?.plannedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(updateEvidence.storageGuard?.physicalPathHash ?? '', /^[a-f0-9]{64}$/);
+  assert.ok(Array.isArray(updateEvidence.storageGuard?.comparedFields));
+  assertStoredJournalHasNoRawFixtureData(dbJournal.body);
+
+  summary.pluginPositive = {
+    applied: apply.body.applied,
+    updateBoundary: updateEvidence.storageGuard.boundary,
+    driver: updateEvidence.storageGuard.driver,
   };
 });
 
@@ -359,6 +469,129 @@ await withPlaygroundServer('storage-guard-file-drift', baseBlueprint, async (ser
   };
   summary.redaction = {
     responseAndJournal: true,
+  };
+});
+
+await withPlaygroundServer('storage-guard-plugin-file-drift', baseBlueprint, async (server) => {
+  const dryRun = await postLab(server, '/dry-run', { plan: pluginFailurePlan });
+  assert.equal(dryRun.status, 200);
+  assert.equal(dryRun.body.ok, true);
+
+  const applyBody = {
+    plan: pluginFailurePlan,
+    receipt: dryRun.body.receipt,
+    labDriftBeforeStorageWrite: {
+      mutationId: pluginFailureMutation.id,
+      resourceKey: pluginFailureMutation.resourceKey,
+      value: {
+        type: 'file',
+        content: pluginDriftContent,
+      },
+    },
+  };
+  const idempotencyKey = 'storage-guard-plugin-file-drift-001';
+  const apply = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: idempotencyKey });
+  const driftHash = hashFileContent(pluginDriftContent);
+  assert.equal(apply.status, 412);
+  assert.equal(apply.body.ok, false);
+  assert.equal(apply.body.code, 'PRECONDITION_FAILED');
+  assert.equal(apply.body.preconditionCheck, 'storage-boundary-cas');
+  assert.equal(apply.body.preWriteActualHash, pluginPreconditionsByMutation.get(pluginFailureMutation.id).expectedHash);
+  assert.equal(apply.body.actualHash, driftHash);
+  assert.equal(apply.body.applied, pluginFailureIndex);
+  assert.equal(apply.body.storageGuard?.boundary, 'filesystem-compare-rename');
+  assert.equal(apply.body.storageGuard?.driver, 'fixture-plugin-file');
+  assert.equal(apply.body.storageGuard?.operation, 'update');
+  assert.equal(apply.body.storageGuard?.logicalPath, pluginPath);
+  assert.equal(apply.body.storageGuard?.outcome, 'stale-at-write');
+  assert.match(apply.body.storageGuard?.expectedResourceHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(apply.body.storageGuard?.expectedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(apply.body.storageGuard?.actualStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(apply.body.storageGuard?.plannedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.notEqual(apply.body.storageGuard?.actualStorageHash, apply.body.storageGuard?.expectedStorageHash);
+  assertResponseHasNoRawFixtureData(apply.body);
+
+  const afterFailure = await getSnapshot(server);
+  assert.equal(afterFailure.body.snapshot.files[pluginPath], pluginDriftContent, 'drifted plugin file content must be preserved');
+  assert.equal(Object.hasOwn(afterFailure.body.snapshot.files, laterPath), false, 'later mutation must not run after plugin file drift');
+  assert.equal(resourceHash(afterFailure.body.snapshot, pluginFailureMutation.resource), driftHash);
+  assert.notEqual(resourceHash(afterFailure.body.snapshot, pluginFailureMutation.resource), pluginFailureMutation.localHash);
+  assertLaterMutationsStayedOld(afterFailure.body.snapshot, pluginFailurePlan, pluginFailureIndex, pluginPreconditionsByMutation);
+
+  const dbJournal = await getLab(server, '/db-journal?limit=120');
+  const failureEntries = journalEntries(dbJournal.body);
+  assertJournalEvents(failureEntries, [
+    'idempotency-opened',
+    'apply-started',
+    'mutation-prepared',
+    'mutation-precondition-failed',
+    'apply-rejected',
+  ]);
+  assertNoJournalEvent(failureEntries, 'apply-committed');
+  assertNoMutationAppliedFor(failureEntries, pluginFailureMutation.id);
+  assert.equal(countJournalEvents(failureEntries, 'mutation-applied'), pluginFailureIndex);
+  assertNoPreparedAfter(failureEntries, pluginFailureIndex);
+  const failedEvidence = failureEntries
+    .filter((entry) => journalEvent(entry) === 'mutation-precondition-failed')
+    .map(mutationEvidence)
+    .find((evidence) => evidence.mutationId === pluginFailureMutation.id);
+  assert.ok(failedEvidence, 'missing failed fixture plugin file storage evidence');
+  assert.equal(failedEvidence.preWriteActualHash, pluginPreconditionsByMutation.get(pluginFailureMutation.id).expectedHash);
+  assert.equal(failedEvidence.actualHash, driftHash);
+  assert.equal(failedEvidence.observedHash, driftHash);
+  assert.equal(failedEvidence.storageGuard?.boundary, 'filesystem-compare-rename');
+  assert.equal(failedEvidence.storageGuard?.driver, 'fixture-plugin-file');
+  assert.equal(failedEvidence.storageGuard?.operation, 'update');
+  assert.equal(failedEvidence.storageGuard?.outcome, 'stale-at-write');
+  assertStoredJournalHasNoRawFixtureData(dbJournal.body);
+
+  const replay = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: idempotencyKey });
+  assert.equal(replay.status, 412);
+  assert.equal(replay.body.ok, false);
+  assert.equal(replay.body.idempotency?.replayed, true);
+  assert.equal(replay.body.idempotency?.freshMutationWork, false);
+  assertResponseHasNoRawFixtureData(replay.body);
+  const afterReplay = await getSnapshot(server);
+  assertTargetSurfaceEqual(afterReplay.body.snapshot, afterFailure.body.snapshot, 'replayed plugin rejection must not mutate');
+
+  const conflict = await postLab(server, '/apply', {
+    ...applyBody,
+    labDriftBeforeStorageWrite: {
+      ...applyBody.labDriftBeforeStorageWrite,
+      value: {
+        type: 'file',
+        content: pluginConflictDriftContent,
+      },
+    },
+  }, { [idempotencyHeader]: idempotencyKey });
+  assert.equal(conflict.status, 409);
+  assert.equal(conflict.body.ok, false);
+  assert.equal(conflict.body.code, 'IDEMPOTENCY_KEY_CONFLICT');
+  assert.equal(conflict.body.idempotency?.freshMutationWork, false);
+  assertResponseHasNoRawFixtureData(conflict.body);
+  const afterConflict = await getSnapshot(server);
+  assertTargetSurfaceEqual(afterConflict.body.snapshot, afterFailure.body.snapshot, 'different-body plugin conflict must not mutate');
+
+  const dbJournalAfterConflict = await getLab(server, '/db-journal?limit=120');
+  const conflictEntries = journalEntries(dbJournalAfterConflict.body);
+  assertJournalEvents(conflictEntries, ['apply-replayed', 'idempotency-key-conflict']);
+  assertNoJournalEvent(conflictEntries, 'apply-committed');
+  assert.equal(countJournalEvents(conflictEntries, 'mutation-applied'), pluginFailureIndex);
+  assertStoredJournalHasNoRawFixtureData(dbJournalAfterConflict.body);
+
+  summary.pluginFailure = {
+    status: apply.status,
+    code: apply.body.code,
+    mutationIndex: pluginFailureIndex,
+    driftPreserved: afterFailure.body.snapshot.files[pluginPath] === pluginDriftContent,
+    laterMutationRan: Object.hasOwn(afterFailure.body.snapshot.files, laterPath),
+    guardOutcome: apply.body.storageGuard.outcome,
+  };
+  summary.pluginIdempotency = {
+    replayStatus: replay.status,
+    replayFreshMutationWork: replay.body.idempotency?.freshMutationWork,
+    conflictStatus: conflict.status,
+    conflictCode: conflict.body.code,
   };
 });
 
@@ -769,6 +1002,10 @@ function assertStoredJournalHasNoRawFixtureData(body) {
     deleteConflictDriftContent,
     deleteDriftLaterContent,
     laterContent,
+    pluginPositiveContent,
+    pluginPlannedContent,
+    pluginDriftContent,
+    pluginConflictDriftContent,
   ];
   const forbiddenPathFragments = [
     repoRoot,
@@ -1035,6 +1272,24 @@ async function requestJson(server, method, pathname, body = undefined, headers =
     throw new Error(`Expected JSON from ${method} ${pathname}, got HTTP ${response.status}\n${text}\n${error.message}`);
   }
   return { status: response.status, body: json };
+}
+
+function assertPublicDryRunReceiptBinding(receipt, plan, payload) {
+  assert.equal(receipt?.authBinding?.schemaVersion, 1);
+  assert.equal(receipt.authBinding.scope, 'reprint-push-lab:authenticated-http-push');
+  assert.equal(receipt.authBinding.bindingType, 'lab-public-source-bound-receipt');
+  assert.equal(receipt.authBinding.source?.restNamespace, 'reprint-push-lab/v1');
+  assert.equal(receipt.authBinding.source?.routeProfile, 'lab-public');
+  assert.equal(receipt.authBinding.source?.labBacked, true);
+  assert.match(receipt.authBinding.source?.sourceHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(receipt.authBinding.source?.sourceUrlHash ?? '', /^[a-f0-9]{64}$/);
+  assert.equal(receipt.authBinding.request?.restNamespace, 'reprint-push-lab/v1');
+  assert.equal(receipt.authBinding.request?.dryRunRoute, '/dry-run');
+  assert.equal(receipt.authBinding.request?.routeProfile, 'lab-public');
+  assert.equal(receipt.authBinding.request?.labBacked, true);
+  assert.equal(receipt.authBinding.request?.planHash, digest(plan));
+  assert.equal(receipt.authBinding.request?.planPayloadHash, digest(plan));
+  assert.equal(receipt.authBinding.request?.dryRunBodyHash, digest(payload));
 }
 
 function parseMarkedJson(stdout, begin, end, missingMessage) {

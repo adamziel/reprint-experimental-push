@@ -1504,12 +1504,17 @@ function reprint_push_lab_rest_protocol_response(string $mode, WP_REST_Request $
         $receipt = $mode === 'apply' ? reprint_push_lab_rest_receipt_payload($payload) : null;
         $profile = reprint_push_lab_rest_route_profile($request);
 
+        $options = reprint_push_lab_rest_lab_options($payload);
+        if ($mode === 'dry-run') {
+            $options['receiptAuthBinding'] = reprint_push_lab_rest_public_receipt_auth_binding($request, $payload, $plan);
+        }
+
         $result = reprint_push_protocol_run_payload($mode, $plan, $receipt, [
             'transport' => 'wordpress-rest',
             'restNamespace' => (string) $profile['restNamespace'],
             'restRoute' => reprint_push_lab_rest_profile_route($request, $mode === 'dry-run' ? '/dry-run' : '/apply'),
             'routeProfile' => (string) $profile['profile'],
-        ], reprint_push_lab_rest_lab_options($payload));
+        ], $options);
     } catch (Reprint_Push_Protocol_Error $error) {
         $result = $error->result;
     } catch (Throwable $error) {
@@ -1525,6 +1530,28 @@ function reprint_push_lab_rest_protocol_response(string $mode, WP_REST_Request $
     }
 
     return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_public_receipt_auth_binding(WP_REST_Request $request, array $payload, array $plan): array
+{
+    $profile = reprint_push_lab_rest_route_profile($request);
+    $plan_hash = reprint_push_protocol_plan_hash($plan);
+
+    return [
+        'schemaVersion' => 1,
+        'scope' => (string) $profile['authScope'],
+        'bindingType' => 'lab-public-source-bound-receipt',
+        'source' => reprint_push_lab_rest_source_identity($request),
+        'request' => [
+            'restNamespace' => (string) $profile['restNamespace'],
+            'dryRunRoute' => reprint_push_lab_rest_profile_route($request, '/dry-run'),
+            'routeProfile' => (string) $profile['profile'],
+            'labBacked' => (bool) ($profile['labBacked'] ?? false),
+            'planHash' => $plan_hash,
+            'planPayloadHash' => hash('sha256', reprint_push_stable_json($plan)),
+            'dryRunBodyHash' => hash('sha256', reprint_push_stable_json($payload)),
+        ],
+    ];
 }
 
 function reprint_push_lab_rest_apply_with_db_journal(

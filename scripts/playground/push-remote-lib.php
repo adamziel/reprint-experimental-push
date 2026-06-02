@@ -140,7 +140,10 @@ function reprint_push_protocol_run_payload(
     );
 
     if ($mode === 'dry-run') {
-        $receipt = reprint_push_protocol_create_receipt($plan, $plan_evidence, $mutations, $precondition_entries, $verified_preconditions, $current);
+        $receipt_auth_binding = isset($options['receiptAuthBinding']) && is_array($options['receiptAuthBinding'])
+            ? $options['receiptAuthBinding']
+            : null;
+        $receipt = reprint_push_protocol_create_receipt($plan, $plan_evidence, $mutations, $precondition_entries, $verified_preconditions, $current, $receipt_auth_binding);
         $journal_entry = reprint_push_protocol_append_journal_event('dry-run-recorded', $journal_context + $plan_evidence + [
             'receiptHash' => (string) $receipt['receiptHash'],
             'verifiedPreconditions' => reprint_push_protocol_compact_precondition_hashes($verified_preconditions),
@@ -1602,7 +1605,8 @@ function reprint_push_protocol_create_receipt(
     array $mutations,
     array $preconditions,
     array $verified_preconditions,
-    array $snapshot
+    array $snapshot,
+    ?array $auth_binding = null
 ): array {
     $receipt = [
         'schemaVersion' => 1,
@@ -1631,6 +1635,9 @@ function reprint_push_protocol_create_receipt(
             $verified_preconditions
         )),
     ];
+    if ($auth_binding !== null) {
+        $receipt['authBinding'] = $auth_binding;
+    }
     $receipt['receiptHash'] = hash('sha256', reprint_push_stable_json($receipt));
 
     return $receipt;
