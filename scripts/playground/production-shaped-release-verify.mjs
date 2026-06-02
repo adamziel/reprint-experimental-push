@@ -79,6 +79,7 @@ import {
   consumeProductionRecoveryJournal,
   openProductionRecoveryJournal,
 } from '../../src/recovery-journal.js';
+import { pluginOwnedRowDriverContractHash } from '../../src/plugin-driver-contracts.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const isMainModule = process.argv[1]
@@ -87,6 +88,7 @@ const isMainModule = process.argv[1]
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const readinessProbeIntervalMs = 200;
 const readinessFailureBodyLimit = 240;
+const bareSha256Pattern = /^[a-f0-9]{64}$/;
 // The release verifier starts remote-base, remote-changed, and local-edited in
 // sequence, so the shared readiness helper needs a longer bounded window than
 // the earlier single-server smoke path.
@@ -11234,6 +11236,41 @@ export function summarizeProductionPluginDriverBoundaryProof({
         && entry?.pluginOwnedResource?.driver === boundary.driver
         && entry?.pluginOwnedResource?.pluginOwner === boundary.owner
         && entry?.pluginOwnedResource?.supportsDelete === false);
+  const contractValidationEvidence = mutation?.pluginOwnedResource?.contractValidationEvidence || null;
+  const driverPayloadValidationEvidence = mutation?.pluginOwnedResource?.driverPayloadValidationEvidence || null;
+  const contractHash = contractValidationEvidence?.contractHash || null;
+  const expectedContractHash = contractValidationEvidence
+    ? pluginOwnedRowDriverContractHash(contractValidationEvidence)
+    : null;
+  const contractEvidenceAccepted = contractValidationEvidence?.schemaVersion === 1
+    && contractValidationEvidence?.operation === 'plugin-driver-contract-validation'
+    && contractValidationEvidence?.contractKind === 'plugin-owned-row-driver'
+    && contractValidationEvidence?.contractVersion === 1
+    && contractValidationEvidence?.outcome === 'accepted'
+    && contractValidationEvidence?.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+    && contractValidationEvidence?.rawValuesIncluded === false
+    && Array.isArray(contractValidationEvidence?.issueCodes)
+    && contractValidationEvidence.issueCodes.length === 0
+    && contractValidationEvidence?.resourceKey === boundary.resourceKey
+    && contractValidationEvidence?.pluginOwner === boundary.owner
+    && contractValidationEvidence?.driver === boundary.driver
+    && contractValidationEvidence?.table === boundary.table
+    && contractValidationEvidence?.supportsDelete === false
+    && bareSha256Pattern.test(contractHash || '')
+    && contractHash === expectedContractHash;
+  const driverPayloadEvidenceAccepted = contractEvidenceAccepted
+    && driverPayloadValidationEvidence?.validator === 'contract-bound-row-driver'
+    && driverPayloadValidationEvidence?.outcome === 'accepted'
+    && driverPayloadValidationEvidence?.reasonCode === 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED'
+    && driverPayloadValidationEvidence?.rawValuesIncluded === false
+    && driverPayloadValidationEvidence?.resourceKey === boundary.resourceKey
+    && driverPayloadValidationEvidence?.pluginOwner === boundary.owner
+    && driverPayloadValidationEvidence?.driver === boundary.driver
+    && driverPayloadValidationEvidence?.table === boundary.table
+    && driverPayloadValidationEvidence?.supportsDelete === false
+    && driverPayloadValidationEvidence?.contractHash === contractHash
+    && bareSha256Pattern.test(driverPayloadValidationEvidence?.contractHash || '');
+  const contractBoundDriverMutation = contractEvidenceAccepted && driverPayloadEvidenceAccepted;
   const noActivePluginsDirectMutation = plannedMutations.every((entry) =>
     !(entry?.resource?.type === 'row'
       && entry.resource.table === 'wp_options'
@@ -11257,6 +11294,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && mutation?.localHash === localState.hash
     && exactAllowlistOwnerDriver
     && exactMutationOwnerDriver
+    && contractBoundDriverMutation
     && applyCarryThrough.accepted
     && verifiedBeforeFirstMutation
     && noActivePluginsDirectMutation
@@ -11285,6 +11323,12 @@ export function summarizeProductionPluginDriverBoundaryProof({
         driver: allowlistEntry.driver,
         table: allowlistEntry.table,
         supportsDelete: allowlistEntry.supportsDelete === true,
+        contractKind: allowlistEntry.contractKind || allowlistEntry.kind || null,
+        contractVersion: allowlistEntry.contractVersion
+          ?? allowlistEntry.schemaVersion
+          ?? allowlistEntry.driverContractVersion
+          ?? null,
+        contractHash: allowlistEntry.contractHash || null,
       } : null,
     },
     sourcePluginStateEvidence: sourceState,
@@ -11300,6 +11344,42 @@ export function summarizeProductionPluginDriverBoundaryProof({
       remoteBeforeHash: mutation.remoteBeforeHash,
       localHash: mutation.localHash,
     } : null,
+    driverContractBoundary: {
+      contractBound: contractBoundDriverMutation,
+      contractEvidenceAccepted,
+      driverPayloadEvidenceAccepted,
+      contractHash,
+      expectedContractHash,
+      contractHashMatchesExpected: Boolean(contractHash)
+        && contractHash === expectedContractHash,
+      contractHashMatchesPayload: Boolean(contractHash)
+        && driverPayloadValidationEvidence?.contractHash === contractHash,
+      contractValidation: contractValidationEvidence ? {
+        reasonCode: contractValidationEvidence.reasonCode || null,
+        outcome: contractValidationEvidence.outcome || null,
+        contractKind: contractValidationEvidence.contractKind || null,
+        contractVersion: contractValidationEvidence.contractVersion ?? null,
+        resourceKey: contractValidationEvidence.resourceKey || null,
+        pluginOwner: contractValidationEvidence.pluginOwner || null,
+        driver: contractValidationEvidence.driver || null,
+        table: contractValidationEvidence.table || null,
+        supportsDelete: contractValidationEvidence.supportsDelete === true,
+        contractHash: contractValidationEvidence.contractHash || null,
+        rawValuesIncluded: contractValidationEvidence.rawValuesIncluded === true,
+      } : null,
+      driverPayloadValidation: driverPayloadValidationEvidence ? {
+        reasonCode: driverPayloadValidationEvidence.reasonCode || null,
+        outcome: driverPayloadValidationEvidence.outcome || null,
+        validator: driverPayloadValidationEvidence.validator || null,
+        resourceKey: driverPayloadValidationEvidence.resourceKey || null,
+        pluginOwner: driverPayloadValidationEvidence.pluginOwner || null,
+        driver: driverPayloadValidationEvidence.driver || null,
+        table: driverPayloadValidationEvidence.table || null,
+        supportsDelete: driverPayloadValidationEvidence.supportsDelete === true,
+        contractHash: driverPayloadValidationEvidence.contractHash || null,
+        rawValuesIncluded: driverPayloadValidationEvidence.rawValuesIncluded === true,
+      } : null,
+    },
     preconditionHashes: precondition ? {
       mutationId: precondition.mutationId,
       resourceKey: precondition.resourceKey,
@@ -11329,6 +11409,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
     ownershipBoundary: {
       exactAllowlistOwnerDriver,
       exactMutationOwnerDriver,
+      contractBoundDriverMutation,
       allowedCustomTable: boundary.table,
       allowedResourceKey: boundary.resourceKey,
       activePluginsDirectResourceKeys: activePluginsDirectMutations.map((entry) => entry.resourceKey),

@@ -19,6 +19,7 @@ import {
 import {
   PLUGIN_DRIVER_CONTRACT_KIND,
   PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+  pluginOwnedRowDriverContractHash,
 } from './plugin-driver-contracts.js';
 import { wordpressGraphRelationshipContractForType } from './wordpress-graph-contracts.js';
 
@@ -459,6 +460,7 @@ function isContractBoundRowDriverMutation(mutation, owner, driver, plannedValue,
   const validation = driverPayloadSupport?.evidence;
   const table = mutation.pluginOwnedResource?.table || contract?.table || null;
   const mutationSupportsDelete = mutation.pluginOwnedResource?.supportsDelete === true;
+  const expectedContractHash = pluginOwnedRowDriverContractHash(contract);
 
   return contract?.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
     && contract.schemaVersion === 1
@@ -469,6 +471,7 @@ function isContractBoundRowDriverMutation(mutation, owner, driver, plannedValue,
     && Array.isArray(contract.issueCodes)
     && contract.issueCodes.length === 0
     && contract.rawValuesIncluded === false
+    && contract.contractHash === expectedContractHash
     && contract.resourceKey === mutation.resourceKey
     && contract.pluginOwner === owner
     && contract.driver === driver
@@ -487,6 +490,7 @@ function isContractBoundRowDriverMutation(mutation, owner, driver, plannedValue,
     && validation.table === table
     && validation.supportsDelete === mutationSupportsDelete
     && validation.contractSupportsDelete === contract.supportsDelete
+    && validation.contractHash === contract.contractHash
     && validation.rawValuesIncluded === false;
 }
 
@@ -529,7 +533,7 @@ function validatePluginOwnedContractValidation(mutation, owner, driver) {
     return;
   }
 
-  const evidenceAccepted = evidence.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+  const evidenceShapeAccepted = evidence.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
     && evidence.schemaVersion === 1
     && evidence.operation === 'plugin-driver-contract-validation'
     && evidence.contractKind === PLUGIN_DRIVER_CONTRACT_KIND
@@ -538,6 +542,8 @@ function validatePluginOwnedContractValidation(mutation, owner, driver) {
     && Array.isArray(evidence.issueCodes)
     && evidence.issueCodes.length === 0
     && evidence.rawValuesIncluded === false;
+  const expectedContractHash = pluginOwnedRowDriverContractHash(evidence);
+  const evidenceAccepted = evidenceShapeAccepted && evidence.contractHash === expectedContractHash;
   const shapeAccepted = evidenceAccepted
     && evidence.resourceKey === mutation.resourceKey
     && evidence.pluginOwner === owner
@@ -560,6 +566,8 @@ function validatePluginOwnedContractValidation(mutation, owner, driver) {
   const reasonCode = pluginDriverContractApplyRefusalCode({
     evidence,
     evidenceAccepted,
+    evidenceShapeAccepted,
+    expectedContractHash,
     mutation,
     owner,
     driver,
@@ -583,6 +591,8 @@ function validatePluginOwnedContractValidation(mutation, owner, driver) {
 function pluginDriverContractApplyRefusalCode({
   evidence,
   evidenceAccepted,
+  evidenceShapeAccepted,
+  expectedContractHash,
   mutation,
   owner,
   driver,
@@ -591,6 +601,9 @@ function pluginDriverContractApplyRefusalCode({
   mutationSupportsDelete,
 }) {
   if (!evidenceAccepted) {
+    if (evidenceShapeAccepted && evidence.contractHash !== expectedContractHash) {
+      return 'PLUGIN_DRIVER_CONTRACT_HASH_MISMATCH';
+    }
     return typeof evidence.reasonCode === 'string' && evidence.reasonCode
       ? evidence.reasonCode
       : 'PLUGIN_DRIVER_CONTRACT_INVALID';
@@ -645,6 +658,7 @@ function redactedPluginDriverContractValidationEvidence(evidence) {
     driver: evidence.driver || null,
     table: evidence.table || null,
     supportsDelete: evidence.supportsDelete === true,
+    contractHash: evidence.contractHash || null,
   };
 }
 

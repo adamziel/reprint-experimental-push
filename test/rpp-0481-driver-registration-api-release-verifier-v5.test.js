@@ -234,6 +234,13 @@ function rpp_0481_contract_bound_policy(
     string $action,
     $value
 ): array {
+    $contract_hash = reprint_push_plugin_owned_row_driver_contract_hash(
+        $resource_key,
+        $owner,
+        $driver,
+        $table,
+        $supports_delete
+    );
     $contract = [
         'schemaVersion' => 1,
         'operation' => 'plugin-driver-contract-validation',
@@ -251,6 +258,7 @@ function rpp_0481_contract_bound_policy(
         'driver' => $driver,
         'table' => $table,
         'supportsDelete' => $supports_delete,
+        'contractHash' => $contract_hash,
     ];
     return [
         'pluginOwner' => $owner,
@@ -275,6 +283,7 @@ function rpp_0481_contract_bound_policy(
             'action' => $action,
             'supportsDelete' => $supports_delete,
             'contractSupportsDelete' => $supports_delete,
+            'contractHash' => $contract_hash,
             'value' => [
                 'state' => $action === 'delete' ? 'absent' : 'present',
                 'hash' => $action === 'delete'

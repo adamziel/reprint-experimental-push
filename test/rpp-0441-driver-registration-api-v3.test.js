@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const snapshotLibPath = path.join(repoRoot, 'scripts/playground/snapshot-lib.php');
 const sha256Pattern = /^sha256:[a-f0-9]{64}$/;
+const bareSha256Pattern = /^[a-f0-9]{64}$/;
 
 function stableStringify(value) {
   if (Array.isArray(value)) {
@@ -141,6 +142,13 @@ function rpp_0441_contract_bound_policy(
     string $action,
     $value
 ): array {
+    $contract_hash = reprint_push_plugin_owned_row_driver_contract_hash(
+        $resource_key,
+        $owner,
+        $driver,
+        $table,
+        $supports_delete
+    );
     $contract = [
         'schemaVersion' => 1,
         'operation' => 'plugin-driver-contract-validation',
@@ -158,6 +166,7 @@ function rpp_0441_contract_bound_policy(
         'driver' => $driver,
         'table' => $table,
         'supportsDelete' => $supports_delete,
+        'contractHash' => $contract_hash,
     ];
     $payload_hash = $action === 'delete'
         ? hash('sha256', '"__REPRINT_PUSH_ABSENT__"')
@@ -185,6 +194,7 @@ function rpp_0441_contract_bound_policy(
             'action' => $action,
             'supportsDelete' => $supports_delete,
             'contractSupportsDelete' => $supports_delete,
+            'contractHash' => $contract_hash,
             'value' => [
                 'state' => $action === 'delete' ? 'absent' : 'present',
                 'hash' => $payload_hash,
@@ -632,7 +642,9 @@ echo json_encode([
   assert.equal(report.lookups.missingByName, null);
   assert.equal(report.lookups.missingByTable, null);
 
-  assert.deepEqual(report.policyAllowed, [
+  assert.equal(report.policyAllowed.every((entry) => bareSha256Pattern.test(entry.contractHash)), true);
+  const policyAllowedWithoutHashes = report.policyAllowed.map(({ contractHash, ...entry }) => entry);
+  assert.deepEqual(policyAllowedWithoutHashes, [
     {
       contractVersion: 1,
       contractKind: 'plugin-owned-row-driver',

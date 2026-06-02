@@ -16,7 +16,8 @@ The first explicit contract shape is a plugin-owned row driver:
   "pluginOwner": "forms",
   "driver": "wp-option",
   "table": "wp_options",
-  "supportsDelete": false
+  "supportsDelete": false,
+  "contractHash": "..."
 }
 ```
 
@@ -33,6 +34,8 @@ Optional fields:
 - `table`: the expected WordPress table for row drivers.
 - `supportsDelete`: boolean delete capability. Missing or `false` means delete
   mutations refuse before apply.
+- `contractHash`: stable hash of the declared resource key, owner, driver,
+  table, delete support, contract kind, and contract version.
 - `dryRunValidation`: hash-only dry-run validation hook evidence.
 - `applyValidation`: hash-only apply validation hook evidence.
 - `evidenceScope` or `releaseGateEvidenceScope`: evidence classification.
@@ -50,6 +53,8 @@ that declares an explicit contract becomes strict:
 - malformed `supportsDelete` refuses before mutation
 - `rawValuesIncluded` values other than `false` refuse before mutation
 - accepted contracts emit `plugin-driver-contract-validation` evidence
+- accepted contracts must carry the expected `contractHash`, and apply
+  recomputes it before trusting the evidence
 - contract evidence is hash-only and carries no raw plugin payload values
 - accepted contract evidence does not by itself authorize a mutation: the
   mutation envelope must still carry the same `pluginOwner`, `driver`, resource,

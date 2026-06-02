@@ -7,6 +7,7 @@ import {
   productionPluginDriverBoundary,
   summarizeProductionPluginDriverBoundaryProof,
 } from '../scripts/playground/production-shaped-release-verify.mjs';
+import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
 
 const fixedNow = new Date('2026-05-30T12:48:30.000Z');
 const boundary = productionPluginDriverBoundary;
@@ -24,6 +25,18 @@ function releaseStateSnapshot(mode, version, marker, {
   privateNote = '',
   allowlistOverride = {},
 } = {}) {
+  const allowlistEntry = {
+    resourceKey: boundary.resourceKey,
+    pluginOwner: boundary.owner,
+    driver: boundary.driver,
+    table: boundary.table,
+    supportsDelete: false,
+    contractKind: 'plugin-owned-row-driver',
+    contractVersion: 1,
+    ...allowlistOverride,
+  };
+  allowlistEntry.contractHash = pluginOwnedRowDriverContractHash(allowlistEntry);
+
   return {
     files: {},
     plugins: {},
@@ -45,16 +58,7 @@ function releaseStateSnapshot(mode, version, marker, {
     },
     meta: {
       pluginOwnedResources: {
-        allowedResources: [
-          {
-            resourceKey: boundary.resourceKey,
-            pluginOwner: boundary.owner,
-            driver: boundary.driver,
-            table: boundary.table,
-            supportsDelete: false,
-            ...allowlistOverride,
-          },
-        ],
+        allowedResources: [allowlistEntry],
       },
     },
   };
@@ -191,6 +195,24 @@ test('RPP-0483 release verifier carries exact custom-table allowlist through app
   assert.equal(mutation.pluginOwnedResource.pluginOwner, boundary.owner);
   assert.equal(mutation.pluginOwnedResource.driver, boundary.driver);
   assert.equal(mutation.pluginOwnedResource.supportsDelete, false);
+  assert.equal(
+    mutation.pluginOwnedResource.contractValidationEvidence.reasonCode,
+    'PLUGIN_DRIVER_CONTRACT_ACCEPTED',
+  );
+  assert.equal(mutation.pluginOwnedResource.contractValidationEvidence.rawValuesIncluded, false);
+  assert.equal(
+    mutation.pluginOwnedResource.contractValidationEvidence.contractHash,
+    pluginOwnedRowDriverContractHash(mutation.pluginOwnedResource.contractValidationEvidence),
+  );
+  assert.equal(
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.reasonCode,
+    'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED',
+  );
+  assert.equal(mutation.pluginOwnedResource.driverPayloadValidationEvidence.rawValuesIncluded, false);
+  assert.equal(
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.contractHash,
+    mutation.pluginOwnedResource.contractValidationEvidence.contractHash,
+  );
   assert.equal(precondition.checkedAgainst, 'live-remote');
   assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
 
@@ -201,8 +223,25 @@ test('RPP-0483 release verifier carries exact custom-table allowlist through app
   assert.equal(summary.allowlist.entry.driver, boundary.driver);
   assert.equal(summary.allowlist.entry.table, boundary.table);
   assert.equal(summary.allowlist.entry.supportsDelete, false);
+  assert.equal(summary.allowlist.entry.contractKind, 'plugin-owned-row-driver');
+  assert.equal(summary.allowlist.entry.contractVersion, 1);
+  assert.equal(summary.allowlist.entry.contractHash, summary.driverContractBoundary.contractHash);
+  assert.equal(summary.driverContractBoundary.contractBound, true);
+  assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
+  assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, true);
+  assert.equal(summary.driverContractBoundary.contractHashMatchesExpected, true);
+  assert.equal(summary.driverContractBoundary.contractHashMatchesPayload, true);
+  assert.match(summary.driverContractBoundary.contractHash, /^[a-f0-9]{64}$/);
+  assert.equal(summary.driverContractBoundary.expectedContractHash, summary.driverContractBoundary.contractHash);
+  assert.equal(summary.driverContractBoundary.contractValidation.reasonCode, 'PLUGIN_DRIVER_CONTRACT_ACCEPTED');
+  assert.equal(summary.driverContractBoundary.contractValidation.contractKind, 'plugin-owned-row-driver');
+  assert.equal(summary.driverContractBoundary.contractValidation.contractVersion, 1);
+  assert.equal(summary.driverContractBoundary.contractValidation.contractHash, summary.driverContractBoundary.contractHash);
+  assert.equal(summary.driverContractBoundary.driverPayloadValidation.validator, 'contract-bound-row-driver');
+  assert.equal(summary.driverContractBoundary.driverPayloadValidation.contractHash, summary.driverContractBoundary.contractHash);
   assert.equal(summary.ownershipBoundary.exactAllowlistOwnerDriver, true);
   assert.equal(summary.ownershipBoundary.exactMutationOwnerDriver, true);
+  assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, true);
   assert.deepEqual(summary.ownershipBoundary.nonProductionCustomTableResourceKeys, []);
   assert.equal(summary.noArbitraryCustomTableMutation, true);
   assert.equal(summary.preconditionHashes.expectedHash, summary.sourcePluginStateEvidence.hash);
@@ -244,13 +283,16 @@ test('RPP-0483 release verifier blocks custom-table allowlist and apply carry-th
 
   for (const nearMiss of allowlistCases) {
     await t.test(nearMiss.label, () => {
-      const topology = releaseStateTopology({ allowlistOverride: nearMiss.allowlistOverride });
-      const plan = releaseStatePlan(topology);
-      const summary = summarize(topology, releaseVerifierProof(plan));
+      const contractBoundTopology = releaseStateTopology();
+      const plan = releaseStatePlan(contractBoundTopology);
+      const mutatedAllowlistTopology = releaseStateTopology({ allowlistOverride: nearMiss.allowlistOverride });
+      const summary = summarize(mutatedAllowlistTopology, releaseVerifierProof(plan));
 
       assert.equal(summary.status, 'blocked');
       assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
       assert.equal(summary.ownershipBoundary.exactAllowlistOwnerDriver, false);
+      assert.equal(summary.ownershipBoundary.exactMutationOwnerDriver, true);
+      assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, true);
       assert.equal(summary.applyCarryThrough.accepted, true);
       assertNoRawSentinels(summary, nearMiss.label);
     });
@@ -270,6 +312,26 @@ test('RPP-0483 release verifier blocks custom-table allowlist and apply carry-th
     assert.equal(summary.applyCarryThrough.finalMatchesLocal, false);
     assert.equal(summary.applyCarryThrough.accepted, false);
     assertNoRawSentinels(summary, 'failed apply carry-through summary');
+  });
+
+  await t.test('forged matching contract and payload fingerprints are not release-verifier eligible', () => {
+    const topology = releaseStateTopology();
+    const plan = releaseStatePlan(topology);
+    const forgedHash = '0'.repeat(64);
+    const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey);
+    mutation.pluginOwnedResource.contractValidationEvidence.contractHash = forgedHash;
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.contractHash = forgedHash;
+    const summary = summarize(topology, releaseVerifierProof(plan));
+
+    assert.equal(summary.status, 'blocked');
+    assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+    assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, false);
+    assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, false);
+    assert.equal(summary.driverContractBoundary.contractHashMatchesPayload, true);
+    assert.equal(summary.driverContractBoundary.contractHashMatchesExpected, false);
+    assert.equal(summary.driverContractBoundary.contractBound, false);
+    assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
+    assertNoRawSentinels(summary, 'forged contract fingerprint summary');
   });
 
   await t.test('extra custom-table mutation is not release-verifier eligible', () => {

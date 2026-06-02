@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const snapshotLibPath = path.join(repoRoot, 'scripts/playground/snapshot-lib.php');
 const sha256Pattern = /^sha256:[a-f0-9]{64}$/;
+const bareSha256Pattern = /^[a-f0-9]{64}$/;
 
 function stableStringify(value) {
   if (Array.isArray(value)) {
@@ -394,7 +395,13 @@ echo json_encode([
 ]);
 `);
 
-  assert.deepEqual(report.custom, {
+  assert.match(report.custom.contractHash, bareSha256Pattern);
+  assert.match(report.releaseState.contractHash, bareSha256Pattern);
+  const { contractHash: customContractHash, ...customContract } = report.custom;
+  const { contractHash: releaseStateContractHash, ...releaseStateContract } = report.releaseState;
+  assert.equal(customContractHash.length, 64);
+  assert.equal(releaseStateContractHash.length, 64);
+  assert.deepEqual(customContract, {
     contractVersion: 1,
     contractKind: 'plugin-owned-row-driver',
     resourceKey: 'row:["wp_fixture_contract_rows","id:7"]',
@@ -403,7 +410,7 @@ echo json_encode([
     table: 'wp_fixture_contract_rows',
     supportsDelete: true,
   });
-  assert.deepEqual(report.releaseState, {
+  assert.deepEqual(releaseStateContract, {
     contractVersion: 1,
     contractKind: 'plugin-owned-row-driver',
     resourceKey: 'row:["wp_reprint_push_release_state","state_id:1"]',
@@ -428,6 +435,13 @@ function rpp_contract_bound_policy(
     string $action,
     $value
 ): array {
+    $contract_hash = reprint_push_plugin_owned_row_driver_contract_hash(
+        $resource_key,
+        $owner,
+        $driver,
+        $table,
+        $supports_delete
+    );
     $contract = [
         'schemaVersion' => 1,
         'operation' => 'plugin-driver-contract-validation',
@@ -445,6 +459,7 @@ function rpp_contract_bound_policy(
         'driver' => $driver,
         'table' => $table,
         'supportsDelete' => $supports_delete,
+        'contractHash' => $contract_hash,
     ];
     return [
         'pluginOwner' => $owner,
@@ -469,6 +484,7 @@ function rpp_contract_bound_policy(
             'action' => $action,
             'supportsDelete' => $supports_delete,
             'contractSupportsDelete' => $supports_delete,
+            'contractHash' => $contract_hash,
             'value' => [
                 'state' => $action === 'delete' ? 'absent' : 'present',
                 'hash' => $action === 'delete'

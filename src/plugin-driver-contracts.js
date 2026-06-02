@@ -1,3 +1,5 @@
+import { digest } from './stable-json.js';
+
 export const PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION = 1;
 export const PLUGIN_DRIVER_CONTRACT_KIND = 'plugin-owned-row-driver';
 
@@ -114,6 +116,17 @@ export function normalizePluginOwnedRowDriverContract(entry, {
   }
 
   const accepted = issues.length === 0;
+  const normalized = {
+    resourceKey: resourceKey || null,
+    pluginOwner: pluginOwner || null,
+    driver: driver || null,
+    table: table || null,
+    supportsDelete: entry.supportsDelete === true,
+    evidenceScope: scope,
+    contractVersion,
+    contractKind,
+  };
+  const contractHash = pluginOwnedRowDriverContractHash(normalized);
   const evidence = {
     schemaVersion: 1,
     operation: 'plugin-driver-contract-validation',
@@ -133,23 +146,31 @@ export function normalizePluginOwnedRowDriverContract(entry, {
     driver: driver || null,
     table: table || null,
     supportsDelete: entry.supportsDelete === true,
+    contractHash,
   };
 
   return {
     explicit: true,
     valid: accepted,
     normalized: {
-      resourceKey: resourceKey || null,
-      pluginOwner: pluginOwner || null,
-      driver: driver || null,
-      table: table || null,
-      supportsDelete: entry.supportsDelete === true,
-      evidenceScope: scope,
-      contractVersion,
-      contractKind,
+      ...normalized,
+      contractHash,
     },
     evidence,
   };
+}
+
+export function pluginOwnedRowDriverContractHash(contract) {
+  return digest({
+    schemaVersion: 1,
+    contractKind: PLUGIN_DRIVER_CONTRACT_KIND,
+    contractVersion: PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+    resourceKey: contract?.resourceKey || null,
+    pluginOwner: contract?.pluginOwner || null,
+    driver: contract?.driver || null,
+    table: contract?.table || null,
+    supportsDelete: contract?.supportsDelete === true,
+  });
 }
 
 function isNonEmptyString(value) {

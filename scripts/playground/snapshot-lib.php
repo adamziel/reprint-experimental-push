@@ -490,15 +490,42 @@ function reprint_push_plugin_owned_row_driver_policy_entry(
     string $driver,
     bool $supports_delete
 ): array {
+    $resource_key = 'row:' . wp_json_encode([$table, $row_id], JSON_UNESCAPED_SLASHES);
     return [
         'contractVersion' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_VERSION,
         'contractKind' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_KIND,
-        'resourceKey' => 'row:' . wp_json_encode([$table, $row_id], JSON_UNESCAPED_SLASHES),
+        'resourceKey' => $resource_key,
         'pluginOwner' => $plugin_owner,
         'driver' => $driver,
         'table' => $table,
         'supportsDelete' => $supports_delete,
+        'contractHash' => reprint_push_plugin_owned_row_driver_contract_hash(
+            $resource_key,
+            $plugin_owner,
+            $driver,
+            $table,
+            $supports_delete
+        ),
     ];
+}
+
+function reprint_push_plugin_owned_row_driver_contract_hash(
+    string $resource_key,
+    string $plugin_owner,
+    string $driver,
+    string $table,
+    bool $supports_delete
+): string {
+    return hash('sha256', reprint_push_stable_json([
+        'schemaVersion' => 1,
+        'contractKind' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_KIND,
+        'contractVersion' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_VERSION,
+        'resourceKey' => $resource_key,
+        'pluginOwner' => $plugin_owner,
+        'driver' => $driver,
+        'table' => $table,
+        'supportsDelete' => $supports_delete,
+    ]));
 }
 
 function reprint_push_add_wordpress_graph_contracts(array &$snapshot): void
@@ -3443,7 +3470,14 @@ function reprint_push_plugin_driver_contract_evidence_accepted(
         && ($evidence['pluginOwner'] ?? null) === $owner
         && ($evidence['driver'] ?? null) === $driver
         && ($evidence['table'] ?? null) === $table
-        && ($evidence['supportsDelete'] ?? null) === $supports_delete;
+        && ($evidence['supportsDelete'] ?? null) === $supports_delete
+        && ($evidence['contractHash'] ?? null) === reprint_push_plugin_owned_row_driver_contract_hash(
+            $resource_key,
+            $owner,
+            $driver,
+            $table,
+            $supports_delete
+        );
 }
 
 function reprint_push_plugin_driver_payload_evidence_accepted(
@@ -3482,6 +3516,7 @@ function reprint_push_plugin_driver_payload_evidence_accepted(
         && ($evidence['action'] ?? null) === $action
         && ($evidence['supportsDelete'] ?? null) === $supports_delete
         && ($evidence['contractSupportsDelete'] ?? null) === ($contract['supportsDelete'] ?? null)
+        && ($evidence['contractHash'] ?? null) === ($contract['contractHash'] ?? null)
         && ($evidence['contractValidationHash'] ?? null) === hash('sha256', reprint_push_stable_json($contract))
         && ($value_evidence['state'] ?? null) === $expected_state
         && ($value_evidence['hash'] ?? null) === $expected_hash;

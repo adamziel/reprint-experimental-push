@@ -9,7 +9,12 @@ import {
   serializeResourceValue,
 } from './resources.js';
 import { serializedOptionValidationEvidenceForRows } from './serialized-option-validator.js';
-import { normalizePluginOwnedRowDriverContract } from './plugin-driver-contracts.js';
+import {
+  PLUGIN_DRIVER_CONTRACT_KIND,
+  PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+  normalizePluginOwnedRowDriverContract,
+  pluginOwnedRowDriverContractHash,
+} from './plugin-driver-contracts.js';
 import { validatePluginOwnedDriverPayload } from './plugin-driver-validators.js';
 import {
   SERIALIZED_BLOCK_ATTACHMENT_REFERENCE_RULES,
@@ -605,6 +610,29 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
       const supportedTable = supported.table || PLUGIN_DATA_DRIVER_TABLES.get(supported.driver) || null;
       const plannedValue = getResource(local, resource);
       const action = plannedValue === ABSENT ? 'delete' : 'put';
+      if (
+        pluginOwnedPolicyEntryRequiresExplicitContract(supported)
+        && !acceptedPluginOwnedRowDriverContractEvidence(supported.contractValidationEvidence)
+      ) {
+        return {
+          supported: false,
+          className: 'missing-plugin-driver-contract',
+          reasonCode: 'PLUGIN_DRIVER_CONTRACT_REQUIRED',
+          driver: supported.driver,
+          table: supportedTable,
+          policySource: supported.source,
+          reason: 'Generic plugin-owned custom row drivers require an explicit accepted row-driver contract.',
+          pluginDriverContractRequiredEvidence: pluginDriverContractRequiredEvidence({
+            resource,
+            owner,
+            entry: supported,
+            table: supportedTable,
+            base,
+            local,
+            remote,
+          }),
+        };
+      }
       const serializedOptionValidationEvidence = supported.driver === 'wp-option'
         ? serializedOptionValidationEvidenceForRows({
           resourceKey: resource.key,
@@ -863,6 +891,58 @@ function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
   }
 
   return false;
+}
+
+function pluginOwnedPolicyEntryRequiresExplicitContract(entry) {
+  return Boolean(entry?.driver)
+    && Boolean(entry?.table)
+    && !SUPPORTED_PLUGIN_DATA_DRIVERS.has(entry.driver);
+}
+
+function acceptedPluginOwnedRowDriverContractEvidence(evidence) {
+  const expectedContractHash = pluginOwnedRowDriverContractHash(evidence);
+  return evidence?.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+    && evidence.schemaVersion === 1
+    && evidence.operation === 'plugin-driver-contract-validation'
+    && evidence.contractKind === PLUGIN_DRIVER_CONTRACT_KIND
+    && evidence.contractVersion === PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION
+    && evidence.outcome === 'accepted'
+    && Array.isArray(evidence.issueCodes)
+    && evidence.issueCodes.length === 0
+    && evidence.rawValuesIncluded === false
+    && evidence.contractHash === expectedContractHash;
+}
+
+function pluginDriverContractRequiredEvidence({
+  resource,
+  owner,
+  entry,
+  table,
+  base,
+  local,
+  remote,
+}) {
+  return {
+    schemaVersion: 1,
+    operation: 'planner-refusal',
+    outcome: 'blocked-before-mutation',
+    reasonCode: 'PLUGIN_DRIVER_CONTRACT_REQUIRED',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    requiredContractKind: PLUGIN_DRIVER_CONTRACT_KIND,
+    requiredContractVersion: PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: entry.driver || null,
+    table: table || entry.table || null,
+    policySource: entry.source || null,
+    resource: pluginDriverResourceEvidence(resource),
+    hashes: {
+      baseHash: resourceHash(base, resource),
+      localHash: resourceHash(local, resource),
+      remoteHash: resourceHash(remote, resource),
+    },
+  };
 }
 
 function fixtureFormsLabTableDriverEvidence({ resource, owner, base, local, remote }) {
@@ -3687,6 +3767,9 @@ function addPluginOwnedResourceBlocker(plan, {
       : {}),
     ...(support.contractValidationEvidence
       ? { contractValidationEvidence: support.contractValidationEvidence }
+      : {}),
+    ...(support.pluginDriverContractRequiredEvidence
+      ? { pluginDriverContractRequiredEvidence: support.pluginDriverContractRequiredEvidence }
       : {}),
     ...(support.driverAuditEvidence ? { driverAuditEvidence: support.driverAuditEvidence } : {}),
     ...(support.driverEvidence ? { driverEvidence: support.driverEvidence } : {}),

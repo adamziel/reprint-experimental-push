@@ -2,6 +2,7 @@ import { ABSENT, digest } from './stable-json.js';
 import {
   PLUGIN_DRIVER_CONTRACT_KIND,
   PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+  pluginOwnedRowDriverContractHash,
 } from './plugin-driver-contracts.js';
 
 export const INVALID_SERIALIZED_OPTION_PAYLOAD = 'INVALID_SERIALIZED_OPTION_PAYLOAD';
@@ -181,6 +182,7 @@ function validateContractBoundRowDriverPayload({
     action,
     supportsDelete: supportsDelete === true,
     contractSupportsDelete,
+    contractHash: contractValidationEvidence.contractHash || null,
     value: {
       state: value === ABSENT ? 'absent' : 'present',
       hash: digest(value),
@@ -201,6 +203,7 @@ function validateContractBoundRowDriverPayload({
 }
 
 function acceptedContractValidationEvidence(evidence) {
+  const expectedContractHash = pluginOwnedRowDriverContractHash(evidence);
   return evidence?.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
     && evidence.schemaVersion === 1
     && evidence.operation === 'plugin-driver-contract-validation'
@@ -209,7 +212,8 @@ function acceptedContractValidationEvidence(evidence) {
     && evidence.outcome === 'accepted'
     && Array.isArray(evidence.issueCodes)
     && evidence.issueCodes.length === 0
-    && evidence.rawValuesIncluded === false;
+    && evidence.rawValuesIncluded === false
+    && evidence.contractHash === expectedContractHash;
 }
 
 function isNonEmptyString(value) {

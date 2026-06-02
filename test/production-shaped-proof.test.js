@@ -77,6 +77,7 @@ import {
   resolveBlueprintSnapshotFixturePath,
 } from '../scripts/playground/blueprint-snapshot-fixture.js';
 import { createPushPlan } from '../src/planner.js';
+import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
 import { resourceHash } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 
@@ -505,6 +506,17 @@ process.on('SIGTERM', () => {
 });
 
 function productionPluginDriverSnapshot(mode, version, marker) {
+  const allowlistEntry = {
+    resourceKey: productionPluginDriverBoundary.resourceKey,
+    pluginOwner: productionPluginDriverBoundary.owner,
+    driver: productionPluginDriverBoundary.driver,
+    table: productionPluginDriverBoundary.table,
+    supportsDelete: false,
+    contractKind: 'plugin-owned-row-driver',
+    contractVersion: 1,
+  };
+  allowlistEntry.contractHash = pluginOwnedRowDriverContractHash(allowlistEntry);
+
   return {
     files: {},
     plugins: {},
@@ -525,15 +537,7 @@ function productionPluginDriverSnapshot(mode, version, marker) {
     },
     meta: {
       pluginOwnedResources: {
-        allowedResources: [
-          {
-            resourceKey: productionPluginDriverBoundary.resourceKey,
-            pluginOwner: productionPluginDriverBoundary.owner,
-            driver: productionPluginDriverBoundary.driver,
-            table: productionPluginDriverBoundary.table,
-            supportsDelete: false,
-          },
-        ],
+        allowedResources: [allowlistEntry],
       },
     },
   };
@@ -576,13 +580,17 @@ function addDriverFixtureCustomTable(snapshot, mode, version, marker) {
       __pluginOwner: driverFixtureCustomTableBoundary.owner,
     },
   };
-  snapshot.meta.pluginOwnedResources.allowedResources.push({
+  const allowlistEntry = {
     resourceKey: driverFixtureCustomTableBoundary.resourceKey,
     pluginOwner: driverFixtureCustomTableBoundary.owner,
     driver: driverFixtureCustomTableBoundary.driver,
     table: driverFixtureCustomTableBoundary.table,
     supportsDelete: false,
-  });
+    contractKind: 'plugin-owned-row-driver',
+    contractVersion: 1,
+  };
+  allowlistEntry.contractHash = pluginOwnedRowDriverContractHash(allowlistEntry);
+  snapshot.meta.pluginOwnedResources.allowedResources.push(allowlistEntry);
 }
 
 function addSerializedPluginOption(snapshot, mode, version) {
@@ -2273,6 +2281,17 @@ test('production plugin-driver boundary proof accepts one owned row and fails cl
   assert.equal(summary.rejectedRemoteEvidence.remoteChangedState.mode, 'remote-changed');
   assert.equal(summary.ownershipBoundary.exactAllowlistOwnerDriver, true);
   assert.equal(summary.ownershipBoundary.exactMutationOwnerDriver, true);
+  assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, true);
+  assert.equal(summary.driverContractBoundary.contractBound, true);
+  assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
+  assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, true);
+  assert.equal(summary.driverContractBoundary.contractHashMatchesExpected, true);
+  assert.equal(summary.driverContractBoundary.contractHashMatchesPayload, true);
+  assert.match(summary.driverContractBoundary.contractHash, /^[a-f0-9]{64}$/);
+  assert.equal(summary.driverContractBoundary.expectedContractHash, summary.driverContractBoundary.contractHash);
+  assert.equal(summary.driverContractBoundary.contractValidation.reasonCode, 'PLUGIN_DRIVER_CONTRACT_ACCEPTED');
+  assert.equal(summary.driverContractBoundary.contractValidation.contractKind, 'plugin-owned-row-driver');
+  assert.equal(summary.driverContractBoundary.driverPayloadValidation.validator, 'contract-bound-row-driver');
   assert.deepEqual(summary.ownershipBoundary.activePluginsDirectResourceKeys, []);
   assert.deepEqual(summary.ownershipBoundary.serializedPluginOwnedOptionResourceKeys, []);
   assert.deepEqual(summary.ownershipBoundary.directPluginActivationOrUpdateResourceKeys, []);
