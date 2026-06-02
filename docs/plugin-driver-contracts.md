@@ -41,9 +41,13 @@ Optional fields:
   `null`. Scalar fields may also declare `const` or `enum` constraints; the
   normalized contract stores these as `constHash` or sorted `enumHashes`, never
   as raw values.
+- `mergePolicy`: optional conflict-policy metadata for plugin-owned row
+  drivers. Version 1 supports only `refuse-on-conflict`, normalized to a
+  hash-bound object with `conflictResolution: "preserve-remote-and-stop"` and
+  `rawValuesIncluded: false`.
 - `contractHash`: stable hash of the declared resource key, owner, driver,
-  table, delete support, contract kind, contract version, and optional
-  normalized row schema.
+  table, delete support, contract kind, contract version, optional normalized
+  row schema, and optional normalized merge policy.
 - `dryRunValidation`: hash-only dry-run validation hook evidence.
 - `applyValidation`: hash-only apply validation hook evidence.
 - `evidenceScope` or `releaseGateEvidenceScope`: evidence classification.
@@ -66,6 +70,11 @@ that declares an explicit contract becomes strict:
 - malformed schema constraints, mixed raw/hash constraint forms, constraints on
   non-scalar fields, or empty enum sets refuse before mutation with
   `PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA`
+- unsupported merge policies, malformed merge-policy shapes, or merge-policy
+  declarations that claim raw values refuse before mutation with
+  `PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_MERGE_POLICY`,
+  `PLUGIN_DRIVER_CONTRACT_INVALID_MERGE_POLICY`, or
+  `PLUGIN_DRIVER_CONTRACT_MERGE_POLICY_RAW_VALUES_INCLUDED`
 - accepted contracts emit `plugin-driver-contract-validation` evidence
 - accepted contracts must carry the expected `contractHash`, and apply
   recomputes it before trusting the evidence
@@ -76,7 +85,7 @@ that declares an explicit contract becomes strict:
 - contract evidence is hash-only and carries no raw plugin payload values
 - accepted contract evidence does not by itself authorize a mutation: the
   mutation envelope must still carry the same `pluginOwner`, `driver`, resource,
-  table, and `supportsDelete` binding at apply time
+  table, `supportsDelete`, and merge-policy binding at apply time
 
 This lets production integrations ratchet from allowlist-shaped support toward
 stable, reviewable plugin contracts without breaking older lab fixtures.
@@ -95,6 +104,7 @@ Registered PHP row drivers are exported with:
 - `driver`
 - `table`
 - boolean `supportsDelete`
+- optional normalized `mergePolicy`
 
 The built-in `reprint-push-release-state` row driver and registered custom row
 drivers use the same policy-entry shape. Contract entries are metadata only and
@@ -130,6 +140,12 @@ shape. For custom row drivers outside the built-in driver set, apply requires:
 - carried payload evidence that matches apply's recomputed mutation action,
   value state/hash, row identity evidence, schema validation evidence when a
   schema is declared, contract hash, and canonical `contractValidationHash`.
+
+If a contract declares `mergePolicy`, planner carries the normalized policy
+into the mutation envelope and apply recomputes the accepted contract hash and
+requires the mutation-side policy to match it exactly. A forged ready plan that
+changes or drops the merge policy refuses before mutation with
+`PLUGIN_DRIVER_CONTRACT_BOUND_MERGE_POLICY_MISMATCH`.
 
 Payload validation evidence now includes a hash-only `rowIdentity` object:
 
@@ -207,6 +223,7 @@ The row-driver contract is the first step toward a broader plugin API. Future
 contracts should cover:
 
 - merge-driver conflict policies for plugin-owned payloads
+- merge-driver conflict policies beyond conservative `refuse-on-conflict`
 - richer JSON Schema semantics beyond scalar `const`/`enum`
 - plugin-owned files
 - plugin activation and update side effects

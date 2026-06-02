@@ -2,6 +2,7 @@ import { digest } from './stable-json.js';
 
 export const PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION = 1;
 export const PLUGIN_DRIVER_CONTRACT_KIND = 'plugin-owned-row-driver';
+export const PLUGIN_DRIVER_REFUSE_ON_CONFLICT_MERGE_POLICY = 'refuse-on-conflict';
 
 export function normalizePluginOwnedRowDriverContract(entry, {
   source = null,
@@ -42,6 +43,9 @@ export function normalizePluginOwnedRowDriverContract(entry, {
   const scope = entry.evidenceScope || entry.releaseGateEvidenceScope || evidenceScope || 'local-candidate';
   const rowSchemaResult = normalizePluginOwnedRowDriverRowSchema(
     entry.rowSchema ?? nestedContract?.rowSchema ?? null,
+  );
+  const mergePolicyResult = normalizePluginOwnedRowDriverMergePolicy(
+    entry.mergePolicy ?? nestedContract?.mergePolicy ?? null,
   );
 
   const issues = [];
@@ -125,6 +129,14 @@ export function normalizePluginOwnedRowDriverContract(entry, {
       observed: rowSchemaResult.observed,
     });
   }
+  if (!mergePolicyResult.valid) {
+    issues.push({
+      reasonCode: mergePolicyResult.reasonCode,
+      field: 'mergePolicy',
+      required: mergePolicyResult.required,
+      observed: mergePolicyResult.observed,
+    });
+  }
 
   const accepted = issues.length === 0;
   const normalized = {
@@ -137,6 +149,7 @@ export function normalizePluginOwnedRowDriverContract(entry, {
     contractVersion,
     contractKind,
     ...(rowSchemaResult.normalized ? { rowSchema: rowSchemaResult.normalized } : {}),
+    ...(mergePolicyResult.normalized ? { mergePolicy: mergePolicyResult.normalized } : {}),
   };
   const contractHash = pluginOwnedRowDriverContractHash(normalized);
   const evidence = {
@@ -159,6 +172,7 @@ export function normalizePluginOwnedRowDriverContract(entry, {
     table: table || null,
     supportsDelete: entry.supportsDelete === true,
     ...(rowSchemaResult.normalized ? { rowSchema: rowSchemaResult.normalized } : {}),
+    ...(mergePolicyResult.normalized ? { mergePolicy: mergePolicyResult.normalized } : {}),
     contractHash,
   };
 
@@ -184,6 +198,7 @@ export function pluginOwnedRowDriverContractHash(contract) {
     table: contract?.table || null,
     supportsDelete: contract?.supportsDelete === true,
     ...(contract?.rowSchema ? { rowSchema: normalizePluginOwnedRowDriverRowSchema(contract.rowSchema).normalized } : {}),
+    ...(contract?.mergePolicy ? { mergePolicy: normalizePluginOwnedRowDriverMergePolicy(contract.mergePolicy).normalized } : {}),
   });
 }
 
@@ -211,6 +226,7 @@ export function canonicalPluginOwnedRowDriverContractValidationEvidence(evidence
     table: evidence.table || null,
     supportsDelete: evidence.supportsDelete === true,
     ...(evidence.rowSchema ? { rowSchema: normalizePluginOwnedRowDriverRowSchema(evidence.rowSchema).normalized } : {}),
+    ...(evidence.mergePolicy ? { mergePolicy: normalizePluginOwnedRowDriverMergePolicy(evidence.mergePolicy).normalized } : {}),
     contractHash: pluginOwnedRowDriverContractHash(evidence),
   };
 }
@@ -239,6 +255,63 @@ function canonicalPluginOwnedRowDriverContractValidationIssue(issue) {
     field: issue.field || null,
     required: issue.required ?? null,
     observed: issue.observed ?? null,
+  };
+}
+
+export function normalizePluginOwnedRowDriverMergePolicy(mergePolicy) {
+  if (mergePolicy === null || mergePolicy === undefined) {
+    return { valid: true, normalized: null };
+  }
+
+  const policyIsString = typeof mergePolicy === 'string';
+  const policyIsObject = mergePolicy
+    && typeof mergePolicy === 'object'
+    && !Array.isArray(mergePolicy);
+  if (!policyIsString && !policyIsObject) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_MERGE_POLICY',
+      required: 'mergePolicy string or object',
+      observed: Array.isArray(mergePolicy) ? 'array' : typeof mergePolicy,
+    };
+  }
+
+  if (
+    policyIsObject
+    && Object.prototype.hasOwnProperty.call(mergePolicy, 'rawValuesIncluded')
+    && mergePolicy.rawValuesIncluded !== false
+  ) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_MERGE_POLICY_RAW_VALUES_INCLUDED',
+      required: false,
+      observed: true,
+    };
+  }
+
+  const strategy = policyIsString
+    ? mergePolicy
+    : mergePolicy.strategy ?? mergePolicy.policy ?? null;
+  if (strategy !== PLUGIN_DRIVER_REFUSE_ON_CONFLICT_MERGE_POLICY) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_MERGE_POLICY',
+      required: PLUGIN_DRIVER_REFUSE_ON_CONFLICT_MERGE_POLICY,
+      observed: isNonEmptyString(strategy) ? 'unsupported-strategy' : typeof strategy,
+    };
+  }
+
+  return {
+    valid: true,
+    normalized: {
+      schemaVersion: 1,
+      strategy: PLUGIN_DRIVER_REFUSE_ON_CONFLICT_MERGE_POLICY,
+      conflictResolution: 'preserve-remote-and-stop',
+      rawValuesIncluded: false,
+    },
   };
 }
 

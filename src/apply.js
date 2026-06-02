@@ -503,6 +503,8 @@ function isContractBoundRowDriverMutation(mutation, owner, driver, plannedValue,
   const table = mutation.pluginOwnedResource?.table || contract?.table || null;
   const mutationSupportsDelete = mutation.pluginOwnedResource?.supportsDelete === true;
   const expectedContractHash = pluginOwnedRowDriverContractHash(contract);
+  const contractMergePolicy = contract?.mergePolicy || null;
+  const mutationMergePolicy = mutation.pluginOwnedResource?.mergePolicy || null;
 
   return contract?.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
     && contract.schemaVersion === 1
@@ -519,6 +521,7 @@ function isContractBoundRowDriverMutation(mutation, owner, driver, plannedValue,
     && contract.pluginOwner === owner
     && contract.driver === driver
     && contract.supportsDelete === mutationSupportsDelete
+    && digest(contractMergePolicy) === digest(mutationMergePolicy)
     && typeof table === 'string'
     && table.length > 0
     && contract.table === table
@@ -672,10 +675,13 @@ function validatePluginOwnedContractValidation(mutation, owner, driver) {
   const mutationOwner = mutation.pluginOwnedResource?.pluginOwner || null;
   const mutationDriver = mutation.pluginOwnedResource?.driver || null;
   const mutationSupportsDelete = mutation.pluginOwnedResource?.supportsDelete === true;
+  const contractMergePolicy = evidence?.mergePolicy || null;
+  const mutationMergePolicy = mutation.pluginOwnedResource?.mergePolicy || null;
   const mutationBindingAccepted = shapeAccepted
     && mutationOwner === owner
     && mutationDriver === driver
-    && evidence.supportsDelete === mutationSupportsDelete;
+    && evidence.supportsDelete === mutationSupportsDelete
+    && digest(contractMergePolicy) === digest(mutationMergePolicy);
   const bindingAccepted = mutationBindingAccepted
     && (!evidence.table || evidence.table === mutation.resource?.table)
     && (!mutation.pluginOwnedResource?.table || mutation.pluginOwnedResource.table === mutation.resource?.table)
@@ -696,6 +702,8 @@ function validatePluginOwnedContractValidation(mutation, owner, driver) {
     mutationOwner,
     mutationDriver,
     mutationSupportsDelete,
+    contractMergePolicy,
+    mutationMergePolicy,
   });
   throw new PushPlanError(
     reasonCode,
@@ -722,6 +730,8 @@ function pluginDriverContractApplyRefusalCode({
   mutationOwner,
   mutationDriver,
   mutationSupportsDelete,
+  contractMergePolicy,
+  mutationMergePolicy,
 }) {
   if (!evidenceAccepted) {
     if (evidenceShapeAccepted && evidence.contractHash !== expectedContractHash) {
@@ -761,6 +771,9 @@ function pluginDriverContractApplyRefusalCode({
       ? 'PLUGIN_DRIVER_CONTRACT_BOUND_DELETE_UNSUPPORTED'
       : 'PLUGIN_DRIVER_CONTRACT_BOUND_DELETE_SUPPORT_MISMATCH';
   }
+  if (digest(contractMergePolicy || null) !== digest(mutationMergePolicy || null)) {
+    return 'PLUGIN_DRIVER_CONTRACT_BOUND_MERGE_POLICY_MISMATCH';
+  }
   return 'PLUGIN_DRIVER_CONTRACT_INVALID_BINDING';
 }
 
@@ -784,6 +797,7 @@ function redactedPluginDriverContractValidationEvidence(evidence) {
     driver: evidence.driver || null,
     table: evidence.table || null,
     supportsDelete: evidence.supportsDelete === true,
+    ...(evidence.mergePolicy ? { mergePolicy: evidence.mergePolicy } : {}),
     contractHash: evidence.contractHash || null,
   };
 }

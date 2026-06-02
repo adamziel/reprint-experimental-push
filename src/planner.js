@@ -412,6 +412,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           table: support.table || null,
           policySource: support.policySource,
           supportsDelete: support.supportsDelete,
+          ...(support.mergePolicy ? { mergePolicy: support.mergePolicy } : {}),
           ownerContext,
           ownerContextRequired: ownerContext.length > 0,
           auditEvidence: pluginOwnedDriverAuditEvidence({
@@ -783,6 +784,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         policySource: supported.source,
         evidenceScope: supported.evidenceScope,
         supportsDelete: supported.supportsDelete === true,
+        ...(supported.mergePolicy ? { mergePolicy: supported.mergePolicy } : {}),
         ...(supported.contractValidationEvidence
           ? { contractValidationEvidence: supported.contractValidationEvidence }
           : {}),
@@ -858,6 +860,7 @@ function normalizePluginOwnedPolicyEntry(entry, source, evidenceScope = null) {
     supportsDelete: contract.explicit
       ? contractFields.supportsDelete === true
       : entry.supportsDelete === true || entry.delete === true || entry.allowDelete === true,
+    ...(contractFields.mergePolicy ? { mergePolicy: contractFields.mergePolicy } : {}),
     dryRunValidation: entry.dryRunValidation || null,
     applyValidation: entry.applyValidation || null,
     evidenceScope: contractFields.evidenceScope || entry.evidenceScope || entry.releaseGateEvidenceScope || evidenceScope || 'local-candidate',

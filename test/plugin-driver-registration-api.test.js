@@ -361,6 +361,10 @@ reprint_push_register_plugin_owned_row_driver([
     'table' => 'wp_fixture_contract_rows',
     'pluginOwner' => 'fixture-contract-plugin',
     'supportsDelete' => true,
+    'mergePolicy' => [
+        'strategy' => 'refuse-on-conflict',
+        'rawValuesIncluded' => false,
+    ],
     'rowSchema' => [
         'required' => ['id', 'payload', '__pluginOwner'],
         'fields' => [
@@ -435,6 +439,12 @@ echo json_encode([
     driver: 'fixture-contract-driver',
     table: 'wp_fixture_contract_rows',
     supportsDelete: true,
+    mergePolicy: {
+      schemaVersion: 1,
+      strategy: 'refuse-on-conflict',
+      conflictResolution: 'preserve-remote-and-stop',
+      rawValuesIncluded: false,
+    },
     rowSchema: {
       schemaVersion: 1,
       fields: [

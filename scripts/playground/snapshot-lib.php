@@ -470,7 +470,8 @@ function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
                 $plugin_owner,
                 $driver_name,
                 !empty($driver['supportsDelete']),
-                is_array($driver['rowSchema'] ?? null) ? $driver['rowSchema'] : null
+                is_array($driver['rowSchema'] ?? null) ? $driver['rowSchema'] : null,
+                $driver['mergePolicy'] ?? null
             );
         }
     }
@@ -490,11 +491,15 @@ function reprint_push_plugin_owned_row_driver_policy_entry(
     string $plugin_owner,
     string $driver,
     bool $supports_delete,
-    ?array $row_schema = null
+    ?array $row_schema = null,
+    $merge_policy = null
 ): array {
     $resource_key = 'row:' . wp_json_encode([$table, $row_id], JSON_UNESCAPED_SLASHES);
     $normalized_schema = $row_schema !== null
         ? reprint_push_normalize_plugin_owned_row_driver_row_schema($row_schema)
+        : null;
+    $normalized_merge_policy = $merge_policy !== null
+        ? reprint_push_normalize_plugin_owned_row_driver_merge_policy($merge_policy)
         : null;
     $entry = [
         'contractVersion' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_VERSION,
@@ -508,13 +513,17 @@ function reprint_push_plugin_owned_row_driver_policy_entry(
     if ($normalized_schema !== null) {
         $entry['rowSchema'] = $normalized_schema;
     }
+    if ($normalized_merge_policy !== null) {
+        $entry['mergePolicy'] = $normalized_merge_policy;
+    }
     $entry['contractHash'] = reprint_push_plugin_owned_row_driver_contract_hash(
         $resource_key,
         $plugin_owner,
         $driver,
         $table,
         $supports_delete,
-        $normalized_schema
+        $normalized_schema,
+        $normalized_merge_policy
     );
     return $entry;
 }
@@ -525,7 +534,8 @@ function reprint_push_plugin_owned_row_driver_contract_hash(
     string $driver,
     string $table,
     bool $supports_delete,
-    ?array $row_schema = null
+    ?array $row_schema = null,
+    $merge_policy = null
 ): string {
     $contract = [
         'schemaVersion' => 1,
@@ -540,7 +550,35 @@ function reprint_push_plugin_owned_row_driver_contract_hash(
     if ($row_schema !== null) {
         $contract['rowSchema'] = reprint_push_normalize_plugin_owned_row_driver_row_schema($row_schema);
     }
+    if ($merge_policy !== null) {
+        $contract['mergePolicy'] = reprint_push_normalize_plugin_owned_row_driver_merge_policy($merge_policy);
+    }
     return hash('sha256', reprint_push_stable_json($contract));
+}
+
+function reprint_push_normalize_plugin_owned_row_driver_merge_policy($merge_policy): array
+{
+    if (is_string($merge_policy)) {
+        $strategy = $merge_policy;
+    } elseif (is_array($merge_policy)) {
+        if (array_key_exists('rawValuesIncluded', $merge_policy) && $merge_policy['rawValuesIncluded'] !== false) {
+            throw new RuntimeException('Plugin-owned row driver mergePolicy must not include raw values.');
+        }
+        $strategy = (string) ($merge_policy['strategy'] ?? ($merge_policy['policy'] ?? ''));
+    } else {
+        throw new RuntimeException('Plugin-owned row driver mergePolicy must be a string or object.');
+    }
+
+    if ($strategy !== 'refuse-on-conflict') {
+        throw new RuntimeException('Unsupported plugin-owned row driver mergePolicy strategy.');
+    }
+
+    return [
+        'schemaVersion' => 1,
+        'strategy' => 'refuse-on-conflict',
+        'conflictResolution' => 'preserve-remote-and-stop',
+        'rawValuesIncluded' => false,
+    ];
 }
 
 function reprint_push_normalize_plugin_owned_row_driver_row_schema($row_schema): array
@@ -3068,6 +3106,9 @@ function reprint_push_normalize_plugin_owned_row_driver(array $driver, ?string $
     if (array_key_exists('rowSchema', $driver)) {
         $normalized['rowSchema'] = reprint_push_normalize_plugin_owned_row_driver_row_schema($driver['rowSchema']);
     }
+    if (array_key_exists('mergePolicy', $driver)) {
+        $normalized['mergePolicy'] = reprint_push_normalize_plugin_owned_row_driver_merge_policy($driver['mergePolicy']);
+    }
     return $normalized;
 }
 
@@ -3768,6 +3809,9 @@ function reprint_push_plugin_driver_contract_evidence_accepted(
     if (array_key_exists('rowSchema', $evidence)) {
         $expected_keys[] = 'rowSchema';
     }
+    if (array_key_exists('mergePolicy', $evidence)) {
+        $expected_keys[] = 'mergePolicy';
+    }
     if (!reprint_push_array_has_exact_keys($evidence, $expected_keys)) {
         return false;
     }
@@ -3782,6 +3826,20 @@ function reprint_push_plugin_driver_contract_evidence_accepted(
             return false;
         }
         if ($evidence['rowSchema'] !== $row_schema) {
+            return false;
+        }
+    }
+    $merge_policy = null;
+    if (array_key_exists('mergePolicy', $evidence)) {
+        if (!is_array($evidence['mergePolicy'] ?? null)) {
+            return false;
+        }
+        try {
+            $merge_policy = reprint_push_normalize_plugin_owned_row_driver_merge_policy($evidence['mergePolicy']);
+        } catch (Throwable $error) {
+            return false;
+        }
+        if ($evidence['mergePolicy'] !== $merge_policy) {
             return false;
         }
     }
@@ -3809,7 +3867,8 @@ function reprint_push_plugin_driver_contract_evidence_accepted(
             $driver,
             $table,
             $supports_delete,
-            $row_schema
+            $row_schema,
+            $merge_policy
         );
 }
 

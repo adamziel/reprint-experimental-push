@@ -4,6 +4,30 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Plugin Row Driver Merge Policy Boundary
+
+- Last update: 2026-06-02 08:57 CEST +02:00.
+- Plugin-owned row driver contracts can now declare a normalized
+  `mergePolicy`. Version 1 supports only `refuse-on-conflict`, which binds to
+  `conflictResolution: "preserve-remote-and-stop"` and `rawValuesIncluded:
+  false`.
+- The merge policy is included in the contract hash and canonical contract
+  evidence. Planner carries the normalized policy into mutation envelopes, and
+  apply refuses forged ready plans whose mutation-side policy no longer matches
+  the accepted contract evidence.
+- Unsupported merge strategies, malformed merge-policy declarations, and
+  merge-policy objects that claim raw values fail closed before mutation with
+  hash-only contract evidence.
+- PHP registered-driver snapshot export now emits normalized merge-policy
+  metadata and includes it in the exported plugin row-driver contract hash.
+- Focused JS/PHP coverage proves normalization, hash binding, planner refusal,
+  apply refusal for forged policy changes, and PHP snapshot export parity. See
+  [ao-plugin-driver-merge-policy.md](evidence/ao-plugin-driver-merge-policy.md).
+- Caveat: this does not implement semantic plugin merging. It creates the first
+  conservative merge-driver contract boundary; merge strategies beyond
+  `refuse-on-conflict`, plugin-owned files, side-effect recovery, and
+  plugin-provided reference extractors remain release-scope work.
+
 ## 2026-06-02 - Contract-Driven Core Graph Target Validation
 
 - Last update: 2026-06-02 08:46 CEST +02:00.

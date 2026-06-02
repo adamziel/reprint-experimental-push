@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { applyPlan } from '../src/apply.js';
 import { createPushPlan } from '../src/planner.js';
 import {
+  normalizePluginOwnedRowDriverMergePolicy,
   normalizePluginOwnedRowDriverRowSchema,
   pluginOwnedRowDriverContractValidationEvidenceHash,
   pluginOwnedRowDriverContractHash,
@@ -207,6 +208,13 @@ const normalizedConstrainedCustomTableRowSchema = Object.freeze({
   ],
 });
 
+const normalizedRefuseOnConflictMergePolicy = Object.freeze({
+  schemaVersion: 1,
+  strategy: 'refuse-on-conflict',
+  conflictResolution: 'preserve-remote-and-stop',
+  rawValuesIncluded: false,
+});
+
 test('legacy object row schema normalization and contract hash remain stable', () => {
   const objectSchemaContract = schemaBoundCustomTableContract();
   const normalizedSchemaContract = schemaBoundCustomTableContract({
@@ -316,6 +324,43 @@ test('schema constraint normalization stores hashes and preserves hash-form cont
   assert.equal(serialized.includes('local-constraint'), false);
   assert.equal(serialized.includes('local-constraint-alt'), false);
   assert.equal(serialized.includes('"local"'), false);
+});
+
+test('plugin row driver merge policy normalization is hash-bound and conservative', () => {
+  const stringPolicyContract = explicitCustomTableContract({
+    mergePolicy: 'refuse-on-conflict',
+  });
+  const objectPolicyContract = explicitCustomTableContract({
+    mergePolicy: {
+      strategy: 'refuse-on-conflict',
+      rawValuesIncluded: false,
+    },
+  });
+  const unsupportedPolicy = normalizePluginOwnedRowDriverMergePolicy({
+    strategy: 'last-write-wins',
+  });
+  const rawPolicy = normalizePluginOwnedRowDriverMergePolicy({
+    strategy: 'refuse-on-conflict',
+    rawValuesIncluded: true,
+  });
+
+  assert.deepEqual(
+    normalizePluginOwnedRowDriverMergePolicy('refuse-on-conflict').normalized,
+    normalizedRefuseOnConflictMergePolicy,
+  );
+  assert.equal(
+    pluginOwnedRowDriverContractHash(stringPolicyContract),
+    pluginOwnedRowDriverContractHash(objectPolicyContract),
+  );
+  assert.notEqual(
+    pluginOwnedRowDriverContractHash(stringPolicyContract),
+    pluginOwnedRowDriverContractHash(explicitCustomTableContract()),
+  );
+  assert.equal(unsupportedPolicy.valid, false);
+  assert.equal(unsupportedPolicy.reasonCode, 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_MERGE_POLICY');
+  assert.equal(unsupportedPolicy.observed, 'unsupported-strategy');
+  assert.equal(rawPolicy.valid, false);
+  assert.equal(rawPolicy.reasonCode, 'PLUGIN_DRIVER_CONTRACT_MERGE_POLICY_RAW_VALUES_INCLUDED');
 });
 
 test('invalid schema constraints fail closed before becoming contracts', () => {
@@ -472,6 +517,52 @@ test('explicit custom row driver contract carries contract-bound validator evide
   assert.equal(result.site.db.wp_forms_contract_rows['entry_id:7'].payload.mode, 'local-contract-custom');
   assert.equal(evidenceJson.includes('base-contract-custom-secret'), false);
   assert.equal(evidenceJson.includes('local-contract-custom-secret'), false);
+});
+
+test('explicit custom row driver merge policy is carried and bound through apply', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-merge-policy', secret: 'base-merge-policy-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-merge-policy';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-merge-policy-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract({
+      mergePolicy: 'refuse-on-conflict',
+    })),
+  };
+  const remote = cloneJson(base);
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const contractEvidence = mutation.pluginOwnedResource.contractValidationEvidence;
+  const payloadEvidence = mutation.pluginOwnedResource.driverPayloadValidationEvidence;
+  const result = applyPlan(remote, plan);
+  const evidenceJson = JSON.stringify({ contractEvidence, payloadEvidence, mutation: mutation.pluginOwnedResource });
+
+  assert.equal(plan.status, 'ready');
+  assert.deepEqual(mutation.pluginOwnedResource.mergePolicy, normalizedRefuseOnConflictMergePolicy);
+  assert.deepEqual(contractEvidence.mergePolicy, normalizedRefuseOnConflictMergePolicy);
+  assert.equal(
+    contractEvidence.contractHash,
+    pluginOwnedRowDriverContractHash(contractEvidence),
+  );
+  assert.equal(
+    payloadEvidence.contractValidationHash,
+    pluginOwnedRowDriverContractValidationEvidenceHash(contractEvidence),
+  );
+  assert.equal(result.appliedMutations, 1);
+  assert.equal(result.site.db.wp_forms_contract_rows['entry_id:7'].payload.mode, 'local-merge-policy');
+  assert.equal(evidenceJson.includes('base-merge-policy-secret'), false);
+  assert.equal(evidenceJson.includes('local-merge-policy-secret'), false);
 });
 
 test('contract-bound custom row driver blocks present payloads without owner markers', () => {
@@ -998,6 +1089,50 @@ test('schema-bound custom row driver contract with unsupported field type fails 
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
+test('explicit custom row driver contract with unsupported merge policy fails closed before mutation', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-merge-policy-invalid', secret: 'base-merge-policy-invalid-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-merge-policy-invalid';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-merge-policy-invalid-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract({
+      mergePolicy: {
+        strategy: 'last-write-wins',
+        rawValuesIncluded: false,
+      },
+    })),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const evidence = blocker.contractValidationEvidence;
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'invalid-plugin-driver-contract');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_MERGE_POLICY');
+  assert.equal(evidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_MERGE_POLICY');
+  assert.deepEqual(evidence.issueCodes, ['PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_MERGE_POLICY']);
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(JSON.stringify(blocker).includes('last-write-wins'), false);
+  assert.equal(JSON.stringify(blocker).includes('base-merge-policy-invalid-secret'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-merge-policy-invalid-secret'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
 test('unsupported explicit plugin-owned row driver contract version fails closed before mutation', () => {
   const base = baseSite();
   const local = cloneJson(base);
@@ -1476,6 +1611,54 @@ test('apply refuses forged custom row driver contracts when table binding is cha
   assert.equal(error.details.contractValidationEvidence.table, 'wp_forms_contract_rows');
   assert.equal(JSON.stringify(error.details).includes('base-contract-binding-secret'), false);
   assert.equal(JSON.stringify(error.details).includes('local-contract-binding-secret'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('apply refuses forged custom row driver contracts when merge policy binding is changed', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-contract-merge-binding', secret: 'base-contract-merge-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-contract-merge-binding';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-contract-merge-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract({
+      mergePolicy: 'refuse-on-conflict',
+    })),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const forgedPlan = cloneJson(plan);
+  mutationFor(forgedPlan, resourceKey).pluginOwnedResource.mergePolicy = {
+    schemaVersion: 1,
+    strategy: 'refuse-on-conflict',
+    conflictResolution: 'silently-merge',
+    rawValuesIncluded: false,
+  };
+
+  let error;
+  try {
+    applyPlan(remote, forgedPlan);
+  } catch (caught) {
+    error = caught;
+  }
+
+  assert.equal(error?.code, 'PLUGIN_DRIVER_CONTRACT_BOUND_MERGE_POLICY_MISMATCH');
+  assert.equal(error.details.resourceKey, resourceKey);
+  assert.equal(error.details.pluginOwner, 'forms');
+  assert.equal(error.details.driver, 'forms-contract-row');
+  assert.deepEqual(error.details.contractValidationEvidence.mergePolicy, normalizedRefuseOnConflictMergePolicy);
+  assert.equal(JSON.stringify(error.details).includes('silently-merge'), false);
+  assert.equal(JSON.stringify(error.details).includes('base-contract-merge-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('local-contract-merge-secret'), false);
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
