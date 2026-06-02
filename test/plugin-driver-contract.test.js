@@ -190,6 +190,69 @@ test('unsupported explicit plugin-owned row driver contract version fails closed
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
+test('explicit plugin-owned row driver contract without a kind fails closed before mutation', () => {
+  const base = baseSite();
+  const local = cloneJson(base);
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-contract-missing-kind';
+  const malformed = explicitContract();
+  delete malformed.contractKind;
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(malformed),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === formsOptionResourceKey);
+  const evidence = blocker.contractValidationEvidence;
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, formsOptionResourceKey), undefined);
+  assert.equal(blocker.class, 'invalid-plugin-driver-contract');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_MISSING_KIND');
+  assert.equal(evidence.outcome, 'refused-before-mutation');
+  assert.equal(evidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_MISSING_KIND');
+  assert.deepEqual(evidence.issueCodes, ['PLUGIN_DRIVER_CONTRACT_MISSING_KIND']);
+  assert.equal(evidence.contractKind, null);
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(blockerJson.includes('local-contract-missing-kind'), false);
+  assert.equal(blockerJson.includes('remote-preserved-contract'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('raw-value explicit plugin-owned row driver contract fails closed before mutation', () => {
+  const base = baseSite();
+  const local = cloneJson(base);
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-contract-raw-values';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitContract({ rawValuesIncluded: true })),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === formsOptionResourceKey);
+  const evidence = blocker.contractValidationEvidence;
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, formsOptionResourceKey), undefined);
+  assert.equal(blocker.class, 'invalid-plugin-driver-contract');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_RAW_VALUES_INCLUDED');
+  assert.equal(evidence.outcome, 'refused-before-mutation');
+  assert.equal(evidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_RAW_VALUES_INCLUDED');
+  assert.deepEqual(evidence.issueCodes, ['PLUGIN_DRIVER_CONTRACT_RAW_VALUES_INCLUDED']);
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(blockerJson.includes('local-contract-raw-values'), false);
+  assert.equal(blockerJson.includes('remote-preserved-contract'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
 test('explicit plugin-owned row driver contract without a driver fails closed as a contract error', () => {
   const base = baseSite();
   const local = cloneJson(base);

@@ -36,6 +36,8 @@ Optional fields:
 - `dryRunValidation`: hash-only dry-run validation hook evidence.
 - `applyValidation`: hash-only apply validation hook evidence.
 - `evidenceScope` or `releaseGateEvidenceScope`: evidence classification.
+- `rawValuesIncluded`: may be present only as `false`; any other value refuses
+  before mutation.
 
 ## Runtime Policy
 
@@ -43,9 +45,10 @@ Legacy fixture policies still normalize for existing lab coverage, but an entry
 that declares an explicit contract becomes strict:
 
 - unsupported `contractVersion` refuses before mutation
-- unsupported `contractKind` refuses before mutation
+- missing or unsupported `contractKind` refuses before mutation
 - missing `resourceKey`, `pluginOwner`, or `driver` refuses before mutation
 - malformed `supportsDelete` refuses before mutation
+- `rawValuesIncluded` values other than `false` refuse before mutation
 - accepted contracts emit `plugin-driver-contract-validation` evidence
 - contract evidence is hash-only and carries no raw plugin payload values
 - accepted contract evidence does not by itself authorize a mutation: the

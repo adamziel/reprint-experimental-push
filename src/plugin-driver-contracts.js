@@ -9,13 +9,16 @@ export function normalizePluginOwnedRowDriverContract(entry, {
     return { explicit: false, valid: true, normalized: null, evidence: null };
   }
 
+  const nestedContract = entry.contract && typeof entry.contract === 'object' && !Array.isArray(entry.contract)
+    ? entry.contract
+    : null;
   const explicit = hasOwn(entry, 'contractVersion')
     || hasOwn(entry, 'schemaVersion')
     || hasOwn(entry, 'driverContractVersion')
     || hasOwn(entry, 'contractKind')
     || entry.kind === PLUGIN_DRIVER_CONTRACT_KIND
-    || entry.contract?.kind === PLUGIN_DRIVER_CONTRACT_KIND
-    || hasOwn(entry.contract || {}, 'schemaVersion');
+    || nestedContract?.kind === PLUGIN_DRIVER_CONTRACT_KIND
+    || hasOwn(nestedContract || {}, 'schemaVersion');
 
   if (!explicit) {
     return { explicit: false, valid: true, normalized: null, evidence: null };
@@ -24,12 +27,12 @@ export function normalizePluginOwnedRowDriverContract(entry, {
   const contractVersion = entry.contractVersion
     ?? entry.schemaVersion
     ?? entry.driverContractVersion
-    ?? entry.contract?.schemaVersion
+    ?? nestedContract?.schemaVersion
     ?? null;
   const contractKind = entry.contractKind
     ?? entry.kind
-    ?? entry.contract?.kind
-    ?? PLUGIN_DRIVER_CONTRACT_KIND;
+    ?? nestedContract?.kind
+    ?? null;
   const resourceKey = entry.resourceKey || entry.key || entry.resource?.key || null;
   const pluginOwner = entry.pluginOwner || entry.owner || entry.plugin || null;
   const driver = entry.driver || entry.supportedDriver || entry.resourceDriver || null;
@@ -45,7 +48,14 @@ export function normalizePluginOwnedRowDriverContract(entry, {
       observed: contractVersion ?? null,
     });
   }
-  if (contractKind !== PLUGIN_DRIVER_CONTRACT_KIND) {
+  if (!isNonEmptyString(contractKind)) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_MISSING_KIND',
+      field: 'contractKind',
+      required: PLUGIN_DRIVER_CONTRACT_KIND,
+      observed: contractKind ?? null,
+    });
+  } else if (contractKind !== PLUGIN_DRIVER_CONTRACT_KIND) {
     issues.push({
       reasonCode: 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_KIND',
       field: 'contractKind',
@@ -91,6 +101,15 @@ export function normalizePluginOwnedRowDriverContract(entry, {
       field: 'supportsDelete',
       required: 'boolean',
       observed: typeof entry.supportsDelete,
+    });
+  }
+  const rawValuesIncluded = rawValuesIncludedMarker(entry, nestedContract);
+  if (rawValuesIncluded.declared && rawValuesIncluded.value !== false) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_RAW_VALUES_INCLUDED',
+      field: rawValuesIncluded.field,
+      required: false,
+      observed: rawValuesIncluded.value,
     });
   }
 
@@ -139,4 +158,22 @@ function isNonEmptyString(value) {
 
 function hasOwn(value, key) {
   return value && Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function rawValuesIncludedMarker(entry, nestedContract) {
+  if (hasOwn(entry, 'rawValuesIncluded')) {
+    return {
+      declared: true,
+      field: 'rawValuesIncluded',
+      value: entry.rawValuesIncluded,
+    };
+  }
+  if (hasOwn(nestedContract, 'rawValuesIncluded')) {
+    return {
+      declared: true,
+      field: 'contract.rawValuesIncluded',
+      value: nestedContract.rawValuesIncluded,
+    };
+  }
+  return { declared: false, field: 'rawValuesIncluded', value: false };
 }
