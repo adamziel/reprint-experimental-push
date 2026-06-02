@@ -92,9 +92,11 @@ The default generated run covers:
   hash-only stale-user blockers, `wp_posts.post_parent` page hierarchy
   variant-3 cases with ready identity-map rewrites and stale parent drift
   blockers, `wp_postmeta.post_id` variant-3 cases with ready identity-map row
-  rewrites and stale post drift blockers, multisite `wp_sitemeta.site_id`
-  variant-3 cases with ready identity-map row rewrites and stale site drift
-  blockers, `wp_comments.comment_post_ID`
+  rewrites and stale post drift blockers, multisite `wp_blogs.site_id`
+  variant-3 cases with ready identity-map scalar rewrites and stale site drift
+  blockers, multisite `wp_sitemeta.site_id` variant-3 cases with ready
+  identity-map row rewrites and stale site drift blockers,
+  `wp_comments.comment_post_ID`
   variant-3 cases with ready identity-map rewrites and stale post drift
   blockers, `wp_comments.comment_parent` thread reference variant-3 cases with
   stable parent identity proof, ready identity-map rewrites, and stale parent
@@ -929,6 +931,17 @@ post drift cases, with two cases in every tier. Ready cases map a local
 post, rewrite the dependent `wp_postmeta` row key and row `post_id` to the
 proven remote ID, and reject stale replay before mutation. Stale cases drift the
 base post remotely and require the dependent postmeta row to fail closed as
+`stale-wordpress-graph-identity` with hash-only target evidence. This remains
+local generated support evidence only; final release remains `NO-GO`.
+
+The `blogSiteIdReferenceVariant3` target adds generated multisite
+`wp_blogs.site_id` references. The deterministic roster emits 20 support-only
+variant-3 target cases: 10 ready site identity-map rewrite cases and 10 stale
+site drift cases, with two cases in every tier. Ready cases map a local
+`wp_site` row to an equivalent remote site row, preserve that remote site, and
+rewrite the dependent `wp_blogs` row's `site_id` to the proven remote ID without
+changing the `blog_id:<id>` row key. Stale cases drift the base site remotely
+and require the dependent blog row to fail closed as
 `stale-wordpress-graph-identity` with hash-only target evidence. This remains
 local generated support evidence only; final release remains `NO-GO`.
 

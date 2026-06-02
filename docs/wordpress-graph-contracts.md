@@ -93,6 +93,12 @@ including `wp_blogmeta.blog_id` and `wp_sitemeta.site_id`. Apply then validates
 that the serialized payload field and the rewritten row key point at the same
 carried target row.
 
+Rows whose identity does not contain the rewritten field keep their row key.
+For multisite `wp_blogs.site_id`, the `blog_id:<id>` row resource stays fixed
+while the serialized `site_id` payload rewrites to the proven remote `wp_site`
+target. Apply validates the payload against the carried target site before any
+mutation.
+
 Identity-map equivalence is proven only against maps already promoted as usable.
 The candidate map may rewrite its own primary row ID during equivalence
 comparison, but nested scalar references inside that row must resolve through a

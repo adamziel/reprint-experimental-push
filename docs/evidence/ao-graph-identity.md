@@ -41,6 +41,14 @@ Lane: graph-identity
   target, and apply validates target primary IDs by WordPress table suffix so
   `wp_blogs.blog_id` and prefixed tables stay bound to the same hash-only
   rewrite evidence.
+- Adds focused planner/apply evidence for multisite `wp_blogs.site_id`
+  identity-map rewrites. Blog row IDs shaped as `blog_id:<id>` stay stable
+  while the `site_id` payload rewrites to the proven remote site target; apply
+  refuses forged `site_id` payloads before mutation, and stale mapped site
+  targets remain blocked with hash-only graph evidence.
+- Adds generated harness evidence for multisite `wp_blogs.site_id` references:
+  20 deterministic support-only cases across all 10 tiers, split between ready
+  identity-map scalar rewrites and stale site drift blockers.
 - Adds focused planner/apply evidence for multisite `wp_sitemeta.site_id`
   identity-map rewrites. Composite sitemeta row IDs shaped as
   `site_id:<source>:meta_key:<key>` are rewritten to the proven remote site
@@ -105,19 +113,28 @@ RPP-0306 focused worker verification commands:
   — 3 subtests, 0 failures, including `wp_blogmeta.blog_id` payload and
   composite row-key rewrite, forged payload refusal, and stale mapped-target
   refusal before mutation.
+- `node --test test/blog-site-id-reference.test.js`
+  — 3 subtests, 0 failures, including `wp_blogs.site_id` payload rewrite with
+  stable blog row key, forged payload refusal, and stale mapped-target refusal
+  before mutation.
 - `node --test test/sitemeta-site-id-reference.test.js`
   — 3 subtests, 0 failures, including `wp_sitemeta.site_id` payload and
   composite row-key rewrite, forged payload refusal, and stale mapped-target
   refusal before mutation.
+- `node --test --test-name-pattern='blog site_id reference variant 3|RPP-0902' test/generated-push-harness.test.js`
+  — 2 subtests, 0 failures, including generated `wp_blogs.site_id` and
+  `wp_sitemeta.site_id` support-only cases with ready identity-map rewrites and
+  stale site blockers.
 - `node --test --test-name-pattern=RPP-0902 test/generated-push-harness.test.js`
   — 1 subtest, 0 failures, including 20 generated `wp_sitemeta.site_id`
   support-only cases with ready identity-map row rewrites and stale site
   blockers.
 - `node --test test/generated-push-harness.test.js`
-  — 101 subtests, 0 failures, including RPP-0902 generated multisite
+  — 102 subtests, 0 failures, including generated multisite
+  `wp_blogs.site_id` coverage, RPP-0902 generated multisite
   `wp_sitemeta.site_id` coverage and adjacent graph-identity generated proofs.
 - `npm test`
-  — 3138 tests, 3127 passed, 0 failed, 11 skipped.
+  — 3142 tests, 3131 passed, 0 failed, 11 skipped.
 
 ## Remaining unmapped or fail-closed WordPress surfaces
 
@@ -146,6 +163,10 @@ RPP-0306 focused worker verification commands:
   `wp_blogs` identity maps, including composite
   `blog_id:<id>:meta_key:<key>` row IDs, apply-time forged payload refusal,
   and stale target refusal.
+- Generated/focused multisite evidence: `wp_blogs.site_id` references now
+  rewrite through explicit `wp_site` identity maps, preserving the
+  `blog_id:<id>` row key while rebinding the payload, with apply-time forged
+  payload refusal and stale target refusal.
 - RPP-0902 / focused multisite evidence: `wp_sitemeta.site_id` references now
   rewrite through explicit `wp_site` identity maps, including composite
   `site_id:<id>:meta_key:<key>` row IDs, apply-time forged payload refusal,

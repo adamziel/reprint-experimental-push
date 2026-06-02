@@ -14578,6 +14578,239 @@ function assertPostmetaPostIdReferenceVariant3RawValuesAbsent(testCase, shape, e
   }
 }
 
+test('generated harness records blog site_id reference variant 3 coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.blogSiteIdReferenceVariant3;
+  const expectedPerTier = Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2]));
+
+  assert.ok(coverage, 'missing blog site_id reference variant 3 target coverage');
+  assert.equal(coverage.family, 'blog-site-id-reference-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['blog-site-id-reference-v3']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { blocked: 10, ready: 10 });
+  assert.deepEqual(coverage.perTier, expectedPerTier);
+  assert.equal(report.summary.featureFamilies['blog-site-id-reference-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['blog-site-id-reference-v3-stale'], 10);
+  assert.equal(report.summary.featureFamilies['blog-site-id-reference-v3-non-ready'], 10);
+  assert.equal(report.summary.featureFamilies['blog-site-id-reference-v3-identity-map'], 10);
+
+  const targetCases = generatePushHarnessCases()
+    .filter((testCase) => testCase.tags.has('blog-site-id-reference-v3'));
+  const perTier = {};
+  const statuses = {};
+
+  assert.equal(targetCases.length, coverage.total);
+  for (const testCase of targetCases) {
+    const staleTarget = testCase.tags.has('blog-site-id-reference-v3-stale');
+    const result = validateGeneratedCase(testCase);
+    const plan = createGeneratedPlan(testCase);
+    const shape = blogSiteIdReferenceVariant3Shape(testCase, { staleTarget });
+
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    assertBlogSiteIdReferenceVariant3EvidenceRedacted(testCase, plan, shape);
+
+    if (staleTarget) {
+      assertBlogSiteIdReferenceVariant3StaleCase({ testCase, result, plan, shape });
+      continue;
+    }
+
+    assertBlogSiteIdReferenceVariant3ReadyCase({ testCase, result, plan, shape });
+  }
+
+  assert.deepEqual(sortNumericObject(perTier), coverage.perTier);
+  assert.deepEqual(sortStringObject(statuses), coverage.statuses);
+});
+
+function blogSiteIdReferenceVariant3Shape(testCase, { staleTarget }) {
+  const blogRows = Object.entries(testCase.local.db.wp_blogs || {})
+    .filter(([, row]) => String(row.domain || '').startsWith('rpp-blog-site-reference-blog-'));
+
+  assert.equal(blogRows.length, 1, `${testCase.id} should include one generated blog site_id row`);
+
+  const [blogRowId, blogRow] = blogRows[0];
+  const sourceSiteId = Number(blogRow.site_id);
+  const sourceSiteRowId = `id:${sourceSiteId}`;
+  const sourceSite = testCase.local.db.wp_site?.[sourceSiteRowId];
+  const mapEntry = (testCase.local.meta?.wordpressGraphIdentityMap?.rows || [])
+    .find((entry) => entry.table === 'wp_site' && entry.localId === sourceSiteRowId);
+  const targetSiteRowId = staleTarget ? sourceSiteRowId : mapEntry?.remoteId;
+  const targetSiteId = blogSiteIdReferenceVariant3SiteIdFromRowId(targetSiteRowId);
+  const targetSite = testCase.remote.db.wp_site?.[targetSiteRowId];
+
+  assert.equal(blogRowId, `blog_id:${blogRow.blog_id}`);
+  assert.ok(Number.isSafeInteger(sourceSiteId), `${testCase.id} blog site_id should be numeric`);
+  assert.ok(sourceSite, `${testCase.id} missing local source site ${sourceSiteRowId}`);
+  assert.equal(sourceSite.id, sourceSiteId);
+  assert.ok(targetSite, `${testCase.id} missing remote target site ${targetSiteRowId}`);
+  assert.equal(targetSite.id, targetSiteId);
+
+  if (staleTarget) {
+    assert.equal(mapEntry, undefined, `${testCase.id} stale target should not use an identity map`);
+    assert.deepEqual(
+      testCase.local.db.wp_site[sourceSiteRowId],
+      testCase.base.db.wp_site[sourceSiteRowId],
+      `${testCase.id} stale local source site should match base`,
+    );
+    assert.notDeepEqual(
+      testCase.remote.db.wp_site[sourceSiteRowId],
+      testCase.base.db.wp_site[sourceSiteRowId],
+      `${testCase.id} stale site target should drift remotely`,
+    );
+  } else {
+    assert.ok(mapEntry, `${testCase.id} ready target should carry a wp_site identity map`);
+    assert.equal(testCase.remote.db.wp_site?.[sourceSiteRowId], undefined);
+    assert.equal(testCase.base.db.wp_site?.[sourceSiteRowId], undefined);
+    assert.equal(testCase.base.db.wp_site?.[targetSiteRowId], undefined);
+    assert.equal(sourceSite.domain, targetSite.domain);
+    assert.equal(sourceSite.path, targetSite.path);
+  }
+
+  return {
+    sourceSiteId,
+    sourceSiteRowId,
+    sourceSiteResource: rowResource('wp_site', sourceSiteRowId),
+    sourceSiteResourceKey: rowResourceKey('wp_site', sourceSiteRowId),
+    targetSiteId,
+    targetSiteRowId,
+    targetSiteResource: rowResource('wp_site', targetSiteRowId),
+    targetSiteResourceKey: rowResourceKey('wp_site', targetSiteRowId),
+    blogId: blogRow.blog_id,
+    blogRowId,
+    blogResource: rowResource('wp_blogs', blogRowId),
+    blogResourceKey: rowResourceKey('wp_blogs', blogRowId),
+    rawValues: [
+      sourceSite.domain,
+      targetSite.domain,
+      blogRow.domain,
+      blogRow.path,
+    ].filter(Boolean),
+  };
+}
+
+function assertBlogSiteIdReferenceVariant3ReadyCase({ testCase, result, plan, shape }) {
+  assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+  assert.equal(result.status, 'ready', `${testCase.id} should validate as ready`);
+  assert.equal(result.applied, true, `${testCase.id} should apply`);
+  assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+  assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+  assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+  const sourceDecision = plan.decisions.find((decision) => decision.resourceKey === shape.sourceSiteResourceKey);
+  const targetDecision = plan.decisions.find((decision) => decision.resourceKey === shape.targetSiteResourceKey);
+  const blogMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === shape.blogResourceKey);
+  const blogPrecondition = plan.preconditions.find((precondition) =>
+    precondition.resourceKey === shape.blogResourceKey);
+
+  assert.equal(sourceDecision?.decision, 'map-local-identity-to-remote');
+  assert.equal(targetDecision?.decision, 'keep-remote');
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.sourceSiteResourceKey),
+    false,
+    `${testCase.id} should not create the mapped local source site`,
+  );
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.targetSiteResourceKey),
+    false,
+    `${testCase.id} should preserve the remote target site`,
+  );
+  assert.ok(blogMutation, `${testCase.id} should plan the rewritten wp_blogs row`);
+  assert.ok(blogPrecondition, `${testCase.id} should precondition the rewritten wp_blogs row`);
+
+  const plannedBlog = deserializeResourceValue(blogMutation.value);
+  const rewrite = blogMutation.wordpressGraphIdentity?.rewrites.find((entry) =>
+    entry.relationshipType === 'blog-site');
+  const applied = applyPlan(cloneJson(testCase.remote), plan);
+  const appliedHash = resourceHash(applied.site, shape.blogResource);
+
+  assert.ok(rewrite, `${testCase.id} should carry blog-site rewrite evidence`);
+  assert.equal(blogMutation.action, 'put');
+  assert.equal(blogMutation.changeKind, 'create');
+  assert.equal(plannedBlog.blog_id, shape.blogId);
+  assert.equal(plannedBlog.site_id, shape.targetSiteId);
+  assert.equal(rewrite.relationshipKey, 'wp_blogs.site_id');
+  assert.equal(rewrite.relationshipType, 'blog-site');
+  assert.equal(rewrite.field, 'site_id');
+  assert.equal(rewrite.sourceResourceKey, shape.blogResourceKey);
+  assert.equal(rewrite.rewrittenResourceKey, shape.blogResourceKey);
+  assert.equal(rewrite.sourceTargetResourceKey, shape.sourceSiteResourceKey);
+  assert.equal(rewrite.targetResourceKey, shape.targetSiteResourceKey);
+  assert.equal(blogPrecondition.mutationId, blogMutation.id);
+  assert.equal(blogPrecondition.expectedHash, blogMutation.remoteBeforeHash);
+  assert.equal(appliedHash, blogMutation.localHash, `${testCase.id} did not apply the rewritten blog hash`);
+  assert.equal(applied.site.db.wp_site[shape.sourceSiteRowId], undefined);
+  assert.equal(applied.site.db.wp_site[shape.targetSiteRowId].id, shape.targetSiteId);
+  assert.equal(applied.site.db.wp_blogs[shape.blogRowId].site_id, shape.targetSiteId);
+}
+
+function assertBlogSiteIdReferenceVariant3StaleCase({ testCase, result, plan, shape }) {
+  assert.equal(plan.status, 'blocked', `${testCase.id} should plan as blocked`);
+  assert.equal(result.status, 'blocked', `${testCase.id} should validate as blocked`);
+  assert.equal(result.applied, false, `${testCase.id} stale blog site_id graph should not apply`);
+  assert.equal(result.nonReadyRemoteUnchanged, true, `${testCase.id} stale graph should leave remote unchanged`);
+
+  const blogMutation = plan.mutations.find((mutation) => mutation.resourceKey === shape.blogResourceKey);
+  const blocker = plan.blockers.find((entry) =>
+    entry.resourceKey === shape.blogResourceKey
+    && entry.references?.some((reference) => reference.relationshipType === 'blog-site'));
+  const reference = blocker?.references.find((entry) => entry.relationshipType === 'blog-site');
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+
+  assert.equal(blogMutation, undefined, `${testCase.id} should not plan the stale wp_blogs row`);
+  assert.ok(blocker, `${testCase.id} should expose a blog site_id graph blocker`);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.ok(reference, `${testCase.id} should include blog site_id target evidence`);
+  assert.equal(reference.relationshipKey, 'wp_blogs.site_id');
+  assert.equal(reference.relationshipType, 'blog-site');
+  assert.equal(reference.sourceResourceKey, shape.blogResourceKey);
+  assert.equal(reference.targetResourceKey, shape.sourceSiteResourceKey);
+  assert.equal(reference.targetChange.localChange, 'unchanged');
+  assert.equal(reference.targetChange.remoteChange, 'update');
+  assert.ok(error instanceof PushPlanError, `${testCase.id} stale blog site_id plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(digest(remoteBefore), remoteBeforeHash, `${testCase.id} stale refusal mutated remote`);
+}
+
+function assertBlogSiteIdReferenceVariant3EvidenceRedacted(testCase, plan, shape) {
+  const redacted = redactEvidence({
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    tags: [...testCase.tags].sort(),
+    status: plan.status,
+    summary: plan.summary,
+    preconditions: plan.preconditions,
+    mutations: plan.mutations,
+    blockers: plan.blockers,
+    decisions: plan.decisions,
+    rawBlogSiteProbe: {
+      value: {
+        localSite: testCase.local.db.wp_site?.[shape.sourceSiteRowId],
+        remoteSite: testCase.remote.db.wp_site?.[shape.targetSiteRowId],
+        blog: testCase.local.db.wp_blogs?.[shape.blogRowId],
+      },
+    },
+  });
+  const serialized = JSON.stringify(redacted);
+
+  assert.ok(serialized.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} should redact raw blog site evidence`);
+  assert.match(serialized, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash-only values`);
+  for (const value of shape.rawValues) {
+    assert.equal(serialized.includes(String(value)), false, `${testCase.id} leaked raw blog site value ${value}`);
+  }
+}
+
+function blogSiteIdReferenceVariant3SiteIdFromRowId(rowId) {
+  const match = /^id:(\d+)$/.exec(String(rowId || ''));
+  assert.ok(match, `invalid wp_site row id ${rowId}`);
+  return Number(match[1]);
+}
+
 test('RPP-0902 generated harness records sitemeta site_id reference variant 3 coverage', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.sitemetaSiteIdReferenceVariant3;
