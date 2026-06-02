@@ -86,10 +86,11 @@ explicit identity map, it also records the normalized identity-map
 `contractHash`. Apply recomputes both contract hashes and rejects forged,
 missing, or unsupported rewrite evidence before any mutation.
 
-For meta tables whose row resource IDs include the referenced owner ID, planner
-also rewrites the dependent row key. Version 1 covers composite meta IDs shaped
-like `<owner_field>:<id>:meta_key:<key>` for supported WordPress meta families,
-including `wp_blogmeta.blog_id` and `wp_sitemeta.site_id`. Apply then validates
+For tables whose row resource IDs include the referenced owner ID, planner also
+rewrites the dependent row key. Version 1 covers composite meta IDs shaped like
+`<owner_field>:<id>:meta_key:<key>` for supported WordPress meta families,
+including `wp_blogmeta.blog_id` and `wp_sitemeta.site_id`, plus owner-keyed
+`wp_blog_versions.blog_id` rows shaped as `blog_id:<id>`. Apply then validates
 that the serialized payload field and the rewritten row key point at the same
 carried target row.
 

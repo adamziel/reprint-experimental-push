@@ -557,6 +557,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'link-owner-reference-variant3',
     tag: 'link-owner-reference-v3',
   },
+  blogVersionBlogIdReferenceVariant3: {
+    family: 'blog-version-blog-id-reference-variant3',
+    tag: 'blog-version-blog-id-reference-v3',
+  },
   blogSiteIdReferenceVariant3: {
     family: 'blog-site-id-reference-variant3',
     tag: 'blog-site-id-reference-v3',
@@ -2264,6 +2268,15 @@ function buildGeneratedCase({ index, tier, rng }) {
     tags,
   });
 
+  addBlogVersionBlogIdReferenceVariant3Target({
+    family,
+    base,
+    local,
+    remote,
+    allocator,
+    tags,
+  });
+
   addBlogSiteIdReferenceVariant3Target({
     family,
     base,
@@ -2541,6 +2554,24 @@ function addLinkOwnerReferenceVariant3Target({
   }
 
   addLinkOwnerReferenceVariant3(base, local, remote, allocator, tags, { staleTarget });
+  tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
+}
+
+function addBlogVersionBlogIdReferenceVariant3Target({
+  family,
+  base,
+  local,
+  remote,
+  allocator,
+  tags,
+}) {
+  const readyTarget = family === 'same-plan-post-parent-graph';
+  const staleTarget = family === 'stale-post-author-graph';
+  if (!readyTarget && !staleTarget) {
+    return;
+  }
+
+  addBlogVersionBlogIdReferenceVariant3(base, local, remote, allocator, tags, { staleTarget });
   tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
 }
 
@@ -5397,6 +5428,80 @@ function addLinkOwnerReferenceVariant3(base, local, remote, allocator, tags, { s
     tags.add('link-owner-reference-v3-stale');
     tags.add('link-owner-reference-v3-stale-target');
     tags.add('link-owner-reference-v3-non-ready');
+  }
+}
+
+function addBlogVersionBlogIdReferenceVariant3(base, local, remote, allocator, tags, { staleTarget }) {
+  const sourceBlogId = allocator.graphId();
+  const sourceBlogRowId = `blog_id:${sourceBlogId}`;
+  const blogVersionRow = {
+    blog_id: sourceBlogId,
+    db_version: 60000,
+    last_updated: '2026-06-02 00:00:00',
+  };
+
+  if (staleTarget) {
+    const blogRow = {
+      blog_id: sourceBlogId,
+      site_id: 1,
+      domain: `rpp-blog-version-reference-stale-blog-${sourceBlogId}.example.test`,
+      path: '/generated-blog-version-reference/',
+      public: 1,
+      archived: 0,
+      mature: 0,
+      spam: 0,
+      deleted: 0,
+    };
+
+    setRow(base, 'wp_blogs', sourceBlogRowId, blogRow);
+    setRow(local, 'wp_blogs', sourceBlogRowId, blogRow);
+    setRow(remote, 'wp_blogs', sourceBlogRowId, {
+      ...blogRow,
+      domain: `remote-private-rpp-blog-version-reference-stale-blog-${sourceBlogId}.example.test`,
+    });
+    setRow(local, 'wp_blog_versions', sourceBlogRowId, blogVersionRow);
+  } else {
+    const targetBlogId = allocator.graphId();
+    const targetBlogRowId = `blog_id:${targetBlogId}`;
+    const blogRow = {
+      blog_id: sourceBlogId,
+      site_id: 1,
+      domain: `rpp-blog-version-reference-mapped-blog-${sourceBlogId}.example.test`,
+      path: '/generated-blog-version-reference/',
+      public: 1,
+      archived: 0,
+      mature: 0,
+      spam: 0,
+      deleted: 0,
+    };
+    const targetBlogRow = {
+      ...blogRow,
+      blog_id: targetBlogId,
+    };
+
+    setRow(local, 'wp_blogs', sourceBlogRowId, blogRow);
+    setRow(remote, 'wp_blogs', targetBlogRowId, targetBlogRow);
+    addWordPressGraphIdentityMapRow(local, {
+      table: 'wp_blogs',
+      localId: sourceBlogRowId,
+      remoteId: targetBlogRowId,
+    });
+    setRow(local, 'wp_blog_versions', sourceBlogRowId, blogVersionRow);
+
+    tags.add('blog-version-blog-id-reference-v3-identity-map');
+    tags.add('blog-version-blog-id-reference-v3-ready');
+  }
+
+  tags.add('blog-version-blog-id-reference-v3');
+  tags.add('blog-version-blog-id-reference-v3-hash-only');
+  tags.add('blog-version-blog');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('blog-version-blog-id-reference-v3-stale');
+    tags.add('blog-version-blog-id-reference-v3-stale-target');
+    tags.add('blog-version-blog-id-reference-v3-non-ready');
   }
 }
 
