@@ -67,6 +67,7 @@ const summary = {
     'live target hashes all equal durable planned after hashes before finalization',
     'same key with a different body rejects before finalization and does not mutate',
     'same key with the same body appends DB apply-committed with zero fresh mutation work',
+    'recovery inspect reads the DB target envelope and classifies a missing envelope as blocked without mutating',
     'missing target-planned rows block missing-commit finalization even when live target hashes are all new',
   ],
   residualRisks: [
@@ -235,6 +236,31 @@ await withPlaygroundServer('db-journal-missing-target-envelope-negative', path.j
   assert.equal(started?.resourceHashEvidence?.targetEnvelope?.required, true, 'started row must still require target envelope');
   assert.equal(started?.resourceHashEvidence?.targetEnvelope?.plannedTargets, readyPlan.mutations.length);
 
+  const inspect = await postLab(server, '/recovery/inspect', applyBody, {
+    [idempotencyHeader]: `${idempotencyKey}-missing-envelope`,
+  });
+  assert.equal(inspect.status, 200);
+  assert.equal(inspect.body.ok, true);
+  assert.equal(inspect.body.recovery?.state, 'blocked-recovery');
+  assert.equal(inspect.body.recovery?.action, 'block-non-mutating');
+  assert.equal(inspect.body.recovery?.code, 'DB_JOURNAL_TARGET_ENVELOPE_MISSING');
+  assert.equal(inspect.body.recovery?.blockedReason, 'missing or incomplete DB target-planned recovery envelope');
+  assert.equal(inspect.body.recovery?.usedOptionJournal, false);
+  assert.equal(inspect.body.recovery?.journal?.storage, 'db-journal');
+  assert.equal(inspect.body.recovery?.journal?.targetEnvelope?.required, true);
+  assert.equal(inspect.body.recovery?.journal?.targetEnvelope?.status, 'blocked');
+  assert.equal(inspect.body.recovery?.journal?.targetEnvelope?.targetPlannedRows, 0);
+  assert.equal(inspect.body.recovery?.journal?.targetEnvelope?.requestTargetCount, readyPlan.mutations.length);
+  assert.equal(inspect.body.recovery?.journal?.targetEnvelope?.rawValuesIncluded, false);
+  assert.deepEqual(inspect.body.recovery?.counts, {
+    old: 0,
+    new: 0,
+    blockedUnknown: 0,
+    total: 0,
+  });
+  const afterInspect = await getSnapshot(server);
+  assert.equal(digest(visibleSurface(afterInspect.body.snapshot)), firstDigest, 'missing-envelope recovery inspect mutated target data');
+
   const blocked = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: `${idempotencyKey}-missing-envelope` });
   assert.equal(blocked.status, 409);
   assert.equal(blocked.body.ok, false);
@@ -262,6 +288,10 @@ await withPlaygroundServer('db-journal-missing-target-envelope-negative', path.j
   summary.missingEnvelope = {
     firstStatus: firstApply.status,
     firstCode: firstApply.body.code,
+    inspectStatus: inspect.status,
+    inspectState: inspect.body.recovery?.state,
+    inspectCode: inspect.body.recovery?.code,
+    inspectUsedOptionJournal: inspect.body.recovery?.usedOptionJournal,
     targetPlannedRows: countJournalEvents(blockedEntries, 'target-planned'),
     blockedStatus: blocked.status,
     blockedCode: blocked.body.code,

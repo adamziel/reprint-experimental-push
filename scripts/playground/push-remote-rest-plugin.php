@@ -1802,7 +1802,12 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
                 || !isset($result['recovery']['journal'])
             )
         ) {
-            $result['recovery']['journal'] = reprint_push_lab_rest_recovery_journal_evidence($request);
+            $result['recovery']['journal'] = reprint_push_lab_rest_merge_recovery_journal_evidence(
+                isset($result['recovery']['journal']) && is_array($result['recovery']['journal'])
+                    ? $result['recovery']['journal']
+                    : [],
+                reprint_push_lab_rest_recovery_journal_evidence($request)
+            );
         }
         $result = reprint_push_lab_rest_attach_authenticated_response_evidence($result, $request);
         $response->set_data($result);
@@ -2435,6 +2440,24 @@ function reprint_push_lab_rest_recovery_journal_evidence(WP_REST_Request $reques
     ];
 }
 
+function reprint_push_lab_rest_merge_recovery_journal_evidence(array $existing, array $checked): array
+{
+    if (count($existing) === 0) {
+        return $checked;
+    }
+
+    foreach (['targetEnvelope', 'storage'] as $key) {
+        if (array_key_exists($key, $existing)) {
+            $checked[$key] = $existing[$key];
+        }
+    }
+    if (isset($existing['integrity']) && is_array($existing['integrity'])) {
+        $checked['targetEnvelopeIntegrity'] = $existing['integrity'];
+    }
+
+    return $checked;
+}
+
 function reprint_push_lab_rest_prime_checked_recovery_claim_evidence(): void
 {
     $summary = reprint_push_lab_db_journal_summary(500);
@@ -2499,7 +2522,14 @@ function reprint_push_lab_rest_recovery_inspect(WP_REST_Request $request): WP_RE
         $receipt = reprint_push_lab_rest_receipt_payload($payload);
         $profile = reprint_push_lab_rest_route_profile($request);
 
-        $result = reprint_push_protocol_inspect_recovery($plan, $receipt, [
+        $db_journal_result = reprint_push_lab_rest_db_journal_recovery_inspect(
+            $request,
+            $payload,
+            $plan,
+            $receipt,
+            $profile
+        );
+        $result = is_array($db_journal_result) ? $db_journal_result : reprint_push_protocol_inspect_recovery($plan, $receipt, [
             'transport' => 'wordpress-rest',
             'restNamespace' => (string) $profile['restNamespace'],
             'restRoute' => reprint_push_lab_rest_profile_route($request, '/recovery/inspect'),
@@ -2520,6 +2550,138 @@ function reprint_push_lab_rest_recovery_inspect(WP_REST_Request $request): WP_RE
     }
 
     return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_db_journal_recovery_inspect(
+    WP_REST_Request $request,
+    array $payload,
+    array $plan,
+    ?array $receipt_payload,
+    array $profile
+): ?array {
+    $idempotency_key_hash = reprint_push_lab_rest_recovery_inspect_target_idempotency_key_hash(
+        $request,
+        $receipt_payload
+    );
+    if ($idempotency_key_hash === '') {
+        return null;
+    }
+
+    $request_hash = reprint_push_lab_db_journal_request_hash($payload);
+    $started_entry = reprint_push_lab_rest_latest_db_row_for_key_event(
+        $idempotency_key_hash,
+        $request_hash,
+        'apply-started'
+    );
+    if (!is_array($started_entry)) {
+        return null;
+    }
+
+    $validated = reprint_push_lab_rest_validate_plan_receipt_for_missing_commit($plan, $receipt_payload);
+    $planned_targets = reprint_push_lab_rest_planned_targets_from_started_entry($started_entry);
+    $target_validation = reprint_push_lab_rest_validate_started_targets(
+        $planned_targets,
+        $validated['recoveryTargets']
+    );
+    $target_rows = reprint_push_lab_db_journal_target_planned_rows_for_started_entry($started_entry);
+
+    $extra = [
+        'source' => 'db-journal-target-planned-recovery-inspect',
+        'action' => 'classify-read-only',
+        'usedOptionJournal' => false,
+        'restNamespace' => (string) ($profile['restNamespace'] ?? ''),
+        'routeProfile' => (string) ($profile['profile'] ?? ''),
+        'restRoute' => reprint_push_lab_rest_profile_route($request, '/recovery/inspect'),
+        'journal' => reprint_push_lab_rest_db_journal_recovery_inspect_journal_evidence(
+            $started_entry,
+            $planned_targets,
+            $validated['recoveryTargets'],
+            $target_rows,
+            $target_validation
+        ),
+    ];
+    if (($target_validation['ok'] ?? false) !== true) {
+        $extra['action'] = 'block-non-mutating';
+        $extra['code'] = (string) ($target_validation['code'] ?? 'DB_JOURNAL_TARGET_ENVELOPE_MISSING');
+        $extra['blockedReason'] = (string) ($target_validation['reason'] ?? 'missing durable target evidence');
+    }
+
+    $recovery = reprint_push_lab_rest_missing_commit_recovery_from_targets(
+        $planned_targets,
+        $validated['planEvidence'],
+        $validated['receipt'],
+        $extra
+    );
+
+    return [
+        'ok' => true,
+        'mode' => 'inspect',
+        'recovery' => $recovery,
+    ];
+}
+
+function reprint_push_lab_rest_recovery_inspect_target_idempotency_key_hash(
+    WP_REST_Request $request,
+    ?array $receipt_payload
+): string {
+    $dry_run_idempotency_key_hash = '';
+    if (is_array($receipt_payload)) {
+        $binding = isset($receipt_payload['authBinding']) && is_array($receipt_payload['authBinding'])
+            ? $receipt_payload['authBinding']
+            : [];
+        $push_session = isset($binding['pushSession']) && is_array($binding['pushSession'])
+            ? $binding['pushSession']
+            : [];
+        $dry_run_idempotency_key_hash = (string) ($push_session['dryRunIdempotencyKeyHash'] ?? '');
+    }
+    if (preg_match('/^[a-f0-9]{64}$/', $dry_run_idempotency_key_hash) === 1) {
+        return $dry_run_idempotency_key_hash;
+    }
+
+    $header_key = trim((string) $request->get_header('x-reprint-push-idempotency-key'));
+    if ($header_key !== '') {
+        return reprint_push_lab_db_journal_key_hash($header_key);
+    }
+
+    $signature = reprint_push_lab_rest_signature_context($request);
+    $signed_hash = (string) ($signature['request']['idempotencyKeyHash'] ?? '');
+    return preg_match('/^[a-f0-9]{64}$/', $signed_hash) === 1 ? $signed_hash : '';
+}
+
+function reprint_push_lab_rest_db_journal_recovery_inspect_journal_evidence(
+    array $started_entry,
+    array $started_targets,
+    array $request_targets,
+    array $target_rows,
+    array $target_validation
+): array {
+    $ok = ($target_validation['ok'] ?? false) === true;
+
+    return [
+        'schemaVersion' => 1,
+        'storage' => 'db-journal',
+        'integrity' => [
+            'schemaVersion' => 1,
+            'status' => $ok ? 'ok' : 'blocked',
+            'scope' => 'DB target-planned recovery inspect evidence; hash-only and read-only',
+        ],
+        'targetEnvelope' => [
+            'schemaVersion' => 1,
+            'required' => true,
+            'event' => 'target-planned',
+            'status' => $ok ? 'ok' : 'blocked',
+            'code' => (string) ($target_validation['code'] ?? ($ok ? 'OK' : 'DB_JOURNAL_TARGET_ENVELOPE_MISSING')),
+            'reason' => (string) ($target_validation['reason'] ?? ($ok ? 'DB target-planned envelope matches inspected request.' : 'missing durable target evidence')),
+            'startedCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
+            'targetPlannedRows' => count($target_rows),
+            'startedTargetCount' => count($started_targets),
+            'requestTargetCount' => count($request_targets),
+            'startedTargetSetHash' => reprint_push_lab_rest_target_set_hash($started_targets),
+            'requestTargetSetHash' => reprint_push_lab_rest_target_set_hash($request_targets),
+            'hashOnly' => true,
+            'rawValuesIncluded' => false,
+        ],
+    ];
 }
 
 function reprint_push_lab_rest_recovery_mutate(WP_REST_Request $request): WP_REST_Response
@@ -4075,6 +4237,7 @@ function reprint_push_lab_rest_validate_started_targets(array $started_targets, 
     if (count($started_targets) === 0 || count($started_targets) !== count($request_targets)) {
         return [
             'ok' => false,
+            'code' => 'DB_JOURNAL_TARGET_ENVELOPE_MISSING',
             'reason' => 'missing or incomplete DB target-planned recovery envelope',
         ];
     }
@@ -4086,12 +4249,17 @@ function reprint_push_lab_rest_validate_started_targets(array $started_targets, 
         ) {
             return [
                 'ok' => false,
+                'code' => 'DB_JOURNAL_TARGET_ENVELOPE_MISMATCH',
                 'reason' => 'DB target-planned recovery envelope does not match the retried canonical request',
             ];
         }
     }
 
-    return ['ok' => true];
+    return [
+        'ok' => true,
+        'code' => 'OK',
+        'reason' => 'DB target-planned recovery envelope matches the retried canonical request',
+    ];
 }
 
 function reprint_push_lab_rest_mutation_event_counts_for_key_request(string $idempotency_key_hash, string $request_hash): array

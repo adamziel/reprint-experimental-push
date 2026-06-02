@@ -182,17 +182,19 @@ a hard minimum of 300.
   identity maps.
 - Production DB-table journal and kill-process recovery tests around every
   durable WordPress boundary. The current DB journal/idempotency/process-kill
-  plus missing-commit finalization and all-old stale-claim retry slices are
-  fixture-scoped local Playground SQLite/host-mount evidence only, not
-  production durability, storage `fsync`, rollback, exactly-once production
-  writes, arbitrary plugin data safety, or full MySQL/InnoDB behavior. The
-  stale-claim slice does not solve production stale-claim leases, fencing,
-  claim expiry, cross-process/shared-DB lock proof, arbitrary production
-  repair, or production retry policy; observed-hash assertions are still
-  shallow in places, and production auth/live source mutation/full push remains
-  pending. The JSONL journal has per-append `fsync` evidence in the JSON-model
-  lab, and the Playground recovery harness is injected lab failure inspection
-  only.
+  plus missing-commit finalization, DB target-envelope recovery-inspect
+  blocking, and all-old stale-claim retry slices are fixture-scoped local
+  Playground SQLite/host-mount evidence only, not production durability,
+  storage `fsync`, rollback, exactly-once production writes, arbitrary plugin
+  data safety, or full MySQL/InnoDB behavior. The DB recovery-inspect slice now
+  blocks when required `target-planned` rows are absent, but it does not prove
+  every durable WordPress boundary. The stale-claim slice does not solve
+  production stale-claim leases, fencing, claim expiry, cross-process/shared-DB
+  lock proof, arbitrary production repair, or production retry policy;
+  observed-hash assertions are still shallow in places, and production
+  auth/live source mutation/full push remains pending. The JSONL journal has
+  per-append `fsync` evidence in the JSON-model lab, and the Playground
+  recovery harness is injected lab failure inspection only.
 
 ## Invariant Policy
 

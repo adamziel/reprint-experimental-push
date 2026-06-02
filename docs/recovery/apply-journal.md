@@ -271,6 +271,15 @@ after hash, appends the missing commit row, returns
 `BATCH_RECOVERY_FINALIZED`, reports `fully-updated-remote`, and performs zero
 fresh mutation work. A later replay returns `BATCH_ALREADY_COMMITTED`.
 
+The same smoke also covers a missing target-envelope negative. If an
+`apply-started` row declares that `target-planned` rows are required but the
+DB journal has none, `/recovery/inspect` now classifies from the DB journal
+surface and returns read-only `blocked-recovery` evidence with
+`DB_JOURNAL_TARGET_ENVELOPE_MISSING`, `usedOptionJournal: false`, and a
+hash-only target-envelope summary. It does not derive a green recovery state
+from the caller-supplied plan, does not synthesize missing target rows, and does
+not append `apply-committed` evidence.
+
 `npm run test:playground:db-journal-stale-claim-all-old` verifies a
 deterministic all-old stale-claim retry path in the local Playground
 SQLite/host-mount lab. The first request uses a lab hook that writes

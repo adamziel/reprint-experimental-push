@@ -4,6 +4,28 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - DB Target Envelope Recovery Inspect
+
+- Last update: 2026-06-02 07:09 CEST +02:00.
+- Local Playground recovery inspect now checks the DB journal when the
+  inspected receipt/request identifies an existing `apply-started` row. When
+  durable `target-planned` rows exist, recovery classification is derived from
+  those persisted target envelopes plus live hashes instead of only from the
+  caller-supplied plan body.
+- If an `apply-started` row requires `target-planned` evidence but the target
+  envelope is missing or incomplete, recovery inspect now reports
+  `blocked-recovery` with `DB_JOURNAL_TARGET_ENVELOPE_MISSING`,
+  `usedOptionJournal=false`, `storage=db-journal`, and a hash-only target
+  envelope summary. The route remains read-only and does not synthesize target
+  rows or commit evidence.
+- The existing missing-commit finalization smoke now proves the negative path:
+  an omitted target envelope blocks recovery inspect even when live target
+  hashes happen to match the planned after hashes.
+- Caveat: this hardens the local REST/DB journal recovery-inspect boundary. It
+  is not production durability, storage `fsync`, rollback, exactly-once
+  production write proof, or kill-process coverage for every WordPress storage
+  surface.
+
 ## 2026-06-02 - Server-Minted Auth Receipt Signatures
 
 - Last update: 2026-06-02 06:52 CEST +02:00.

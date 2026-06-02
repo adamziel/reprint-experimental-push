@@ -74,6 +74,14 @@ function assertNoJsonParsing(body, label) {
 }
 
 test('production recovery mutate route is a signed POST route behind authenticated permission', () => {
+  const inspectRoute = routeRegistration(
+    'REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE',
+    '/push/recovery/inspect',
+  );
+  assert.match(inspectRoute, /'methods'\s*=>\s*WP_REST_Server::CREATABLE/);
+  assert.match(inspectRoute, /'callback'\s*=>\s*'reprint_push_lab_rest_authenticated_recovery_inspect'/);
+  assert.match(inspectRoute, /'permission_callback'\s*=>\s*'reprint_push_lab_rest_authenticated_permission'/);
+
   const productionRoute = routeRegistration(
     'REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE',
     '/push/recovery/mutate',
@@ -208,12 +216,59 @@ test('RPP-0527 live smoke covers malformed JSON negative auth cases on the produ
   assert.doesNotMatch(liveSmokeSource, /\b(?:ngrok|cloudflared|localtunnel|serveo|localhost\.run|lhr\.life|Tailscale Funnel)\b/i);
 });
 
+test('production recovery inspect classifies from DB target-planned evidence when available', () => {
+  const callback = functionBody('reprint_push_lab_rest_authenticated_recovery_inspect');
+  const inspect = functionBody('reprint_push_lab_rest_recovery_inspect');
+  const dbInspect = functionBody('reprint_push_lab_rest_db_journal_recovery_inspect');
+  const keyResolver = functionBody('reprint_push_lab_rest_recovery_inspect_target_idempotency_key_hash');
+  const journalEvidence = functionBody('reprint_push_lab_rest_db_journal_recovery_inspect_journal_evidence');
+  const targetValidator = functionBody('reprint_push_lab_rest_validate_started_targets');
+
+  assertBefore(
+    callback,
+    "reprint_push_lab_rest_require_signed_request($request, 'recovery-inspect')",
+    'reprint_push_lab_rest_recovery_inspect($request)',
+  );
+  assertBefore(callback, 'return $signature_error;', 'reprint_push_lab_rest_recovery_inspect($request)');
+  assert.doesNotMatch(callback, /reprint_push_lab_rest_json_payload\(\$request\)/);
+
+  assertBefore(inspect, 'reprint_push_lab_rest_db_journal_recovery_inspect', 'reprint_push_protocol_inspect_recovery');
+  assert.match(inspect, /is_array\(\$db_journal_result\)\s*\?\s*\$db_journal_result\s*:\s*reprint_push_protocol_inspect_recovery/);
+
+  assert.match(dbInspect, /reprint_push_lab_rest_recovery_inspect_target_idempotency_key_hash/);
+  assert.match(dbInspect, /reprint_push_lab_rest_latest_db_row_for_key_event\(/);
+  assert.match(dbInspect, /'apply-started'/);
+  assert.match(dbInspect, /reprint_push_lab_rest_validate_plan_receipt_for_missing_commit/);
+  assert.match(dbInspect, /reprint_push_lab_rest_planned_targets_from_started_entry/);
+  assert.match(dbInspect, /reprint_push_lab_rest_validate_started_targets/);
+  assert.match(dbInspect, /reprint_push_lab_rest_missing_commit_recovery_from_targets/);
+  assert.match(dbInspect, /'usedOptionJournal'\s*=>\s*false/);
+  assert.match(dbInspect, /\$extra\['action'\]\s*=\s*'block-non-mutating'/);
+  assert.match(dbInspect, /'DB_JOURNAL_TARGET_ENVELOPE_MISSING'/);
+  assertNoKnownMutationCalls(dbInspect);
+
+  assert.match(keyResolver, /'dryRunIdempotencyKeyHash'/);
+  assert.match(keyResolver, /get_header\('x-reprint-push-idempotency-key'\)/);
+  assert.match(keyResolver, /reprint_push_lab_rest_signature_context\(\$request\)/);
+
+  assert.match(journalEvidence, /'storage'\s*=>\s*'db-journal'/);
+  assert.match(journalEvidence, /'targetEnvelope'\s*=>\s*\[/);
+  assert.match(journalEvidence, /'hashOnly'\s*=>\s*true/);
+  assert.match(journalEvidence, /'rawValuesIncluded'\s*=>\s*false/);
+  assert.match(journalEvidence, /reprint_push_lab_rest_target_set_hash\(\$started_targets\)/);
+  assert.match(journalEvidence, /reprint_push_lab_rest_target_set_hash\(\$request_targets\)/);
+
+  assert.match(targetValidator, /'code'\s*=>\s*'DB_JOURNAL_TARGET_ENVELOPE_MISSING'/);
+  assert.match(targetValidator, /'code'\s*=>\s*'DB_JOURNAL_TARGET_ENVELOPE_MISMATCH'/);
+  assert.match(targetValidator, /'code'\s*=>\s*'OK'/);
+});
+
 test('signed auth lifecycle and status mapping explicitly include recovery mutate', () => {
   const signedVerifier = functionBody('reprint_push_lab_rest_verify_signed_request');
   const lifecycle = functionBody('reprint_push_lab_rest_auth_session_lifecycle_step');
   const status = functionBody('reprint_push_lab_rest_status_for_result');
 
-  assert.match(signedVerifier, /signed dry-run, snapshot hashes, apply, recovery inspect, recovery mutate, and journal inspect requests/);
+  assert.match(signedVerifier, /signed dry-run, snapshot hashes, chunk manifest, chunk upload, apply, recovery inspect, recovery mutate, and journal inspect requests/);
   assertBefore(lifecycle, "str_ends_with($route, '/recovery/inspect')", "str_ends_with($route, '/recovery/mutate')");
   assert.match(lifecycle, /str_ends_with\(\$route, '\/recovery\/repair'\)\s*=>\s*'recovery-mutate'/);
   assert.match(status, /case 'RECOVERY_MUTATE_INSPECT_BLOCKED':\s*return 409;/);
