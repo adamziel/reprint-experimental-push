@@ -343,7 +343,10 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
   assert.equal(authenticatedJournal.status, 200);
   await assertNoMutation(server, initial.body.snapshot, 'authenticated Basic journal');
 
-  const authenticatedDbJournal = await getAuthenticated(server, '/db-journal?limit=80', authHeaders(credentials.admin));
+  const authenticatedDbJournal = await signedGetAuthenticated(server, '/db-journal?limit=80', credentials.admin, {
+    session: pushSession,
+    idempotencyKey: 'auth-http-db-journal-read',
+  });
   assert.equal(authenticatedDbJournal.status, 200);
   await assertNoMutation(server, initial.body.snapshot, 'authenticated Basic db-journal');
 
@@ -351,11 +354,15 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
   assert.equal(authenticatedDbJournalSchema.status, 200);
   await assertNoMutation(server, initial.body.snapshot, 'authenticated Basic db-journal schema');
 
-  const authenticatedRecovery = await postAuthenticated(
+  const authenticatedRecovery = await signedPostAuthenticated(
     server,
     '/recovery/inspect',
     { plan: readyPlan, receipt: {} },
-    authHeaders(credentials.admin),
+    credentials.admin,
+    {
+      session: pushSession,
+      idempotencyKey: 'auth-http-recovery-inspect-read',
+    },
   );
   assert.notEqual(authenticatedRecovery.status, 401);
   await assertNoMutation(server, initial.body.snapshot, 'authenticated Basic recovery inspect');
@@ -1222,10 +1229,24 @@ function assertAuthenticatedReceipt(receipt, auth, plan) {
   assert.equal(receipt.authBinding.request.restNamespace, 'reprint-push-lab/v1');
   assert.equal(receipt.authBinding.request.dryRunRoute, '/authenticated/dry-run');
   assert.equal(receipt.authBinding.request.planPayloadHash, digest(plan));
+  assert.equal(receipt.authBinding.protocol.routeProfile, 'lab-authenticated');
+  assert.equal(receipt.authBinding.protocol.restNamespace, 'reprint-push-lab/v1');
+  assert.equal(receipt.authBinding.protocol.routes.dryRun, '/authenticated/dry-run');
+  assert.equal(receipt.authBinding.protocol.routes.apply, '/authenticated/apply');
+  assert.equal(receipt.authBinding.protocol.signature.scheme, 'hmac-sha256');
+  assert.equal(receipt.authBinding.protocol.signature.dryRunRequest.bodyHash, digest({ plan }));
+  assert.equal(receipt.authBinding.protocol.exporter.planPayloadHash, digest(plan));
+  assert.equal(receipt.authBinding.protocol.exporter.mutationCount, plan.mutations.length);
+  assert.match(receipt.authBinding.protocol.protocolBindingHash || '', /^[a-f0-9]{64}$/);
   assert.equal(receipt.authBinding.preconditions.preconditionSetHash, receipt.preconditionSetHash);
   assert.equal(receipt.authBinding.preconditions.mutationSetHash, receipt.mutationSetHash);
   assert.equal(receipt.authBinding.preconditions.mutationCount, plan.mutations.length);
   assert.ok(Date.parse(receipt.authBinding.expiresAt) > Date.now(), 'auth receipt should not be expired');
+
+  const protocolWithoutHash = JSON.parse(JSON.stringify(receipt.authBinding.protocol));
+  const protocolBindingHash = protocolWithoutHash.protocolBindingHash;
+  delete protocolWithoutHash.protocolBindingHash;
+  assert.equal(digest(protocolWithoutHash), protocolBindingHash, 'auth receipt protocol binding hash mismatch');
 
   const withoutHash = JSON.parse(JSON.stringify(receipt));
   const receiptHash = withoutHash.receiptHash;

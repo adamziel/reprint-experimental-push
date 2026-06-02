@@ -98,6 +98,7 @@ test('production dry-run receipts bind scope identity session and plan hash', ()
   assert.match(bindReceipt, /'session'\s*=>\s*\$auth\['session'\]/);
   assert.match(bindReceipt, /'pushSession'\s*=>\s*\[/);
   assert.match(bindReceipt, /'plan'\s*=>\s*\[/);
+  assert.match(bindReceipt, /'protocol'\s*=>\s*reprint_push_lab_rest_authenticated_receipt_protocol_binding/);
 
   const subjectBinding = functionBody('reprint_push_lab_rest_authenticated_receipt_subject_binding');
   assert.match(subjectBinding, /'scopeHash'\s*=>\s*hash\('sha256',\s*\(string\)\s*\(\$profile\['authScope'\]/);
@@ -106,6 +107,32 @@ test('production dry-run receipts bind scope identity session and plan hash', ()
   assert.match(subjectBinding, /'pushSessionHash'\s*=>\s*\(string\)\s*\(\$signed_request\['sessionHash'\]/);
   assert.match(subjectBinding, /'planHash'\s*=>\s*\$plan_hash/);
   assert.match(subjectBinding, /'bindingHash'\s*\]\s*=\s*hash\('sha256',\s*reprint_push_stable_json\(\$binding\)\)/);
+
+  const dryRunProtocolEvidence = functionBody(
+    'reprint_push_lab_rest_authenticated_receipt_dry_run_protocol_evidence_from_signed_request',
+  );
+  assert.match(dryRunProtocolEvidence, /'dryRunBodyHash'\s*=>\s*hash\('sha256',\s*reprint_push_stable_json\(\$payload\)\)/);
+  assert.match(dryRunProtocolEvidence, /'canonicalHash'\s*=>\s*\(string\)\s*\(\$request\['canonicalHash'\]/);
+  assert.match(dryRunProtocolEvidence, /'idempotencyKeyHash'\s*=>\s*\(string\)\s*\(\$request\['idempotencyKeyHash'\]/);
+  assert.match(dryRunProtocolEvidence, /'sessionHash'\s*=>\s*\(string\)\s*\(\$signed_request\['sessionHash'\]/);
+
+  const protocolRoutes = functionBody('reprint_push_lab_rest_authenticated_receipt_protocol_routes');
+  assert.match(protocolRoutes, /'preflight'\s*=>\s*\$prefix\s*\.\s*'\/preflight'/);
+  assert.match(protocolRoutes, /'dryRun'\s*=>\s*\(string\)\s*\(\$profile\['dryRunRoute'\]/);
+  assert.match(protocolRoutes, /'snapshotHashes'\s*=>\s*\$prefix\s*\.\s*'\/snapshot-hashes'/);
+  assert.match(protocolRoutes, /'apply'\s*=>\s*\$prefix\s*\.\s*'\/apply'/);
+  assert.match(protocolRoutes, /'dbJournal'\s*=>\s*\$prefix\s*\.\s*'\/db-journal'/);
+  assert.match(protocolRoutes, /'recoveryInspect'\s*=>\s*\$prefix\s*\.\s*'\/recovery\/inspect'/);
+
+  const protocolBinding = functionBody('reprint_push_lab_rest_authenticated_receipt_protocol_binding');
+  assert.match(protocolBinding, /'required'\s*=>\s*'dry-run receipt is bound to the exporter route contract, signed request contract, and plan evidence hashes'/);
+  assert.match(protocolBinding, /'routes'\s*=>\s*reprint_push_lab_rest_authenticated_receipt_protocol_routes\(\$profile\)/);
+  assert.match(protocolBinding, /'scheme'\s*=>\s*'hmac-sha256'/);
+  assert.match(protocolBinding, /'canonicalVersion'\s*=>\s*'REPRINT-PUSH-LAB-V1'/);
+  assert.match(protocolBinding, /'planPayloadHash'\s*=>\s*\$plan_payload_hash/);
+  assert.match(protocolBinding, /'mutationSetHash'\s*=>\s*\(string\)\s*\(\$receipt\['mutationSetHash'\]/);
+  assert.match(protocolBinding, /'preconditionSetHash'\s*=>\s*\(string\)\s*\(\$receipt\['preconditionSetHash'\]/);
+  assert.match(protocolBinding, /'protocolBindingHash'\]\s*=\s*hash\('sha256',\s*reprint_push_stable_json\(\$binding\)\)/);
 });
 
 test('authenticated apply validates dry-run receipt subject and plan binding before mutation path', () => {
@@ -121,8 +148,15 @@ test('authenticated apply validates dry-run receipt subject and plan binding bef
   assert.match(validateReceipt, /Receipt plan hash binding does not match the supplied plan\./);
   assert.match(validateReceipt, /\$plan_binding\s*=\s*isset\(\$binding\['plan'\]/);
   assert.match(validateReceipt, /Receipt plan binding does not match the supplied plan hash\./);
+  assert.match(validateReceipt, /\$expected_protocol_binding\s*=\s*reprint_push_lab_rest_authenticated_receipt_protocol_binding/);
+  assert.match(validateReceipt, /Receipt protocol binding does not match the current exporter route contract and plan evidence\./);
   assert.match(validateReceipt, /\$expected_subject_binding\s*=\s*reprint_push_lab_rest_authenticated_receipt_subject_binding/);
   assert.match(validateReceipt, /Receipt subject binding does not match the current session, identity, scope, and plan hash\./);
+  assertBefore(
+    validateReceipt,
+    '$expected_protocol_binding = reprint_push_lab_rest_authenticated_receipt_protocol_binding',
+    '$signed_request = reprint_push_lab_rest_signed_request_evidence($request)',
+  );
   assertBefore(
     validateReceipt,
     '$expected_subject_binding = reprint_push_lab_rest_authenticated_receipt_subject_binding',
@@ -150,6 +184,10 @@ test('RPP-0523 dry-run proof uses the real production-shaped route over sandbox-
   assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.request\?\.restNamespace, 'reprint\/v1'\)/);
   assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.request\?\.dryRunRoute, '\/push\/dry-run'\)/);
   assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.request\?\.routeProfile, 'production-shaped'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.protocol\?\.routeProfile, 'production-shaped'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.protocol\?\.routes\?\.apply, '\/push\/apply'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.protocol\?\.signature\?\.dryRunRequest\?\.route, '\/push\/dry-run'\)/);
+  assert.match(liveSmokeSource, /receipt\.authBinding\.protocol\.protocolBindingHash,\s+digest\(withoutKey\(receipt\.authBinding\.protocol, 'protocolBindingHash'\)\),/s);
   assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.session\?\.type, 'production-auth-session'\)/);
   assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.session\?\.id, session\)/);
   assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.binding\?\.planHash, expectedPlanHash\)/);
@@ -187,6 +225,8 @@ test('RPP-0523 live proof summary reports hash-only dry-run binding evidence', (
   assert.match(dryRunSummary, /routeProfile: receipt\.authBinding\.request\.routeProfile/);
   assert.match(dryRunSummary, /restNamespace: receipt\.authBinding\.request\.restNamespace/);
   assert.match(dryRunSummary, /dryRunRoute: receipt\.authBinding\.request\.dryRunRoute/);
+  assert.match(dryRunSummary, /protocolBindingHashLength: String\(receipt\.authBinding\.protocol\.protocolBindingHash \|\| ''\)\.length/);
+  assert.match(dryRunSummary, /applyRoute: receipt\.authBinding\.protocol\.routes\.apply/);
   assert.match(dryRunSummary, /idMatchesPreflight: receipt\.authBinding\.session\.id === session/);
   assert.match(dryRunSummary, /scopeHashLength: String\(receipt\.authBinding\.binding\.scopeHash \|\| ''\)\.length/);
   assert.match(dryRunSummary, /identityHashLength: String\(receipt\.authBinding\.binding\.identityHash \|\| ''\)\.length/);

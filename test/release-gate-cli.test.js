@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { RELEASE_GATE_DEFINITIONS } from '../src/release-gates.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const scriptPath = path.join(repoRoot, 'scripts/release/check-release-gates.mjs');
@@ -12,6 +13,15 @@ const fixedNow = '2026-05-28T00:00:00.000Z';
 const sourceUrl = 'https://source.example.test/push';
 const localUrl = 'https://local.example.test/push';
 const remoteChangedUrl = 'https://changed.example.test/push';
+const releaseBoundaryProvenanceCategories = new Set([
+  'topology',
+  'boundary',
+  'auth',
+  'identity',
+  'route',
+  'recovery',
+  'operator-proof',
+]);
 
 function runGate(args = [], env = {}) {
   return spawnSync(process.execPath, [scriptPath, '--now', fixedNow, ...args], {
@@ -146,6 +156,27 @@ function operatorProofProvenanceRows(overrides = {}) {
   return Object.keys(rowsById).sort().map((evidenceId) => rowsById[evidenceId]);
 }
 
+function releaseBoundaryProvenanceRows(overrides = {}) {
+  return RELEASE_GATE_DEFINITIONS
+    .filter((gate) => releaseBoundaryProvenanceCategories.has(gate.category))
+    .map((gate, index) => {
+      const evidenceId = `release-gate:${gate.id}`;
+      return {
+        evidenceId,
+        rppId: gate.rpp,
+        sourceKind: 'operator-production',
+        artifactPath: `docs/evidence/release/${gate.id}.json`,
+        observedAt: '2026-05-27T23:30:00.000Z',
+        command: `node scripts/release/prove-${gate.id}.mjs`,
+        status: gate.id === 'verify-release-failure-reason' ? 'checked-failed' : 'checked-passed',
+        subjectHash: `sha256:${String(index + 1).padStart(64, '0')}`,
+        operatorScope: 'final-release',
+        productionRequired: true,
+        ...(overrides[evidenceId] || {}),
+      };
+    });
+}
+
 test('release gate CLI is wired as a local CI-style package script', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
 
@@ -214,24 +245,14 @@ test('release gate CLI keeps synthetic final release evidence at NO-GO without p
   assert.equal(report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(report.releaseEvidenceProvenance.required, true);
   assert.equal(report.releaseEvidenceProvenance.ready, false);
-  assert.deepEqual(report.releaseEvidenceProvenance.requiredEvidenceIds, [
-    'release-gate:tmux-status-marker',
-    'release-gate:progress-release-timestamp',
-    'release-gate:agents-release-gates-row',
-    'release-gate:verify-release-failure-reason',
-  ]);
-  assert.deepEqual(
-    report.missingProductionEvidenceBuckets.find((bucket) => bucket.bucket === 'provenance').gates.map((gate) => [
-      gate.id,
-      gate.code,
-    ]),
-    [
-      ['release-gate:tmux-status-marker', 'PRODUCTION_EVIDENCE_REQUIRED'],
-      ['release-gate:progress-release-timestamp', 'PRODUCTION_EVIDENCE_REQUIRED'],
-      ['release-gate:agents-release-gates-row', 'PRODUCTION_EVIDENCE_REQUIRED'],
-      ['release-gate:verify-release-failure-reason', 'PRODUCTION_EVIDENCE_REQUIRED'],
-    ],
-  );
+  assert.equal(report.releaseEvidenceProvenance.requiredEvidenceIds.length, 19);
+  assert.ok(report.releaseEvidenceProvenance.requiredEvidenceIds.includes('release-gate:application-password-binding'));
+  assert.ok(report.releaseEvidenceProvenance.requiredEvidenceIds.includes('release-gate:preflight-route-identity'));
+  assert.ok(report.releaseEvidenceProvenance.requiredEvidenceIds.includes('release-gate:journal-route-read-only'));
+  assert.equal(report.releaseEvidenceProvenance.requiredEvidenceIds.includes('release-gate:release-movement-summary'), false);
+  const provenanceBucket = report.missingProductionEvidenceBuckets.find((bucket) => bucket.bucket === 'provenance');
+  assert.equal(provenanceBucket.gateCount, 19);
+  assert.ok(provenanceBucket.gates.every((gate) => gate.code === 'PRODUCTION_EVIDENCE_REQUIRED'));
 });
 
 test('release gate CLI keeps stale or local-only production-required provenance at NO-GO', () => {
@@ -240,7 +261,7 @@ test('release gate CLI keeps stale or local-only production-required provenance 
     evidence: completeEvidence('final-release'),
     releaseEvidenceProvenance: {
       maxEvidenceAgeHours: 24,
-      evidenceRows: operatorProofProvenanceRows({
+      evidenceRows: releaseBoundaryProvenanceRows({
         'release-gate:tmux-status-marker': {
           sourceKind: 'local-playground',
           operatorScope: 'local-candidate',
@@ -269,8 +290,8 @@ test('release gate CLI keeps stale or local-only production-required provenance 
     ],
   );
   assert.deepEqual(report.releaseEvidenceProvenance.summary.productionRequired, {
-    total: 4,
-    accepted: 2,
+    total: 19,
+    accepted: 17,
     rejected: 2,
   });
 });
@@ -397,7 +418,7 @@ test('release gate CLI exits zero only when final release evidence and provenanc
     evidence: completeEvidence('final-release'),
     releaseEvidenceProvenance: {
       maxEvidenceAgeHours: 24,
-      evidenceRows: operatorProofProvenanceRows(),
+      evidenceRows: releaseBoundaryProvenanceRows(),
     },
   });
   const result = runGate(['--evidence-file', evidenceFile], releaseEnv());
@@ -415,8 +436,8 @@ test('release gate CLI exits zero only when final release evidence and provenanc
   assert.equal(report.releaseEvidenceProvenance.required, true);
   assert.equal(report.releaseEvidenceProvenance.ready, true);
   assert.deepEqual(report.releaseEvidenceProvenance.summary.productionRequired, {
-    total: 4,
-    accepted: 4,
+    total: 19,
+    accepted: 19,
     rejected: 0,
   });
 });

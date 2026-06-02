@@ -15,6 +15,27 @@ const remoteChangedUrl = 'https://changed.example.test/push';
 const releaseReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
 const deniedMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]';
 const requiredSourceIdentityEvidence = ['preflight, dry-run, apply, and recovery use the same source URL'];
+const expectedProvenanceGateIds = [
+  'release-gate:source-url',
+  'release-gate:local-url',
+  'release-gate:remote-changed-url',
+  'release-gate:packaged-fallback',
+  'release-gate:remote-alias',
+  'release-gate:auth-source-readback',
+  'release-gate:production-secret',
+  'release-gate:application-password-binding',
+  'release-gate:manage-options-capability',
+  'release-gate:same-source-identity',
+  'release-gate:preflight-route-identity',
+  'release-gate:dry-run-route-eligibility',
+  'release-gate:apply-route-pre-mutation',
+  'release-gate:journal-route-read-only',
+  'release-gate:recovery-inspect-read-only',
+  'release-gate:tmux-status-marker',
+  'release-gate:progress-release-timestamp',
+  'release-gate:agents-release-gates-row',
+  'release-gate:verify-release-failure-reason',
+];
 const expectedSummaryGateEvidence = {
   producedBy: 'evaluateReleaseGates',
   schemaVersion: 1,
@@ -294,19 +315,9 @@ test('generated releaseMovement allowed summary remains NO-GO without provenance
   assert.deepEqual(compactProvenanceBuckets(report), [
     {
       bucket: 'provenance',
-      gateCount: 4,
-      codes: [
-        'PRODUCTION_EVIDENCE_REQUIRED',
-        'PRODUCTION_EVIDENCE_REQUIRED',
-        'PRODUCTION_EVIDENCE_REQUIRED',
-        'PRODUCTION_EVIDENCE_REQUIRED',
-      ],
-      ids: [
-        'release-gate:tmux-status-marker',
-        'release-gate:progress-release-timestamp',
-        'release-gate:agents-release-gates-row',
-        'release-gate:verify-release-failure-reason',
-      ],
+      gateCount: 19,
+      codes: expectedProvenanceGateIds.map(() => 'PRODUCTION_EVIDENCE_REQUIRED'),
+      ids: expectedProvenanceGateIds,
     },
   ]);
   assert.deepEqual(observedMatrix, [

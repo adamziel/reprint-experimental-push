@@ -4358,6 +4358,16 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
             'mutationCount' => (int) ($receipt['mutationCount'] ?? 0),
         ],
         'snapshotHashes' => reprint_push_lab_rest_authenticated_receipt_snapshot_hash_binding($receipt, $payload, $plan),
+        'protocol' => reprint_push_lab_rest_authenticated_receipt_protocol_binding(
+            $profile,
+            reprint_push_lab_rest_authenticated_receipt_dry_run_protocol_evidence_from_signed_request(
+                $signed_request,
+                $profile,
+                $payload
+            ),
+            $receipt,
+            $plan
+        ),
         'issuedAt' => gmdate('Y-m-d\TH:i:s\Z'),
         'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', time() + 300),
     ];
@@ -4417,6 +4427,147 @@ function reprint_push_lab_rest_authenticated_user_identity_binding(
         'manageOptions' => (bool) ($capabilities['manage_options'] ?? false),
     ];
     $binding['bindingHash'] = hash('sha256', reprint_push_stable_json($binding));
+
+    return $binding;
+}
+
+function reprint_push_lab_rest_authenticated_receipt_dry_run_protocol_evidence_from_signed_request(
+    array $signed_request,
+    array $profile,
+    array $payload
+): array {
+    $request = isset($signed_request['request']) && is_array($signed_request['request'])
+        ? $signed_request['request']
+        : [];
+
+    return [
+        'route' => (string) ($profile['dryRunRoute'] ?? ''),
+        'dryRunBodyHash' => hash('sha256', reprint_push_stable_json($payload)),
+        'dryRunRawBodyHash' => (string) ($signed_request['contentHash'] ?? ''),
+        'contentHash' => (string) ($signed_request['contentHash'] ?? ''),
+        'canonicalHash' => (string) ($request['canonicalHash'] ?? ''),
+        'idempotencyKeyHash' => (string) ($request['idempotencyKeyHash'] ?? ''),
+        'sessionHash' => (string) ($signed_request['sessionHash'] ?? ''),
+        'signingKeyHash' => (string) ($signed_request['signingKeyHash'] ?? ''),
+    ];
+}
+
+function reprint_push_lab_rest_authenticated_receipt_dry_run_protocol_evidence_from_auth_binding(
+    array $binding
+): array {
+    $request = isset($binding['request']) && is_array($binding['request'])
+        ? $binding['request']
+        : [];
+    $push_session = isset($binding['pushSession']) && is_array($binding['pushSession'])
+        ? $binding['pushSession']
+        : [];
+
+    return [
+        'route' => (string) ($request['dryRunRoute'] ?? ''),
+        'dryRunBodyHash' => (string) ($request['dryRunBodyHash'] ?? ''),
+        'dryRunRawBodyHash' => (string) ($request['dryRunRawBodyHash'] ?? ''),
+        'contentHash' => (string) ($push_session['dryRunContentHash'] ?? ''),
+        'canonicalHash' => (string) ($push_session['dryRunCanonicalHash'] ?? ''),
+        'idempotencyKeyHash' => (string) ($push_session['dryRunIdempotencyKeyHash'] ?? ''),
+        'sessionHash' => (string) ($push_session['sessionHash'] ?? ''),
+        'signingKeyHash' => (string) ($push_session['signingKeyHash'] ?? ''),
+    ];
+}
+
+function reprint_push_lab_rest_authenticated_receipt_protocol_routes(array $profile): array
+{
+    $prefix = (string) ($profile['routePrefix'] ?? '');
+
+    return [
+        'preflight' => $prefix . '/preflight',
+        'dryRun' => (string) ($profile['dryRunRoute'] ?? ($prefix . '/dry-run')),
+        'snapshotHashes' => $prefix . '/snapshot-hashes',
+        'apply' => $prefix . '/apply',
+        'snapshot' => $prefix . '/snapshot',
+        'journal' => $prefix . '/journal',
+        'dbJournal' => $prefix . '/db-journal',
+        'recoveryInspect' => $prefix . '/recovery/inspect',
+        'recoveryMutate' => $prefix . '/recovery/mutate',
+        'recoveryRepair' => $prefix . '/recovery/repair',
+    ];
+}
+
+function reprint_push_lab_rest_authenticated_receipt_protocol_binding(
+    array $profile,
+    array $dry_run_evidence,
+    array $receipt,
+    array $plan
+): array {
+    $plan_payload_hash = hash('sha256', reprint_push_stable_json($plan));
+    $plan_hash = (string) ($receipt['planHash'] ?? $plan_payload_hash);
+    $mutations = isset($plan['mutations']) && is_array($plan['mutations']) ? $plan['mutations'] : [];
+    $preconditions = isset($plan['preconditions']) && is_array($plan['preconditions']) ? $plan['preconditions'] : [];
+
+    $binding = [
+        'schemaVersion' => 1,
+        'required' => 'dry-run receipt is bound to the exporter route contract, signed request contract, and plan evidence hashes',
+        'routeProfile' => (string) ($profile['profile'] ?? ''),
+        'restNamespace' => (string) ($profile['restNamespace'] ?? ''),
+        'routePrefix' => (string) ($profile['routePrefix'] ?? ''),
+        'labBacked' => (bool) ($profile['labBacked'] ?? false),
+        'routes' => reprint_push_lab_rest_authenticated_receipt_protocol_routes($profile),
+        'auth' => [
+            'scopeHash' => hash('sha256', (string) ($profile['authScope'] ?? '')),
+            'requiredCapability' => REPRINT_PUSH_LAB_REQUIRED_CAPABILITY,
+            'requiredCapabilityHash' => hash('sha256', REPRINT_PUSH_LAB_REQUIRED_CAPABILITY),
+        ],
+        'signature' => [
+            'scheme' => 'hmac-sha256',
+            'canonicalVersion' => 'REPRINT-PUSH-LAB-V1',
+            'authString' => 'nonce + timestamp + content_hash',
+            'pushCanonicalString' => "REPRINT-PUSH-LAB-V1\nUPPERCASE_METHOD\nACTUAL_REQUEST_PATH\nCANONICAL_QUERY\nCONTENT_HASH\nSESSION\nIDEMPOTENCY_KEY",
+            'signedHeaders' => [
+                'X-Auth-Content-Hash',
+                'X-Auth-Timestamp',
+                'X-Auth-Nonce',
+                'X-Auth-Signature',
+                'X-Reprint-Push-Signature',
+                'X-Reprint-Push-Session',
+                'X-Reprint-Push-Idempotency-Key',
+            ],
+            'dryRunRequest' => [
+                'method' => 'POST',
+                'route' => (string) ($dry_run_evidence['route'] ?? ''),
+                'bodyHash' => (string) ($dry_run_evidence['dryRunBodyHash'] ?? ''),
+                'rawBodyHash' => (string) ($dry_run_evidence['dryRunRawBodyHash'] ?? ''),
+                'contentHash' => (string) ($dry_run_evidence['contentHash'] ?? ''),
+                'canonicalHash' => (string) ($dry_run_evidence['canonicalHash'] ?? ''),
+                'idempotencyKeyHash' => (string) ($dry_run_evidence['idempotencyKeyHash'] ?? ''),
+            ],
+            'sessionHash' => (string) ($dry_run_evidence['sessionHash'] ?? ''),
+            'signingKeyHash' => (string) ($dry_run_evidence['signingKeyHash'] ?? ''),
+        ],
+        'exporter' => [
+            'schemaVersion' => 1,
+            'mode' => 'dry-run',
+            'planHash' => $plan_hash,
+            'planPayloadHash' => $plan_payload_hash,
+            'summaryHash' => hash('sha256', reprint_push_stable_json($plan['summary'] ?? null)),
+            'mutationSetHash' => (string) ($receipt['mutationSetHash'] ?? ''),
+            'preconditionSetHash' => (string) ($receipt['preconditionSetHash'] ?? ''),
+            'mutationCount' => (int) ($receipt['mutationCount'] ?? count($mutations)),
+            'preconditionCount' => count($preconditions),
+            'mutationResourceKeySetHash' => hash('sha256', reprint_push_stable_json(array_values(array_map(
+                static fn($mutation): string => is_array($mutation) ? (string) ($mutation['resourceKey'] ?? '') : '',
+                $mutations
+            )))),
+            'preconditionResourceKeySetHash' => hash('sha256', reprint_push_stable_json(array_values(array_map(
+                static fn($precondition): string => is_array($precondition) ? (string) ($precondition['resourceKey'] ?? '') : '',
+                $preconditions
+            )))),
+        ],
+        'redaction' => [
+            'format' => 'hash-only-for-sensitive-values',
+            'rawSecretsIncluded' => false,
+            'rawResourceValuesIncluded' => false,
+        ],
+    ];
+    $binding['protocolBindingHash'] = hash('sha256', reprint_push_stable_json($binding));
 
     return $binding;
 }
@@ -4617,6 +4768,19 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
         || empty($snapshot_hashes['planningOnly'])
     ) {
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt snapshot-hashes binding does not match receipt evidence.', $receipt);
+    }
+
+    $protocol_binding = isset($binding['protocol']) && is_array($binding['protocol'])
+        ? $binding['protocol']
+        : [];
+    $expected_protocol_binding = reprint_push_lab_rest_authenticated_receipt_protocol_binding(
+        $profile,
+        reprint_push_lab_rest_authenticated_receipt_dry_run_protocol_evidence_from_auth_binding($binding),
+        $receipt,
+        $plan
+    );
+    if (reprint_push_stable_json($protocol_binding) !== reprint_push_stable_json($expected_protocol_binding)) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Receipt protocol binding does not match the current exporter route contract and plan evidence.', $receipt);
     }
 
     $signed_request = reprint_push_lab_rest_signed_request_evidence($request);

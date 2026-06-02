@@ -160,6 +160,24 @@ try {
     assert.equal(receipt.authBinding?.request?.dryRunRoute, '/push/dry-run');
     assert.equal(receipt.authBinding?.request?.routeProfile, 'production-shaped');
     assert.equal(receipt.authBinding?.request?.labBacked, true);
+    assert.equal(receipt.authBinding?.protocol?.routeProfile, 'production-shaped');
+    assert.equal(receipt.authBinding?.protocol?.restNamespace, 'reprint/v1');
+    assert.equal(receipt.authBinding?.protocol?.routePrefix, '/push');
+    assert.equal(receipt.authBinding?.protocol?.routes?.preflight, '/push/preflight');
+    assert.equal(receipt.authBinding?.protocol?.routes?.dryRun, '/push/dry-run');
+    assert.equal(receipt.authBinding?.protocol?.routes?.snapshotHashes, '/push/snapshot-hashes');
+    assert.equal(receipt.authBinding?.protocol?.routes?.apply, '/push/apply');
+    assert.equal(receipt.authBinding?.protocol?.signature?.scheme, 'hmac-sha256');
+    assert.equal(receipt.authBinding?.protocol?.signature?.canonicalVersion, 'REPRINT-PUSH-LAB-V1');
+    assert.equal(receipt.authBinding?.protocol?.signature?.dryRunRequest?.route, '/push/dry-run');
+    assert.equal(receipt.authBinding?.protocol?.signature?.dryRunRequest?.bodyHash, digest({ plan: readyPlan }));
+    assert.equal(
+      receipt.authBinding?.protocol?.signature?.dryRunRequest?.idempotencyKeyHash,
+      dryRun.body?.signedRequest?.request?.idempotencyKeyHash,
+    );
+    assert.equal(receipt.authBinding?.protocol?.exporter?.planHash, expectedPlanHash);
+    assert.equal(receipt.authBinding?.protocol?.exporter?.mutationCount, readyPlan.mutations.length);
+    assert.match(receipt.authBinding?.protocol?.protocolBindingHash || '', /^[a-f0-9]{64}$/);
     assert.equal(receipt.authBinding?.identity?.userLogin, credentials.username);
     assert.equal(receipt.authBinding?.identity?.capabilities?.manage_options, true);
     assert.equal(receipt.authBinding?.session?.id, session);
@@ -179,6 +197,10 @@ try {
     assert.equal(
       receipt.authBinding.binding.bindingHash,
       digest(withoutKey(receipt.authBinding.binding, 'bindingHash')),
+    );
+    assert.equal(
+      receipt.authBinding.protocol.protocolBindingHash,
+      digest(withoutKey(receipt.authBinding.protocol, 'protocolBindingHash')),
     );
     assert.equal(receipt.receiptHash, digest(withoutKey(receipt, 'receiptHash')));
 
@@ -217,6 +239,18 @@ try {
           pushSessionHashLength: String(receipt.authBinding.binding.pushSessionHash || '').length,
           planHashMatchesExpected: receipt.authBinding.binding.planHash === expectedPlanHash,
           bindingHashLength: String(receipt.authBinding.binding.bindingHash || '').length,
+        },
+        protocol: {
+          routeProfile: receipt.authBinding.protocol.routeProfile,
+          restNamespace: receipt.authBinding.protocol.restNamespace,
+          dryRunRoute: receipt.authBinding.protocol.routes.dryRun,
+          applyRoute: receipt.authBinding.protocol.routes.apply,
+          protocolBindingHashLength: String(receipt.authBinding.protocol.protocolBindingHash || '').length,
+          dryRunBodyHashLength: String(receipt.authBinding.protocol.signature.dryRunRequest.bodyHash || '').length,
+          dryRunCanonicalHashLength: String(receipt.authBinding.protocol.signature.dryRunRequest.canonicalHash || '').length,
+          idempotencyKeyHashLength: String(receipt.authBinding.protocol.signature.dryRunRequest.idempotencyKeyHash || '').length,
+          mutationSetHashLength: String(receipt.authBinding.protocol.exporter.mutationSetHash || '').length,
+          preconditionSetHashLength: String(receipt.authBinding.protocol.exporter.preconditionSetHash || '').length,
         },
       },
       signedRequest: {

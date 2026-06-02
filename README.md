@@ -84,7 +84,9 @@ the next stage or refuses before writes happen.
    Mutates only after recovery evidence classifies the state as safe.
 
 The important invariant is that a dry-run receipt is never trusted by itself.
-Apply must prove that the live source still matches the receipt's preconditions.
+Authenticated receipts expire, bind the route/exporter protocol contract, and
+carry hash-only plan, session, source, precondition, and snapshot evidence, but
+apply still must prove that the live source matches the receipt's preconditions.
 
 ## Feature Map
 
@@ -96,7 +98,7 @@ Apply must prove that the live source still matches the receipt's preconditions.
 | Remote preservation | Remote-only changes and unplanned remote drift are preserved unless a planned change explicitly owns that resource. |
 | Conflict handling | Overlapping local and remote edits refuse before mutation. Non-ready entries suppress overlapping writes. |
 | Plugin-owned data | Owner context, merge-driver evidence, validation checks, and allowlist boundaries for plugin-owned mutations. |
-| Authentication | Authenticated lab and production-shaped routes with session/receipt checks. Production auth integration is still a required integration point. |
+| Authentication | Authenticated lab and production-shaped routes with session/receipt checks, receipt expiry, and protocol-bound dry-run evidence. Production auth integration is still a required integration point. |
 | Journaling | File-backed recovery journal plus recovery tests for partial apply, replay, finish, rollback, and refusal states. |
 | Release gates | Machine-checkable release evidence, provenance coverage, redaction checks, and GO/NO-GO evaluation. |
 | Docker proof | Isolated multi-site topology with runner-local proxies and no public network tunnels. |
@@ -314,7 +316,9 @@ Known remaining integration work includes:
 - A real production Reprint HTTP source mutation endpoint.
 - Production authentication, nonce/session cleanup, Application Password
   integration, and durable audit records.
-- Signed or expiring production receipts bound to the real exporter protocol.
+- External production receipt signing against the deployed Reprint source
+  protocol; the production-shaped route already expires receipts and binds them
+  to the route/exporter contract.
 - Large file body streaming and chunked upload support.
 - MySQL and SQLite transaction-boundary proof for all durable write surfaces.
 - Production storage-level compare-and-swap or locking around final target

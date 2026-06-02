@@ -31,7 +31,8 @@ The contract is intentionally production-shaped:
 
 - preflight is the first live binding after importer provenance exists
 - remote snapshot hash listing is planning-only evidence and never write authority
-- dry-run uploads the canonical plan and returns a receipt, not a lock
+- dry-run uploads the canonical plan and returns an expiring receipt bound to
+  the route/exporter protocol contract, not a lock
 - apply is a separate remote mutation and must revalidate fresh live evidence
   before every batch and again at the storage boundary
 - journal inspect is read-only
@@ -46,7 +47,8 @@ planning evidence:
 - preflight is the first live binding after importer provenance exists
 - remote snapshot hash listing is planning evidence only and never write
   authority
-- dry-run uploads the canonical plan and returns a receipt, not a lock
+- dry-run uploads the canonical plan and returns an expiring receipt bound to
+  the route/exporter protocol contract, not a lock
 - apply is a separate remote mutation and must revalidate fresh live evidence
   before every batch and again at the storage boundary
 - journal inspect is read-only
@@ -59,7 +61,8 @@ The runtime sequence is fixed and non-overlapping:
 
 1. `push_preflight` binds the persisted pull base package to one live remote identity and one short-lived push session.
 2. `push_snapshot_hashes` lists remote hashes for planning only.
-3. `push_plan_dry_run` uploads the canonical plan and returns an eligibility receipt, not a lock.
+3. `push_plan_dry_run` uploads the canonical plan and returns an expiring,
+   route/exporter-protocol-bound eligibility receipt, not a lock.
 4. `push_batch_apply` revalidates fresh live evidence before every batch and again at the storage boundary.
 5. `push_journal` records durable evidence without authorizing mutation.
 6. `push_recover inspect` reads the journal and fresh live hashes before any mutating repair.

@@ -88,6 +88,15 @@ const REASON_CODE_PRIORITY = new Map(REASON_CODE_ORDER.map((code, index) => [cod
 const PRODUCTION_SOURCE_KINDS = new Set(RELEASE_EVIDENCE_PROVENANCE_CONTRACT.productionSourceKinds);
 const PRODUCTION_OPERATOR_SCOPES = new Set(RELEASE_EVIDENCE_PROVENANCE_CONTRACT.productionOperatorScopes);
 const CHECKED_COMMAND_STATUSES = new Set(RELEASE_EVIDENCE_PROVENANCE_COMMAND_STATUSES);
+const DEFAULT_RELEASE_GATE_PROVENANCE_CATEGORIES = Object.freeze([
+  'topology',
+  'boundary',
+  'auth',
+  'identity',
+  'route',
+  'recovery',
+  'operator-proof',
+]);
 
 export function validateReleaseEvidenceProvenance(input = {}, options = {}) {
   const rows = evidenceRows(input);
@@ -165,9 +174,12 @@ export function releaseGateProvenanceRequirements(evaluationOrGates, options = {
   const gates = Array.isArray(evaluationOrGates)
     ? evaluationOrGates
     : (Array.isArray(evaluationOrGates?.gates) ? evaluationOrGates.gates : []);
-  const category = normalizeString(options.category || 'operator-proof');
+  const categories = options.category
+    ? [normalizeString(options.category)]
+    : arrayValue(options.categories).map(normalizeString);
+  const categorySet = new Set(categories.length > 0 ? categories : DEFAULT_RELEASE_GATE_PROVENANCE_CATEGORIES);
   return deepFreeze(gates
-    .filter((gate) => gate && normalizeString(gate.category) === category)
+    .filter((gate) => gate && categorySet.has(normalizeString(gate.category)))
     .map((gate) => ({
       evidenceId: `release-gate:${gate.id}`,
       rppId: normalizeString(gate.rpp),

@@ -456,11 +456,32 @@ function assertReceiptBindsReleaseInput({ receipt, plan, sourceUrl, idempotencyK
     receipt?.authBinding?.pushSession?.dryRunIdempotencyKeyHash,
     sha256Hex(idempotencyKey),
   );
+  assert.equal(receipt?.authBinding?.protocol?.routeProfile, 'production-shaped');
+  assert.equal(receipt?.authBinding?.protocol?.restNamespace, 'reprint/v1');
+  assert.equal(receipt?.authBinding?.protocol?.routes?.dryRun, '/push/dry-run');
+  assert.equal(receipt?.authBinding?.protocol?.routes?.apply, '/push/apply');
+  assert.equal(receipt?.authBinding?.protocol?.signature?.scheme, 'hmac-sha256');
+  assert.equal(receipt?.authBinding?.protocol?.signature?.dryRunRequest?.bodyHash, digest({ plan }));
+  assert.equal(
+    receipt?.authBinding?.protocol?.signature?.dryRunRequest?.idempotencyKeyHash,
+    sha256Hex(idempotencyKey),
+  );
+  assert.equal(receipt?.authBinding?.protocol?.exporter?.planPayloadHash, digest(plan));
+  assert.equal(receipt?.authBinding?.protocol?.exporter?.mutationCount, plan.mutations.length);
+  assert.match(receipt?.authBinding?.protocol?.protocolBindingHash || '', /^[a-f0-9]{64}$/);
   assert.match(receipt?.authBinding?.pushSession?.sessionHash || '', /^[a-f0-9]{64}$/);
   assert.match(receipt?.authBinding?.source?.sourceHash || '', /^[a-f0-9]{64}$/);
   assert.equal(
     normalizeUrlForEvidence(receipt?.authBinding?.source?.siteUrl || ''),
     normalizeUrlForEvidence(sourceUrl),
+  );
+  const protocolWithoutHash = deepClone(receipt.authBinding.protocol);
+  const protocolBindingHash = protocolWithoutHash.protocolBindingHash;
+  delete protocolWithoutHash.protocolBindingHash;
+  assert.equal(
+    digest(protocolWithoutHash),
+    protocolBindingHash,
+    'dry-run receipt must bind the route and exporter protocol contract',
   );
 
   const withoutHash = deepClone(receipt);
@@ -514,6 +535,9 @@ function summarizeReceiptBinding(receipt) {
     dryRunIdempotencyKeyHash: binding.pushSession?.dryRunIdempotencyKeyHash || null,
     dryRunBodyHash: binding.request?.dryRunBodyHash || null,
     dryRunRawBodyHash: binding.request?.dryRunRawBodyHash || null,
+    protocolBindingHash: binding.protocol?.protocolBindingHash || null,
+    protocolApplyRoute: binding.protocol?.routes?.apply || null,
+    protocolDryRunRoute: binding.protocol?.routes?.dryRun || null,
   };
 }
 

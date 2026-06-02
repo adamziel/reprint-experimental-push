@@ -1171,32 +1171,20 @@ test('check-release-gates command summarizes allowed and denied releaseMovement 
   });
   assert.deepEqual(allowed.report.summary.releaseMovement, allowed.report.releaseMovement);
   assert.deepEqual(allowed.report.summary.missingEvidence, []);
-  assert.deepEqual(
-    allowed.report.missingProductionEvidenceBuckets.map((bucket) => ({
-      bucket: bucket.bucket,
-      gateCount: bucket.gateCount,
-      codes: bucket.gates.map((gate) => gate.code),
-      ids: bucket.gates.map((gate) => gate.id),
-    })),
-    [
-      {
-        bucket: 'provenance',
-        gateCount: 4,
-        codes: [
-          'PRODUCTION_EVIDENCE_REQUIRED',
-          'PRODUCTION_EVIDENCE_REQUIRED',
-          'PRODUCTION_EVIDENCE_REQUIRED',
-          'PRODUCTION_EVIDENCE_REQUIRED',
-        ],
-        ids: [
-          'release-gate:tmux-status-marker',
-          'release-gate:progress-release-timestamp',
-          'release-gate:agents-release-gates-row',
-          'release-gate:verify-release-failure-reason',
-        ],
-      },
-    ],
-  );
+  assert.equal(allowed.report.missingProductionEvidenceBuckets.length, 1);
+  const provenanceBucket = allowed.report.missingProductionEvidenceBuckets[0];
+  assert.equal(provenanceBucket.bucket, 'provenance');
+  assert.equal(provenanceBucket.gateCount, 19);
+  assert.ok(provenanceBucket.gates.every((gate) => gate.code === 'PRODUCTION_EVIDENCE_REQUIRED'));
+  const missingProvenanceIds = provenanceBucket.gates.map((gate) => gate.id);
+  assert.ok(missingProvenanceIds.includes('release-gate:application-password-binding'));
+  assert.ok(missingProvenanceIds.includes('release-gate:same-source-identity'));
+  assert.ok(missingProvenanceIds.includes('release-gate:preflight-route-identity'));
+  assert.ok(missingProvenanceIds.includes('release-gate:apply-route-pre-mutation'));
+  assert.ok(missingProvenanceIds.includes('release-gate:journal-route-read-only'));
+  assert.ok(missingProvenanceIds.includes('release-gate:recovery-inspect-read-only'));
+  assert.ok(missingProvenanceIds.includes('release-gate:tmux-status-marker'));
+  assert.equal(missingProvenanceIds.includes('release-gate:release-movement-summary'), false);
 
   const summaryEvidence = {
     producedBy: 'evaluateReleaseGates',

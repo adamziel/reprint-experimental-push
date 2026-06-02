@@ -12,6 +12,27 @@ const fixedNow = '2026-05-28T00:00:00.000Z';
 const sourceUrl = 'https://source.example.test/push';
 const localUrl = 'https://local.example.test/push';
 const remoteChangedUrl = 'https://changed.example.test/push';
+const expectedProvenanceGatePairs = [
+  ['release-gate:source-url', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:local-url', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:remote-changed-url', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:packaged-fallback', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:remote-alias', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:auth-source-readback', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:production-secret', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:application-password-binding', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:manage-options-capability', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:same-source-identity', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:preflight-route-identity', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:dry-run-route-eligibility', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:apply-route-pre-mutation', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:journal-route-read-only', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:recovery-inspect-read-only', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:tmux-status-marker', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:progress-release-timestamp', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:agents-release-gates-row', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:verify-release-failure-reason', 'PRODUCTION_EVIDENCE_REQUIRED'],
+];
 
 function releaseEnv() {
   return {
@@ -255,13 +276,8 @@ test('generated packaged fallback scenario matrix fails closed without mutation 
       boundaryBucket: null,
       provenanceBucketSummary: {
         bucket: 'provenance',
-        gateCount: 4,
-        gates: [
-          ['release-gate:tmux-status-marker', 'PRODUCTION_EVIDENCE_REQUIRED'],
-          ['release-gate:progress-release-timestamp', 'PRODUCTION_EVIDENCE_REQUIRED'],
-          ['release-gate:agents-release-gates-row', 'PRODUCTION_EVIDENCE_REQUIRED'],
-          ['release-gate:verify-release-failure-reason', 'PRODUCTION_EVIDENCE_REQUIRED'],
-        ],
+        gateCount: 19,
+        gates: expectedProvenanceGatePairs,
       },
     },
   ]);
