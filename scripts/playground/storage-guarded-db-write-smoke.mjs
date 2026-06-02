@@ -496,6 +496,13 @@ function assertStoredJournalHasNoRawFixtureData(body) {
     const key = pathParts.at(-1);
     assert.ok(!forbiddenKeys.has(key), `journal stored raw-value field ${pathParts.join('.')}`);
     if (typeof value === 'string') {
+      if (
+        pathParts.at(-2) === 'storageGuardCoverage'
+        && key === 'required'
+        && value === 'storage-guard-before-mutation'
+      ) {
+        return;
+      }
       for (const forbidden of forbiddenStrings) {
         assert.ok(!value.includes(forbidden), `journal stored raw fixture value at ${pathParts.join('.')}`);
       }

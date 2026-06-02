@@ -1761,7 +1761,7 @@ function reprint_push_apply_resource_with_storage_guard(array $resource, array $
         return reprint_push_apply_file_resource_with_storage_guard($resource, $payload, $expected_resource_value, $expected_storage_value);
     }
 
-    if (($resource['type'] ?? null) !== 'row' || !empty($payload['absent'])) {
+    if (($resource['type'] ?? null) !== 'row') {
         reprint_push_apply_resource($resource, $payload);
         return [
             'applied' => true,
@@ -1771,6 +1771,20 @@ function reprint_push_apply_resource_with_storage_guard(array $resource, array $
 
     $table = (string) ($resource['table'] ?? '');
     $id = (string) ($resource['id'] ?? '');
+    if (!empty($payload['absent'])) {
+        if ($table === 'wp_postmeta'
+            && ($expected_resource_value['exists'] ?? false) === true
+            && is_array($expected_resource_value['value'] ?? null)
+        ) {
+            return reprint_push_guarded_delete_existing_postmeta_row($id, $expected_resource_value['value'], $expected_storage_value);
+        }
+        reprint_push_apply_resource($resource, $payload);
+        return [
+            'applied' => true,
+            'storageGuard' => null,
+        ];
+    }
+
     $value = $payload['value'] ?? null;
     if (!is_array($value)) {
         reprint_push_apply_resource($resource, $payload);
@@ -1784,6 +1798,14 @@ function reprint_push_apply_resource_with_storage_guard(array $resource, array $
         return reprint_push_guarded_put_post_row($id, $expected_resource_value, $value, $expected_storage_value);
     }
 
+    if ($table === 'wp_postmeta') {
+        return reprint_push_guarded_put_postmeta_row($id, $expected_resource_value, $value, $expected_storage_value);
+    }
+
+    if ($table === 'wp_blogmeta') {
+        return reprint_push_guarded_put_blogmeta_row($id, $expected_resource_value, $value, $expected_storage_value);
+    }
+
     if (($expected_resource_value['exists'] ?? false) !== true || !is_array($expected_resource_value['value'] ?? null)) {
         reprint_push_apply_resource($resource, $payload);
         return [
@@ -1792,15 +1814,8 @@ function reprint_push_apply_resource_with_storage_guard(array $resource, array $
         ];
     }
 
-    if ($table === 'wp_blogmeta') {
-        return reprint_push_guarded_put_blogmeta_row($id, $expected_resource_value, $value, $expected_storage_value);
-    }
-
     if ($table === 'wp_options') {
         return reprint_push_guarded_update_existing_option_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
-    }
-    if ($table === 'wp_postmeta') {
-        return reprint_push_guarded_update_existing_postmeta_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
     }
     if ($table === 'wp_reprint_push_forms_lab') {
         return reprint_push_guarded_update_existing_forms_lab_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
@@ -1998,6 +2013,15 @@ function reprint_push_guarded_update_existing_option_row(string $id, array $expe
     return reprint_push_storage_guard_result('wp-option', 'wp_options', $wpdb->options, 'update', ['option_name', 'option_value'], $expected, $expected_storage, $rows, $shape);
 }
 
+function reprint_push_guarded_put_postmeta_row(string $id, array $expected_resource_value, array $value, ?array $expected_storage_value = null): array
+{
+    if (($expected_resource_value['exists'] ?? false) === true && is_array($expected_resource_value['value'] ?? null)) {
+        return reprint_push_guarded_update_existing_postmeta_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
+    }
+
+    return reprint_push_guarded_create_postmeta_row($id, $value, $expected_storage_value);
+}
+
 function reprint_push_guarded_update_existing_postmeta_row(string $id, array $expected, array $value, ?array $expected_storage_value = null): array
 {
     global $wpdb;
@@ -2047,6 +2071,105 @@ function reprint_push_guarded_update_existing_postmeta_row(string $id, array $ex
     }
 
     return reprint_push_storage_guard_result('wp-postmeta', 'wp_postmeta', $wpdb->postmeta, 'update', ['post_id', 'meta_key', 'meta_value', 'parent_fixture_marker'], $expected, $expected_storage, $rows, $shape);
+}
+
+function reprint_push_guarded_delete_existing_postmeta_row(string $id, array $expected, ?array $expected_storage_value = null): array
+{
+    global $wpdb;
+
+    [$post_id, $meta_key] = reprint_push_parse_postmeta_row_id($id);
+    if ((int) ($expected['post_id'] ?? 0) !== $post_id
+        || (string) ($expected['meta_key'] ?? '') !== $meta_key
+        || !array_key_exists('meta_value', $expected)
+    ) {
+        throw new RuntimeException('Postmeta expected row does not match row id: ' . $id);
+    }
+
+    $expected_storage = [
+        'post_id' => $post_id,
+        'meta_key' => $meta_key,
+        'meta_value' => maybe_serialize($expected['meta_value']),
+    ];
+    if (($expected_storage_value['exists'] ?? false) === true && is_array($expected_storage_value['value'] ?? null)) {
+        $expected_storage = $expected_storage_value['value'];
+    }
+
+    $table = reprint_push_quote_identifier($wpdb->postmeta);
+    $posts_table = reprint_push_quote_identifier($wpdb->posts);
+    $expected_parent_fixture_marker_id = (int) ($expected_storage['parent_fixture_marker_meta_id'] ?? 0);
+    $expected_parent_fixture_marker = (string) ($expected_storage['parent_fixture_marker_meta_value'] ?? '');
+    $shape = "DELETE FROM {$table} WHERE post_id = %d AND meta_key = %s AND meta_value = %s AND (SELECT COUNT(*) FROM (SELECT meta_id FROM {$table} WHERE post_id = %d AND meta_key = %s) AS reprint_push_guard_postmeta_count) = 1 AND (SELECT COUNT(*) FROM (SELECT marker.meta_id FROM {$table} marker INNER JOIN {$posts_table} p ON p.ID = marker.post_id WHERE marker.meta_id = %d AND p.ID = %d AND marker.meta_key = %s AND marker.meta_value = %s AND marker.meta_value <> '') AS reprint_push_guard_parent_marker_count) >= 1";
+    $rows = $wpdb->query($wpdb->prepare(
+        $shape,
+        $post_id,
+        $meta_key,
+        $expected_storage['meta_value'],
+        $post_id,
+        $meta_key,
+        $expected_parent_fixture_marker_id,
+        $post_id,
+        'reprint_push_fixture',
+        $expected_parent_fixture_marker
+    ));
+    if ($rows === false) {
+        throw new RuntimeException('Could not apply guarded postmeta row delete: ' . $wpdb->last_error);
+    }
+    if ((int) $rows === 1) {
+        wp_cache_delete($post_id, 'post_meta');
+    }
+
+    return reprint_push_storage_guard_result('wp-postmeta', 'wp_postmeta', $wpdb->postmeta, 'delete', ['post_id', 'meta_key', 'meta_value', 'parent_fixture_marker'], $expected, $expected_storage, $rows, $shape);
+}
+
+function reprint_push_guarded_create_postmeta_row(string $id, array $value, ?array $expected_storage_value = null): array
+{
+    global $wpdb;
+
+    [$post_id, $meta_key] = reprint_push_validate_postmeta_row_value($id, $value);
+    $shape = 'GET_LOCK wp_postmeta row id; verify parent fixture marker; verify row absent; insert row; RELEASE_LOCK';
+    $expected_storage = [
+        'post_id' => $post_id,
+        'meta_key' => $meta_key,
+        'exists' => false,
+        'rowCount' => (int) ($expected_storage_value['rowCount'] ?? 0),
+    ];
+    if (($expected_storage_value['exists'] ?? false) === true) {
+        return reprint_push_storage_guard_result('wp-postmeta', 'wp_postmeta', $wpdb->postmeta, 'insert', ['post_id', 'meta_key', 'absent', 'parent_fixture_marker'], ['exists' => false], $expected_storage, 0, $shape, 'wpdb-named-lock-cas');
+    }
+
+    $lock_name = 'reprint_push_postmeta:' . hash('sha256', $wpdb->postmeta . '|' . $post_id . '|' . $meta_key);
+    if (!reprint_push_acquire_mysql_named_lock($lock_name, 5)) {
+        return reprint_push_storage_guard_result('wp-postmeta', 'wp_postmeta', $wpdb->postmeta, 'insert', ['post_id', 'meta_key', 'absent', 'parent_fixture_marker'], ['exists' => false], $expected_storage, 0, $shape, 'wpdb-named-lock-cas');
+    }
+
+    $rows = 0;
+    try {
+        $marker = reprint_push_fixture_marker_storage_row($post_id);
+        if (!is_array($marker) || (string) ($marker['meta_value'] ?? '') === '' || reprint_push_postmeta_row_count($post_id, $meta_key) !== 0) {
+            $rows = 0;
+        } else {
+            $inserted = $wpdb->insert(
+                $wpdb->postmeta,
+                [
+                    'post_id' => $post_id,
+                    'meta_key' => $meta_key,
+                    'meta_value' => maybe_serialize($value['meta_value']),
+                ],
+                ['%d', '%s', '%s']
+            );
+            if ($inserted === false) {
+                throw new RuntimeException('Could not apply guarded postmeta row insert: ' . $wpdb->last_error);
+            }
+            $rows = (int) $inserted;
+            if ($rows === 1) {
+                wp_cache_delete($post_id, 'post_meta');
+            }
+        }
+    } finally {
+        reprint_push_release_mysql_named_lock($lock_name);
+    }
+
+    return reprint_push_storage_guard_result('wp-postmeta', 'wp_postmeta', $wpdb->postmeta, 'insert', ['post_id', 'meta_key', 'absent', 'parent_fixture_marker'], ['exists' => false], $expected_storage, $rows, $shape, 'wpdb-named-lock-cas');
 }
 
 function reprint_push_guarded_put_blogmeta_row(string $id, array $expected_resource_value, array $value, ?array $expected_storage_value = null): array
@@ -3826,6 +3949,37 @@ function reprint_push_is_fixture_blog(int $blog_id): bool
         )
     );
     return (int) $count > 0;
+}
+
+function reprint_push_postmeta_row_count(int $post_id, string $meta_key): int
+{
+    global $wpdb;
+
+    return (int) $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s",
+            $post_id,
+            $meta_key
+        )
+    );
+}
+
+function reprint_push_validate_postmeta_row_value(string $id, $value): array
+{
+    [$post_id, $meta_key] = reprint_push_parse_postmeta_row_id($id);
+    if (!is_array($value) || !array_key_exists('meta_value', $value)) {
+        throw new RuntimeException('Postmeta row payload must include meta_value: ' . $id);
+    }
+    $allowed_keys = ['post_id', 'meta_key', 'meta_value', '__pluginOwner'];
+    foreach (array_keys($value) as $key) {
+        if (!in_array((string) $key, $allowed_keys, true)) {
+            throw new RuntimeException('Unsupported postmeta row column: ' . (string) $key);
+        }
+    }
+    if ((int) ($value['post_id'] ?? 0) !== $post_id || (string) ($value['meta_key'] ?? '') !== $meta_key) {
+        throw new RuntimeException('Postmeta row payload does not match row id: ' . $id);
+    }
+    return [$post_id, $meta_key];
 }
 
 function reprint_push_blogmeta_row_count(int $blog_id, string $meta_key): int

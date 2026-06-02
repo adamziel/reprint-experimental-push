@@ -1237,13 +1237,20 @@ function reprint_push_protocol_storage_guard_coverage_for_mutation(array $mutati
             && is_array($value)
             && !$expected_resource_exists
             && $table === 'wp_posts';
+        $covered_postmeta_insert = !$is_delete
+            && is_array($value)
+            && !$expected_resource_exists
+            && $table === 'wp_postmeta';
+        $covered_postmeta_delete = $is_delete
+            && $expected_resource_exists
+            && $table === 'wp_postmeta';
         $covered_blogmeta_put = !$is_delete && is_array($value) && $table === 'wp_blogmeta';
-        $covered = $covered_update || $covered_post_insert || $covered_blogmeta_put;
+        $covered = $covered_update || $covered_post_insert || $covered_postmeta_insert || $covered_postmeta_delete || $covered_blogmeta_put;
         return array_merge($base, [
             'covered' => $covered,
             'boundary' => $covered_post_insert
                 ? 'wpdb-primary-key-insert-cas'
-                : ($table === 'wp_blogmeta' && !$expected_resource_exists
+                : (($covered_postmeta_insert || ($table === 'wp_blogmeta' && !$expected_resource_exists))
                     ? 'wpdb-named-lock-cas'
                     : 'wpdb-single-statement-cas'),
             'driver' => $covered ? 'wordpress-row-storage-guard' : 'unsupported-row-storage-guard',
