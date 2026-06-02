@@ -40,12 +40,12 @@ Local generated aggregate from the focused proof:
     "conflict": 201,
     "ready": 345
   },
-  "totalMutations": 8645,
-  "totalDecisions": 2107,
+  "totalMutations": 8655,
+  "totalDecisions": 2137,
   "totalConflicts": 583,
-  "totalBlockers": 705,
+  "totalBlockers": 715,
   "totalAtomicGroups": 20,
-  "totalPreconditions": 8645,
+  "totalPreconditions": 8655,
   "casesWithAtomicGroups": 20,
   "maxMutationCount": 47,
   "maxAtomicGroups": 1

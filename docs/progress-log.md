@@ -4,6 +4,32 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Registration Log Graph Identity Rewrite
+
+- Last update: 2026-06-02 14:28 CEST +02:00.
+- Focused planner/apply evidence now covers `wp_registration_log.blog_id`
+  references through explicit `wp_blogs` identity maps. The registration-log
+  row key remains `ID:<id>` while the serialized `blog_id` payload rewrites to
+  the proven remote blog target.
+- Apply refuses forged ready plans that retain contract hashes but change the
+  rewritten `blog_id` payload before mutation with
+  `WORDPRESS_GRAPH_REWRITE_TARGET_VALUE_MISMATCH`.
+- Stale explicit maps whose remote blog target no longer matches the local
+  source blog remain blocked before mutation, and dependent registration-log
+  rows inherit hash-only target evidence.
+- Generated harness coverage now includes 20 deterministic
+  `registrationLogBlogIdReferenceVariant3` support-only cases across all 10
+  tiers: 10 ready identity-map scalar rewrites and 10 stale blog drift
+  blockers.
+- Verification: focused registration-log test passed with 3 subtests and 0
+  failures; focused generated registration-log/blog-version/sitemeta target
+  run passed with 4 subtests and 0 failures.
+- Caveat: this proves explicit identity-map rewriting for the declared
+  multisite `wp_registration_log.blog_id` scalar reference with stable
+  registration primary row IDs. It does not make network identity tables
+  generally writable in production, and it does not widen unsupported
+  plugin-owned graph surfaces.
+
 ## 2026-06-02 - Blog Version Graph Identity Row-Key Rewrite
 
 - Last update: 2026-06-02 10:28 CEST +02:00.
@@ -7020,8 +7046,8 @@ linked implementation artifacts.
 - Keep-remote decision variant-3 generated proof: the current lane now checks
   `RPP-0255` with deterministic generated-harness support evidence over the
   existing `remoteOnlyPreservationVariant3` target. The proof scans all 620
-  generated cases, covers 1,775 `keep-remote` decisions across 542 cases, proves
-  each decision stays mutation-free and precondition-free, verifies 806 ready
+  generated cases, covers 1,795 `keep-remote` decisions across 542 cases, proves
+  each decision stays mutation-free and precondition-free, verifies 816 ready
   `keep-remote` decisions preserve remote state through apply, and verifies 249
   non-ready plans refuse with `PLAN_NOT_READY` without mutating the remote
   digest. Command:

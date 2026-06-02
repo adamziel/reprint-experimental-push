@@ -95,7 +95,9 @@ The default generated run covers:
   rewrites and stale post drift blockers, `wp_links.link_owner` variant-3
   cases with ready identity-map scalar rewrites and stale user drift blockers,
   multisite `wp_blog_versions.blog_id` variant-3 cases with ready identity-map
-  row rewrites and stale blog drift blockers, multisite `wp_blogs.site_id`
+  row rewrites and stale blog drift blockers, multisite
+  `wp_registration_log.blog_id` variant-3 cases with ready identity-map scalar
+  rewrites and stale blog drift blockers, multisite `wp_blogs.site_id`
   variant-3 cases with ready identity-map scalar rewrites and stale site drift
   blockers, multisite `wp_sitemeta.site_id` variant-3 cases with ready
   identity-map row rewrites and stale site drift blockers,
@@ -959,6 +961,18 @@ remote blog ID. Stale cases drift the base blog remotely and require the
 dependent blog-version row to fail closed as `stale-wordpress-graph-identity`
 with hash-only target evidence. This remains local generated support evidence
 only; final release remains `NO-GO`.
+
+The `registrationLogBlogIdReferenceVariant3` target adds generated multisite
+`wp_registration_log.blog_id` references. The deterministic roster emits 20
+support-only variant-3 target cases: 10 ready blog identity-map rewrite cases
+and 10 stale blog drift cases, with two cases in every tier. Ready cases map a
+local `wp_blogs` row to an equivalent remote blog row, preserve that remote
+blog, keep the dependent `wp_registration_log` row key fixed at `ID:<id>`, and
+rewrite only the row `blog_id` payload to the proven remote blog ID. Stale
+cases drift the base blog remotely and require the dependent registration-log
+row to fail closed as `stale-wordpress-graph-identity` with hash-only target
+evidence. This remains local generated support evidence only; final release
+remains `NO-GO`.
 
 The `blogSiteIdReferenceVariant3` target adds generated multisite
 `wp_blogs.site_id` references. The deterministic roster emits 20 support-only

@@ -561,6 +561,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'blog-version-blog-id-reference-variant3',
     tag: 'blog-version-blog-id-reference-v3',
   },
+  registrationLogBlogIdReferenceVariant3: {
+    family: 'registration-log-blog-id-reference-variant3',
+    tag: 'registration-log-blog-id-reference-v3',
+  },
   blogSiteIdReferenceVariant3: {
     family: 'blog-site-id-reference-variant3',
     tag: 'blog-site-id-reference-v3',
@@ -2277,6 +2281,15 @@ function buildGeneratedCase({ index, tier, rng }) {
     tags,
   });
 
+  addRegistrationLogBlogIdReferenceVariant3Target({
+    family,
+    base,
+    local,
+    remote,
+    allocator,
+    tags,
+  });
+
   addBlogSiteIdReferenceVariant3Target({
     family,
     base,
@@ -2572,6 +2585,24 @@ function addBlogVersionBlogIdReferenceVariant3Target({
   }
 
   addBlogVersionBlogIdReferenceVariant3(base, local, remote, allocator, tags, { staleTarget });
+  tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
+}
+
+function addRegistrationLogBlogIdReferenceVariant3Target({
+  family,
+  base,
+  local,
+  remote,
+  allocator,
+  tags,
+}) {
+  const readyTarget = family === 'same-plan-post-parent-graph';
+  const staleTarget = family === 'stale-post-author-graph';
+  if (!readyTarget && !staleTarget) {
+    return;
+  }
+
+  addRegistrationLogBlogIdReferenceVariant3(base, local, remote, allocator, tags, { staleTarget });
   tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
 }
 
@@ -5502,6 +5533,84 @@ function addBlogVersionBlogIdReferenceVariant3(base, local, remote, allocator, t
     tags.add('blog-version-blog-id-reference-v3-stale');
     tags.add('blog-version-blog-id-reference-v3-stale-target');
     tags.add('blog-version-blog-id-reference-v3-non-ready');
+  }
+}
+
+function addRegistrationLogBlogIdReferenceVariant3(base, local, remote, allocator, tags, { staleTarget }) {
+  const sourceBlogId = allocator.graphId();
+  const registrationLogId = allocator.graphId();
+  const sourceBlogRowId = `blog_id:${sourceBlogId}`;
+  const registrationLogRowId = `ID:${registrationLogId}`;
+  const registrationLogRow = {
+    ID: registrationLogId,
+    email: `rpp-registration-log-reference-${registrationLogId}@example.test`,
+    IP: `192.0.2.${registrationLogId % 255}`,
+    blog_id: sourceBlogId,
+    date_registered: '2026-06-02 00:00:00',
+  };
+
+  if (staleTarget) {
+    const blogRow = {
+      blog_id: sourceBlogId,
+      site_id: 1,
+      domain: `rpp-registration-log-reference-stale-blog-${sourceBlogId}.example.test`,
+      path: '/generated-registration-log-reference/',
+      public: 1,
+      archived: 0,
+      mature: 0,
+      spam: 0,
+      deleted: 0,
+    };
+
+    setRow(base, 'wp_blogs', sourceBlogRowId, blogRow);
+    setRow(local, 'wp_blogs', sourceBlogRowId, blogRow);
+    setRow(remote, 'wp_blogs', sourceBlogRowId, {
+      ...blogRow,
+      domain: `remote-private-rpp-registration-log-reference-stale-blog-${sourceBlogId}.example.test`,
+    });
+    setRow(local, 'wp_registration_log', registrationLogRowId, registrationLogRow);
+  } else {
+    const targetBlogId = allocator.graphId();
+    const targetBlogRowId = `blog_id:${targetBlogId}`;
+    const blogRow = {
+      blog_id: sourceBlogId,
+      site_id: 1,
+      domain: `rpp-registration-log-reference-mapped-blog-${sourceBlogId}.example.test`,
+      path: '/generated-registration-log-reference/',
+      public: 1,
+      archived: 0,
+      mature: 0,
+      spam: 0,
+      deleted: 0,
+    };
+    const targetBlogRow = {
+      ...blogRow,
+      blog_id: targetBlogId,
+    };
+
+    setRow(local, 'wp_blogs', sourceBlogRowId, blogRow);
+    setRow(remote, 'wp_blogs', targetBlogRowId, targetBlogRow);
+    addWordPressGraphIdentityMapRow(local, {
+      table: 'wp_blogs',
+      localId: sourceBlogRowId,
+      remoteId: targetBlogRowId,
+    });
+    setRow(local, 'wp_registration_log', registrationLogRowId, registrationLogRow);
+
+    tags.add('registration-log-blog-id-reference-v3-identity-map');
+    tags.add('registration-log-blog-id-reference-v3-ready');
+  }
+
+  tags.add('registration-log-blog-id-reference-v3');
+  tags.add('registration-log-blog-id-reference-v3-hash-only');
+  tags.add('registration-log-blog');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('registration-log-blog-id-reference-v3-stale');
+    tags.add('registration-log-blog-id-reference-v3-stale-target');
+    tags.add('registration-log-blog-id-reference-v3-non-ready');
   }
 }
 

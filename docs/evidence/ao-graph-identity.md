@@ -40,6 +40,15 @@ Lane: graph-identity
 - Adds generated harness evidence for multisite `wp_blog_versions.blog_id`
   references: 20 deterministic support-only cases across all 10 tiers, split
   between ready identity-map row rewrites and stale blog drift blockers.
+- Adds focused planner/apply evidence for multisite
+  `wp_registration_log.blog_id` identity-map rewrites. Registration-log row IDs
+  shaped as `ID:<id>` stay stable while the `blog_id` payload rewrites to the
+  proven remote blog target; apply refuses forged `blog_id` payloads before
+  mutation, and stale mapped blog targets remain blocked with hash-only graph
+  evidence.
+- Adds generated harness evidence for multisite `wp_registration_log.blog_id`
+  references: 20 deterministic support-only cases across all 10 tiers, split
+  between ready identity-map scalar rewrites and stale blog drift blockers.
 - Extends contract-driven primary-row target validation to the remaining core
   graph targets for `wp_posts`, `wp_comments`, `wp_terms`,
   `wp_term_taxonomy`, `wp_blogs`, and `wp_site`. Same-plan target rows whose
@@ -138,6 +147,10 @@ RPP-0306 focused worker verification commands:
   — 3 subtests, 0 failures, including `wp_blog_versions.blog_id` payload and
   row-key rewrite, forged payload refusal, and stale mapped-target refusal
   before mutation.
+- `node --test test/registration-log-blog-id-reference.test.js`
+  — 3 subtests, 0 failures, including `wp_registration_log.blog_id` payload
+  rewrite with stable registration row key, forged payload refusal, and stale
+  mapped-target refusal before mutation.
 - `node --test test/blog-site-id-reference.test.js`
   — 3 subtests, 0 failures, including `wp_blogs.site_id` payload rewrite with
   stable blog row key, forged payload refusal, and stale mapped-target refusal
@@ -146,22 +159,25 @@ RPP-0306 focused worker verification commands:
   — 3 subtests, 0 failures, including `wp_sitemeta.site_id` payload and
   composite row-key rewrite, forged payload refusal, and stale mapped-target
   refusal before mutation.
-- `node --test --test-name-pattern='blog version blog_id reference variant 3|link_owner reference variant 3|blog site_id reference variant 3|RPP-0902' test/generated-push-harness.test.js test/blog-version-blog-id-reference.test.js`
-  — 5 subtests, 0 failures, including generated `wp_blog_versions.blog_id`,
+- `node --test --test-name-pattern='registration log blog_id reference variant 3|blog version blog_id reference variant 3|link_owner reference variant 3|blog site_id reference variant 3|RPP-0902' test/generated-push-harness.test.js`
+  — 5 subtests, 0 failures, including generated
+  `wp_registration_log.blog_id`, `wp_blog_versions.blog_id`,
   `wp_links.link_owner`, `wp_blogs.site_id`, and `wp_sitemeta.site_id`
-  support-only cases with ready identity-map rewrites and stale target blockers.
+  support-only cases with ready identity-map rewrites and stale target
+  blockers.
 - `node --test --test-name-pattern=RPP-0902 test/generated-push-harness.test.js`
   — 1 subtest, 0 failures, including 20 generated `wp_sitemeta.site_id`
   support-only cases with ready identity-map row rewrites and stale site
   blockers.
 - `node --test test/generated-push-harness.test.js`
-  — 104 subtests, 0 failures, including generated multisite
+  — 105 subtests, 0 failures, including generated multisite
+  `wp_registration_log.blog_id` coverage, generated multisite
   `wp_blog_versions.blog_id` coverage, generated `wp_links.link_owner`
   coverage, generated multisite `wp_blogs.site_id` coverage, RPP-0902
   generated multisite `wp_sitemeta.site_id` coverage and adjacent
   graph-identity generated proofs.
 - `npm test`
-  — 3150 tests, 3139 passed, 0 failed, 11 skipped.
+  — 3154 tests, 3143 passed, 0 failed, 11 skipped.
 
 ## Remaining unmapped or fail-closed WordPress surfaces
 
@@ -194,6 +210,10 @@ RPP-0306 focused worker verification commands:
   now rewrite through explicit `wp_blogs` identity maps, rebinding both the
   `blog_id:<id>` row key and payload to the proven remote blog, with apply-time
   forged payload refusal and stale target refusal.
+- Generated/focused multisite evidence: `wp_registration_log.blog_id`
+  references now rewrite through explicit `wp_blogs` identity maps, preserving
+  the `ID:<id>` registration row key while rebinding the payload to the proven
+  remote blog, with apply-time forged payload refusal and stale target refusal.
 - RPP-0901: `wp_blogmeta.blog_id` references now rewrite through explicit
   `wp_blogs` identity maps, including composite
   `blog_id:<id>:meta_key:<key>` row IDs, apply-time forged payload refusal,

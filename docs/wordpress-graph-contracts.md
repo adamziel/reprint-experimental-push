@@ -99,8 +99,10 @@ For example, `wp_links.link_owner` keeps the `link_id:<id>` row resource fixed
 while the serialized owner field rewrites to the proven remote `wp_users`
 target. Multisite `wp_blogs.site_id` similarly keeps the `blog_id:<id>` row
 resource fixed while the serialized `site_id` payload rewrites to the proven
-remote `wp_site` target. Apply validates the payload against the carried target
-row before any mutation.
+remote `wp_site` target. Multisite `wp_registration_log.blog_id` keeps the
+registration row's `ID:<id>` primary row key fixed while rewriting only the
+serialized `blog_id` payload to the proven remote `wp_blogs` target. Apply
+validates the payload against the carried target row before any mutation.
 
 Identity-map equivalence is proven only against maps already promoted as usable.
 The candidate map may rewrite its own primary row ID during equivalence

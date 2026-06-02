@@ -24,7 +24,7 @@ NO-GO until the broader live production-backed release boundary is satisfied.
   ready plans that add overlapping mutations fail with
   `MUTATION_DECISION_RESOURCE_OVERLAP` before remote mutation.
 - Replays all 620 deterministic generated harness cases and confirms the
-  existing keep-remote surface remains decision-only across 1,775 decisions in
+  existing keep-remote surface remains decision-only across 1,795 decisions in
   542 cases.
 - Keeps support evidence hash-only: the envelope records command, caveat,
   statuses, counts, resource keys, change kinds, journal event types, error

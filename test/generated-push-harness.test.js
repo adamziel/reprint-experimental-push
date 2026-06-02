@@ -15064,6 +15064,248 @@ function blogVersionBlogIdReferenceVariant3BlogIdFromRowId(rowId) {
   return Number(match[1]);
 }
 
+test('generated harness records registration log blog_id reference variant 3 coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.registrationLogBlogIdReferenceVariant3;
+  const expectedPerTier = Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2]));
+
+  assert.ok(coverage, 'missing registration log blog_id reference variant 3 target coverage');
+  assert.equal(coverage.family, 'registration-log-blog-id-reference-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['registration-log-blog-id-reference-v3']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { blocked: 10, ready: 10 });
+  assert.deepEqual(coverage.perTier, expectedPerTier);
+  assert.equal(report.summary.featureFamilies['registration-log-blog-id-reference-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['registration-log-blog-id-reference-v3-stale'], 10);
+  assert.equal(report.summary.featureFamilies['registration-log-blog-id-reference-v3-non-ready'], 10);
+  assert.equal(report.summary.featureFamilies['registration-log-blog-id-reference-v3-identity-map'], 10);
+
+  const targetCases = generatePushHarnessCases()
+    .filter((testCase) => testCase.tags.has('registration-log-blog-id-reference-v3'));
+  const perTier = {};
+  const statuses = {};
+
+  assert.equal(targetCases.length, coverage.total);
+  for (const testCase of targetCases) {
+    const staleTarget = testCase.tags.has('registration-log-blog-id-reference-v3-stale');
+    const result = validateGeneratedCase(testCase);
+    const plan = createGeneratedPlan(testCase);
+    const shape = registrationLogBlogIdReferenceVariant3Shape(testCase, { staleTarget });
+
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    assertRegistrationLogBlogIdReferenceVariant3EvidenceRedacted(testCase, plan, shape);
+
+    if (staleTarget) {
+      assertRegistrationLogBlogIdReferenceVariant3StaleCase({ testCase, result, plan, shape });
+      continue;
+    }
+
+    assertRegistrationLogBlogIdReferenceVariant3ReadyCase({ testCase, result, plan, shape });
+  }
+
+  assert.deepEqual(sortNumericObject(perTier), coverage.perTier);
+  assert.deepEqual(sortStringObject(statuses), coverage.statuses);
+});
+
+function registrationLogBlogIdReferenceVariant3Shape(testCase, { staleTarget }) {
+  const registrationLogRows = Object.entries(testCase.local.db.wp_registration_log || {})
+    .filter(([, row]) => {
+      const blogRow = testCase.local.db.wp_blogs?.[`blog_id:${row.blog_id}`];
+      return String(blogRow?.domain || '').startsWith('rpp-registration-log-reference-');
+    });
+
+  assert.equal(registrationLogRows.length, 1, `${testCase.id} should include one generated registration log row`);
+
+  const [registrationLogRowId, registrationLogRow] = registrationLogRows[0];
+  const sourceBlogId = Number(registrationLogRow.blog_id);
+  const sourceBlogRowId = `blog_id:${sourceBlogId}`;
+  const sourceBlog = testCase.local.db.wp_blogs?.[sourceBlogRowId];
+  const mapEntry = (testCase.local.meta?.wordpressGraphIdentityMap?.rows || [])
+    .find((entry) => entry.table === 'wp_blogs' && entry.localId === sourceBlogRowId);
+  const targetBlogRowId = staleTarget ? sourceBlogRowId : mapEntry?.remoteId;
+  const targetBlogId = registrationLogBlogIdReferenceVariant3BlogIdFromRowId(targetBlogRowId);
+  const targetBlog = testCase.remote.db.wp_blogs?.[targetBlogRowId];
+
+  assert.ok(/^ID:\d+$/.test(registrationLogRowId), `${testCase.id} registration log row should use stable ID primary key`);
+  assert.ok(Number.isSafeInteger(sourceBlogId), `${testCase.id} registration log blog_id should be numeric`);
+  assert.ok(sourceBlog, `${testCase.id} missing local source blog ${sourceBlogRowId}`);
+  assert.equal(sourceBlog.blog_id, sourceBlogId);
+  assert.ok(targetBlog, `${testCase.id} missing remote target blog ${targetBlogRowId}`);
+  assert.equal(targetBlog.blog_id, targetBlogId);
+
+  if (staleTarget) {
+    assert.equal(mapEntry, undefined, `${testCase.id} stale target should not use an identity map`);
+    assert.deepEqual(
+      testCase.local.db.wp_blogs[sourceBlogRowId],
+      testCase.base.db.wp_blogs[sourceBlogRowId],
+      `${testCase.id} stale local source blog should match base`,
+    );
+    assert.notDeepEqual(
+      testCase.remote.db.wp_blogs[sourceBlogRowId],
+      testCase.base.db.wp_blogs[sourceBlogRowId],
+      `${testCase.id} stale blog target should drift remotely`,
+    );
+  } else {
+    assert.ok(mapEntry, `${testCase.id} ready target should carry a wp_blogs identity map`);
+    assert.equal(testCase.remote.db.wp_blogs?.[sourceBlogRowId], undefined);
+    assert.equal(testCase.base.db.wp_blogs?.[sourceBlogRowId], undefined);
+    assert.equal(testCase.base.db.wp_blogs?.[targetBlogRowId], undefined);
+    assert.equal(sourceBlog.domain, targetBlog.domain);
+    assert.equal(sourceBlog.path, targetBlog.path);
+  }
+
+  return {
+    sourceBlogId,
+    sourceBlogRowId,
+    sourceBlogResource: rowResource('wp_blogs', sourceBlogRowId),
+    sourceBlogResourceKey: rowResourceKey('wp_blogs', sourceBlogRowId),
+    targetBlogId,
+    targetBlogRowId,
+    targetBlogResource: rowResource('wp_blogs', targetBlogRowId),
+    targetBlogResourceKey: rowResourceKey('wp_blogs', targetBlogRowId),
+    registrationLogRowId,
+    registrationLogResource: rowResource('wp_registration_log', registrationLogRowId),
+    registrationLogResourceKey: rowResourceKey('wp_registration_log', registrationLogRowId),
+    rawValues: [
+      sourceBlog.domain,
+      targetBlog.domain,
+      sourceBlog.path,
+      targetBlog.path,
+      registrationLogRow.email,
+      registrationLogRow.IP,
+    ].filter(Boolean),
+  };
+}
+
+function assertRegistrationLogBlogIdReferenceVariant3ReadyCase({ testCase, result, plan, shape }) {
+  assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+  assert.equal(result.status, 'ready', `${testCase.id} should validate as ready`);
+  assert.equal(result.applied, true, `${testCase.id} should apply`);
+  assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+  assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+  assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+  const sourceDecision = plan.decisions.find((decision) => decision.resourceKey === shape.sourceBlogResourceKey);
+  const targetDecision = plan.decisions.find((decision) => decision.resourceKey === shape.targetBlogResourceKey);
+  const registrationLogMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === shape.registrationLogResourceKey);
+  const registrationLogPrecondition = plan.preconditions.find((precondition) =>
+    precondition.resourceKey === shape.registrationLogResourceKey);
+
+  assert.equal(sourceDecision?.decision, 'map-local-identity-to-remote');
+  assert.equal(targetDecision?.decision, 'keep-remote');
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.sourceBlogResourceKey),
+    false,
+    `${testCase.id} should not create the mapped local source blog`,
+  );
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.targetBlogResourceKey),
+    false,
+    `${testCase.id} should preserve the remote target blog`,
+  );
+  assert.ok(registrationLogMutation, `${testCase.id} should plan the rewritten wp_registration_log row`);
+  assert.ok(registrationLogPrecondition, `${testCase.id} should precondition the rewritten wp_registration_log row`);
+
+  const plannedRegistrationLog = deserializeResourceValue(registrationLogMutation.value);
+  const rewrite = registrationLogMutation.wordpressGraphIdentity?.rewrites.find((entry) =>
+    entry.relationshipType === 'registration-log-blog');
+  const applied = applyPlan(cloneJson(testCase.remote), plan);
+  const appliedHash = resourceHash(applied.site, shape.registrationLogResource);
+
+  assert.ok(rewrite, `${testCase.id} should carry registration-log-blog rewrite evidence`);
+  assert.equal(registrationLogMutation.action, 'put');
+  assert.equal(registrationLogMutation.changeKind, 'create');
+  assert.equal(plannedRegistrationLog.blog_id, shape.targetBlogId);
+  assert.equal(registrationLogMutation.resourceKey, shape.registrationLogResourceKey);
+  assert.equal(rewrite.relationshipKey, 'wp_registration_log.blog_id');
+  assert.equal(rewrite.relationshipType, 'registration-log-blog');
+  assert.equal(rewrite.field, 'blog_id');
+  assert.equal(rewrite.sourceResourceKey, shape.registrationLogResourceKey);
+  assert.equal(rewrite.rewrittenResourceKey, shape.registrationLogResourceKey);
+  assert.equal(rewrite.sourceTargetResourceKey, shape.sourceBlogResourceKey);
+  assert.equal(rewrite.targetResourceKey, shape.targetBlogResourceKey);
+  assert.equal(registrationLogPrecondition.mutationId, registrationLogMutation.id);
+  assert.equal(registrationLogPrecondition.expectedHash, registrationLogMutation.remoteBeforeHash);
+  assert.equal(
+    appliedHash,
+    registrationLogMutation.localHash,
+    `${testCase.id} did not apply the rewritten registration log hash`,
+  );
+  assert.equal(applied.site.db.wp_blogs[shape.sourceBlogRowId], undefined);
+  assert.equal(applied.site.db.wp_blogs[shape.targetBlogRowId].blog_id, shape.targetBlogId);
+  assert.equal(applied.site.db.wp_registration_log[shape.registrationLogRowId].blog_id, shape.targetBlogId);
+}
+
+function assertRegistrationLogBlogIdReferenceVariant3StaleCase({ testCase, result, plan, shape }) {
+  assert.equal(plan.status, 'blocked', `${testCase.id} should plan as blocked`);
+  assert.equal(result.status, 'blocked', `${testCase.id} should validate as blocked`);
+  assert.equal(result.applied, false, `${testCase.id} stale registration log graph should not apply`);
+  assert.equal(result.nonReadyRemoteUnchanged, true, `${testCase.id} stale graph should leave remote unchanged`);
+
+  const registrationLogMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === shape.registrationLogResourceKey);
+  const blocker = plan.blockers.find((entry) =>
+    entry.resourceKey === shape.registrationLogResourceKey
+    && entry.references?.some((reference) => reference.relationshipType === 'registration-log-blog'));
+  const reference = blocker?.references.find((entry) => entry.relationshipType === 'registration-log-blog');
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+
+  assert.equal(registrationLogMutation, undefined, `${testCase.id} should not plan the stale wp_registration_log row`);
+  assert.ok(blocker, `${testCase.id} should expose a registration log graph blocker`);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.ok(reference, `${testCase.id} should include registration log target evidence`);
+  assert.equal(reference.relationshipKey, 'wp_registration_log.blog_id');
+  assert.equal(reference.relationshipType, 'registration-log-blog');
+  assert.equal(reference.sourceResourceKey, shape.registrationLogResourceKey);
+  assert.equal(reference.targetResourceKey, shape.sourceBlogResourceKey);
+  assert.equal(reference.targetChange.localChange, 'unchanged');
+  assert.equal(reference.targetChange.remoteChange, 'update');
+  assert.ok(error instanceof PushPlanError, `${testCase.id} stale registration log plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(digest(remoteBefore), remoteBeforeHash, `${testCase.id} stale refusal mutated remote`);
+}
+
+function assertRegistrationLogBlogIdReferenceVariant3EvidenceRedacted(testCase, plan, shape) {
+  const redacted = redactEvidence({
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    tags: [...testCase.tags].sort(),
+    status: plan.status,
+    summary: plan.summary,
+    preconditions: plan.preconditions,
+    mutations: plan.mutations,
+    blockers: plan.blockers,
+    decisions: plan.decisions,
+    rawRegistrationLogProbe: {
+      value: {
+        localBlog: testCase.local.db.wp_blogs?.[shape.sourceBlogRowId],
+        remoteBlog: testCase.remote.db.wp_blogs?.[shape.targetBlogRowId],
+        registrationLog: testCase.local.db.wp_registration_log?.[shape.registrationLogRowId],
+      },
+    },
+  });
+  const serialized = JSON.stringify(redacted);
+
+  assert.ok(serialized.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} should redact raw registration log evidence`);
+  assert.match(serialized, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash-only values`);
+  for (const value of shape.rawValues) {
+    assert.equal(serialized.includes(String(value)), false, `${testCase.id} leaked raw registration log value ${value}`);
+  }
+}
+
+function registrationLogBlogIdReferenceVariant3BlogIdFromRowId(rowId) {
+  const match = /^blog_id:(\d+)$/.exec(String(rowId || ''));
+  assert.ok(match, `invalid wp_blogs row id ${rowId}`);
+  return Number(match[1]);
+}
+
 test('generated harness records blog site_id reference variant 3 coverage', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.blogSiteIdReferenceVariant3;
