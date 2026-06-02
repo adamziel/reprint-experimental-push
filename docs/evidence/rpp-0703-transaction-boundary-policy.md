@@ -18,6 +18,9 @@ The benchmark report now emits `evidence.transactionBoundaryPolicy` with:
 - resume rule: skip chunks only when the durable receipt exactly matches the
   plan, resource, chunk index, byte range, chunk digest, receipt key, and
   idempotency key
+- target envelope rule: mutation work requires one durable `target-planned`
+  envelope per observed mutation target, scoped to the push plan id and
+  completed after file staging finalization but before the first mutation row
 - apply rule: mutation work is not allowed during transfer resume, and the
   apply transaction opens after `file-staging-finalized`
 
@@ -44,6 +47,8 @@ Observed focused evidence from the guarded executor benchmark:
 - duplicate mutation work during transfer resume: 0
 - mutation work replayed before transfer finalization: 0
 - apply opened after transfer finalization: true
+- target-planned envelopes: 18 of 18 expected mutation targets
+- target envelopes complete before first mutation work: true
 
 ## Limits
 

@@ -55,6 +55,10 @@ The focused test asserts that release-verifier carry-through includes:
 - total generated duplicate mutation work: `0`;
 - duplicate-resume probes blocked: `4`;
 - missing-receipt probes blocked: `4`;
+- target-plan envelopes: `18` of `18` expected mutation targets, with `0`
+  duplicates, `0` missing targets, and `0` orphan targets;
+- target-plan envelopes are written after file staging finalization and before
+  the first mutation work record;
 - apply opens only after file staging finalization; and
 - chunk replay remains idempotent with no duplicate receipt records, duplicate
   chunk bytes, or duplicate mutation work.
@@ -67,15 +71,17 @@ The proof recomputes this gate vector before emitting output:
 2. `built-on-transaction-boundary-policy-v4`
 3. `transaction-boundary-receipt-only-resume`
 4. `deterministic-resume-regression-carried-through`
-5. `apply-after-transfer-finalize-no-duplicate-mutation-work`
-6. `rollout-safety-gate-vector-carried-through`
-7. `hash-count-only-release-verifier-evidence`
-8. `support-only-release-no-go`
+5. `target-plan-envelope-before-mutation-work`
+6. `apply-after-transfer-finalize-no-duplicate-mutation-work`
+7. `rollout-safety-gate-vector-carried-through`
+8. `hash-count-only-release-verifier-evidence`
+9. `support-only-release-no-go`
 
-All eight gates must pass and must be recorded before the output hash is
+All nine gates must pass and must be recorded before the output hash is
 accepted. The fail-closed test mutates otherwise passing evidence so missing
 runtime reporting, missing receipt matches, resumed upload work, duplicate
-mutation work, early apply opening, or missing recorded gates block output.
+mutation work, missing target-plan envelopes, early apply opening, or missing
+recorded gates block output.
 
 ## Rollout safety carry-through
 

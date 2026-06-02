@@ -4,6 +4,26 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Target Envelope Transaction Boundary Tightening
+
+- Last update: 2026-06-02 05:26 CEST +02:00.
+- Transaction-boundary target envelope proof: the RPP-0703/RPP-0783 support
+  lane now requires a plan-scoped `target-planned` envelope for every observed
+  mutation target before mutation work starts. The guarded executor benchmark
+  carries the separate staging plan id and push plan id into
+  `buildChunkTransferTransactionBoundaryPolicy()`, records the expected
+  mutation target count, and keeps the public proof hash/count-only with target
+  key-set hashes rather than raw resource keys.
+- Release-verifier carry-through: RPP-0783 now records
+  `target-plan-envelope-before-mutation-work` as a correctness gate. Tampered
+  verifier evidence with a missing or incomplete target envelope fails closed
+  before output is accepted, and production-throughput claims are blocked when
+  `apply.targetPlanEnvelopeComplete` is not true.
+- Caveat: this is still local support evidence. It strengthens the durable
+  write boundary proof but does not close production MySQL/SQLite transaction
+  proof, storage-level CAS/locking, or external hosted production release
+  evidence. Final release remains `NO-GO`.
+
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
 - Last update: 2026-06-01 09:20 CEST +02:00.

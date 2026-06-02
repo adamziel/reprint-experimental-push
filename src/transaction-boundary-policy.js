@@ -20,9 +20,11 @@ const MUTATION_WORK_RECORD_TYPES = Object.freeze([
 
 export function buildChunkTransferTransactionBoundaryPolicy({
   planId,
+  targetPlanId = planId,
   resourceKey,
   manifestDigest = null,
   assembledHash = null,
+  expectedMutationTargets = null,
   manifestEntries,
   chunkReceiptRecords,
   journalRecords = [],
@@ -84,6 +86,13 @@ export function buildChunkTransferTransactionBoundaryPolicy({
   const transferFinalizeSequence = sequenceNumber(fileStagingFinalizedRecord);
   const manifestFinalizeSequence = sequenceNumber(manifestRecord);
   const firstApplyBoundarySequence = firstRecordSequence(records, APPLY_BOUNDARY_RECORD_TYPES);
+  const firstMutationWorkSequence = firstRecordSequence(records, MUTATION_WORK_RECORD_TYPES);
+  const targetPlan = buildTargetPlanEnvelopeProof(records, {
+    planId: targetPlanId,
+    expectedMutationTargets,
+    transferFinalizeSequence,
+    firstMutationWorkSequence,
+  });
   const mutationWorkBeforeTransferFinalize = transferFinalizeSequence === null
     ? countRecords(records, MUTATION_WORK_RECORD_TYPES)
     : records.filter((record) => (
@@ -106,7 +115,9 @@ export function buildChunkTransferTransactionBoundaryPolicy({
     && missingReceiptBlocksSkip
     && mismatchedReceiptBlocksSkip
     && noDuplicateMutationWork;
-  const status = receiptOnlyResumeSafe && applyOpenedAfterTransferFinalize
+  const status = receiptOnlyResumeSafe
+    && applyOpenedAfterTransferFinalize
+    && targetPlan.targetPlanEnvelopeComplete
     ? 'passed'
     : 'blocked';
 
@@ -160,13 +171,16 @@ export function buildChunkTransferTransactionBoundaryPolicy({
       transaction: 'mutation-apply',
       opensAfter: 'file-staging-finalized',
       firstApplyBoundarySequence,
+      firstMutationWorkSequence,
       applyOpenedAfterTransferFinalize,
       mutationWorkAllowedDuringTransferResume: false,
       mutationWorkReplayedBeforeTransferFinalize: mutationWorkBeforeTransferFinalize,
       freshMutationWorkDuringTransferResume: resumeFreshMutationWork,
       duplicateMutationWork: resumeFreshMutationWork,
       noDuplicateMutationWork,
+      targetPlanEnvelopeComplete: targetPlan.targetPlanEnvelopeComplete,
     },
+    targetPlan,
     receiptMatches,
     redaction: 'hash-and-count-only',
   };
@@ -225,6 +239,138 @@ function countRecords(records, types) {
   return records.filter((record) => types.includes(record?.type)).length;
 }
 
+function buildTargetPlanEnvelopeProof(records, {
+  planId,
+  expectedMutationTargets,
+  transferFinalizeSequence,
+  firstMutationWorkSequence,
+}) {
+  const expectedTargets = normalizeOptionalNonNegativeInteger(expectedMutationTargets);
+  const targetPlanRecords = records.filter((record) => (
+    record?.type === 'target-planned'
+      && recordBelongsToPlan(record, planId)
+  ));
+  const mutationWorkRecords = records.filter((record) => (
+    MUTATION_WORK_RECORD_TYPES.includes(record?.type)
+      && recordBelongsToPlan(record, planId)
+  ));
+  const targetPlanKeys = targetPlanRecords
+    .map((record) => targetEnvelopeKey(record, planId))
+    .filter((key) => key !== null);
+  const mutationWorkKeys = mutationWorkRecords
+    .map((record) => targetEnvelopeKey(record, planId))
+    .filter((key) => key !== null);
+  const uniqueTargetPlanKeys = uniqueValues(targetPlanKeys);
+  const uniqueMutationWorkKeys = uniqueValues(mutationWorkKeys);
+  const targetPlanSequences = targetPlanRecords.map(sequenceNumber);
+  const targetPlanRecordsHaveSequences = targetPlanRecords.length === 0
+    || targetPlanSequences.every((sequence) => sequence !== null);
+  const firstTargetPlanSequence = minSequence(targetPlanSequences);
+  const lastTargetPlanSequence = maxSequence(targetPlanSequences);
+  const requiredForMutationWork = mutationWorkRecords.length > 0;
+  const invalidTargetPlanRecords = targetPlanRecords.length - targetPlanKeys.length;
+  const invalidMutationWorkRecords = mutationWorkRecords.length - mutationWorkKeys.length;
+  const duplicateTargetPlanRecords = duplicateCount(targetPlanKeys);
+  const missingTargetPlanRecords = uniqueMutationWorkKeys
+    .filter((key) => !uniqueTargetPlanKeys.includes(key))
+    .length;
+  const orphanTargetPlanRecords = uniqueTargetPlanKeys
+    .filter((key) => !uniqueMutationWorkKeys.includes(key))
+    .length;
+  const expectedTargetCountMatches = expectedTargets === null
+    ? true
+    : uniqueTargetPlanKeys.length === expectedTargets
+      && uniqueMutationWorkKeys.length === expectedTargets;
+  const targetPlansAfterTransferFinalize = targetPlanRecords.length === 0
+    ? !requiredForMutationWork
+    : targetPlanRecordsHaveSequences
+      && transferFinalizeSequence !== null
+      && firstTargetPlanSequence !== null
+      && firstTargetPlanSequence > transferFinalizeSequence;
+  const targetPlansBeforeMutationWork = targetPlanRecords.length === 0
+    ? !requiredForMutationWork
+    : targetPlanRecordsHaveSequences
+      && firstMutationWorkSequence !== null
+      && lastTargetPlanSequence !== null
+      && lastTargetPlanSequence < firstMutationWorkSequence;
+  const targetPlanEnvelopeComplete = requiredForMutationWork
+    ? targetPlanRecords.length > 0
+      && targetPlanRecordsHaveSequences
+      && invalidTargetPlanRecords === 0
+      && invalidMutationWorkRecords === 0
+      && duplicateTargetPlanRecords === 0
+      && missingTargetPlanRecords === 0
+      && orphanTargetPlanRecords === 0
+      && expectedTargetCountMatches
+      && uniqueTargetPlanKeys.length === uniqueMutationWorkKeys.length
+      && targetPlansAfterTransferFinalize
+      && targetPlansBeforeMutationWork
+    : targetPlanRecords.length === 0;
+  const publicEvidence = {
+    transaction: 'mutation-apply-target-envelope',
+    completionRule: 'one-durable-target-planned-envelope-per-mutation-before-mutation-work',
+    status: targetPlanEnvelopeComplete ? 'passed' : 'blocked',
+    requiredForMutationWork,
+    planIdHash: digest(planId),
+    expectedMutationTargets: expectedTargets,
+    expectedTargetCountMatches,
+    targetPlanEnvelopeComplete,
+    mutationWorkRecords: mutationWorkRecords.length,
+    mutationTargetsObserved: uniqueMutationWorkKeys.length,
+    targetPlanRecords: targetPlanRecords.length,
+    targetPlanUniqueTargets: uniqueTargetPlanKeys.length,
+    duplicateTargetPlanRecords,
+    invalidTargetPlanRecords,
+    invalidMutationWorkRecords,
+    missingTargetPlanRecords,
+    orphanTargetPlanRecords,
+    firstTargetPlanSequence,
+    lastTargetPlanSequence,
+    firstMutationWorkSequence,
+    targetPlanRecordsHaveSequences,
+    targetPlansAfterTransferFinalize,
+    targetPlansBeforeMutationWork,
+    targetPlanKeySetHash: digest(uniqueTargetPlanKeys.map((key) => digest(key)).sort()),
+    mutationWorkKeySetHash: digest(uniqueMutationWorkKeys.map((key) => digest(key)).sort()),
+  };
+
+  return {
+    ...publicEvidence,
+    evidenceHash: digest(publicEvidence),
+  };
+}
+
+function recordBelongsToPlan(record, planId) {
+  return record?.planId === planId || !Object.hasOwn(record || {}, 'planId');
+}
+
+function targetEnvelopeKey(record, planId) {
+  if (record?.planId !== planId) {
+    return null;
+  }
+  const mutationId = typeof record?.mutationId === 'string' && record.mutationId.length > 0
+    ? record.mutationId
+    : null;
+  const resourceKey = typeof record?.resourceKey === 'string' && record.resourceKey.length > 0
+    ? record.resourceKey
+    : null;
+  return mutationId && resourceKey ? `${mutationId}\n${resourceKey}` : null;
+}
+
+function uniqueValues(values) {
+  return [...new Set(values)];
+}
+
+function minSequence(sequences) {
+  const values = sequences.filter((sequence) => sequence !== null);
+  return values.length === 0 ? null : Math.min(...values);
+}
+
+function maxSequence(sequences) {
+  const values = sequences.filter((sequence) => sequence !== null);
+  return values.length === 0 ? null : Math.max(...values);
+}
+
 function sequenceNumber(record) {
   return Number.isInteger(record?.sequence) && record.sequence > 0
     ? record.sequence
@@ -246,6 +392,16 @@ function duplicateCount(values) {
 
 function integerOrZero(value) {
   return Number.isInteger(value) && value > 0 ? value : 0;
+}
+
+function normalizeOptionalNonNegativeInteger(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error('Transaction boundary policy requires expectedMutationTargets to be a non-negative integer when provided.');
+  }
+  return value;
 }
 
 function requireArray(value, label) {

@@ -470,6 +470,7 @@ export function productionThroughputBlockers(report) {
   if (
     report.evidence.transactionBoundaryPolicy?.status !== 'passed'
     || report.evidence.transactionBoundaryPolicy?.apply?.noDuplicateMutationWork !== true
+    || report.evidence.transactionBoundaryPolicy?.apply?.targetPlanEnvelopeComplete !== true
   ) {
     blockers.push('missing-transaction-boundary-policy');
   }
@@ -1056,7 +1057,7 @@ function runFailureProbe({ mode, plan, remote, tempDir, now, failDuringCommitAtM
   };
 }
 
-function buildGuardedTransferEvidence({ stagedFile, successPersisted, config }) {
+function buildGuardedTransferEvidence({ stagedFile, successPersisted, config, plan }) {
   const chunkReceiptRecords = successPersisted.records.filter((record) => record.type === 'chunk-receipt');
   const manifestRecord = successPersisted.records.find((record) =>
     record.type === 'chunk-manifest-finalized'
@@ -1074,9 +1075,11 @@ function buildGuardedTransferEvidence({ stagedFile, successPersisted, config }) 
   const byteRangeCoverage = manifestByteRangeCoverage(stagedFile.manifestEntries, stagedFile.fileBytes);
   const transactionBoundaryPolicy = buildChunkTransferTransactionBoundaryPolicy({
     planId: stagedFile.planId,
+    targetPlanId: plan.id,
     resourceKey: stagedFile.resourceKey,
     manifestDigest: stagedFile.manifestDigest,
     assembledHash: stagedFile.assembledHash,
+    expectedMutationTargets: plan.mutations.length,
     manifestEntries: stagedFile.manifestEntries,
     chunkReceiptRecords,
     journalRecords: successPersisted.records,
@@ -2051,7 +2054,7 @@ function buildReport({
     partialFailure.durableJournalHasNoRawValues,
   ].every(Boolean);
   const graphIdentityReport = buildGraphIdentityReport({ config, sites, plan });
-  const guardedTransfer = buildGuardedTransferEvidence({ stagedFile, successPersisted, config });
+  const guardedTransfer = buildGuardedTransferEvidence({ stagedFile, successPersisted, config, plan });
   const runtime = buildRuntimeReport({
     benchmarkId: GUARDED_EXECUTOR_BENCHMARK_ID,
     config,

@@ -93,6 +93,16 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.transactionBoundaryPolicy.transfer.complete, true);
   assert.equal(report.evidence.transactionBoundaryPolicy.resume.duplicateMutationWork, 0);
   assert.equal(report.evidence.transactionBoundaryPolicy.apply.noDuplicateMutationWork, true);
+  assert.equal(report.evidence.transactionBoundaryPolicy.apply.targetPlanEnvelopeComplete, true);
+  assert.equal(
+    report.evidence.transactionBoundaryPolicy.targetPlan.expectedMutationTargets,
+    report.shape.mutations,
+  );
+  assert.equal(report.evidence.transactionBoundaryPolicy.targetPlan.targetPlanRecords, report.shape.mutations);
+  assert.equal(
+    report.evidence.transactionBoundaryPolicy.targetPlan.targetPlansBeforeMutationWork,
+    true,
+  );
   assert.equal(
     report.evidence.transactionBoundaryPolicy.apply.applyOpenedAfterTransferFinalize,
     true,
@@ -218,6 +228,30 @@ test('RPP-0703 transaction boundary policy resumes chunk transfer without duplic
   assert.equal(policy.apply.freshMutationWorkDuringTransferResume, 0);
   assert.equal(policy.apply.duplicateMutationWork, 0);
   assert.equal(policy.apply.noDuplicateMutationWork, true);
+  assert.equal(policy.apply.targetPlanEnvelopeComplete, true);
+  assert.equal(policy.targetPlan.status, 'passed');
+  assert.equal(policy.targetPlan.requiredForMutationWork, true);
+  assert.equal(policy.targetPlan.expectedMutationTargets, report.shape.mutations);
+  assert.equal(policy.targetPlan.expectedTargetCountMatches, true);
+  assert.equal(policy.targetPlan.targetPlanEnvelopeComplete, true);
+  assert.equal(policy.targetPlan.targetPlanRecords, report.shape.mutations);
+  assert.equal(policy.targetPlan.targetPlanUniqueTargets, report.shape.mutations);
+  assert.equal(policy.targetPlan.mutationTargetsObserved, report.shape.mutations);
+  assert.equal(policy.targetPlan.duplicateTargetPlanRecords, 0);
+  assert.equal(policy.targetPlan.missingTargetPlanRecords, 0);
+  assert.equal(policy.targetPlan.orphanTargetPlanRecords, 0);
+  assert.equal(policy.targetPlan.targetPlansAfterTransferFinalize, true);
+  assert.equal(policy.targetPlan.targetPlansBeforeMutationWork, true);
+  assert.ok(
+    policy.transfer.transferFinalizeSequence < policy.targetPlan.firstTargetPlanSequence,
+    'target envelopes must start only after file staging finalizes',
+  );
+  assert.ok(
+    policy.targetPlan.lastTargetPlanSequence < policy.apply.firstMutationWorkSequence,
+    'target envelopes must complete before mutation work starts',
+  );
+  assert.equal(policy.targetPlan.targetPlanKeySetHash, policy.targetPlan.mutationWorkKeySetHash);
+  assert.match(policy.targetPlan.evidenceHash, /^[a-f0-9]{64}$/);
   assert.match(policy.evidenceHash, /^[a-f0-9]{64}$/);
   assert.equal(
     report.evidence.guardedTransfer.transactionBoundaryPolicy.evidenceHash,
@@ -353,6 +387,13 @@ test('production claim gate fails closed if benchmark evidence is tampered', { c
   missingTransactionBoundary.evidence.transactionBoundaryPolicy.apply.noDuplicateMutationWork = false;
   assert.ok(
     productionThroughputBlockers(missingTransactionBoundary).includes('missing-transaction-boundary-policy'),
+  );
+
+  const missingTargetEnvelope = clone(report);
+  missingTargetEnvelope.evidence.transactionBoundaryPolicy.apply.targetPlanEnvelopeComplete = false;
+  missingTargetEnvelope.evidence.transactionBoundaryPolicy.targetPlan.targetPlanEnvelopeComplete = false;
+  assert.ok(
+    productionThroughputBlockers(missingTargetEnvelope).includes('missing-transaction-boundary-policy'),
   );
 
   const missingParallelSnapshotHashing = clone(report);

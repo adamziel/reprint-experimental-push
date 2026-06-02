@@ -21,6 +21,9 @@ Variant 4 asserts:
 - each generated case resumes only from exact durable local receipt matches;
 - resumed transfers upload `0` chunks, write `0` duplicate chunk bytes, and
   perform `0` duplicate mutation work;
+- the guarded executor carries `18` target-planned envelopes for `18` expected
+  mutation targets, and each generated resume case carries one target envelope
+  before mutation work starts;
 - a resume attempt containing mutation work is blocked by the transaction
   boundary policy instead of being treated as a safe transfer resume;
 - mutation apply opens only after file staging finalizes;
@@ -48,6 +51,8 @@ The variant 4 projection uses support-only local evidence:
 - generated duplicate mutation work: `0`
 - generated duplicate-resume probes blocked: `4`
 - generated missing-receipt probes blocked: `4`
+- target-planned envelopes: `18` of `18` expected mutation targets
+- target envelopes complete before first mutation work: `true`
 - apply opened after transfer finalization: `true`
 
 The public projection hashes plan identity, resource identity, local resource
@@ -63,17 +68,18 @@ The proof recomputes this gate vector before emitting output:
 2. `deterministic-resume-regression-cases`
 3. `durable-local-receipts-complete`
 4. `receipt-only-chunk-transfer-resume`
-5. `no-duplicate-mutation-work`
-6. `apply-opens-after-transfer-finalize`
-7. `unit-storage-performance-budget`
-8. `hash-count-only-regression-evidence`
-9. `support-only-release-no-go`
+5. `target-plan-envelope-before-mutation-work`
+6. `no-duplicate-mutation-work`
+7. `apply-opens-after-transfer-finalize`
+8. `unit-storage-performance-budget`
+9. `hash-count-only-regression-evidence`
+10. `support-only-release-no-go`
 
 If otherwise passing evidence loses a receipt match, requires resumed upload
-work, records duplicate mutation work, opens apply before transfer
-finalization, exceeds the unit runtime budget, or clears the recorded
-correctness gates, the resolver blocks output and records the failing gate
-identifiers.
+work, loses target-plan envelope completeness, records duplicate mutation work,
+opens apply before transfer finalization, exceeds the unit runtime budget, or
+clears the recorded correctness gates, the resolver blocks output and records
+the failing gate identifiers.
 
 ## Support-only release posture
 

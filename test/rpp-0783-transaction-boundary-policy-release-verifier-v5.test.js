@@ -29,6 +29,7 @@ const expectedReleaseVerifierGateIds = Object.freeze([
   'built-on-transaction-boundary-policy-v4',
   'transaction-boundary-receipt-only-resume',
   'deterministic-resume-regression-carried-through',
+  'target-plan-envelope-before-mutation-work',
   'apply-after-transfer-finalize-no-duplicate-mutation-work',
   'rollout-safety-gate-vector-carried-through',
   'hash-count-only-release-verifier-evidence',
@@ -153,6 +154,23 @@ test('RPP-0783 release verifier v5 carries transaction boundary policy with zero
   assert.equal(proof.resume.mismatchedReceiptBlocksSkip, true);
   assert.deepEqual(proof.resume.resumeCursorFields, expectedResumeCursorFields);
 
+  assert.equal(proof.targetPlan.status, 'passed');
+  assert.equal(proof.targetPlan.requiredForMutationWork, true);
+  assert.equal(proof.targetPlan.expectedMutationTargets, proof.resources.apply.mutationResources);
+  assert.equal(proof.targetPlan.expectedTargetCountMatches, true);
+  assert.equal(proof.targetPlan.targetPlanEnvelopeComplete, true);
+  assert.equal(proof.targetPlan.targetPlanRecords, proof.targetPlan.expectedMutationTargets);
+  assert.equal(proof.targetPlan.targetPlanUniqueTargets, proof.targetPlan.expectedMutationTargets);
+  assert.equal(proof.targetPlan.mutationTargetsObserved, proof.targetPlan.expectedMutationTargets);
+  assert.equal(proof.targetPlan.duplicateTargetPlanRecords, 0);
+  assert.equal(proof.targetPlan.missingTargetPlanRecords, 0);
+  assert.equal(proof.targetPlan.orphanTargetPlanRecords, 0);
+  assert.equal(proof.targetPlan.targetPlansAfterTransferFinalize, true);
+  assert.equal(proof.targetPlan.targetPlansBeforeMutationWork, true);
+  assert.equal(proof.targetPlan.targetPlanKeySetHash, proof.targetPlan.mutationWorkKeySetHash);
+  assert.match(proof.targetPlan.planIdHash, /^[a-f0-9]{64}$/);
+  assert.match(proof.targetPlan.evidenceHash, /^[a-f0-9]{64}$/);
+
   assert.equal(proof.resumeRegression.source, 'local-generated-transaction-boundary-release-verifier-cases');
   assert.equal(proof.resumeRegression.releaseVerifierVariant, 'transaction-boundary-policy-release-verifier-v5');
   assert.equal(proof.resumeRegression.caseCount, 4);
@@ -177,6 +195,10 @@ test('RPP-0783 release verifier v5 carries transaction boundary policy with zero
     assert.equal(resumeCase.duplicateChunkBytes, 0);
     assert.equal(resumeCase.duplicateMutationWork, 0);
     assert.equal(resumeCase.noDuplicateMutationWork, true);
+    assert.equal(resumeCase.targetPlanEnvelopeComplete, true);
+    assert.equal(resumeCase.targetPlanRecords, 1);
+    assert.equal(resumeCase.mutationTargetsObserved, 1);
+    assert.equal(resumeCase.targetPlansBeforeMutationWork, true);
     assert.equal(resumeCase.applyOpenedAfterTransferFinalize, true);
     assert.equal(resumeCase.mutationWorkAllowedDuringTransferResume, false);
     assert.equal(resumeCase.duplicateResumeProbe.blocked, true);
@@ -191,6 +213,7 @@ test('RPP-0783 release verifier v5 carries transaction boundary policy with zero
   assert.equal(proof.apply.freshMutationWorkDuringTransferResume, 0);
   assert.equal(proof.apply.duplicateMutationWork, 0);
   assert.equal(proof.apply.noDuplicateMutationWork, true);
+  assert.equal(proof.apply.targetPlanEnvelopeComplete, true);
 
   assert.equal(proof.replay.status, 'passed');
   assert.equal(proof.replay.idempotentReplaySafe, true);
@@ -210,6 +233,7 @@ test('RPP-0783 release verifier v5 carries transaction boundary policy with zero
 
   assert.deepEqual(proof.correctness.gateIds, expectedReleaseVerifierGateIds);
   assert.deepEqual(proof.correctness.recomputedGateVector.map((gate) => gate.status), [
+    'pass',
     'pass',
     'pass',
     'pass',
@@ -263,6 +287,7 @@ test('RPP-0783 release verifier v5 blocks stale transaction boundary carry-throu
     'pass',
     'pass',
     'pass',
+    'pass',
   ]);
 
   assert.equal(unsafeDecisions.missingRuntimeReport.updated, false);
@@ -274,6 +299,9 @@ test('RPP-0783 release verifier v5 blocks stale transaction boundary carry-throu
   assert.equal(unsafeDecisions.regressionUpload.updated, false);
   assert.ok(unsafeDecisions.regressionUpload.blockedBy
     .includes('deterministic-resume-regression-carried-through'));
+  assert.equal(unsafeDecisions.missingTargetEnvelope.updated, false);
+  assert.ok(unsafeDecisions.missingTargetEnvelope.blockedBy
+    .includes('target-plan-envelope-before-mutation-work'));
   assert.equal(unsafeDecisions.duplicateMutationWork.updated, false);
   assert.ok(unsafeDecisions.duplicateMutationWork.blockedBy
     .includes('apply-after-transfer-finalize-no-duplicate-mutation-work'));
@@ -352,6 +380,7 @@ function buildReleaseVerifierProof() {
     benchmark: evidence.benchmark,
     transfer: evidence.transfer,
     resume: evidence.resume,
+    targetPlan: evidence.targetPlan,
     resumeRegression: evidence.resumeRegression,
     apply: evidence.apply,
     replay: evidence.replay,
@@ -529,6 +558,34 @@ function buildReleaseVerifierEvidence({
       mismatchedReceiptBlocksSkip: policy.resume.mismatchedReceiptBlocksSkip,
       resumeCursorFields: policy.resume.resumeCursorFields,
     },
+    targetPlan: {
+      transaction: policy.targetPlan.transaction,
+      completionRule: policy.targetPlan.completionRule,
+      status: policy.targetPlan.status,
+      requiredForMutationWork: policy.targetPlan.requiredForMutationWork,
+      planIdHash: policy.targetPlan.planIdHash,
+      expectedMutationTargets: policy.targetPlan.expectedMutationTargets,
+      expectedTargetCountMatches: policy.targetPlan.expectedTargetCountMatches,
+      targetPlanEnvelopeComplete: policy.targetPlan.targetPlanEnvelopeComplete,
+      mutationWorkRecords: policy.targetPlan.mutationWorkRecords,
+      mutationTargetsObserved: policy.targetPlan.mutationTargetsObserved,
+      targetPlanRecords: policy.targetPlan.targetPlanRecords,
+      targetPlanUniqueTargets: policy.targetPlan.targetPlanUniqueTargets,
+      duplicateTargetPlanRecords: policy.targetPlan.duplicateTargetPlanRecords,
+      invalidTargetPlanRecords: policy.targetPlan.invalidTargetPlanRecords,
+      invalidMutationWorkRecords: policy.targetPlan.invalidMutationWorkRecords,
+      missingTargetPlanRecords: policy.targetPlan.missingTargetPlanRecords,
+      orphanTargetPlanRecords: policy.targetPlan.orphanTargetPlanRecords,
+      firstTargetPlanSequence: policy.targetPlan.firstTargetPlanSequence,
+      lastTargetPlanSequence: policy.targetPlan.lastTargetPlanSequence,
+      firstMutationWorkSequence: policy.targetPlan.firstMutationWorkSequence,
+      targetPlanRecordsHaveSequences: policy.targetPlan.targetPlanRecordsHaveSequences,
+      targetPlansAfterTransferFinalize: policy.targetPlan.targetPlansAfterTransferFinalize,
+      targetPlansBeforeMutationWork: policy.targetPlan.targetPlansBeforeMutationWork,
+      targetPlanKeySetHash: policy.targetPlan.targetPlanKeySetHash,
+      mutationWorkKeySetHash: policy.targetPlan.mutationWorkKeySetHash,
+      evidenceHash: policy.targetPlan.evidenceHash,
+    },
     resumeRegression: {
       source: 'local-generated-transaction-boundary-release-verifier-cases',
       releaseVerifierVariant: 'transaction-boundary-policy-release-verifier-v5',
@@ -576,6 +633,7 @@ function buildReleaseVerifierEvidence({
       transaction: policy.apply.transaction,
       opensAfter: policy.apply.opensAfter,
       firstApplyBoundarySequence: policy.apply.firstApplyBoundarySequence,
+      firstMutationWorkSequence: policy.apply.firstMutationWorkSequence,
       applyOpenedAfterTransferFinalize: policy.apply.applyOpenedAfterTransferFinalize,
       mutationWorkAllowedDuringTransferResume: policy.apply.mutationWorkAllowedDuringTransferResume,
       mutationWorkReplayedBeforeTransferFinalize:
@@ -583,6 +641,7 @@ function buildReleaseVerifierEvidence({
       freshMutationWorkDuringTransferResume: policy.apply.freshMutationWorkDuringTransferResume,
       duplicateMutationWork: policy.apply.duplicateMutationWork,
       noDuplicateMutationWork: policy.apply.noDuplicateMutationWork,
+      targetPlanEnvelopeComplete: policy.apply.targetPlanEnvelopeComplete,
       appliedMutations: report.results.appliedMutations,
       liveRemoteMutationPreconditions:
         report.evidence.preconditions.liveRemoteMutationPreconditions,
@@ -649,6 +708,7 @@ function resolveReleaseVerifierCarryThrough(evidence) {
         transactionBoundaryHash: sha256({
           transfer: evidence.transfer,
           resume: evidence.resume,
+          targetPlan: evidence.targetPlan,
           apply: evidence.apply,
           replay: evidence.replay,
         }),
@@ -700,6 +760,7 @@ function recomputeReleaseVerifierGates(evidence) {
   const journals = resources.journals || {};
   const transfer = evidence.transfer || {};
   const resume = evidence.resume || {};
+  const targetPlan = evidence.targetPlan || {};
   const resumeRegression = evidence.resumeRegression || {};
   const cases = Array.isArray(resumeRegression.cases) ? resumeRegression.cases : [];
   const apply = evidence.apply || {};
@@ -776,9 +837,36 @@ function recomputeReleaseVerifierGates(evidence) {
       && resumeCase.duplicateChunkBytes === 0
       && resumeCase.duplicateMutationWork === 0
       && resumeCase.noDuplicateMutationWork === true
+      && resumeCase.targetPlanEnvelopeComplete === true
+      && resumeCase.targetPlanRecords === 1
+      && resumeCase.mutationTargetsObserved === 1
+      && resumeCase.targetPlansBeforeMutationWork === true
       && resumeCase.duplicateResumeProbe.blocked === true
       && resumeCase.missingReceiptProbe.blocked === true
     ));
+  const targetPlanEnvelopeCovered = targetPlan.status === 'passed'
+    && targetPlan.requiredForMutationWork === true
+    && targetPlan.expectedMutationTargets === resources.apply?.mutationResources
+    && targetPlan.expectedTargetCountMatches === true
+    && targetPlan.targetPlanEnvelopeComplete === true
+    && targetPlan.mutationWorkRecords === resources.apply?.mutationResources
+    && targetPlan.mutationTargetsObserved === resources.apply?.mutationResources
+    && targetPlan.targetPlanRecords === resources.apply?.mutationResources
+    && targetPlan.targetPlanUniqueTargets === resources.apply?.mutationResources
+    && targetPlan.duplicateTargetPlanRecords === 0
+    && targetPlan.invalidTargetPlanRecords === 0
+    && targetPlan.invalidMutationWorkRecords === 0
+    && targetPlan.missingTargetPlanRecords === 0
+    && targetPlan.orphanTargetPlanRecords === 0
+    && targetPlan.targetPlanRecordsHaveSequences === true
+    && targetPlan.targetPlansAfterTransferFinalize === true
+    && targetPlan.targetPlansBeforeMutationWork === true
+    && targetPlan.firstTargetPlanSequence > transfer.transferFinalizeSequence
+    && targetPlan.lastTargetPlanSequence < apply.firstMutationWorkSequence
+    && targetPlan.firstMutationWorkSequence === apply.firstMutationWorkSequence
+    && targetPlan.targetPlanKeySetHash === targetPlan.mutationWorkKeySetHash
+    && isSha256Hash(targetPlan.planIdHash)
+    && isSha256Hash(targetPlan.evidenceHash);
   const noDuplicateMutationWork = resume.duplicateMutationWork === 0
     && apply.mutationWorkReplayedBeforeTransferFinalize === 0
     && apply.freshMutationWorkDuringTransferResume === 0
@@ -840,6 +928,14 @@ function recomputeReleaseVerifierGates(evidence) {
       chunkCounts: resumeRegression.chunkCounts,
       totalChunksToUpload: resumeRegression.totalChunksToUpload,
       totalDuplicateMutationWork: resumeRegression.totalDuplicateMutationWork,
+    }),
+    proofGate('target-plan-envelope-before-mutation-work', targetPlanEnvelopeCovered, {
+      expectedMutationTargets: targetPlan.expectedMutationTargets,
+      targetPlanRecords: targetPlan.targetPlanRecords,
+      mutationTargetsObserved: targetPlan.mutationTargetsObserved,
+      firstTargetPlanSequence: targetPlan.firstTargetPlanSequence,
+      lastTargetPlanSequence: targetPlan.lastTargetPlanSequence,
+      firstMutationWorkSequence: targetPlan.firstMutationWorkSequence,
     }),
     proofGate('apply-after-transfer-finalize-no-duplicate-mutation-work',
       applyOpensAfterTransferFinalize && noDuplicateMutationWork, {
@@ -907,6 +1003,12 @@ function unsafeReleaseVerifierDecisions(evidence) {
   duplicateMutationWork.replay.noDuplicateMutationWork = false;
   duplicateMutationWork.resumeRegression.totalDuplicateMutationWork = 1;
 
+  const missingTargetEnvelope = withPassedStatus(clone(evidence));
+  missingTargetEnvelope.targetPlan.targetPlanEnvelopeComplete = false;
+  missingTargetEnvelope.targetPlan.status = 'blocked';
+  missingTargetEnvelope.targetPlan.missingTargetPlanRecords = 1;
+  missingTargetEnvelope.apply.targetPlanEnvelopeComplete = false;
+
   const earlyApplyBoundary = withPassedStatus(clone(evidence));
   earlyApplyBoundary.apply.applyOpenedAfterTransferFinalize = false;
   earlyApplyBoundary.apply.firstApplyBoundarySequence =
@@ -919,6 +1021,7 @@ function unsafeReleaseVerifierDecisions(evidence) {
     missingRuntimeReport: resolveReleaseVerifierCarryThrough(missingRuntimeReport),
     missingReceipt: resolveReleaseVerifierCarryThrough(missingReceipt),
     regressionUpload: resolveReleaseVerifierCarryThrough(regressionUpload),
+    missingTargetEnvelope: resolveReleaseVerifierCarryThrough(missingTargetEnvelope),
     duplicateMutationWork: resolveReleaseVerifierCarryThrough(duplicateMutationWork),
     earlyApplyBoundary: resolveReleaseVerifierCarryThrough(earlyApplyBoundary),
     prematurePassStatus: resolveReleaseVerifierCarryThrough(prematurePassStatus),
@@ -987,16 +1090,33 @@ function buildReleaseVerifierResumeCase(spec) {
       assembledHash: localResourceHash,
     },
     {
-      type: 'apply-staged',
+      type: 'target-planned',
       sequence: spec.chunkCount + 3,
+      planId,
+      mutationId: `${spec.caseId}-mutation-1`,
+      resourceKey,
+      beforeHash: sha256({ proofId, caseId: spec.caseId, state: 'before' }),
+      afterHash: localResourceHash,
+      state: 'planned',
+    },
+    {
+      type: 'apply-staged',
+      sequence: spec.chunkCount + 4,
+      planId,
     },
     {
       type: 'mutation-observed',
-      sequence: spec.chunkCount + 4,
+      sequence: spec.chunkCount + 5,
+      planId,
+      mutationId: `${spec.caseId}-mutation-1`,
+      resourceKey,
     },
     {
       type: 'mutation-applied',
-      sequence: spec.chunkCount + 5,
+      sequence: spec.chunkCount + 6,
+      planId,
+      mutationId: `${spec.caseId}-mutation-1`,
+      resourceKey,
     },
   ];
   const policy = buildChunkTransferTransactionBoundaryPolicy({
@@ -1004,6 +1124,7 @@ function buildReleaseVerifierResumeCase(spec) {
     resourceKey,
     manifestDigest,
     assembledHash: localResourceHash,
+    expectedMutationTargets: 1,
     manifestEntries,
     chunkReceiptRecords,
     journalRecords,
@@ -1014,6 +1135,7 @@ function buildReleaseVerifierResumeCase(spec) {
     resourceKey,
     manifestDigest,
     assembledHash: localResourceHash,
+    expectedMutationTargets: 1,
     manifestEntries,
     chunkReceiptRecords,
     journalRecords,
@@ -1027,6 +1149,7 @@ function buildReleaseVerifierResumeCase(spec) {
     resourceKey,
     manifestDigest,
     assembledHash: localResourceHash,
+    expectedMutationTargets: 1,
     manifestEntries,
     chunkReceiptRecords: chunkReceiptRecords.slice(1),
     journalRecords,
@@ -1069,6 +1192,10 @@ function buildReleaseVerifierResumeCase(spec) {
     applyDuplicateMutationWork: policy.apply.duplicateMutationWork,
     duplicateMutationWork: policy.resume.duplicateMutationWork + policy.apply.duplicateMutationWork,
     noDuplicateMutationWork: policy.apply.noDuplicateMutationWork,
+    targetPlanEnvelopeComplete: policy.targetPlan.targetPlanEnvelopeComplete,
+    targetPlanRecords: policy.targetPlan.targetPlanRecords,
+    mutationTargetsObserved: policy.targetPlan.mutationTargetsObserved,
+    targetPlansBeforeMutationWork: policy.targetPlan.targetPlansBeforeMutationWork,
     duplicateResumeProbe: {
       status: duplicateResumePolicy.status,
       blocked: duplicateResumePolicy.status === 'blocked'
