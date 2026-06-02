@@ -1009,17 +1009,44 @@ function reprint_push_normalize_plugin_owned_row_driver_row_schema_field_constra
     $has_const_hash = array_key_exists('constHash', $definition);
     $has_raw_enum = array_key_exists('enum', $definition);
     $has_enum_hashes = array_key_exists('enumHashes', $definition);
+    $has_minimum = array_key_exists('minimum', $definition);
+    $has_maximum = array_key_exists('maximum', $definition);
+    $has_range = $has_minimum || $has_maximum;
     $constraint_count = (($has_raw_const || $has_const_hash) ? 1 : 0)
-        + (($has_raw_enum || $has_enum_hashes) ? 1 : 0);
+        + (($has_raw_enum || $has_enum_hashes) ? 1 : 0)
+        + ($has_range ? 1 : 0);
 
     if ($constraint_count === 0) {
         return [];
     }
-    if (!in_array($type, ['boolean', 'integer', 'null', 'number', 'string'], true)) {
+    if ($has_range && !in_array($type, ['integer', 'number'], true)) {
+        throw new RuntimeException('Plugin-owned row driver rowSchema minimum/maximum constraints are only supported for integer or number fields.');
+    }
+    if (!$has_range && !in_array($type, ['boolean', 'integer', 'null', 'number', 'string'], true)) {
         throw new RuntimeException('Plugin-owned row driver rowSchema const/enum constraints are only supported for scalar fields.');
     }
     if ($constraint_count > 1 || ($has_raw_const && $has_const_hash) || ($has_raw_enum && $has_enum_hashes)) {
-        throw new RuntimeException('Plugin-owned row driver rowSchema must declare exactly one const or enum constraint representation.');
+        throw new RuntimeException('Plugin-owned row driver rowSchema must declare exactly one const, enum, or range constraint representation.');
+    }
+
+    if ($has_range) {
+        $range = [];
+        if ($has_minimum) {
+            $range['minimum'] = reprint_push_normalize_plugin_owned_row_driver_row_schema_range_boundary(
+                $type,
+                $definition['minimum']
+            );
+        }
+        if ($has_maximum) {
+            $range['maximum'] = reprint_push_normalize_plugin_owned_row_driver_row_schema_range_boundary(
+                $type,
+                $definition['maximum']
+            );
+        }
+        if (array_key_exists('minimum', $range) && array_key_exists('maximum', $range) && $range['minimum'] > $range['maximum']) {
+            throw new RuntimeException('Plugin-owned row driver rowSchema minimum must be less than or equal to maximum.');
+        }
+        return $range;
     }
 
     if ($has_raw_const) {
@@ -1071,6 +1098,19 @@ function reprint_push_normalize_plugin_owned_row_driver_row_schema_field_constra
     return [
         'enumHashes' => $enum_hashes,
     ];
+}
+
+function reprint_push_normalize_plugin_owned_row_driver_row_schema_range_boundary(
+    string $type,
+    $value
+) {
+    if (!(is_int($value) || is_float($value)) || !is_finite((float) $value)) {
+        throw new RuntimeException('Plugin-owned row driver rowSchema range boundaries must be finite numbers.');
+    }
+    if ($type === 'integer' && !is_int($value)) {
+        throw new RuntimeException('Plugin-owned row driver rowSchema integer range boundaries must be integers.');
+    }
+    return $value;
 }
 
 function reprint_push_is_sha256_hex($value): bool
@@ -5293,6 +5333,28 @@ function reprint_push_plugin_driver_payload_row_schema_constraint_evidence(
             'constraintHash' => hash('sha256', reprint_push_stable_json($field['enumHashes'])),
             'observedHash' => $observed_hash,
             'matched' => in_array($observed_hash, $field['enumHashes'], true),
+        ];
+    }
+    $range = [];
+    if (array_key_exists('minimum', $field)) {
+        $range['minimum'] = $field['minimum'];
+    }
+    if (array_key_exists('maximum', $field)) {
+        $range['maximum'] = $field['maximum'];
+    }
+    if ($range !== []) {
+        $matched = (is_int($observed) || is_float($observed)) && is_finite((float) $observed);
+        if ($matched && array_key_exists('minimum', $range) && $observed < $range['minimum']) {
+            $matched = false;
+        }
+        if ($matched && array_key_exists('maximum', $range) && $observed > $range['maximum']) {
+            $matched = false;
+        }
+        return [
+            'constraint' => 'range',
+            'constraintHash' => hash('sha256', reprint_push_stable_json($range)),
+            'observedHash' => $observed_hash,
+            'matched' => $matched,
         ];
     }
     return null;

@@ -424,12 +424,17 @@ reprint_push_register_plugin_owned_row_driver([
             'id' => 'integer',
 	        'payload' => [
 	            'type' => 'object',
-	            'required' => ['mode', 'version'],
+	            'required' => ['mode', 'priority', 'version'],
 	            'additionalProperties' => false,
 	            'properties' => [
 	                'mode' => [
 	                    'type' => 'string',
 	                    'enum' => ['schema-bound-private-mode', 'schema-bound-private-alt-mode'],
+	                ],
+	                'priority' => [
+	                    'type' => 'integer',
+	                    'minimum' => 1,
+	                    'maximum' => 5,
 	                ],
 	                'version' => [
 	                    'type' => 'integer',
@@ -517,6 +522,13 @@ echo json_encode([
                 digest('schema-bound-private-alt-mode'),
                 digest('schema-bound-private-mode'),
               ].sort(),
+            },
+            {
+              field: 'priority',
+              type: 'integer',
+              required: true,
+              minimum: 1,
+              maximum: 5,
             },
             {
               field: 'version',
@@ -898,12 +910,17 @@ $row_schema = [
         'id' => 'integer',
         'payload' => [
             'type' => 'object',
-            'required' => ['mode', 'version'],
+            'required' => ['mode', 'priority', 'version'],
             'additionalProperties' => false,
             'properties' => [
                 'mode' => [
                     'type' => 'string',
                     'enum' => ['schema-bound-private-mode', 'schema-bound-private-alt-mode'],
+                ],
+                'priority' => [
+                    'type' => 'integer',
+                    'minimum' => 1,
+                    'maximum' => 5,
                 ],
                 'version' => [
                     'type' => 'integer',
@@ -918,6 +935,7 @@ $value = [
     'id' => 7,
     'payload' => [
         'mode' => 'schema-bound-private-mode',
+        'priority' => 3,
         'version' => 1,
     ],
     '__pluginOwner' => 'fixture-schema-bound-plugin',
@@ -973,6 +991,18 @@ $forged_schema_payload['value']['value']['payload']['private_note'] = 'schema-bo
 	    $forged_constraint_payload['value']['value'],
 	    $row_schema
 	);
+	$forged_range_payload = $base_mutation;
+	$forged_range_payload['value']['value']['payload']['priority'] = 9;
+	$forged_range_payload['pluginOwnedResource'] = rpp_schema_bound_policy(
+	    $resource_key,
+	    'wp_fixture_schema_bound_rows',
+	    'fixture-schema-bound-plugin',
+	    'fixture-schema-bound-driver',
+	    false,
+	    'put',
+	    $forged_range_payload['value']['value'],
+	    $row_schema
+	);
 	$forged_root_payload = $base_mutation;
 	$forged_root_payload['value']['value']['private_note'] = 'schema-bound-root-private-payload';
 	$forged_root_payload['pluginOwnedResource'] = rpp_schema_bound_policy(
@@ -999,12 +1029,17 @@ $forged_schema_payload['value']['value']['payload']['private_note'] = 'schema-bo
 	        reprint_push_assert_supported_plugin_owned_mutation($forged_constraint_payload, $snapshot);
 	        return true;
 	    }),
+	    'forgedRangePayload' => rpp_driver_api_capture(static function () use ($forged_range_payload, $snapshot): bool {
+	        reprint_push_assert_supported_plugin_owned_mutation($forged_range_payload, $snapshot);
+	        return true;
+	    }),
 	    'forgedRootPayload' => rpp_driver_api_capture(static function () use ($forged_root_payload, $snapshot): bool {
 	        reprint_push_assert_supported_plugin_owned_mutation($forged_root_payload, $snapshot);
 	        return true;
 	    }),
 	    'schemaValidation' => $forged_schema_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['schemaValidation'],
 	    'constraintValidation' => $forged_constraint_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['schemaValidation'],
+	    'rangeValidation' => $forged_range_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['schemaValidation'],
 	    'rootSchemaValidation' => $forged_root_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['schemaValidation'],
 	    'normalizedSchema' => $base_mutation['pluginOwnedResource']['contractValidationEvidence']['rowSchema'],
 	]);
@@ -1013,6 +1048,7 @@ $forged_schema_payload['value']['value']['payload']['private_note'] = 'schema-bo
   assert.deepEqual(report.accepted, { ok: true, value: true });
 	  assert.equal(report.forgedSchemaPayload.ok, false);
 	  assert.equal(report.forgedConstraintPayload.ok, false);
+	  assert.equal(report.forgedRangePayload.ok, false);
 	  assert.equal(report.forgedRootPayload.ok, false);
   assert.equal(
     report.forgedSchemaPayload.error.message,
@@ -1065,6 +1101,13 @@ $forged_schema_payload['value']['value']['payload']['private_note'] = 'schema-bo
 	          ].sort(),
 	        },
 	        {
+	          field: 'priority',
+	          type: 'integer',
+	          required: true,
+	          minimum: 1,
+	          maximum: 5,
+	        },
+	        {
 	          field: 'version',
 	          type: 'integer',
 	          required: true,
@@ -1088,6 +1131,21 @@ $forged_schema_payload['value']['value']['payload']['private_note'] = 'schema-bo
 	        digest('schema-bound-private-mode'),
 	      ].sort()),
 	      observedHash: digest('schema-bound-private-forged-mode'),
+	      matched: false,
+	    },
+	  );
+	  assert.deepEqual(
+	    report.rangeValidation.fields.find((field) => field.path === 'payload.priority'),
+	    {
+	      field: 'priority',
+	      path: 'payload.priority',
+	      expectedType: 'integer',
+	      required: true,
+	      state: 'constraint-mismatch',
+	      observedType: 'integer',
+	      constraint: 'range',
+	      constraintHash: digest({ minimum: 1, maximum: 5 }),
+	      observedHash: digest(9),
 	      matched: false,
 	    },
 	  );

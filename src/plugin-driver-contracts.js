@@ -868,11 +868,25 @@ function normalizePluginOwnedRowDriverRowSchemaFieldConstraints({
   const hasConstHash = hasOwn(definition, 'constHash');
   const hasRawEnum = hasOwn(definition, 'enum');
   const hasEnumHashes = hasOwn(definition, 'enumHashes');
-  const constraintCount = Number(hasRawConst || hasConstHash) + Number(hasRawEnum || hasEnumHashes);
+  const hasMinimum = hasOwn(definition, 'minimum');
+  const hasMaximum = hasOwn(definition, 'maximum');
+  const hasRange = hasMinimum || hasMaximum;
+  const constraintCount = Number(hasRawConst || hasConstHash)
+    + Number(hasRawEnum || hasEnumHashes)
+    + Number(hasRange);
   if (constraintCount === 0) {
     return { valid: true, normalized: {} };
   }
-  if (!SUPPORTED_ROW_SCHEMA_CONSTRAINT_TYPES.has(type)) {
+  if (hasRange && !SUPPORTED_ROW_SCHEMA_RANGE_CONSTRAINT_TYPES.has(type)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: 'minimum or maximum constraints only on integer or number fields',
+      observed: type ?? null,
+    };
+  }
+  if (!hasRange && !SUPPORTED_ROW_SCHEMA_CONSTRAINT_TYPES.has(type)) {
     return {
       valid: false,
       normalized: null,
@@ -886,8 +900,48 @@ function normalizePluginOwnedRowDriverRowSchemaFieldConstraints({
       valid: false,
       normalized: null,
       reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
-      required: 'exactly one const or enum constraint representation',
+      required: 'exactly one const, enum, or range constraint representation',
       observed: 'multiple constraints',
+    };
+  }
+  if (hasRange) {
+    const normalizedRange = {};
+    if (hasMinimum) {
+      const minimum = normalizePluginOwnedRowDriverRowSchemaRangeBoundary({
+        type,
+        value: definition.minimum,
+      });
+      if (!minimum.valid) {
+        return minimum;
+      }
+      normalizedRange.minimum = minimum.normalized;
+    }
+    if (hasMaximum) {
+      const maximum = normalizePluginOwnedRowDriverRowSchemaRangeBoundary({
+        type,
+        value: definition.maximum,
+      });
+      if (!maximum.valid) {
+        return maximum;
+      }
+      normalizedRange.maximum = maximum.normalized;
+    }
+    if (
+      hasOwn(normalizedRange, 'minimum')
+      && hasOwn(normalizedRange, 'maximum')
+      && normalizedRange.minimum > normalizedRange.maximum
+    ) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+        required: 'minimum less than or equal to maximum',
+        observed: 'range boundary order',
+      };
+    }
+    return {
+      valid: true,
+      normalized: normalizedRange,
     };
   }
   if (hasRawConst) {
@@ -982,6 +1036,34 @@ function normalizePluginOwnedRowDriverRowSchemaFieldConstraints({
   };
 }
 
+function normalizePluginOwnedRowDriverRowSchemaRangeBoundary({
+  type,
+  value,
+}) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: `${type} finite range boundary`,
+      observed: rowSchemaConstraintValueType(value),
+    };
+  }
+  if (type === 'integer' && !Number.isInteger(value)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: 'integer range boundary',
+      observed: 'number',
+    };
+  }
+  return {
+    valid: true,
+    normalized: value,
+  };
+}
+
 function rowSchemaConstraintValueType(value) {
   if (value === null) {
     return 'null';
@@ -1024,6 +1106,10 @@ const SUPPORTED_ROW_SCHEMA_CONSTRAINT_TYPES = new Set([
   'null',
   'number',
   'string',
+]);
+const SUPPORTED_ROW_SCHEMA_RANGE_CONSTRAINT_TYPES = new Set([
+  'integer',
+  'number',
 ]);
 
 function hasOwn(value, key) {

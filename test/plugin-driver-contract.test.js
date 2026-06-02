@@ -162,12 +162,17 @@ function constrainedSchemaBoundCustomTableContract(extra = {}) {
         entry_id: 'integer',
         payload: {
           type: 'object',
-          required: ['mode', 'version'],
+          required: ['mode', 'priority', 'version'],
           additionalProperties: false,
           properties: {
             mode: {
               type: 'string',
               enum: ['local-constraint', 'local-constraint-alt'],
+            },
+            priority: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 5,
             },
             version: {
               type: 'integer',
@@ -286,6 +291,13 @@ const normalizedConstrainedCustomTableRowSchema = Object.freeze({
           type: 'string',
           required: true,
           enumHashes: constrainedModeEnumHashes,
+        },
+        {
+          field: 'priority',
+          type: 'integer',
+          required: true,
+          minimum: 1,
+          maximum: 5,
         },
         {
           field: 'version',
@@ -645,6 +657,40 @@ test('invalid schema constraints fail closed before becoming contracts', () => {
         mode: {
           type: 'string',
           constHash: 'not-a-sha256',
+        },
+      },
+    },
+    {
+      fields: {
+        mode: {
+          type: 'string',
+          minimum: 1,
+        },
+      },
+    },
+    {
+      fields: {
+        score: {
+          type: 'integer',
+          minimum: 1.5,
+        },
+      },
+    },
+    {
+      fields: {
+        score: {
+          type: 'integer',
+          minimum: 10,
+          maximum: 1,
+        },
+      },
+    },
+    {
+      fields: {
+        score: {
+          type: 'integer',
+          minimum: 0,
+          const: 0,
         },
       },
     },
@@ -2217,7 +2263,7 @@ test('schema-bound custom row driver validates hash-only scalar constraints', ()
   base.db.wp_forms_contract_rows = {
     'entry_id:7': {
       entry_id: 7,
-      payload: { mode: 'local-constraint', version: 2 },
+      payload: { mode: 'local-constraint', priority: 3, version: 2 },
       updated_marker: 'local',
       __pluginOwner: 'forms',
     },
@@ -2234,6 +2280,7 @@ test('schema-bound custom row driver validates hash-only scalar constraints', ()
   const payloadEvidence = mutation.pluginOwnedResource.driverPayloadValidationEvidence;
   const result = applyPlan(remote, plan);
   const modeEvidence = payloadEvidence.schemaValidation.fields.find((field) => field.path === 'payload.mode');
+  const priorityEvidence = payloadEvidence.schemaValidation.fields.find((field) => field.path === 'payload.priority');
   const versionEvidence = payloadEvidence.schemaValidation.fields.find((field) => field.path === 'payload.version');
 
   assert.equal(plan.status, 'ready');
@@ -2265,6 +2312,18 @@ test('schema-bound custom row driver validates hash-only scalar constraints', ()
     observedHash: digest(2),
     matched: true,
   });
+  assert.deepEqual(priorityEvidence, {
+    field: 'priority',
+    path: 'payload.priority',
+    expectedType: 'integer',
+    required: true,
+    state: 'present',
+    observedType: 'integer',
+    constraint: 'range',
+    constraintHash: digest({ minimum: 1, maximum: 5 }),
+    observedHash: digest(3),
+    matched: true,
+  });
   assert.equal(result.appliedMutations, 1);
   assert.equal(JSON.stringify(payloadEvidence).includes('local-constraint-alt'), false);
   assert.equal(JSON.stringify(payloadEvidence).includes('local-constraint'), false);
@@ -2276,7 +2335,7 @@ test('schema-bound custom row driver blocks scalar constraint mismatches', () =>
   base.db.wp_forms_contract_rows = {
     'entry_id:7': {
       entry_id: 7,
-      payload: { mode: 'local-constraint', version: 2 },
+      payload: { mode: 'local-constraint', priority: 3, version: 2 },
       updated_marker: 'local',
       __pluginOwner: 'forms',
     },
@@ -2313,6 +2372,51 @@ test('schema-bound custom row driver blocks scalar constraint mismatches', () =>
   });
   assert.equal(JSON.stringify(blocker).includes('constraint-private-mode'), false);
   assert.equal(JSON.stringify(blocker).includes('local-constraint'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('schema-bound custom row driver blocks numeric range constraint mismatches', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'local-constraint', priority: 3, version: 2 },
+      updated_marker: 'local',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.priority = 9;
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(constrainedSchemaBoundCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const mismatch = blocker.driverPayloadValidationEvidence.schemaValidation.fields.find(
+    (field) => field.path === 'payload.priority',
+  );
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'invalid-plugin-driver-payload');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_CONSTRAINT_MISMATCH');
+  assert.deepEqual(mismatch, {
+    field: 'priority',
+    path: 'payload.priority',
+    expectedType: 'integer',
+    required: true,
+    state: 'constraint-mismatch',
+    observedType: 'integer',
+    constraint: 'range',
+    constraintHash: digest({ minimum: 1, maximum: 5 }),
+    observedHash: digest(9),
+    matched: false,
+  });
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
   assert.equal(JSON.stringify(remote), remoteBefore);
 });

@@ -28,7 +28,11 @@ const releaseStateRowSchema = Object.freeze({
           const: boundary.owner,
         },
         mode: 'string',
-        version: 'integer',
+        version: {
+          type: 'integer',
+          minimum: 1,
+          maximum: 10,
+        },
         private_note: 'string',
         releaseBoundaryProof: {
           type: 'string',
@@ -64,7 +68,13 @@ const normalizedReleaseStateRowSchema = Object.freeze({
           required: true,
           constHash: digest(releaseBoundaryProofValue),
         },
-        { field: 'version', type: 'integer', required: true },
+        {
+          field: 'version',
+          type: 'integer',
+          required: true,
+          minimum: 1,
+          maximum: 10,
+        },
       ],
     },
     { field: 'state_id', type: 'integer', required: true },
@@ -230,6 +240,9 @@ function matchedReleaseStateSchemaValidation() {
         required: true,
         state: 'present',
         observedType: 'integer',
+        constraint: 'range',
+        constraintHash: digest({ minimum: 1, maximum: 10 }),
+        observedHash: digest(2),
         matched: true,
       },
       {
@@ -999,6 +1012,50 @@ test('RPP-0483 release verifier blocks custom-table allowlist and apply carry-th
     assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
     assert.equal(JSON.stringify(summary).includes('rpp-0483-private-forged-release-boundary-proof'), false);
     assertNoRawSentinels(summary, 'planned payload row schema constraint mismatch summary');
+  });
+
+  await t.test('forged payload row schema range is not release-verifier eligible with matching hashes', () => {
+    const topology = releaseStateTopology();
+    const plan = releaseStatePlan(topology);
+    const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey);
+    const rangeMismatchValue = cloneJson(topology.localEditedSnapshot.db[boundary.table][boundary.rowId]);
+    rangeMismatchValue.payload.version = 99;
+    topology.localEditedSnapshot.db[boundary.table][boundary.rowId] = rangeMismatchValue;
+    mutation.value = serializeResourceValue(rangeMismatchValue);
+    mutation.localHash = digest(rangeMismatchValue);
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.value.hash = digest(rangeMismatchValue);
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.schemaValidation =
+      constraintMismatchReleaseStateSchemaValidation({
+        fieldPath: 'payload.version',
+        observedHash: digest(99),
+      });
+    const summary = summarize(topology, releaseVerifierProof(plan));
+    const mismatch = summary.driverContractBoundary.driverPayloadValidation.schemaValidation.fields.find(
+      (field) => field.path === 'payload.version',
+    );
+
+    assert.equal(summary.status, 'blocked');
+    assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+    assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
+    assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, false);
+    assert.equal(summary.driverContractBoundary.payloadActionMatchesMutation, true);
+    assert.equal(summary.driverContractBoundary.payloadValueHashMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.payloadSchemaValidationMatchesExpected, false);
+    assert.deepEqual(mismatch, {
+      field: 'version',
+      path: 'payload.version',
+      expectedType: 'integer',
+      required: true,
+      state: 'constraint-mismatch',
+      observedType: 'integer',
+      constraint: 'range',
+      constraintHash: digest({ minimum: 1, maximum: 10 }),
+      observedHash: digest(99),
+      matched: false,
+    });
+    assert.equal(summary.driverContractBoundary.contractBound, false);
+    assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
+    assertNoRawSentinels(summary, 'planned payload row schema range mismatch summary');
   });
 
   await t.test('unexpected nested payload properties are not release-verifier eligible with redacted evidence', () => {

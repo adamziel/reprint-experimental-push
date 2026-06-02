@@ -40,7 +40,11 @@ Optional fields:
   types: `string`, `integer`, `number`, `boolean`, `object`, `array`, and
   `null`. Scalar fields may also declare `const` or `enum` constraints; the
   normalized contract stores these as `constHash` or sorted `enumHashes`, never
-  as raw values.
+  as raw values. Numeric `integer` and `number` fields may instead declare
+  finite `minimum` and/or `maximum` range constraints. Range constraints are
+  normalized as contract metadata, require `minimum <= maximum` when both are
+  present, require integer boundaries for `integer` fields, and are mutually
+  exclusive with `const` and `enum`.
 - `mergePolicy`: optional conflict-policy metadata for plugin-owned row
   drivers. Version 1 supports only `refuse-on-conflict`, normalized to a
   hash-bound object with `conflictResolution: "preserve-remote-and-stop"` and
@@ -79,7 +83,8 @@ that declares an explicit contract becomes strict:
   mutation with `PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA` or
   `PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA_TYPE`
 - malformed schema constraints, mixed raw/hash constraint forms, constraints on
-  non-scalar fields, or empty enum sets refuse before mutation with
+  non-scalar fields, range constraints on non-numeric fields, non-finite range
+  boundaries, invalid range ordering, or empty enum sets refuse before mutation with
   `PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA`
 - unsupported merge policies, malformed merge-policy shapes, or merge-policy
   declarations that claim raw values refuse before mutation with
@@ -250,7 +255,9 @@ match booleans. It does not copy raw plugin row values. For undeclared object
 properties it reports the declared object path and an
 `observedExtraPropertyCount`, not the raw extra key names. For scalar `const`
 and `enum` rules it reports only `constraint`, `constraintHash`, and
-`observedHash`.
+`observedHash`. For numeric ranges it reports `constraint: "range"`, a stable
+hash of the declared range metadata, the observed value hash, and whether the
+observed value is inside the declared bounds.
 The production-shaped RPP-0483 verifier now includes
 `payloadSchemaValidationMatchesExpected`, exact payload evidence shape checks,
 and allowlist row-schema/contract-hash binding; it refuses proofs whose value
@@ -308,7 +315,7 @@ contracts should cover:
 
 - merge-driver conflict policies for plugin-owned payloads
 - merge-driver conflict policies beyond conservative `refuse-on-conflict`
-- richer JSON Schema semantics beyond scalar `const`/`enum`
+- richer JSON Schema semantics beyond scalar `const`/`enum` and numeric ranges
 - plugin-owned files
 - plugin activation and update side effects
 - plugin-provided graph identities

@@ -12217,7 +12217,40 @@ function contractBoundRowSchemaConstraintEvidence(field, observed) {
       matched: field.enumHashes.includes(observedHash),
     };
   }
+  const range = contractBoundRowSchemaRangeConstraint(field);
+  if (range) {
+    return {
+      constraint: 'range',
+      constraintHash: digest(range),
+      observedHash,
+      matched: contractBoundRowSchemaRangeConstraintMatches(range, observed),
+    };
+  }
   return null;
+}
+
+function contractBoundRowSchemaRangeConstraint(field) {
+  const range = {};
+  if (hasOwn(field, 'minimum')) {
+    range.minimum = field.minimum;
+  }
+  if (hasOwn(field, 'maximum')) {
+    range.maximum = field.maximum;
+  }
+  return Object.keys(range).length > 0 ? range : null;
+}
+
+function contractBoundRowSchemaRangeConstraintMatches(range, observed) {
+  if (typeof observed !== 'number' || !Number.isFinite(observed)) {
+    return false;
+  }
+  if (hasOwn(range, 'minimum') && observed < range.minimum) {
+    return false;
+  }
+  if (hasOwn(range, 'maximum') && observed > range.maximum) {
+    return false;
+  }
+  return true;
 }
 
 function contractBoundRowSchemaValueType(value) {
@@ -12361,7 +12394,7 @@ function pluginDriverSchemaValidationEvidenceExactShape(evidence) {
         && (!hasOwn(field, 'observedExtraPropertyCount')
           || Number.isInteger(field.observedExtraPropertyCount))
         && (!hasOwn(field, 'constraint')
-          || ['const', 'enum'].includes(field.constraint))
+          || ['const', 'enum', 'range'].includes(field.constraint))
         && (!hasOwn(field, 'constraintHash')
           || bareSha256Pattern.test(field.constraintHash))
         && (!hasOwn(field, 'observedHash')
