@@ -127,7 +127,7 @@ await withPlaygroundServer('plugin-atomic-positive', blueprints.base, async (ser
 
   const applyBody = { plan: readyPlan, receipt: readyReceipt };
   const apply = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: 'plugin-atomic-positive-apply' });
-  assert.equal(apply.status, 200);
+  assert.equal(apply.status, 200, JSON.stringify(apply.body));
   assert.equal(apply.body.ok, true);
   assert.equal(apply.body.applied, readyPlan.mutations.length);
   assert.equal(apply.body.idempotency?.freshMutationWork, true);

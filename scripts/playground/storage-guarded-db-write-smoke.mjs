@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createPushPlan } from '../../src/planner.js';
@@ -14,6 +16,11 @@ const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 const serverStartupTimeoutMs = 120_000;
 const idempotencyHeader = 'X-Reprint-Push-Idempotency-Key';
 const baseBlueprint = path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json');
+const optionCreateRowId = 'option_name:reprint_push_forms_fixture';
+const optionCreateName = 'reprint_push_forms_fixture';
+const temporaryBlueprintDirs = [];
+
+process.on('exit', cleanupTemporaryBlueprints);
 
 const base = exportSnapshot('base', baseBlueprint);
 const positiveLocal = clone(base);
@@ -29,6 +36,29 @@ const positivePlan = createPushPlan({
 assert.equal(positivePlan.status, 'ready');
 assertGuardedSurfaceCoverage(positivePlan, positiveTargets);
 
+const optionCreateBlueprint = temporaryBlueprintWithoutPluginOption(optionCreateName);
+const optionCreateBase = clone(base);
+delete optionCreateBase.db.wp_options[optionCreateRowId];
+const optionCreateLocal = clone(optionCreateBase);
+optionCreateLocal.db.wp_options[optionCreateRowId] = mutatedRow(
+  'wp_options',
+  base.db.wp_options[optionCreateRowId],
+  'option_create',
+);
+const optionCreatePlan = createPushPlan({
+  base: optionCreateBase,
+  local: optionCreateLocal,
+  remote: optionCreateBase,
+  now: fixedNow,
+});
+const optionCreateMutation = optionCreatePlan.mutations.find((mutation) =>
+  mutation.resource.type === 'row'
+  && mutation.resource.table === 'wp_options'
+  && mutation.resource.id === optionCreateRowId);
+assert.equal(optionCreatePlan.status, 'ready');
+assert.ok(optionCreateMutation, 'plan missing guarded option create mutation');
+assert.equal(optionCreateMutation.changeKind, 'create');
+
 const failureScenarios = [
   createFailureScenario('wp_options', { driftKind: 'value' }),
   createFailureScenario('wp_postmeta', { driftKind: 'value' }),
@@ -40,6 +70,7 @@ const failureScenarios = [
 
 const summary = {
   positive: {},
+  optionCreate: {},
   failures: [],
   idempotency: {},
   redaction: {},
@@ -78,6 +109,47 @@ await withPlaygroundServer('storage-guard-positive', baseBlueprint, async (serve
       const mutation = unsupportedMutation(positivePlan, evidence);
       return mutation && mutation.resource.type !== 'file' && evidence.storageGuard;
     }).length,
+  };
+});
+
+await withPlaygroundServer('storage-option-create', optionCreateBlueprint, async (server) => {
+  const dryRun = await postLab(server, '/dry-run', { plan: optionCreatePlan });
+  assert.equal(dryRun.status, 200, JSON.stringify(dryRun.body, null, 2));
+  assert.equal(dryRun.body.ok, true);
+
+  const apply = await postLab(server, '/apply', {
+    plan: optionCreatePlan,
+    receipt: dryRun.body.receipt,
+  }, { [idempotencyHeader]: 'option-create-001' });
+  assert.equal(apply.status, 200, JSON.stringify(apply.body, null, 2));
+  assert.equal(apply.body.ok, true);
+  assert.equal(apply.body.applied, 1);
+
+  const after = await getSnapshot(server);
+  assert.equal(
+    resourceHash(after.body.snapshot, optionCreateMutation.resource),
+    optionCreateMutation.localHash,
+    'guarded option create did not land',
+  );
+
+  const dbJournal = await getLab(server, '/db-journal?limit=80');
+  const entries = journalEntries(dbJournal.body);
+  const applied = entries.filter((entry) => journalEvent(entry) === 'mutation-applied').map(mutationEvidence);
+  const evidence = applied.find((entry) => entry.mutationId === optionCreateMutation.id);
+  assert.ok(evidence, 'missing guarded option create mutation evidence');
+  assert.equal(evidence.preconditionCheck, 'storage-boundary-cas');
+  assert.equal(evidence.storageGuard?.boundary, 'wpdb-unique-key-insert-cas');
+  assert.equal(evidence.storageGuard?.operation, 'insert');
+  assert.equal(evidence.storageGuard?.outcome, 'applied');
+  assert.equal(evidence.storageGuard?.rowsAffected, 1);
+  assert.equal(evidence.storageGuard?.logicalTable, 'wp_options');
+  assertStoredJournalHasNoRawFixtureData(dbJournal.body);
+
+  summary.optionCreate = {
+    applied: apply.body.applied,
+    boundary: evidence.storageGuard.boundary,
+    operation: evidence.storageGuard.operation,
+    rowsAffected: evidence.storageGuard.rowsAffected,
   };
 });
 
@@ -596,6 +668,25 @@ function exportSnapshot(name, blueprintPath) {
     'REPRINT_PUSH_SNAPSHOT_JSON_END',
     `Snapshot markers missing for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`,
   );
+}
+
+function temporaryBlueprintWithoutPluginOption(optionName) {
+  const blueprint = JSON.parse(readFileSync(baseBlueprint, 'utf8'));
+  blueprint.steps.push({
+    step: 'runPHP',
+    code: `<?php require_once '/wordpress/wp-load.php'; delete_option('${optionName.replace(/'/g, "\\'")}');`,
+  });
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'reprint-storage-guard-'));
+  temporaryBlueprintDirs.push(dir);
+  const blueprintPath = path.join(dir, 'option-absent.blueprint.json');
+  writeFileSync(blueprintPath, JSON.stringify(blueprint, null, 2));
+  return blueprintPath;
+}
+
+function cleanupTemporaryBlueprints() {
+  for (const dir of temporaryBlueprintDirs.splice(0)) {
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 async function withPlaygroundServer(name, blueprintPath, run) {

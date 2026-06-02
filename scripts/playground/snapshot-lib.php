@@ -1761,6 +1761,10 @@ function reprint_push_apply_resource_with_storage_guard(array $resource, array $
         return reprint_push_apply_file_resource_with_storage_guard($resource, $payload, $expected_resource_value, $expected_storage_value);
     }
 
+    if (($resource['type'] ?? null) === 'plugin') {
+        return reprint_push_apply_plugin_resource_with_storage_guard($resource, $payload, $expected_resource_value, $expected_storage_value);
+    }
+
     if (($resource['type'] ?? null) !== 'row') {
         reprint_push_apply_resource($resource, $payload);
         return [
@@ -1783,6 +1787,12 @@ function reprint_push_apply_resource_with_storage_guard(array $resource, array $
             && is_array($expected_resource_value['value'] ?? null)
         ) {
             return reprint_push_guarded_delete_existing_blogmeta_row($id, $expected_resource_value['value'], $expected_storage_value);
+        }
+        if ($table === 'wp_options'
+            && ($expected_resource_value['exists'] ?? false) === true
+            && is_array($expected_resource_value['value'] ?? null)
+        ) {
+            return reprint_push_guarded_delete_existing_plugin_option_row($id, $expected_resource_value['value'], $expected_storage_value);
         }
         reprint_push_apply_resource($resource, $payload);
         return [
@@ -1812,6 +1822,10 @@ function reprint_push_apply_resource_with_storage_guard(array $resource, array $
         return reprint_push_guarded_put_blogmeta_row($id, $expected_resource_value, $value, $expected_storage_value);
     }
 
+    if ($table === 'wp_options') {
+        return reprint_push_guarded_put_option_row($id, $expected_resource_value, $value, $expected_storage_value);
+    }
+
     if (($expected_resource_value['exists'] ?? false) !== true || !is_array($expected_resource_value['value'] ?? null)) {
         reprint_push_apply_resource($resource, $payload);
         return [
@@ -1820,9 +1834,6 @@ function reprint_push_apply_resource_with_storage_guard(array $resource, array $
         ];
     }
 
-    if ($table === 'wp_options') {
-        return reprint_push_guarded_update_existing_option_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
-    }
     if ($table === 'wp_reprint_push_forms_lab') {
         return reprint_push_guarded_update_existing_forms_lab_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
     }
@@ -1976,6 +1987,15 @@ function reprint_push_guarded_create_post_row(string $id, array $value, ?array $
     return reprint_push_storage_guard_result('wp-post', 'wp_posts', $wpdb->posts, 'insert', array_merge($columns, ['absent']), ['exists' => false], $expected_storage, $rows, $shape, 'wpdb-primary-key-insert-cas');
 }
 
+function reprint_push_guarded_put_option_row(string $id, array $expected_resource_value, array $value, ?array $expected_storage_value = null): array
+{
+    if (($expected_resource_value['exists'] ?? false) === true && is_array($expected_resource_value['value'] ?? null)) {
+        return reprint_push_guarded_update_existing_option_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
+    }
+
+    return reprint_push_guarded_create_plugin_option_row($id, $value, $expected_storage_value);
+}
+
 function reprint_push_guarded_update_existing_option_row(string $id, array $expected, array $value, ?array $expected_storage_value = null): array
 {
     global $wpdb;
@@ -2017,6 +2037,77 @@ function reprint_push_guarded_update_existing_option_row(string $id, array $expe
     }
 
     return reprint_push_storage_guard_result('wp-option', 'wp_options', $wpdb->options, 'update', ['option_name', 'option_value'], $expected, $expected_storage, $rows, $shape);
+}
+
+function reprint_push_guarded_create_plugin_option_row(string $id, array $value, ?array $expected_storage_value = null): array
+{
+    global $wpdb;
+
+    $option_name = reprint_push_validate_plugin_option_row_value($id, $value);
+    $expected_storage = [
+        'option_name' => $option_name,
+        'exists' => false,
+    ];
+    $shape = 'INSERT wp_options by unique option_name when absent';
+    if (($expected_storage_value['exists'] ?? false) === true) {
+        return reprint_push_storage_guard_result('wp-option', 'wp_options', $wpdb->options, 'insert', ['option_name', 'option_value', 'absent'], ['exists' => false], $expected_storage, 0, $shape, 'wpdb-unique-key-insert-cas');
+    }
+
+    $table = reprint_push_quote_identifier($wpdb->options);
+    $shape = "INSERT INTO {$table} (option_name, option_value, autoload) SELECT %s, %s, %s WHERE NOT EXISTS (SELECT 1 FROM {$table} WHERE option_name = %s)";
+    $rows = $wpdb->query($wpdb->prepare(
+        $shape,
+        $option_name,
+        maybe_serialize($value['option_value']),
+        'no',
+        $option_name
+    ));
+    if ($rows === false) {
+        $existing = $wpdb->get_var($wpdb->prepare("SELECT option_name FROM {$table} WHERE option_name = %s", $option_name));
+        if ($existing === null) {
+            throw new RuntimeException('Could not apply guarded option row insert: ' . $wpdb->last_error);
+        }
+        $rows = 0;
+    }
+    if ((int) $rows === 1) {
+        wp_cache_delete($option_name, 'options');
+        wp_cache_delete('alloptions', 'options');
+        wp_cache_delete('notoptions', 'options');
+    }
+
+    return reprint_push_storage_guard_result('wp-option', 'wp_options', $wpdb->options, 'insert', ['option_name', 'option_value', 'absent'], ['exists' => false], $expected_storage, $rows, $shape, 'wpdb-unique-key-insert-cas');
+}
+
+function reprint_push_guarded_delete_existing_plugin_option_row(string $id, array $expected, ?array $expected_storage_value = null): array
+{
+    global $wpdb;
+
+    $option_name = reprint_push_validate_plugin_option_expected_row($id, $expected);
+    $expected_storage = [
+        'option_name' => $option_name,
+        'option_value' => maybe_serialize($expected['option_value']),
+    ];
+    if (($expected_storage_value['exists'] ?? false) === true && is_array($expected_storage_value['value'] ?? null)) {
+        $expected_storage = $expected_storage_value['value'];
+    }
+
+    $table = reprint_push_quote_identifier($wpdb->options);
+    $shape = "DELETE FROM {$table} WHERE option_name = %s AND option_value = %s";
+    $rows = $wpdb->query($wpdb->prepare(
+        $shape,
+        $option_name,
+        $expected_storage['option_value']
+    ));
+    if ($rows === false) {
+        throw new RuntimeException('Could not apply guarded option row delete: ' . $wpdb->last_error);
+    }
+    if ((int) $rows === 1) {
+        wp_cache_delete($option_name, 'options');
+        wp_cache_delete('alloptions', 'options');
+        wp_cache_delete('notoptions', 'options');
+    }
+
+    return reprint_push_storage_guard_result('wp-option', 'wp_options', $wpdb->options, 'delete', ['option_name', 'option_value'], $expected, $expected_storage, $rows, $shape);
 }
 
 function reprint_push_guarded_put_postmeta_row(string $id, array $expected_resource_value, array $value, ?array $expected_storage_value = null): array
@@ -2538,6 +2629,10 @@ function reprint_push_get_storage_resource(array $resource): array
         return reprint_push_get_file_storage_resource((string) ($resource['path'] ?? ''));
     }
 
+    if (($resource['type'] ?? null) === 'plugin') {
+        return reprint_push_get_plugin_storage_resource((string) ($resource['name'] ?? ''));
+    }
+
     if (($resource['type'] ?? null) !== 'row') {
         return ['exists' => false, 'value' => null];
     }
@@ -2661,6 +2756,35 @@ function reprint_push_get_storage_resource(array $resource): array
     return ['exists' => false, 'value' => null];
 }
 
+function reprint_push_get_plugin_storage_resource(string $slug): array
+{
+    reprint_push_assert_fixture_plugin_slug($slug);
+    if (!function_exists('get_plugin_data')) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+
+    $plugin = reprint_push_allowed_fixture_plugins()[$slug];
+    $plugin_basename = $slug . '/' . $slug . '.php';
+    $plugin_file = WP_PLUGIN_DIR . '/' . $plugin_basename;
+    if (!is_file($plugin_file)) {
+        return ['exists' => false, 'value' => null];
+    }
+
+    $active_plugins = get_option('active_plugins', []);
+    $active_plugins = is_array($active_plugins) ? $active_plugins : [];
+    $plugin_data = get_plugin_data($plugin_file, false, false);
+    return [
+        'exists' => true,
+        'value' => [
+            'name' => (string) ($plugin_data['Name'] ?: $plugin['name']),
+            'version' => (string) ($plugin_data['Version'] ?: ''),
+            'pluginFile' => $plugin_basename,
+            'active' => in_array($plugin_basename, $active_plugins, true),
+            '__pluginOwner' => $plugin['owner'],
+        ],
+    ];
+}
+
 function reprint_push_get_file_storage_resource(string $relative_path): array
 {
     if (!reprint_push_is_fixture_file_guard_path($relative_path)) {
@@ -2714,9 +2838,10 @@ function reprint_push_apply_file_resource_with_storage_guard(array $resource, ar
     $expected_resource_exists = ($expected_resource_value['exists'] ?? false) === true;
     $expected_storage_exists = ($expected_storage_value['exists'] ?? false) === true;
     $is_fixture_upload = reprint_push_is_fixture_upload_path($relative_path);
+    $is_fixture_plugin_file = reprint_push_is_fixture_plugin_file_path($relative_path);
 
     if ($is_delete) {
-        if (!$is_fixture_upload) {
+        if (!$is_fixture_upload && !$is_fixture_plugin_file) {
             reprint_push_apply_resource($resource, $payload);
             return [
                 'applied' => true,
@@ -2782,7 +2907,7 @@ function reprint_push_apply_file_resource_with_storage_guard(array $resource, ar
         : (string) $value;
 
     if (!$expected_resource_exists || !$expected_storage_exists) {
-        if (!$is_fixture_upload) {
+        if (!$is_fixture_upload && !$is_fixture_plugin_file) {
             reprint_push_apply_resource($resource, $payload);
             return [
                 'applied' => true,
@@ -2899,6 +3024,210 @@ function reprint_push_apply_file_resource_with_storage_guard(array $resource, ar
             @unlink($temp_path);
         }
     }
+}
+
+function reprint_push_apply_plugin_resource_with_storage_guard(array $resource, array $payload, array $expected_resource_value, ?array $expected_storage_value = null): array
+{
+    $slug = (string) ($resource['name'] ?? '');
+    reprint_push_assert_fixture_plugin_slug($slug);
+    $is_delete = !empty($payload['absent']);
+    $value = $payload['value'] ?? null;
+    $operation = $is_delete ? 'delete' : (!empty($value['active']) ? 'activate' : 'deactivate');
+
+    if ($expected_storage_value === null) {
+        $expected_storage_value = $expected_resource_value;
+    }
+
+    if ($is_delete || !is_array($value)) {
+        return [
+            'applied' => false,
+            'storageGuard' => reprint_push_plugin_storage_guard_evidence(
+                $slug,
+                $operation,
+                $expected_resource_value,
+                $expected_storage_value,
+                reprint_push_get_plugin_storage_resource($slug),
+                is_array($value) ? $value : null,
+                'unsupported'
+            ),
+        ];
+    }
+
+    reprint_push_validate_fixture_plugin_resource_value($slug, $value);
+
+    if (($expected_resource_value['exists'] ?? false) !== true || ($expected_storage_value['exists'] ?? false) !== true) {
+        return [
+            'applied' => false,
+            'storageGuard' => reprint_push_plugin_storage_guard_evidence(
+                $slug,
+                $operation,
+                $expected_resource_value,
+                $expected_storage_value,
+                reprint_push_get_plugin_storage_resource($slug),
+                $value,
+                'stale-at-write'
+            ),
+        ];
+    }
+
+    $lock = reprint_push_acquire_plugin_state_option_lock($slug, 30);
+    if ($lock === null) {
+        throw new RuntimeException('Could not acquire fixture plugin state lock: ' . $slug);
+    }
+
+    try {
+        $current_storage_value = reprint_push_get_plugin_storage_resource($slug);
+        $expected_storage_hash = reprint_push_hash_storage_resource_value($expected_storage_value);
+        $current_storage_hash = reprint_push_hash_storage_resource_value($current_storage_value);
+        if ($current_storage_hash !== $expected_storage_hash) {
+            return [
+                'applied' => false,
+                'storageGuard' => reprint_push_plugin_storage_guard_evidence(
+                    $slug,
+                    $operation,
+                    $expected_resource_value,
+                    $expected_storage_value,
+                    $current_storage_value,
+                    $value,
+                    'stale-at-write'
+                ),
+            ];
+        }
+
+        reprint_push_apply_plugin_resource($slug, false, $value);
+
+        return [
+            'applied' => true,
+            'storageGuard' => reprint_push_plugin_storage_guard_evidence(
+                $slug,
+                $operation,
+                $expected_resource_value,
+                $expected_storage_value,
+                $current_storage_value,
+                $value,
+                'applied'
+            ),
+        ];
+    } finally {
+        reprint_push_release_plugin_state_option_lock($lock);
+    }
+}
+
+function reprint_push_acquire_plugin_state_option_lock(string $slug, int $ttl_seconds): ?array
+{
+    reprint_push_assert_fixture_plugin_slug($slug);
+    $option_name = 'reprint_push_plugin_lock_' . substr(hash('sha256', $slug), 0, 32);
+    $payload = [
+        'token' => bin2hex(random_bytes(16)),
+        'createdAt' => time(),
+        'slugHash' => hash('sha256', $slug),
+    ];
+
+    if (add_option($option_name, $payload, '', 'no')) {
+        return [
+            'optionName' => $option_name,
+            'payload' => $payload,
+        ];
+    }
+
+    $existing = get_option($option_name, null);
+    $created_at = is_array($existing) ? (int) ($existing['createdAt'] ?? 0) : 0;
+    if ($created_at > 0 && $created_at < time() - $ttl_seconds) {
+        reprint_push_delete_plugin_state_option_lock_payload($option_name, $existing);
+        if (add_option($option_name, $payload, '', 'no')) {
+            return [
+                'optionName' => $option_name,
+                'payload' => $payload,
+            ];
+        }
+    }
+
+    return null;
+}
+
+function reprint_push_release_plugin_state_option_lock(array $lock): void
+{
+    $option_name = (string) ($lock['optionName'] ?? '');
+    $payload = isset($lock['payload']) && is_array($lock['payload']) ? $lock['payload'] : null;
+    if ($option_name === '' || $payload === null) {
+        return;
+    }
+    reprint_push_delete_plugin_state_option_lock_payload($option_name, $payload);
+}
+
+function reprint_push_delete_plugin_state_option_lock_payload(string $option_name, array $payload): void
+{
+    global $wpdb;
+
+    $table = reprint_push_quote_identifier($wpdb->options);
+    $wpdb->query($wpdb->prepare(
+        "DELETE FROM {$table} WHERE option_name = %s AND option_value = %s",
+        $option_name,
+        maybe_serialize($payload)
+    ));
+    wp_cache_delete($option_name, 'options');
+    wp_cache_delete('alloptions', 'options');
+    wp_cache_delete('notoptions', 'options');
+}
+
+function reprint_push_validate_fixture_plugin_resource_value(string $slug, $value): void
+{
+    reprint_push_assert_fixture_plugin_slug($slug);
+    if (!is_array($value)) {
+        throw new RuntimeException('Plugin resource payload must be an object');
+    }
+
+    $allowed_keys = ['name', 'version', 'pluginFile', 'active', '__pluginOwner'];
+    foreach (array_keys($value) as $key) {
+        if (!in_array((string) $key, $allowed_keys, true)) {
+            throw new RuntimeException('Unsupported fixture plugin resource field: ' . (string) $key);
+        }
+    }
+
+    $plugin_basename = $slug . '/' . $slug . '.php';
+    if ((string) ($value['pluginFile'] ?? '') !== $plugin_basename) {
+        throw new RuntimeException('Plugin resource payload does not match fixture plugin basename: ' . $slug);
+    }
+    $plugin_owner = reprint_push_allowed_fixture_plugins()[$slug]['owner'] ?? null;
+    if (isset($value['__pluginOwner']) && (string) $value['__pluginOwner'] !== (string) $plugin_owner) {
+        throw new RuntimeException('Plugin resource payload owner does not match fixture plugin: ' . $slug);
+    }
+    if (!array_key_exists('active', $value) || !is_bool($value['active'])) {
+        throw new RuntimeException('Plugin resource payload active flag must be boolean: ' . $slug);
+    }
+}
+
+function reprint_push_plugin_storage_guard_evidence(
+    string $slug,
+    string $operation,
+    array $expected_resource_value,
+    array $expected_storage_value,
+    array $current_storage_value,
+    ?array $planned_value,
+    string $outcome
+): array {
+    $plugin_basename = $slug . '/' . $slug . '.php';
+    return [
+        'boundary' => 'wp-active-plugins-option-lock-cas',
+        'driver' => 'fixture-plugin-resource',
+        'operation' => $operation,
+        'plugin' => $slug,
+        'pluginFile' => $plugin_basename,
+        'comparedFields' => ['plugin-main-file-metadata', 'active_plugins-membership'],
+        'expectedResourceHash' => reprint_push_hash_file_guard_resource_value($expected_resource_value),
+        'expectedStorageHash' => reprint_push_hash_storage_resource_value($expected_storage_value),
+        'actualStorageHash' => reprint_push_hash_storage_resource_value($current_storage_value),
+        'plannedResourceHash' => reprint_push_hash_plugin_guard_planned_value($planned_value),
+        'outcome' => $outcome,
+    ];
+}
+
+function reprint_push_hash_plugin_guard_planned_value(?array $planned_value): string
+{
+    if ($planned_value === null) {
+        return hash('sha256', '"__REPRINT_PUSH_ABSENT__"');
+    }
+    return hash('sha256', reprint_push_stable_json(reprint_push_normalize_snapshot_value($planned_value)));
 }
 
 function reprint_push_write_fixture_file_via_temp_rename(string $relative_path, string $contents, ?int $mode): void
@@ -3198,16 +3527,7 @@ function reprint_push_apply_plugin_resource(string $slug, bool $is_delete, $valu
         return;
     }
 
-    if (!is_array($value)) {
-        throw new RuntimeException('Plugin resource payload must be an object');
-    }
-    if ((string) ($value['pluginFile'] ?? '') !== $plugin_basename) {
-        throw new RuntimeException('Plugin resource payload does not match fixture plugin basename: ' . $slug);
-    }
-    $plugin_owner = reprint_push_allowed_fixture_plugins()[$slug]['owner'] ?? null;
-    if (isset($value['__pluginOwner']) && (string) $value['__pluginOwner'] !== (string) $plugin_owner) {
-        throw new RuntimeException('Plugin resource payload owner does not match fixture plugin: ' . $slug);
-    }
+    reprint_push_validate_fixture_plugin_resource_value($slug, $value);
     if (!is_file(WP_PLUGIN_DIR . '/' . $plugin_basename)) {
         throw new RuntimeException('Plugin main file is missing for fixture plugin: ' . $slug);
     }
@@ -4134,6 +4454,34 @@ function reprint_push_assert_core_page_option_payload_supported(string $option_n
     if (!$post || $post->post_type !== 'page') {
         throw new RuntimeException('Core page option payload must point at an existing page: ' . $option_name);
     }
+}
+
+function reprint_push_validate_plugin_option_row_value(string $id, array $value): string
+{
+    $option_name = reprint_push_validate_plugin_option_expected_row($id, $value);
+    $allowed_keys = ['option_name', 'option_value', '__pluginOwner'];
+    foreach (array_keys($value) as $key) {
+        if (!in_array((string) $key, $allowed_keys, true)) {
+            throw new RuntimeException('Unsupported option row column: ' . (string) $key);
+        }
+    }
+    $expected_owner = (string) (reprint_push_allowed_plugin_options()[$option_name] ?? '');
+    if (array_key_exists('__pluginOwner', $value) && (string) $value['__pluginOwner'] !== $expected_owner) {
+        throw new RuntimeException('Plugin option owner does not match row id: ' . $id);
+    }
+    return $option_name;
+}
+
+function reprint_push_validate_plugin_option_expected_row(string $id, array $value): string
+{
+    $option_name = reprint_push_option_name($id);
+    if (!in_array($option_name, reprint_push_allowed_plugin_option_names(), true)) {
+        throw new RuntimeException('Refusing plugin-option storage guard for non-plugin option: ' . $option_name);
+    }
+    if ((string) ($value['option_name'] ?? '') !== $option_name || !array_key_exists('option_value', $value)) {
+        throw new RuntimeException('Option row payload does not match row id: ' . $id);
+    }
+    return $option_name;
 }
 
 function reprint_push_allowed_plugin_options(): array

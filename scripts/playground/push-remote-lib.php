@@ -312,7 +312,9 @@ function reprint_push_protocol_run_payload(
                 : null;
             if ($storage_guard !== null) {
                 $pre_write_evidence['storageGuard'] = $storage_guard;
-                $pre_write_evidence['preconditionCheck'] = 'storage-boundary-cas';
+                if (($pre_write_evidence['preconditionCheck'] ?? '') !== 'same-apply-staged') {
+                    $pre_write_evidence['preconditionCheck'] = 'storage-boundary-cas';
+                }
             }
             if (($apply_result['applied'] ?? true) !== true) {
                 $post_failure_snapshot = reprint_push_export_snapshot();
@@ -678,6 +680,8 @@ function reprint_push_protocol_recheck_mutation_precondition(
             'actualHash' => $actual_hash,
             'preconditionCheck' => 'same-apply-staged',
             'preWriteStagingProof' => $staging_proof,
+            'resourceValue' => reprint_push_get_resource($snapshot, $mutation['resource']),
+            'storageValue' => reprint_push_get_storage_resource($mutation['resource']),
         ];
     }
 
@@ -1208,8 +1212,13 @@ function reprint_push_protocol_storage_guard_coverage_for_mutation(array $mutati
         $is_upload = reprint_push_is_fixture_upload_path($path);
         $is_plugin_file = reprint_push_is_fixture_plugin_file_path($path);
         $operation = $is_delete ? 'delete' : ($expected_resource_exists ? 'update' : 'create');
-        $covered = $is_upload
-            || ($is_plugin_file && !$is_delete && $expected_resource_exists && $expected_storage_exists);
+        $covered_plugin_file_put = $is_plugin_file
+            && !$is_delete
+            && (
+                ($expected_resource_exists && $expected_storage_exists)
+                || (!$expected_resource_exists && !$expected_storage_exists)
+            );
+        $covered = $is_upload || $covered_plugin_file_put;
         return array_merge($base, [
             'covered' => $covered,
             'boundary' => $is_delete ? 'filesystem-compare-unlink' : 'filesystem-compare-rename',
@@ -1219,9 +1228,31 @@ function reprint_push_protocol_storage_guard_coverage_for_mutation(array $mutati
         ]);
     }
 
+    if ($resource_type === 'plugin') {
+        $value = $payload['value'] ?? null;
+        $plugin = (string) ($resource['name'] ?? '');
+        $is_fixture_plugin = array_key_exists($plugin, reprint_push_allowed_fixture_plugins());
+        $operation = $is_delete ? 'delete' : (!empty($value['active']) ? 'activate' : 'deactivate');
+        $covered = !$is_delete
+            && is_array($value)
+            && $is_fixture_plugin
+            && $expected_resource_exists
+            && $expected_storage_exists;
+        return array_merge($base, [
+            'covered' => $covered,
+            'boundary' => 'wp-active-plugins-option-lock-cas',
+            'driver' => $is_fixture_plugin ? 'fixture-plugin-resource' : 'unsupported-plugin-resource',
+            'operation' => $operation,
+            'reason' => $covered ? 'covered-plugin-storage-boundary' : 'plugin-write-has-no-storage-guard',
+        ]);
+    }
+
     if ($resource_type === 'row') {
         $table = (string) ($resource['table'] ?? '');
         $value = $payload['value'] ?? null;
+        $option_name = $table === 'wp_options' ? reprint_push_option_name((string) ($resource['id'] ?? '')) : '';
+        $is_plugin_option = $table === 'wp_options'
+            && in_array($option_name, reprint_push_allowed_plugin_option_names(), true);
         $guarded_update_tables = [
             'wp_posts',
             'wp_options',
@@ -1237,6 +1268,13 @@ function reprint_push_protocol_storage_guard_coverage_for_mutation(array $mutati
             && is_array($value)
             && !$expected_resource_exists
             && $table === 'wp_posts';
+        $covered_option_insert = !$is_delete
+            && is_array($value)
+            && !$expected_resource_exists
+            && $is_plugin_option;
+        $covered_option_delete = $is_delete
+            && $expected_resource_exists
+            && $is_plugin_option;
         $covered_postmeta_insert = !$is_delete
             && is_array($value)
             && !$expected_resource_exists
@@ -1248,14 +1286,18 @@ function reprint_push_protocol_storage_guard_coverage_for_mutation(array $mutati
         $covered_blogmeta_delete = $is_delete
             && $expected_resource_exists
             && $table === 'wp_blogmeta';
-        $covered = $covered_update || $covered_post_insert || $covered_postmeta_insert || $covered_postmeta_delete || $covered_blogmeta_put || $covered_blogmeta_delete;
+        $covered = $covered_update || $covered_post_insert || $covered_option_insert || $covered_option_delete || $covered_postmeta_insert || $covered_postmeta_delete || $covered_blogmeta_put || $covered_blogmeta_delete;
+        $boundary = 'wpdb-single-statement-cas';
+        if ($covered_post_insert) {
+            $boundary = 'wpdb-primary-key-insert-cas';
+        } elseif ($covered_option_insert) {
+            $boundary = 'wpdb-unique-key-insert-cas';
+        } elseif ($covered_postmeta_insert || ($table === 'wp_blogmeta' && !$expected_resource_exists)) {
+            $boundary = 'wpdb-named-lock-cas';
+        }
         return array_merge($base, [
             'covered' => $covered,
-            'boundary' => $covered_post_insert
-                ? 'wpdb-primary-key-insert-cas'
-                : (($covered_postmeta_insert || ($table === 'wp_blogmeta' && !$expected_resource_exists))
-                    ? 'wpdb-named-lock-cas'
-                    : 'wpdb-single-statement-cas'),
+            'boundary' => $boundary,
             'driver' => $covered ? 'wordpress-row-storage-guard' : 'unsupported-row-storage-guard',
             'logicalTable' => $table,
             'operation' => $is_delete ? 'delete' : ($expected_resource_exists ? 'update' : 'insert'),

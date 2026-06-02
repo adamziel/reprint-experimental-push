@@ -294,11 +294,17 @@ test('production apply refuses uncovered storage write boundaries before mutatio
   const coverageClassifier = protocolFunctionBody('reprint_push_protocol_storage_guard_coverage_for_mutation');
   const guardedPostPut = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_put_post_row');
   const guardedPostCreate = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_create_post_row');
+  const guardedOptionPut = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_put_option_row');
+  const guardedOptionCreate = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_create_plugin_option_row');
+  const guardedOptionDelete = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_delete_existing_plugin_option_row');
   const guardedPostmetaPut = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_put_postmeta_row');
   const guardedPostmetaDelete = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_delete_existing_postmeta_row');
   const guardedPostmetaCreate = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_create_postmeta_row');
   const guardedBlogmetaDelete = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_delete_existing_blogmeta_row');
   const guardedApply = functionBodyFromSource(snapshotSource, 'reprint_push_apply_resource_with_storage_guard');
+  const guardedFileApply = functionBodyFromSource(snapshotSource, 'reprint_push_apply_file_resource_with_storage_guard');
+  const guardedPluginApply = functionBodyFromSource(snapshotSource, 'reprint_push_apply_plugin_resource_with_storage_guard');
+  const pluginStorageResource = functionBodyFromSource(snapshotSource, 'reprint_push_get_plugin_storage_resource');
   const dbJournalMutationEvidence = functionBodyFromSource(
     dbJournalLibSource,
     'reprint_push_lab_db_journal_mutation_evidence',
@@ -348,20 +354,44 @@ test('production apply refuses uncovered storage write boundaries before mutatio
   }
   assert.match(coverageClassifier, /'resolutionPolicy'\s*=>\s*'preserve-remote-state-and-stop'/);
   assert.match(coverageClassifier, /'mutationAttempted'\s*=>\s*false/);
+  assert.match(coverageClassifier, /\$covered_plugin_file_put\s*=\s*\$is_plugin_file[\s\S]*!\$is_delete[\s\S]*!\$expected_resource_exists && !\$expected_storage_exists/);
+  assert.match(coverageClassifier, /if \(\$resource_type === 'plugin'\) \{/);
+  assert.match(coverageClassifier, /\$is_fixture_plugin\s*=\s*array_key_exists\(\$plugin,\s*reprint_push_allowed_fixture_plugins\(\)\)/);
+  assert.match(coverageClassifier, /\$expected_resource_exists[\s\S]*\$expected_storage_exists/);
+  assert.match(coverageClassifier, /'wp-active-plugins-option-lock-cas'/);
+  assert.match(coverageClassifier, /'fixture-plugin-resource'/);
   assert.match(coverageClassifier, /\$covered_post_insert\s*=\s*!\$is_delete[\s\S]*\$table === 'wp_posts'/);
+  assert.match(coverageClassifier, /\$covered_option_insert\s*=\s*!\$is_delete[\s\S]*\$is_plugin_option/);
+  assert.match(coverageClassifier, /\$covered_option_delete\s*=\s*\$is_delete[\s\S]*\$is_plugin_option/);
   assert.match(coverageClassifier, /\$covered_postmeta_insert\s*=\s*!\$is_delete[\s\S]*\$table === 'wp_postmeta'/);
   assert.match(coverageClassifier, /\$covered_postmeta_delete\s*=\s*\$is_delete[\s\S]*\$table === 'wp_postmeta'/);
   assert.match(coverageClassifier, /\$covered_blogmeta_delete\s*=\s*\$is_delete[\s\S]*\$table === 'wp_blogmeta'/);
-  assert.match(coverageClassifier, /\$covered_update \|\| \$covered_post_insert \|\| \$covered_postmeta_insert \|\| \$covered_postmeta_delete \|\| \$covered_blogmeta_put \|\| \$covered_blogmeta_delete/);
+  assert.match(coverageClassifier, /\$covered_update \|\| \$covered_post_insert \|\| \$covered_option_insert \|\| \$covered_option_delete \|\| \$covered_postmeta_insert \|\| \$covered_postmeta_delete \|\| \$covered_blogmeta_put \|\| \$covered_blogmeta_delete/);
   assert.match(coverageClassifier, /'wpdb-primary-key-insert-cas'/);
+  assert.match(coverageClassifier, /'wpdb-unique-key-insert-cas'/);
   assert.match(coverageClassifier, /'wpdb-named-lock-cas'/);
   assert.match(coverageClassifier, /'row-write-has-no-storage-guard'/);
   assert.match(coverageClassifier, /'resource-type-has-no-storage-guard'/);
   assert.doesNotMatch(coverageClassifier, /reprint_push_apply_resource|reprint_push_apply_resource_with_storage_guard|wp_update_post|update_option|\$wpdb->query/);
+  assert.match(guardedFileApply, /\$is_fixture_plugin_file\s*=\s*reprint_push_is_fixture_plugin_file_path\(\$relative_path\)/);
+  assert.match(guardedFileApply, /if \(!\$is_fixture_upload && !\$is_fixture_plugin_file\) \{/);
+  assert.match(guardedFileApply, /\$contents[\s\S]*if \(!\$expected_resource_exists \|\| !\$expected_storage_exists\) \{\s*if \(!\$is_fixture_upload && !\$is_fixture_plugin_file\) \{/);
+  assert.match(guardedFileApply, /reprint_push_write_fixture_file_via_temp_rename\(\$relative_path,\s*\$contents,\s*null\)/);
+  assert.match(pluginStorageResource, /get_option\('active_plugins', \[\]\)/);
+  assert.match(pluginStorageResource, /get_plugin_data\(\$plugin_file,\s*false,\s*false\)/);
+  assert.match(pluginStorageResource, /'active'\s*=>\s*in_array\(\$plugin_basename,\s*\$active_plugins,\s*true\)/);
+  assert.match(guardedPluginApply, /reprint_push_acquire_plugin_state_option_lock\(\$slug,\s*30\)/);
+  assert.match(guardedPluginApply, /reprint_push_get_plugin_storage_resource\(\$slug\)/);
+  assert.match(guardedPluginApply, /reprint_push_hash_storage_resource_value\(\$expected_storage_value\)/);
+  assert.match(guardedPluginApply, /reprint_push_apply_plugin_resource\(\$slug,\s*false,\s*\$value\)/);
+  assert.match(guardedPluginApply, /reprint_push_release_plugin_state_option_lock\(\$lock\)/);
 
   assert.match(guardedApply, /if \(\$table === 'wp_posts'\) \{\s*return reprint_push_guarded_put_post_row\(/);
+  assert.match(guardedApply, /if \(\(\$resource\['type'\] \?\? null\) === 'plugin'\) \{\s*return reprint_push_apply_plugin_resource_with_storage_guard\(/);
+  assert.match(guardedApply, /if \(\$table === 'wp_options'\) \{\s*return reprint_push_guarded_put_option_row\(/);
   assert.match(guardedApply, /if \(\$table === 'wp_postmeta'\) \{\s*return reprint_push_guarded_put_postmeta_row\(/);
   assert.match(guardedApply, /if \(\$table === 'wp_blogmeta'\) \{\s*return reprint_push_guarded_put_blogmeta_row\(/);
+  assert.match(guardedApply, /if \(!empty\(\$payload\['absent'\]\)\) \{[\s\S]*\$table === 'wp_options'[\s\S]*return reprint_push_guarded_delete_existing_plugin_option_row\(/);
   assert.match(guardedApply, /if \(!empty\(\$payload\['absent'\]\)\) \{[\s\S]*\$table === 'wp_postmeta'[\s\S]*return reprint_push_guarded_delete_existing_postmeta_row\(/);
   assert.match(guardedApply, /if \(!empty\(\$payload\['absent'\]\)\) \{[\s\S]*\$table === 'wp_blogmeta'[\s\S]*return reprint_push_guarded_delete_existing_blogmeta_row\(/);
   assertBefore(
@@ -372,6 +402,11 @@ test('production apply refuses uncovered storage write boundaries before mutatio
   assertBefore(
     guardedApply,
     "if ($table === 'wp_postmeta')",
+    "if (($expected_resource_value['exists'] ?? false) !== true",
+  );
+  assertBefore(
+    guardedApply,
+    "if ($table === 'wp_options')",
     "if (($expected_resource_value['exists'] ?? false) !== true",
   );
   assertBefore(
@@ -387,6 +422,16 @@ test('production apply refuses uncovered storage write boundaries before mutatio
   assert.match(guardedPostCreate, /add_post_meta\(\$post_id,\s*'reprint_push_fixture'/);
   assert.match(guardedPostCreate, /reprint_push_storage_guard_result\('wp-post',\s*'wp_posts',\s*\$wpdb->posts,\s*'insert'/);
   assert.doesNotMatch(guardedPostCreate, /wp_insert_post|wp_update_post/);
+  assert.match(guardedOptionPut, /reprint_push_guarded_update_existing_option_row/);
+  assert.match(guardedOptionPut, /reprint_push_guarded_create_plugin_option_row/);
+  assert.match(guardedOptionCreate, /INSERT INTO \{\$table\} \(option_name, option_value, autoload\) SELECT %s, %s, %s WHERE NOT EXISTS/);
+  assert.match(guardedOptionCreate, /reprint_push_validate_plugin_option_row_value\(\$id,\s*\$value\)/);
+  assert.match(guardedOptionCreate, /'wpdb-unique-key-insert-cas'/);
+  assert.match(guardedOptionCreate, /reprint_push_storage_guard_result\('wp-option',\s*'wp_options',\s*\$wpdb->options,\s*'insert'/);
+  assert.match(guardedOptionDelete, /DELETE FROM \{\$table\} WHERE option_name = %s AND option_value = %s/);
+  assert.match(guardedOptionDelete, /reprint_push_validate_plugin_option_expected_row\(\$id,\s*\$expected\)/);
+  assert.match(guardedOptionDelete, /reprint_push_storage_guard_result\('wp-option',\s*'wp_options',\s*\$wpdb->options,\s*'delete'/);
+  assert.doesNotMatch(guardedOptionDelete, /delete_option|update_option/);
   assert.match(guardedPostmetaPut, /reprint_push_guarded_update_existing_postmeta_row/);
   assert.match(guardedPostmetaPut, /reprint_push_guarded_create_postmeta_row/);
   assert.match(guardedPostmetaCreate, /GET_LOCK wp_postmeta row id; verify parent fixture marker; verify row absent; insert row; RELEASE_LOCK/);
