@@ -33,6 +33,7 @@ const REPRINT_PUSH_LAB_SIGNATURE_REQUEST_ATTRIBUTE = 'reprint_push_lab_signature
 const REPRINT_PUSH_LAB_SIGNED_SESSION_TTL = 300;
 const REPRINT_PUSH_LAB_SIGNED_TIMESTAMP_SKEW = 300;
 const REPRINT_PUSH_LAB_SIGNED_STORE_CLEANUP_LIMIT = 500;
+const REPRINT_PUSH_LAB_CHUNK_UPLOAD_MAX_BYTES = 4194304;
 
 add_filter('wp_is_application_passwords_available', 'reprint_push_lab_rest_application_passwords_available');
 add_filter('rest_pre_dispatch', 'reprint_push_lab_rest_pre_dispatch_snapshot_hashes_auth_guard', 9, 3);
@@ -137,6 +138,18 @@ function reprint_push_lab_rest_register_routes(): void
             'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
         ]);
 
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/chunk-manifest', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => 'reprint_push_lab_rest_authenticated_chunk_manifest',
+            'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        ]);
+
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/chunks', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => 'reprint_push_lab_rest_authenticated_chunk_upload',
+            'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        ]);
+
         register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/apply', [
             'methods' => WP_REST_Server::CREATABLE,
             'callback' => 'reprint_push_lab_rest_authenticated_apply',
@@ -228,6 +241,18 @@ function reprint_push_lab_rest_register_routes(): void
     register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/snapshot-hashes', [
         'methods' => WP_REST_Server::CREATABLE,
         'callback' => 'reprint_push_lab_rest_authenticated_snapshot_hashes',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/chunk-manifest', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'reprint_push_lab_rest_authenticated_chunk_manifest',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/chunks', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'reprint_push_lab_rest_authenticated_chunk_upload',
         'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
     ]);
 
@@ -466,7 +491,7 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
         'protocol' => [
             'schemaVersion' => 1,
             'authString' => 'nonce + timestamp + content_hash',
-            'pushCanonicalString' => "REPRINT-PUSH-LAB-V1\nUPPERCASE_METHOD\nACTUAL_REQUEST_PATH\nCANONICAL_QUERY\nCONTENT_HASH\nSESSION\nIDEMPOTENCY_KEY",
+            'pushCanonicalString' => "REPRINT-PUSH-LAB-V1\nUPPERCASE_METHOD\nACTUAL_REQUEST_PATH\nCANONICAL_QUERY\nCONTENT_HASH\nSESSION\nIDEMPOTENCY_KEY\nOPTIONAL_METADATA_HASH",
             'contentHash' => 'lowercase hex SHA-256 of the exact raw request body bytes',
             'signature' => 'lowercase hex HMAC-SHA256',
             'labSigningKey' => 'hex HMAC-SHA256 with key = Basic application password and data = "reprint-push-lab-v1\\n" + Basic username',
@@ -591,6 +616,607 @@ function reprint_push_lab_rest_authenticated_snapshot_hashes(WP_REST_Request $re
     }
 
     return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_authenticated_chunk_manifest(WP_REST_Request $request): WP_REST_Response
+{
+    $signature_error = reprint_push_lab_rest_require_signed_request($request, 'chunk-manifest');
+    if ($signature_error instanceof WP_REST_Response) {
+        return $signature_error;
+    }
+
+    try {
+        $payload = reprint_push_lab_rest_json_payload($request);
+        $result = reprint_push_protocol_validate_chunk_manifest_payload($payload);
+        $result = reprint_push_lab_rest_attach_authenticated_response_evidence($result, $request);
+    } catch (Reprint_Push_Protocol_Error $error) {
+        $result = $error->result;
+    } catch (Throwable $error) {
+        $result = [
+            'ok' => false,
+            'code' => 'PUSH_PROTOCOL_ERROR',
+            'message' => $error->getMessage(),
+            'error' => [
+                'class' => get_class($error),
+                'message' => $error->getMessage(),
+            ],
+            'mode' => 'chunk-manifest',
+            'mutationAttempted' => false,
+        ];
+    }
+
+    return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_authenticated_chunk_upload(WP_REST_Request $request): WP_REST_Response
+{
+    $signature_error = reprint_push_lab_rest_require_signed_request($request, 'chunk-upload');
+    if ($signature_error instanceof WP_REST_Response) {
+        return $signature_error;
+    }
+
+    try {
+        $result = reprint_push_lab_rest_chunk_upload_response($request);
+        $result = reprint_push_lab_rest_attach_authenticated_response_evidence($result, $request);
+    } catch (Reprint_Push_Protocol_Error $error) {
+        $result = $error->result;
+    } catch (Throwable $error) {
+        $result = [
+            'ok' => false,
+            'code' => 'PUSH_PROTOCOL_ERROR',
+            'message' => $error->getMessage(),
+            'error' => [
+                'class' => get_class($error),
+                'message' => $error->getMessage(),
+            ],
+            'mode' => 'chunk-upload',
+            'mutationAttempted' => false,
+        ];
+    }
+
+    return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_chunk_upload_response(WP_REST_Request $request): array
+{
+    $raw_body = (string) $request->get_body();
+    $body_size = strlen($raw_body);
+    if ($body_size <= 0 || $body_size > REPRINT_PUSH_LAB_CHUNK_UPLOAD_MAX_BYTES) {
+        reprint_push_lab_rest_chunk_upload_fail('Chunk upload body must be non-empty and within the configured chunk size limit.');
+    }
+
+    $plan_id = reprint_push_lab_rest_chunk_upload_header($request, 'x-reprint-push-plan-id', 'plan id');
+    $resource_key = reprint_push_lab_rest_chunk_upload_header($request, 'x-reprint-push-resource-key', 'resource key');
+    $local_resource_hash = reprint_push_lab_rest_chunk_upload_header($request, 'x-reprint-push-local-resource-hash', 'local resource hash');
+    $chunk_digest = reprint_push_lab_rest_chunk_upload_header($request, 'x-reprint-push-chunk-digest', 'chunk digest');
+    $manifest_hash = trim((string) $request->get_header('x-reprint-push-manifest-hash'));
+    $chunk_index = reprint_push_lab_rest_chunk_upload_int_header($request, 'x-reprint-push-chunk-index', 'chunk index');
+    $offset_bytes = reprint_push_lab_rest_chunk_upload_int_header($request, 'x-reprint-push-chunk-offset', 'chunk offset');
+    $declared_size = reprint_push_lab_rest_chunk_upload_int_header($request, 'x-reprint-push-chunk-size', 'chunk size');
+
+    if (strpos($resource_key, 'file:') !== 0 || strpos($resource_key, '..') !== false || strpos($resource_key, "\0") !== false) {
+        reprint_push_lab_rest_chunk_upload_fail('Chunk upload resourceKey must identify a bounded file resource.');
+    }
+    reprint_push_lab_rest_chunk_upload_assert_sha256($local_resource_hash, 'local resource hash');
+    reprint_push_lab_rest_chunk_upload_assert_sha256($chunk_digest, 'chunk digest');
+    if ($manifest_hash !== '') {
+        reprint_push_lab_rest_chunk_upload_assert_sha256($manifest_hash, 'manifest hash');
+    }
+    if ($declared_size !== $body_size) {
+        reprint_push_lab_rest_chunk_upload_fail('Chunk upload declared size does not match raw body bytes.');
+    }
+
+    $actual_chunk_digest = 'sha256:' . hash('sha256', $raw_body);
+    if (!hash_equals($actual_chunk_digest, $chunk_digest)) {
+        reprint_push_lab_rest_chunk_upload_fail('Chunk upload digest does not match raw body bytes.');
+    }
+
+    $signed_request = reprint_push_lab_rest_signed_request_evidence($request);
+    $context = reprint_push_lab_rest_chunk_upload_journal_context([
+        'planId' => $plan_id,
+        'resourceKey' => $resource_key,
+        'localResourceHash' => $local_resource_hash,
+        'manifestHash' => $manifest_hash,
+        'chunkIndex' => $chunk_index,
+        'offsetBytes' => $offset_bytes,
+        'sizeBytes' => $body_size,
+        'chunkDigest' => $chunk_digest,
+    ], $signed_request);
+
+    $existing_receipt = reprint_push_lab_rest_chunk_upload_receipt_row_for_key_request(
+        $context['idempotencyKeyHash'],
+        $context['requestHash']
+    );
+    if (is_array($existing_receipt)) {
+        return reprint_push_lab_rest_chunk_upload_replay_result($existing_receipt);
+    }
+    $existing_rejection = reprint_push_lab_rest_chunk_upload_rejection_row_for_key_request(
+        $context['idempotencyKeyHash'],
+        $context['requestHash']
+    );
+    if (is_array($existing_rejection)) {
+        return reprint_push_lab_rest_chunk_upload_replay_rejected_result($existing_rejection);
+    }
+
+    if (reprint_push_lab_db_journal_key_has_different_request($context['idempotencyKeyHash'], $context['requestHash'])) {
+        return reprint_push_lab_rest_chunk_upload_idempotency_conflict_result($context);
+    }
+
+    $claim = reprint_push_lab_db_journal_try_open_idempotency($context);
+    if (($claim['opened'] ?? false) !== true) {
+        $claim_entry = is_array($claim['entry'] ?? null) ? $claim['entry'] : [];
+        if ((string) ($claim_entry['requestHash'] ?? '') !== $context['requestHash']) {
+            return reprint_push_lab_rest_chunk_upload_idempotency_conflict_result($context);
+        }
+
+        $existing_receipt = reprint_push_lab_rest_chunk_upload_receipt_row_for_key_request(
+            $context['idempotencyKeyHash'],
+            $context['requestHash']
+        );
+        if (is_array($existing_receipt)) {
+            return reprint_push_lab_rest_chunk_upload_replay_result($existing_receipt);
+        }
+        $existing_rejection = reprint_push_lab_rest_chunk_upload_rejection_row_for_key_request(
+            $context['idempotencyKeyHash'],
+            $context['requestHash']
+        );
+        if (is_array($existing_rejection)) {
+            return reprint_push_lab_rest_chunk_upload_replay_rejected_result($existing_rejection);
+        }
+
+        return reprint_push_lab_rest_chunk_upload_in_progress_result($context, $claim_entry);
+    }
+
+    $claim_entry = is_array($claim['entry'] ?? null) ? $claim['entry'] : [];
+    try {
+        $staging = reprint_push_lab_rest_store_chunk_upload([
+            'planId' => $plan_id,
+            'resourceKey' => $resource_key,
+            'localResourceHash' => $local_resource_hash,
+            'chunkIndex' => $chunk_index,
+            'chunkDigest' => $chunk_digest,
+            'rawBody' => $raw_body,
+        ]);
+    } catch (Reprint_Push_Protocol_Error $error) {
+        return reprint_push_lab_rest_chunk_upload_rejected_result($context, $claim_entry, $error->result);
+    }
+
+    $receipt = [
+        'schemaVersion' => 1,
+        'type' => 'chunk-upload-receipt',
+        'mode' => 'chunk-upload',
+        'status' => 'accepted',
+        'planIdHash' => hash('sha256', $plan_id),
+        'resourceKey' => $resource_key,
+        'resourceKeyHash' => hash('sha256', $resource_key),
+        'localResourceHash' => $local_resource_hash,
+        'manifestHash' => $manifest_hash,
+        'chunkIndex' => $chunk_index,
+        'offsetBytes' => $offset_bytes,
+        'sizeBytes' => $body_size,
+        'chunkDigest' => $chunk_digest,
+        'contentHash' => (string) ($signed_request['contentHash'] ?? ''),
+        'idempotencyKeyHash' => (string) ($signed_request['request']['idempotencyKeyHash'] ?? ''),
+        'canonicalRequestHash' => (string) ($signed_request['request']['canonicalHash'] ?? ''),
+        'stagingRef' => (string) $staging['ref'],
+        'stagingRootHash' => (string) $staging['rootHash'],
+        'stagingPathHash' => (string) $staging['pathHash'],
+        'storageVisibility' => (string) $staging['visibility'],
+        'canonicalVisible' => false,
+        'rawValuesIncluded' => false,
+        'mutationAttempted' => false,
+    ];
+    $receipt['receiptHash'] = 'sha256:' . hash('sha256', reprint_push_stable_json($receipt));
+
+    $result = [
+        'ok' => true,
+        'code' => 'CHUNK_UPLOAD_ACCEPTED',
+        'mode' => 'chunk-upload',
+        'mutationAttempted' => false,
+        'chunkReceipt' => $receipt,
+        'idempotency' => [
+            'replayed' => false,
+            'conflict' => false,
+            'inProgress' => false,
+            'freshMutationWork' => false,
+            'freshStagingWork' => true,
+            'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+            'requestHash' => $context['requestHash'],
+            'claimSequence' => (int) ($claim_entry['sequence'] ?? 0),
+        ],
+    ];
+
+    $journal_entry = reprint_push_lab_db_journal_append_event('chunk-receipt', [
+        'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+        'requestHash' => $context['requestHash'],
+        'planHash' => $context['planHash'],
+        'planFingerprint' => $context['planFingerprint'],
+        'mutationCount' => 0,
+        'appliedCount' => 0,
+        'receiptHash' => substr((string) $receipt['receiptHash'], 7),
+        'result' => [
+            'chunkReceipt' => $receipt,
+            'idempotency' => $result['idempotency'],
+        ],
+        'resourceHashEvidence' => [
+            'resourceKey' => $resource_key,
+            'resourceKeyHash' => hash('sha256', $resource_key),
+            'localResourceHash' => $local_resource_hash,
+            'manifestHash' => $manifest_hash,
+            'chunkDigest' => $chunk_digest,
+            'chunkIndex' => $chunk_index,
+            'offsetBytes' => $offset_bytes,
+            'sizeBytes' => $body_size,
+            'stagingRef' => (string) $staging['ref'],
+            'stagingRootHash' => (string) $staging['rootHash'],
+            'stagingPathHash' => (string) $staging['pathHash'],
+            'storageVisibility' => (string) $staging['visibility'],
+            'canonicalVisible' => false,
+            'rawValuesIncluded' => false,
+        ],
+    ]);
+
+    $result['journal'] = [
+        'event' => 'chunk-receipt',
+        'sequence' => (int) ($journal_entry['sequence'] ?? 0),
+        'resultHash' => (string) ($journal_entry['resultHash'] ?? ''),
+        'resourceHashEvidence' => $journal_entry['resourceHashEvidence'] ?? null,
+    ];
+    return $result;
+}
+
+function reprint_push_lab_rest_chunk_upload_fail(string $message): void
+{
+    reprint_push_protocol_fail([
+        'ok' => false,
+        'code' => 'INVALID_CHUNK_UPLOAD',
+        'message' => $message,
+        'mode' => 'chunk-upload',
+        'mutationAttempted' => false,
+    ]);
+}
+
+function reprint_push_lab_rest_chunk_upload_header(WP_REST_Request $request, string $header, string $label): string
+{
+    $value = trim((string) $request->get_header($header));
+    if ($value === '') {
+        reprint_push_lab_rest_chunk_upload_fail('Chunk upload requires ' . $label . ' header.');
+    }
+    return $value;
+}
+
+function reprint_push_lab_rest_chunk_upload_int_header(WP_REST_Request $request, string $header, string $label): int
+{
+    $value = reprint_push_lab_rest_chunk_upload_header($request, $header, $label);
+    if (!preg_match('/^(0|[1-9][0-9]{0,15})$/', $value)) {
+        reprint_push_lab_rest_chunk_upload_fail('Chunk upload ' . $label . ' header must be a non-negative integer.');
+    }
+    $parsed = (int) $value;
+    if ($parsed < 0) {
+        reprint_push_lab_rest_chunk_upload_fail('Chunk upload ' . $label . ' header must be a non-negative integer.');
+    }
+    return $parsed;
+}
+
+function reprint_push_lab_rest_chunk_upload_assert_sha256(string $value, string $label): void
+{
+    if (!preg_match('/^sha256:[a-f0-9]{64}$/', $value)) {
+        reprint_push_lab_rest_chunk_upload_fail('Chunk upload ' . $label . ' must be sha256 evidence.');
+    }
+}
+
+function reprint_push_lab_rest_chunk_upload_journal_context(array $chunk, array $signed_request): array
+{
+    $idempotency_key_hash = (string) ($signed_request['request']['idempotencyKeyHash'] ?? '');
+    if ($idempotency_key_hash === '') {
+        reprint_push_lab_rest_chunk_upload_fail('Chunk upload requires signed idempotency evidence.');
+    }
+
+    $plan_id = (string) $chunk['planId'];
+    $resource_key = (string) $chunk['resourceKey'];
+    $request_hash = hash('sha256', reprint_push_stable_json([
+        'mode' => 'chunk-upload',
+        'planIdHash' => hash('sha256', $plan_id),
+        'resourceKeyHash' => hash('sha256', $resource_key),
+        'localResourceHash' => (string) $chunk['localResourceHash'],
+        'manifestHash' => (string) $chunk['manifestHash'],
+        'chunkIndex' => (int) $chunk['chunkIndex'],
+        'offsetBytes' => (int) $chunk['offsetBytes'],
+        'sizeBytes' => (int) $chunk['sizeBytes'],
+        'chunkDigest' => (string) $chunk['chunkDigest'],
+        'contentHash' => (string) ($signed_request['contentHash'] ?? ''),
+        'canonicalRequestHash' => (string) ($signed_request['request']['canonicalHash'] ?? ''),
+    ]));
+
+    return [
+        'idempotencyKeyHash' => $idempotency_key_hash,
+        'requestHash' => $request_hash,
+        'planHash' => hash('sha256', $plan_id),
+        'receiptHash' => (string) $chunk['manifestHash'],
+        'planFingerprint' => hash('sha256', reprint_push_stable_json([
+            'mode' => 'chunk-upload',
+            'planIdHash' => hash('sha256', $plan_id),
+            'resourceKeyHash' => hash('sha256', $resource_key),
+            'localResourceHash' => (string) $chunk['localResourceHash'],
+            'manifestHash' => (string) $chunk['manifestHash'],
+        ])),
+        'mutationCount' => 0,
+        'appliedCount' => 0,
+    ];
+}
+
+function reprint_push_lab_rest_chunk_upload_receipt_row_for_key_request(
+    string $idempotency_key_hash,
+    string $request_hash
+): ?array {
+    return reprint_push_lab_rest_chunk_upload_row_for_key_request(
+        $idempotency_key_hash,
+        $request_hash,
+        'chunk-receipt'
+    );
+}
+
+function reprint_push_lab_rest_chunk_upload_rejection_row_for_key_request(
+    string $idempotency_key_hash,
+    string $request_hash
+): ?array {
+    return reprint_push_lab_rest_chunk_upload_row_for_key_request(
+        $idempotency_key_hash,
+        $request_hash,
+        'chunk-rejected'
+    );
+}
+
+function reprint_push_lab_rest_chunk_upload_row_for_key_request(
+    string $idempotency_key_hash,
+    string $request_hash,
+    string $event
+): ?array {
+    $rows = array_reverse(reprint_push_lab_db_journal_rows_for_key($idempotency_key_hash));
+    foreach ($rows as $row) {
+        if ((string) ($row['event'] ?? '') !== $event) {
+            continue;
+        }
+        if ((string) ($row['request_hash'] ?? '') === $request_hash) {
+            return reprint_push_lab_db_journal_public_row($row);
+        }
+    }
+    return null;
+}
+
+function reprint_push_lab_rest_chunk_upload_replay_result(array $row): array
+{
+    $result = isset($row['result']) && is_array($row['result']) ? $row['result'] : [];
+    $receipt = isset($result['chunkReceipt']) && is_array($result['chunkReceipt'])
+        ? $result['chunkReceipt']
+        : [];
+
+    return [
+        'ok' => true,
+        'code' => 'CHUNK_UPLOAD_ALREADY_ACCEPTED',
+        'mode' => 'chunk-upload',
+        'mutationAttempted' => false,
+        'chunkReceipt' => $receipt,
+        'idempotency' => [
+            'replayed' => true,
+            'conflict' => false,
+            'inProgress' => false,
+            'freshMutationWork' => false,
+            'freshStagingWork' => false,
+            'idempotencyKeyHash' => (string) ($row['idempotencyKeyHash'] ?? ''),
+            'requestHash' => (string) ($row['requestHash'] ?? ''),
+            'receiptSequence' => (int) ($row['sequence'] ?? 0),
+        ],
+        'journal' => reprint_push_lab_rest_db_journal_evidence($row),
+    ];
+}
+
+function reprint_push_lab_rest_chunk_upload_replay_rejected_result(array $row): array
+{
+    $result = isset($row['result']) && is_array($row['result']) ? $row['result'] : [];
+    if (!is_array($result) || count($result) === 0) {
+        $result = [
+            'ok' => false,
+            'code' => (string) ($row['errorCode'] ?? 'INVALID_CHUNK_UPLOAD'),
+            'mode' => 'chunk-upload',
+            'mutationAttempted' => false,
+        ];
+    }
+    $result['ok'] = false;
+    $result['mode'] = 'chunk-upload';
+    $result['mutationAttempted'] = false;
+    $result['idempotency'] = [
+        'replayed' => true,
+        'conflict' => false,
+        'inProgress' => false,
+        'freshMutationWork' => false,
+        'freshStagingWork' => false,
+        'idempotencyKeyHash' => (string) ($row['idempotencyKeyHash'] ?? ''),
+        'requestHash' => (string) ($row['requestHash'] ?? ''),
+        'rejectedSequence' => (int) ($row['sequence'] ?? 0),
+    ];
+    $result['journal'] = reprint_push_lab_rest_db_journal_evidence($row);
+    return $result;
+}
+
+function reprint_push_lab_rest_chunk_upload_idempotency_conflict_result(array $context): array
+{
+    $idempotency_key_hash = (string) ($context['idempotencyKeyHash'] ?? '');
+    $request_hash = (string) ($context['requestHash'] ?? '');
+    $conflicting_request_hash = '';
+    $claim_row = reprint_push_lab_db_journal_claim_row_for_key($idempotency_key_hash);
+    if (is_array($claim_row)) {
+        $claim_request_hash = (string) ($claim_row['requestHash'] ?? '');
+        if ($claim_request_hash !== '' && $claim_request_hash !== $request_hash) {
+            $conflicting_request_hash = $claim_request_hash;
+        }
+    }
+
+    $conflict_result = [
+        'ok' => false,
+        'code' => 'IDEMPOTENCY_KEY_CONFLICT',
+        'message' => 'Idempotency key was already used for a different canonical chunk upload request.',
+        'mode' => 'chunk-upload',
+        'mutationAttempted' => false,
+        'idempotency' => [
+            'replayed' => false,
+            'conflict' => true,
+            'inProgress' => false,
+            'freshMutationWork' => false,
+            'freshStagingWork' => false,
+            'idempotencyKeyHash' => $idempotency_key_hash,
+            'requestHash' => $request_hash,
+            'conflictingRequestHash' => $conflicting_request_hash,
+        ],
+    ];
+    $conflict_entry = reprint_push_lab_db_journal_append_event('chunk-idempotency-key-conflict', $context + [
+        'errorCode' => 'IDEMPOTENCY_KEY_CONFLICT',
+        'result' => $conflict_result,
+        'resourceHashEvidence' => [
+            'idempotencyConflict' => $conflict_result['idempotency'],
+        ],
+    ]);
+    $conflict_result['journal'] = reprint_push_lab_rest_db_journal_evidence($conflict_entry);
+    return $conflict_result;
+}
+
+function reprint_push_lab_rest_chunk_upload_in_progress_result(array $context, array $claim_entry): array
+{
+    $in_progress_result = [
+        'ok' => false,
+        'code' => 'IDEMPOTENCY_KEY_IN_PROGRESS',
+        'message' => 'A chunk upload for this idempotency key is already in progress. Retry the same canonical request.',
+        'mode' => 'chunk-upload',
+        'mutationAttempted' => false,
+        'idempotency' => [
+            'replayed' => false,
+            'conflict' => false,
+            'inProgress' => true,
+            'freshMutationWork' => false,
+            'freshStagingWork' => false,
+            'idempotencyKeyHash' => (string) ($context['idempotencyKeyHash'] ?? ''),
+            'requestHash' => (string) ($context['requestHash'] ?? ''),
+            'claimSequence' => (int) ($claim_entry['sequence'] ?? 0),
+        ],
+    ];
+    $in_progress_entry = reprint_push_lab_db_journal_append_event('chunk-idempotency-in-progress', $context + [
+        'errorCode' => 'IDEMPOTENCY_KEY_IN_PROGRESS',
+        'result' => $in_progress_result,
+        'resourceHashEvidence' => [
+            'claimCursor' => 'db-journal:' . (int) ($claim_entry['sequence'] ?? 0),
+            'requestHash' => (string) ($context['requestHash'] ?? ''),
+        ],
+    ]);
+    $in_progress_result['journal'] = reprint_push_lab_rest_db_journal_evidence($in_progress_entry);
+    return $in_progress_result;
+}
+
+function reprint_push_lab_rest_chunk_upload_rejected_result(array $context, array $claim_entry, array $result): array
+{
+    $result['mode'] = 'chunk-upload';
+    $result['mutationAttempted'] = false;
+    $result['idempotency'] = [
+        'replayed' => false,
+        'conflict' => false,
+        'inProgress' => false,
+        'freshMutationWork' => false,
+        'freshStagingWork' => false,
+        'idempotencyKeyHash' => (string) ($context['idempotencyKeyHash'] ?? ''),
+        'requestHash' => (string) ($context['requestHash'] ?? ''),
+        'claimSequence' => (int) ($claim_entry['sequence'] ?? 0),
+    ];
+    $rejected_entry = reprint_push_lab_db_journal_append_event('chunk-rejected', $context + [
+        'errorCode' => (string) ($result['code'] ?? 'INVALID_CHUNK_UPLOAD'),
+        'result' => $result,
+        'resourceHashEvidence' => [
+            'claimCursor' => 'db-journal:' . (int) ($claim_entry['sequence'] ?? 0),
+            'requestHash' => (string) ($context['requestHash'] ?? ''),
+            'canonicalVisible' => false,
+            'rawValuesIncluded' => false,
+        ],
+    ]);
+    $result['journal'] = reprint_push_lab_rest_db_journal_evidence($rejected_entry);
+    return $result;
+}
+
+function reprint_push_lab_rest_store_chunk_upload(array $chunk): array
+{
+    $scope_hash = hash('sha256', reprint_push_stable_json([
+        'planId' => (string) $chunk['planId'],
+        'resourceKey' => (string) $chunk['resourceKey'],
+        'localResourceHash' => (string) $chunk['localResourceHash'],
+    ]));
+    $root = reprint_push_lab_rest_chunk_upload_staging_root();
+    $staging_root = $root . '/' . substr($scope_hash, 0, 32);
+    if (!is_dir($staging_root) && !wp_mkdir_p($staging_root)) {
+        reprint_push_lab_rest_chunk_upload_fail('Chunk upload staging directory could not be created.');
+    }
+    reprint_push_lab_rest_write_chunk_staging_guards($staging_root);
+
+    $chunk_index = (int) $chunk['chunkIndex'];
+    $chunk_digest = (string) $chunk['chunkDigest'];
+    $file_name = sprintf('%08d', $chunk_index) . '-' . substr($chunk_digest, 7, 16) . '.chunk';
+    $staging_path = $staging_root . '/' . $file_name;
+    $raw_body = (string) $chunk['rawBody'];
+    $written = file_put_contents($staging_path, $raw_body, LOCK_EX);
+    if ($written !== strlen($raw_body)) {
+        reprint_push_lab_rest_chunk_upload_fail('Chunk upload could not persist the staged chunk.');
+    }
+
+    return [
+        'ref' => 'chunk:' . substr(hash('sha256', $staging_path), 0, 32),
+        'rootHash' => hash('sha256', $root),
+        'pathHash' => hash('sha256', $staging_path),
+        'visibility' => 'private-plan-staging',
+    ];
+}
+
+function reprint_push_lab_rest_chunk_upload_staging_root(): string
+{
+    $candidates = [];
+    if (defined('WP_CONTENT_DIR') && (string) WP_CONTENT_DIR !== '') {
+        $candidates[] = rtrim((string) WP_CONTENT_DIR, '/\\') . '/reprint-push-private/chunks';
+    }
+    if (function_exists('get_temp_dir')) {
+        $candidates[] = rtrim((string) get_temp_dir(), '/\\') . '/reprint-push/chunks';
+    }
+    $upload_dir = wp_upload_dir(null, false);
+    if (is_array($upload_dir) && empty($upload_dir['error']) && !empty($upload_dir['basedir'])) {
+        $candidates[] = rtrim((string) $upload_dir['basedir'], '/\\') . '/reprint-push-private/chunks';
+    }
+
+    foreach (array_unique($candidates) as $candidate) {
+        if ($candidate === '' || strpos($candidate, "\0") !== false) {
+            continue;
+        }
+        if (!is_dir($candidate) && !wp_mkdir_p($candidate)) {
+            continue;
+        }
+        if (!is_writable($candidate)) {
+            continue;
+        }
+        reprint_push_lab_rest_write_chunk_staging_guards($candidate);
+        return $candidate;
+    }
+
+    reprint_push_lab_rest_chunk_upload_fail('Chunk upload private staging directory is unavailable.');
+}
+
+function reprint_push_lab_rest_write_chunk_staging_guards(string $directory): void
+{
+    if (!is_dir($directory)) {
+        return;
+    }
+
+    $index_path = rtrim($directory, '/\\') . '/index.php';
+    if (!is_file($index_path)) {
+        file_put_contents($index_path, "<?php\n// Silence is golden.\n", LOCK_EX);
+    }
+
+    $htaccess_path = rtrim($directory, '/\\') . '/.htaccess';
+    if (!is_file($htaccess_path)) {
+        file_put_contents($htaccess_path, "Require all denied\nDeny from all\n", LOCK_EX);
+    }
 }
 
 function reprint_push_lab_rest_authenticated_apply(WP_REST_Request $request): WP_REST_Response
@@ -3188,6 +3814,7 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
     $push_signature = trim((string) $request->get_header('x-reprint-push-signature'));
     $session_id = trim((string) $request->get_header('x-reprint-push-session'));
     $idempotency_key = trim((string) $request->get_header('x-reprint-push-idempotency-key'));
+    $metadata_hash = '';
 
     foreach ([
         'X-Auth-Content-Hash' => $content_hash,
@@ -3217,18 +3844,24 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
         if ($session_id === '') {
             return reprint_push_lab_rest_signature_failure(
                 'SIGNED_SESSION_REQUIRED',
-                'X-Reprint-Push-Session is required for signed dry-run, snapshot hashes, apply, recovery inspect, recovery mutate, and journal inspect requests.',
+                'X-Reprint-Push-Session is required for signed dry-run, snapshot hashes, chunk manifest, chunk upload, apply, recovery inspect, recovery mutate, and journal inspect requests.',
                 401
             );
         }
         if ($idempotency_key === '') {
             return reprint_push_lab_rest_signature_failure(
                 'MISSING_IDEMPOTENCY_KEY',
-                'X-Reprint-Push-Idempotency-Key is required for signed dry-run, snapshot hashes, apply, recovery inspect, recovery mutate, and journal inspect requests.',
+                'X-Reprint-Push-Idempotency-Key is required for signed dry-run, snapshot hashes, chunk manifest, chunk upload, apply, recovery inspect, recovery mutate, and journal inspect requests.',
                 400
             );
         }
     }
+
+    $metadata = reprint_push_lab_rest_signed_metadata_hash($request, $mode);
+    if (($metadata['ok'] ?? false) !== true) {
+        return $metadata;
+    }
+    $metadata_hash = (string) ($metadata['metadataHash'] ?? '');
 
     if (!preg_match('/^[a-f0-9]{64}$/', $content_hash)) {
         return reprint_push_lab_rest_signature_failure(
@@ -3330,7 +3963,8 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
         $request,
         $content_hash,
         $mode === 'preflight' ? '' : $session_id,
-        $mode === 'preflight' ? '' : $idempotency_key
+        $mode === 'preflight' ? '' : $idempotency_key,
+        $metadata_hash
     );
     $expected_push_signature = hash_hmac('sha256', $canonical['string'], $signing_key);
     if (!reprint_push_lab_rest_signature_matches($push_signature, $expected_push_signature)) {
@@ -3348,6 +3982,7 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
             'timestamp' => $timestamp_seconds,
             'expiresAtUnix' => time() + REPRINT_PUSH_LAB_SIGNED_TIMESTAMP_SKEW,
             'contentHash' => $content_hash,
+            'metadataHash' => $metadata_hash,
             'sessionHash' => (string) ($session['sessionHash'] ?? ''),
             'identityHash' => reprint_push_lab_rest_signed_identity_hash($auth),
             'credentialHash' => (string) ($auth['credentialHash'] ?? ''),
@@ -3376,6 +4011,7 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
             'schemaVersion' => 1,
             'mode' => $mode,
             'contentHash' => $content_hash,
+            'metadataHash' => $metadata_hash,
             'timestamp' => $timestamp,
             'timestampUnix' => $timestamp_seconds,
             'nonceHash' => hash('sha256', $nonce),
@@ -3416,6 +4052,64 @@ function reprint_push_lab_rest_signature_failure(string $code, string $message, 
     ];
 }
 
+function reprint_push_lab_rest_signed_metadata_hash(WP_REST_Request $request, string $mode): array
+{
+    if ($mode !== 'chunk-upload') {
+        return [
+            'ok' => true,
+            'metadataHash' => '',
+        ];
+    }
+
+    $metadata_hash = strtolower(trim((string) $request->get_header('x-reprint-push-metadata-hash')));
+    if ($metadata_hash === '') {
+        return reprint_push_lab_rest_signature_failure(
+            'SIGNED_METADATA_HASH_REQUIRED',
+            'X-Reprint-Push-Metadata-Hash is required for signed chunk upload requests.',
+            401
+        );
+    }
+    if (!preg_match('/^sha256:[a-f0-9]{64}$/', $metadata_hash)) {
+        return reprint_push_lab_rest_signature_failure(
+            'SIGNED_METADATA_HASH_INVALID',
+            'X-Reprint-Push-Metadata-Hash must be sha256 evidence.',
+            400
+        );
+    }
+
+    $metadata = reprint_push_lab_rest_chunk_upload_signed_metadata($request);
+    $expected_hash = 'sha256:' . hash('sha256', reprint_push_stable_json($metadata));
+    if (!hash_equals($expected_hash, $metadata_hash)) {
+        return reprint_push_lab_rest_signature_failure(
+            'SIGNED_METADATA_HASH_MISMATCH',
+            'X-Reprint-Push-Metadata-Hash does not match the signed chunk upload metadata headers.',
+            401
+        );
+    }
+
+    return [
+        'ok' => true,
+        'metadataHash' => $metadata_hash,
+        'metadata' => $metadata,
+    ];
+}
+
+function reprint_push_lab_rest_chunk_upload_signed_metadata(WP_REST_Request $request): array
+{
+    return [
+        'schemaVersion' => 1,
+        'mode' => 'chunk-upload',
+        'planId' => trim((string) $request->get_header('x-reprint-push-plan-id')),
+        'resourceKey' => trim((string) $request->get_header('x-reprint-push-resource-key')),
+        'localResourceHash' => trim((string) $request->get_header('x-reprint-push-local-resource-hash')),
+        'manifestHash' => trim((string) $request->get_header('x-reprint-push-manifest-hash')),
+        'chunkIndex' => trim((string) $request->get_header('x-reprint-push-chunk-index')),
+        'offsetBytes' => trim((string) $request->get_header('x-reprint-push-chunk-offset')),
+        'sizeBytes' => trim((string) $request->get_header('x-reprint-push-chunk-size')),
+        'chunkDigest' => trim((string) $request->get_header('x-reprint-push-chunk-digest')),
+    ];
+}
+
 function reprint_push_lab_rest_parse_signed_timestamp(string $timestamp): ?int
 {
     if (preg_match('/^\d{10}$/', $timestamp)) {
@@ -3447,7 +4141,8 @@ function reprint_push_lab_rest_push_canonical_string(
     WP_REST_Request $request,
     string $content_hash,
     string $session,
-    string $idempotency_key
+    string $idempotency_key,
+    string $metadata_hash = ''
 ): array {
     $request_uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
     $parts = parse_url($request_uri);
@@ -3464,12 +4159,16 @@ function reprint_push_lab_rest_push_canonical_string(
         $session,
         $idempotency_key,
     ]);
+    if ($metadata_hash !== '') {
+        $canonical .= "\n" . $metadata_hash;
+    }
 
     return [
         'string' => $canonical,
         'method' => $method,
         'path' => $path,
         'canonicalQuery' => $canonical_query,
+        'metadataHash' => $metadata_hash,
     ];
 }
 
@@ -3694,7 +4393,7 @@ function reprint_push_lab_rest_signed_request_evidence(WP_REST_Request $request)
     $session = isset($signature['session']) && is_array($signature['session'])
         ? $signature['session']
         : [];
-    return [
+    $evidence = [
         'schemaVersion' => 1,
         'contentHash' => (string) ($signature['contentHash'] ?? ''),
         'timestamp' => (string) ($signature['timestamp'] ?? ''),
@@ -3721,6 +4420,10 @@ function reprint_push_lab_rest_signed_request_evidence(WP_REST_Request $request)
             ? $signature['request']
             : [],
     ];
+    if ((string) ($signature['metadataHash'] ?? '') !== '') {
+        $evidence['metadataHash'] = (string) $signature['metadataHash'];
+    }
+    return $evidence;
 }
 
 function reprint_push_lab_rest_authenticated_session_store_evidence(WP_REST_Request $request): array
@@ -4547,7 +5250,7 @@ function reprint_push_lab_rest_authenticated_receipt_protocol_binding(
             'scheme' => 'hmac-sha256',
             'canonicalVersion' => 'REPRINT-PUSH-LAB-V1',
             'authString' => 'nonce + timestamp + content_hash',
-            'pushCanonicalString' => "REPRINT-PUSH-LAB-V1\nUPPERCASE_METHOD\nACTUAL_REQUEST_PATH\nCANONICAL_QUERY\nCONTENT_HASH\nSESSION\nIDEMPOTENCY_KEY",
+            'pushCanonicalString' => "REPRINT-PUSH-LAB-V1\nUPPERCASE_METHOD\nACTUAL_REQUEST_PATH\nCANONICAL_QUERY\nCONTENT_HASH\nSESSION\nIDEMPOTENCY_KEY\nOPTIONAL_METADATA_HASH",
             'signedHeaders' => [
                 'X-Auth-Content-Hash',
                 'X-Auth-Timestamp',
@@ -5376,6 +6079,8 @@ function reprint_push_lab_rest_status_for_result(array $result): int
         case 'SIGNED_HEADER_REQUIRED':
         case 'SIGNED_AUTH_UNAVAILABLE':
         case 'SIGNED_CONTENT_HASH_MISMATCH':
+        case 'SIGNED_METADATA_HASH_REQUIRED':
+        case 'SIGNED_METADATA_HASH_MISMATCH':
         case 'SIGNED_TIMESTAMP_INVALID':
         case 'SIGNED_AUTH_SIGNATURE_MISMATCH':
         case 'SIGNED_SESSION_REQUIRED':
@@ -5388,6 +6093,7 @@ function reprint_push_lab_rest_status_for_result(array $result): int
             return 409;
         case 'SIGNED_PREFLIGHT_SESSION_REJECTED':
         case 'SIGNED_CONTENT_HASH_INVALID':
+        case 'SIGNED_METADATA_HASH_INVALID':
         case 'SIGNED_NONCE_INVALID':
             return 400;
         case 'IDEMPOTENCY_KEY_CONFLICT':
@@ -5400,6 +6106,8 @@ function reprint_push_lab_rest_status_for_result(array $result): int
         case 'MISSING_DRY_RUN_RECEIPT':
             return 428;
         case 'INVALID_ARGUMENT':
+        case 'INVALID_CHUNK_MANIFEST':
+        case 'INVALID_CHUNK_UPLOAD':
         case 'INVALID_PLAN':
         case 'INVALID_RECEIPT':
             return 400;

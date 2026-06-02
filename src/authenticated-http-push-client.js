@@ -27,6 +27,7 @@ const authTimestampHeader = 'X-Auth-Timestamp';
 const authNonceHeader = 'X-Auth-Nonce';
 const authSignatureHeader = 'X-Auth-Signature';
 const pushSignatureHeader = 'X-Reprint-Push-Signature';
+const pushMetadataHashHeader = 'X-Reprint-Push-Metadata-Hash';
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
 const checkedDbJournalSupportedSurface = 'claim-fenced-restart-readable';
@@ -2074,6 +2075,43 @@ export function authenticatedHttpClient({
         {
           retryable: options.retryable === true || (!readOnlyInspect && options.idempotencyKey !== undefined),
           requestEvidence: signedRequestEvidence('POST', pathname, rawBody, options),
+        },
+      );
+    },
+    signedChunkUpload(rawBody, options = {}) {
+      const pathname = `${profile.namespacePath}/chunks`;
+      const rawChunkBody = normalizeSignedChunkBody(rawBody);
+      assertMutatingRequestOptions(pathname, options);
+      const chunkHeaders = signedChunkUploadHeaders(rawChunkBody, options);
+      const metadataHash = chunkHeaders[pushMetadataHashHeader];
+      return requestJsonRaw(
+        baseUrl,
+        'POST',
+        pathname,
+        rawChunkBody,
+        ({ attempt } = {}) => ({
+          ...signedRequestHeaders(credential, 'POST', pathname, rawChunkBody, {
+            ...options,
+            attempt,
+            metadataHash,
+          }),
+          'content-type': 'application/octet-stream',
+          ...chunkHeaders,
+        }),
+        requestTimeoutMs,
+        {
+          retryable: true,
+          requestEvidence: {
+            ...signedRequestEvidence('POST', pathname, rawChunkBody, {
+              ...options,
+              metadataHash,
+            }),
+            metadataHash,
+            chunkDigest: chunkHeaders['X-Reprint-Push-Chunk-Digest'],
+            chunkIndex: options.chunkIndex,
+            offsetBytes: options.offsetBytes,
+            sizeBytes: rawChunkBody.byteLength,
+          },
         },
       );
     },
@@ -4802,12 +4840,17 @@ function signedRequestHeaders(credential, method, pathname, rawBody, options = {
   const nonce = signedNonceForAttempt(options);
   const signingKey = labSigningKey(credential);
   const authString = `${nonce}${timestamp}${contentHash}`;
+  const metadataHash = options.metadataHash || '';
+  if (metadataHash !== '' && !isSha256Evidence(metadataHash)) {
+    throw new Error('Signed request metadataHash must be sha256 evidence.');
+  }
   const canonical = pushCanonicalString({
     method,
     pathname,
     contentHash,
     session: options.session || '',
     idempotencyKey: options.idempotencyKey || '',
+    metadataHash,
   });
   const headers = {
     ...authHeaders(credential),
@@ -4824,15 +4867,99 @@ function signedRequestHeaders(credential, method, pathname, rawBody, options = {
   if (options.idempotencyKey !== undefined) {
     headers[idempotencyHeader] = options.idempotencyKey;
   }
+  if (metadataHash !== '') {
+    headers[pushMetadataHashHeader] = metadataHash;
+  }
 
   return headers;
+}
+
+function normalizeSignedChunkBody(rawBody) {
+  if (Buffer.isBuffer(rawBody)) {
+    return rawBody;
+  }
+  if (rawBody instanceof Uint8Array) {
+    return Buffer.from(rawBody.buffer, rawBody.byteOffset, rawBody.byteLength);
+  }
+  if (typeof rawBody === 'string') {
+    return Buffer.from(rawBody, 'utf8');
+  }
+  throw new Error('signedChunkUpload rawBody must be a Buffer, Uint8Array, or string.');
+}
+
+function signedChunkUploadHeaders(rawBody, options = {}) {
+  const chunkDigest = `sha256:${sha256Hex(rawBody)}`;
+  const suppliedChunkDigest = options.chunkDigest || chunkDigest;
+  if (suppliedChunkDigest !== chunkDigest) {
+    throw new Error('signedChunkUpload chunkDigest must match rawBody.');
+  }
+  const manifestHash = options.manifestHash || '';
+  if (manifestHash !== '' && !isSha256Evidence(manifestHash)) {
+    throw new Error('signedChunkUpload manifestHash must be sha256 evidence.');
+  }
+  const headers = {
+    'X-Reprint-Push-Plan-Id': requiredChunkUploadStringOption(options.planId, 'planId'),
+    'X-Reprint-Push-Resource-Key': requiredChunkUploadStringOption(options.resourceKey, 'resourceKey'),
+    'X-Reprint-Push-Local-Resource-Hash': requiredChunkUploadSha256Option(options.localResourceHash, 'localResourceHash'),
+    'X-Reprint-Push-Chunk-Index': String(nonNegativeSafeIntegerOption(options.chunkIndex, 'chunkIndex')),
+    'X-Reprint-Push-Chunk-Offset': String(nonNegativeSafeIntegerOption(options.offsetBytes, 'offsetBytes')),
+    'X-Reprint-Push-Chunk-Size': String(rawBody.byteLength),
+    'X-Reprint-Push-Chunk-Digest': chunkDigest,
+    ...(manifestHash ? { 'X-Reprint-Push-Manifest-Hash': manifestHash } : {}),
+  };
+  return {
+    ...headers,
+    [pushMetadataHashHeader]: signedChunkUploadMetadataHash(headers),
+  };
+}
+
+function signedChunkUploadMetadataHash(headers) {
+  return `sha256:${digest({
+    schemaVersion: 1,
+    mode: 'chunk-upload',
+    planId: headers['X-Reprint-Push-Plan-Id'],
+    resourceKey: headers['X-Reprint-Push-Resource-Key'],
+    localResourceHash: headers['X-Reprint-Push-Local-Resource-Hash'],
+    manifestHash: headers['X-Reprint-Push-Manifest-Hash'] || '',
+    chunkIndex: headers['X-Reprint-Push-Chunk-Index'],
+    offsetBytes: headers['X-Reprint-Push-Chunk-Offset'],
+    sizeBytes: headers['X-Reprint-Push-Chunk-Size'],
+    chunkDigest: headers['X-Reprint-Push-Chunk-Digest'],
+  })}`;
+}
+
+function requiredChunkUploadStringOption(value, label) {
+  if (typeof value !== 'string' || value.trim() !== value || value === '' || /[\u0000-\u001f\u007f]/.test(value)) {
+    throw new Error(`signedChunkUpload requires ${label}.`);
+  }
+  return value;
+}
+
+function requiredChunkUploadSha256Option(value, label) {
+  const normalized = requiredChunkUploadStringOption(value, label);
+  if (!isSha256Evidence(normalized)) {
+    throw new Error(`signedChunkUpload ${label} must be sha256 evidence.`);
+  }
+  return normalized;
+}
+
+function nonNegativeSafeIntegerOption(value, label) {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new Error(`signedChunkUpload ${label} must be a non-negative safe integer.`);
+  }
+  return value;
+}
+
+function isSha256Evidence(value) {
+  return /^sha256:[a-f0-9]{64}$/.test(value);
 }
 
 function signedRequestEvidence(method, pathname, rawBody, options = {}) {
   const contentHash = sha256Hex(rawBody);
   const idempotencyKey = options.idempotencyKey || '';
   const session = options.session || '';
-  return {
+  const metadataHash = options.metadataHash || '';
+  const evidence = {
     contentHash,
     idempotencyKeyHash: idempotencyKey ? sha256Hex(idempotencyKey) : '',
     canonicalHash: sha256Hex(pushCanonicalString({
@@ -4841,8 +4968,13 @@ function signedRequestEvidence(method, pathname, rawBody, options = {}) {
       contentHash,
       session,
       idempotencyKey,
+      metadataHash,
     })),
   };
+  if (metadataHash !== '') {
+    evidence.metadataHash = metadataHash;
+  }
+  return evidence;
 }
 
 function signedNonceForAttempt(options = {}) {
@@ -4858,9 +4990,9 @@ function signedNonceForAttempt(options = {}) {
   return nextSignedNonce('cli-push');
 }
 
-function pushCanonicalString({ method, pathname, contentHash, session, idempotencyKey }) {
+function pushCanonicalString({ method, pathname, contentHash, session, idempotencyKey, metadataHash = '' }) {
   const [rawPath, rawQuery = ''] = pathname.split('?', 2);
-  return [
+  const parts = [
     'REPRINT-PUSH-LAB-V1',
     method.toUpperCase(),
     rawPath || '/',
@@ -4868,7 +5000,11 @@ function pushCanonicalString({ method, pathname, contentHash, session, idempoten
     contentHash,
     session,
     idempotencyKey,
-  ].join('\n');
+  ];
+  if (metadataHash !== '') {
+    parts.push(metadataHash);
+  }
+  return parts.join('\n');
 }
 
 function canonicalQuery(query) {

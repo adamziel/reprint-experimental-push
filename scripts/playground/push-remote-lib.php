@@ -19,6 +19,10 @@ class Reprint_Push_Protocol_Error extends RuntimeException
     }
 }
 
+if (!defined('REPRINT_PUSH_CHUNK_MANIFEST_MAX_ENTRIES')) {
+    define('REPRINT_PUSH_CHUNK_MANIFEST_MAX_ENTRIES', 10000);
+}
+
 function reprint_push_protocol_run(string $mode, string $plan_path, ?string $receipt_path = null): array
 {
     if (!in_array($mode, ['dry-run', 'apply', 'inspect'], true)) {
@@ -1537,6 +1541,210 @@ function reprint_push_protocol_assert_resource_key_matches_resource(string $reso
             'code' => 'INVALID_PLAN',
             'message' => $label . ' resourceKey is not canonical for resource object.',
         ]);
+    }
+}
+
+function reprint_push_protocol_validate_chunk_manifest_payload(array $payload): array
+{
+    $manifest = isset($payload['manifest']) && is_array($payload['manifest'])
+        ? $payload['manifest']
+        : $payload;
+    foreach (['planId', 'resourceKey', 'resource', 'fileBytes', 'chunkSizeBytes', 'localResourceHash', 'assembledHash', 'entries'] as $key) {
+        if (!array_key_exists($key, $manifest)) {
+            reprint_push_protocol_chunk_manifest_fail('Chunk manifest is missing ' . $key . '.');
+        }
+    }
+    if (!is_array($manifest['resource']) || !is_array($manifest['entries'])) {
+        reprint_push_protocol_chunk_manifest_fail('Chunk manifest resource and entries must be objects.');
+    }
+
+    reprint_push_protocol_assert_no_chunk_manifest_raw_values($manifest, '$.manifest');
+
+    $plan_id = (string) $manifest['planId'];
+    $resource_key = (string) $manifest['resourceKey'];
+    $resource = $manifest['resource'];
+    if ($plan_id === '' || strlen($plan_id) > 160) {
+        reprint_push_protocol_chunk_manifest_fail('Chunk manifest planId must be a non-empty bounded string.');
+    }
+    if (($resource['type'] ?? null) !== 'file') {
+        reprint_push_protocol_chunk_manifest_fail('Chunk manifest resource must be a file resource.');
+    }
+    reprint_push_protocol_assert_chunk_manifest_file_resource($resource);
+    if (strpos($resource_key, 'file:') !== 0) {
+        reprint_push_protocol_chunk_manifest_fail('Chunk manifest resourceKey must identify a file resource.');
+    }
+    $resource_object_key = isset($resource['key']) && is_string($resource['key']) && $resource['key'] !== ''
+        ? $resource['key']
+        : null;
+    if ($resource_object_key !== null && $resource_object_key !== $resource_key) {
+        reprint_push_protocol_chunk_manifest_fail('Chunk manifest resource key does not match resource object.');
+    }
+    if (reprint_push_resource_object_key($resource) !== $resource_key) {
+        reprint_push_protocol_chunk_manifest_fail('Chunk manifest resourceKey is not canonical for resource object.');
+    }
+
+    $file_bytes = reprint_push_protocol_positive_int($manifest['fileBytes'], 'Chunk manifest fileBytes');
+    $chunk_size = reprint_push_protocol_positive_int($manifest['chunkSizeBytes'], 'Chunk manifest chunkSizeBytes');
+    if ($chunk_size > $file_bytes) {
+        reprint_push_protocol_chunk_manifest_fail('Chunk manifest chunkSizeBytes must not exceed fileBytes.');
+    }
+    reprint_push_protocol_assert_sha256_evidence((string) $manifest['localResourceHash'], 'Chunk manifest localResourceHash');
+    reprint_push_protocol_assert_sha256_evidence((string) $manifest['assembledHash'], 'Chunk manifest assembledHash');
+
+    $entries = array_values($manifest['entries']);
+    if (count($entries) === 0 || count($entries) > REPRINT_PUSH_CHUNK_MANIFEST_MAX_ENTRIES) {
+        reprint_push_protocol_chunk_manifest_fail('Chunk manifest entries must be a non-empty bounded array.');
+    }
+    $expected_count = (int) ceil($file_bytes / $chunk_size);
+    if (count($entries) !== $expected_count) {
+        reprint_push_protocol_chunk_manifest_fail('Chunk manifest entry count does not match file and chunk sizes.');
+    }
+
+    $expected_offset = 0;
+    $entry_evidence = [];
+    foreach ($entries as $index => $entry) {
+        if (!is_array($entry)) {
+            reprint_push_protocol_chunk_manifest_fail('Chunk manifest entry must be an object.');
+        }
+        reprint_push_protocol_assert_no_chunk_manifest_raw_values($entry, '$.manifest.entries[' . $index . ']');
+        foreach (['chunkIndex', 'offsetBytes', 'sizeBytes', 'chunkDigest', 'receiptKey', 'idempotencyKey'] as $key) {
+            if (!array_key_exists($key, $entry)) {
+                reprint_push_protocol_chunk_manifest_fail('Chunk manifest entry is missing ' . $key . '.');
+            }
+        }
+        $entry_index = reprint_push_protocol_non_negative_int($entry['chunkIndex'], 'Chunk manifest entry chunkIndex');
+        if ($entry_index !== $index) {
+            reprint_push_protocol_chunk_manifest_fail('Chunk manifest chunk indexes must be contiguous.');
+        }
+        $entry_offset = reprint_push_protocol_non_negative_int($entry['offsetBytes'], 'Chunk manifest entry offsetBytes');
+        if ($entry_offset !== $expected_offset) {
+            reprint_push_protocol_chunk_manifest_fail('Chunk manifest byte ranges must be contiguous.');
+        }
+        $size = reprint_push_protocol_positive_int($entry['sizeBytes'], 'Chunk manifest entry sizeBytes');
+        $remaining = $file_bytes - $expected_offset;
+        if ($size > $chunk_size || $size > $remaining) {
+            reprint_push_protocol_chunk_manifest_fail('Chunk manifest entry size exceeds its declared range.');
+        }
+        reprint_push_protocol_assert_sha256_evidence((string) $entry['chunkDigest'], 'Chunk manifest entry chunkDigest');
+        if ((string) $entry['receiptKey'] === '' || (string) $entry['idempotencyKey'] === '') {
+            reprint_push_protocol_chunk_manifest_fail('Chunk manifest receiptKey and idempotencyKey must be non-empty.');
+        }
+
+        $entry_evidence[] = [
+            'chunkIndex' => $index,
+            'offsetBytes' => $expected_offset,
+            'sizeBytes' => $size,
+            'chunkDigest' => (string) $entry['chunkDigest'],
+            'receiptKeyHash' => hash('sha256', (string) $entry['receiptKey']),
+            'idempotencyKeyHash' => hash('sha256', (string) $entry['idempotencyKey']),
+            'canonicalVisible' => false,
+        ];
+        $expected_offset += $size;
+    }
+    if ($expected_offset !== $file_bytes) {
+        reprint_push_protocol_chunk_manifest_fail('Chunk manifest byte ranges must cover the full file.');
+    }
+
+    $manifest_evidence = [
+        'schemaVersion' => 1,
+        'mode' => 'chunk-manifest',
+        'status' => 'accepted',
+        'planIdHash' => hash('sha256', $plan_id),
+        'resourceKey' => $resource_key,
+        'resourceHash' => hash('sha256', reprint_push_stable_json($resource)),
+        'fileBytes' => $file_bytes,
+        'chunkSizeBytes' => $chunk_size,
+        'chunkCount' => count($entry_evidence),
+        'entryCount' => count($entry_evidence),
+        'localResourceHash' => (string) $manifest['localResourceHash'],
+        'assembledHash' => (string) $manifest['assembledHash'],
+        'byteRangeCoverage' => [
+            'contiguous' => true,
+            'nonOverlapping' => true,
+            'coveredBytes' => $file_bytes,
+            'expectedBytes' => $file_bytes,
+        ],
+        'entries' => $entry_evidence,
+        'rawValuesIncluded' => false,
+        'canonicalVisibleBeforeFinalize' => false,
+    ];
+    $manifest_evidence['entryDigest'] = 'sha256:' . hash('sha256', reprint_push_stable_json($entry_evidence));
+    $manifest_evidence['manifestEvidenceHash'] = 'sha256:' . hash('sha256', reprint_push_stable_json($manifest_evidence));
+
+    return [
+        'ok' => true,
+        'code' => 'CHUNK_MANIFEST_ACCEPTED',
+        'mode' => 'chunk-manifest',
+        'mutationAttempted' => false,
+        'chunkManifest' => $manifest_evidence,
+    ];
+}
+
+function reprint_push_protocol_chunk_manifest_fail(string $message): void
+{
+    reprint_push_protocol_fail([
+        'ok' => false,
+        'code' => 'INVALID_CHUNK_MANIFEST',
+        'message' => $message,
+        'mode' => 'chunk-manifest',
+        'mutationAttempted' => false,
+    ]);
+}
+
+function reprint_push_protocol_assert_chunk_manifest_file_resource(array $resource): void
+{
+    $path = isset($resource['path']) && is_string($resource['path'])
+        ? $resource['path']
+        : '';
+    if ($path === ''
+        || strpos($path, "\0") !== false
+        || strpos($path, '\\') !== false
+        || strpos($path, '/') === 0
+        || strpos($path, '://') !== false
+        || preg_match('#(^|/)\.\.(?:/|$)#', $path)
+        || strpos($path, 'wp-content/') !== 0
+    ) {
+        reprint_push_protocol_chunk_manifest_fail('Chunk manifest file resource path must be a bounded wp-content relative path.');
+    }
+}
+
+function reprint_push_protocol_assert_sha256_evidence(string $value, string $label): void
+{
+    if (!preg_match('/^sha256:[a-f0-9]{64}$/', $value)) {
+        reprint_push_protocol_chunk_manifest_fail($label . ' must be sha256 evidence.');
+    }
+}
+
+function reprint_push_protocol_positive_int($value, string $label): int
+{
+    if (!is_int($value) || $value <= 0) {
+        reprint_push_protocol_chunk_manifest_fail($label . ' must be a positive integer.');
+    }
+    return $value;
+}
+
+function reprint_push_protocol_non_negative_int($value, string $label): int
+{
+    if (!is_int($value) || $value < 0) {
+        reprint_push_protocol_chunk_manifest_fail($label . ' must be a non-negative integer.');
+    }
+    return $value;
+}
+
+function reprint_push_protocol_assert_no_chunk_manifest_raw_values($value, string $path): void
+{
+    if (!is_array($value)) {
+        return;
+    }
+    foreach ($value as $key => $inner_value) {
+        $key_string = (string) $key;
+        $next_path = is_int($key) ? $path . '[' . $key_string . ']' : $path . '.' . $key_string;
+        if (in_array($key_string, ['body', 'bytes', 'content', 'payload', 'value', 'rawValue', 'chunkBody'], true)) {
+            reprint_push_protocol_chunk_manifest_fail('Chunk manifest must not include raw chunk payloads at ' . $next_path . '.');
+        }
+        if (is_array($inner_value)) {
+            reprint_push_protocol_assert_no_chunk_manifest_raw_values($inner_value, $next_path);
+        }
     }
 }
 

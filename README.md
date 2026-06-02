@@ -319,7 +319,10 @@ Known remaining integration work includes:
 - External production receipt signing against the deployed Reprint source
   protocol; the production-shaped route already expires receipts and binds them
   to the route/exporter contract.
-- Large file body streaming and chunked upload support.
+- Full large file streaming integration: production-shaped routes now expose
+  signed chunk manifest validation and bounded raw chunk staging, but manifest
+  finalization, staged-byte receipt verification, and apply consumption remain
+  release work.
 - MySQL and SQLite transaction-boundary proof for all durable write surfaces.
 - Production storage-level compare-and-swap or locking around final target
   writes.
