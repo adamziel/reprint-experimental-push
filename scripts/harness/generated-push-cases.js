@@ -553,6 +553,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'postmeta-post-id-reference-variant3',
     tag: 'postmeta-post-id-reference-v3',
   },
+  sitemetaSiteIdReferenceVariant3: {
+    family: 'sitemeta-site-id-reference-variant3',
+    tag: 'sitemeta-site-id-reference-v3',
+  },
   commentPostReferenceVariant3: {
     family: 'comment-post-reference-variant3',
     tag: 'comment-post-reference-v3',
@@ -2243,6 +2247,15 @@ function buildGeneratedCase({ index, tier, rng }) {
     tags,
   });
 
+  addSitemetaSiteIdReferenceVariant3Target({
+    family,
+    base,
+    local,
+    remote,
+    allocator,
+    tags,
+  });
+
   addCommentPostReferenceVariant3Target({
     family,
     base,
@@ -2484,6 +2497,24 @@ function addPostmetaPostIdReferenceVariant3Target({
   }
 
   addPostmetaPostIdReferenceVariant3(base, local, remote, allocator, tags, { staleTarget });
+  tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
+}
+
+function addSitemetaSiteIdReferenceVariant3Target({
+  family,
+  base,
+  local,
+  remote,
+  allocator,
+  tags,
+}) {
+  const readyTarget = family === 'same-plan-post-parent-graph';
+  const staleTarget = family === 'stale-post-author-graph';
+  if (!readyTarget && !staleTarget) {
+    return;
+  }
+
+  addSitemetaSiteIdReferenceVariant3(base, local, remote, allocator, tags, { staleTarget });
   tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
 }
 
@@ -5234,6 +5265,71 @@ function addPostmetaPostIdReferenceVariant3(base, local, remote, allocator, tags
     tags.add('postmeta-post-id-reference-v3-stale');
     tags.add('postmeta-post-id-reference-v3-stale-target');
     tags.add('postmeta-post-id-reference-v3-non-ready');
+  }
+}
+
+function addSitemetaSiteIdReferenceVariant3(base, local, remote, allocator, tags, { staleTarget }) {
+  const sourceSiteId = allocator.graphId();
+  const metaId = allocator.graphId();
+  const sourceSiteRowId = `id:${sourceSiteId}`;
+  const metaKey = `_rpp0902_sitemeta_site_id_reference_v3_${metaId}`;
+  const sourceSitemetaRowId = `site_id:${sourceSiteId}:meta_key:${metaKey}`;
+  const sitemetaRow = {
+    site_id: sourceSiteId,
+    meta_key: metaKey,
+    meta_value: `rpp0902-${staleTarget ? 'stale' : 'ready'}-local-sitemeta-private-${metaId}`,
+  };
+
+  if (staleTarget) {
+    const siteRow = {
+      id: sourceSiteId,
+      domain: `rpp-0902-stale-site-${sourceSiteId}.example.test`,
+      path: '/',
+    };
+
+    setRow(base, 'wp_site', sourceSiteRowId, siteRow);
+    setRow(local, 'wp_site', sourceSiteRowId, siteRow);
+    setRow(remote, 'wp_site', sourceSiteRowId, {
+      ...siteRow,
+      domain: `rpp-0902-remote-stale-site-${sourceSiteId}.example.test`,
+    });
+    setRow(local, 'wp_sitemeta', sourceSitemetaRowId, sitemetaRow);
+  } else {
+    const targetSiteId = allocator.graphId();
+    const targetSiteRowId = `id:${targetSiteId}`;
+    const siteRow = {
+      id: sourceSiteId,
+      domain: `rpp-0902-mapped-site-${sourceSiteId}.example.test`,
+      path: '/',
+    };
+    const targetSiteRow = {
+      ...siteRow,
+      id: targetSiteId,
+    };
+
+    setRow(local, 'wp_site', sourceSiteRowId, siteRow);
+    setRow(remote, 'wp_site', targetSiteRowId, targetSiteRow);
+    addWordPressGraphIdentityMapRow(local, {
+      table: 'wp_site',
+      localId: sourceSiteRowId,
+      remoteId: targetSiteRowId,
+    });
+    setRow(local, 'wp_sitemeta', sourceSitemetaRowId, sitemetaRow);
+
+    tags.add('sitemeta-site-id-reference-v3-identity-map');
+    tags.add('sitemeta-site-id-reference-v3-ready');
+  }
+
+  tags.add('sitemeta-site-id-reference-v3');
+  tags.add('sitemeta-site-id-reference-v3-hash-only');
+  tags.add('sitemeta-site');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('sitemeta-site-id-reference-v3-stale');
+    tags.add('sitemeta-site-id-reference-v3-stale-target');
+    tags.add('sitemeta-site-id-reference-v3-non-ready');
   }
 }
 

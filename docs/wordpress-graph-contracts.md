@@ -89,8 +89,9 @@ missing, or unsupported rewrite evidence before any mutation.
 For meta tables whose row resource IDs include the referenced owner ID, planner
 also rewrites the dependent row key. Version 1 covers composite meta IDs shaped
 like `<owner_field>:<id>:meta_key:<key>` for supported WordPress meta families,
-including `wp_blogmeta.blog_id`. Apply then validates that the serialized
-payload field and the rewritten row key point at the same carried target row.
+including `wp_blogmeta.blog_id` and `wp_sitemeta.site_id`. Apply then validates
+that the serialized payload field and the rewritten row key point at the same
+carried target row.
 
 Identity-map equivalence is proven only against maps already promoted as usable.
 The candidate map may rewrite its own primary row ID during equivalence

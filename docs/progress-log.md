@@ -6972,8 +6972,8 @@ linked implementation artifacts.
 - Keep-remote decision variant-3 generated proof: the current lane now checks
   `RPP-0255` with deterministic generated-harness support evidence over the
   existing `remoteOnlyPreservationVariant3` target. The proof scans all 620
-  generated cases, covers 1,575 `keep-remote` decisions across 533 cases, proves
-  each decision stays mutation-free and precondition-free, verifies 706 ready
+  generated cases, covers 1,715 `keep-remote` decisions across 542 cases, proves
+  each decision stays mutation-free and precondition-free, verifies 776 ready
   `keep-remote` decisions preserve remote state through apply, and verifies 249
   non-ready plans refuse with `PLAN_NOT_READY` without mutating the remote
   digest. Command:

@@ -14578,6 +14578,250 @@ function assertPostmetaPostIdReferenceVariant3RawValuesAbsent(testCase, shape, e
   }
 }
 
+test('RPP-0902 generated harness records sitemeta site_id reference variant 3 coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.sitemetaSiteIdReferenceVariant3;
+  const expectedPerTier = Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2]));
+
+  assert.ok(coverage, 'missing sitemeta site_id reference variant 3 target coverage');
+  assert.equal(coverage.family, 'sitemeta-site-id-reference-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['sitemeta-site-id-reference-v3']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { blocked: 10, ready: 10 });
+  assert.deepEqual(coverage.perTier, expectedPerTier);
+  assert.equal(report.summary.featureFamilies['sitemeta-site-id-reference-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['sitemeta-site-id-reference-v3-stale'], 10);
+  assert.equal(report.summary.featureFamilies['sitemeta-site-id-reference-v3-non-ready'], 10);
+  assert.equal(report.summary.featureFamilies['sitemeta-site-id-reference-v3-identity-map'], 10);
+
+  const targetCases = generatePushHarnessCases()
+    .filter((testCase) => testCase.tags.has('sitemeta-site-id-reference-v3'));
+  const perTier = {};
+  const statuses = {};
+
+  assert.equal(targetCases.length, coverage.total);
+  for (const testCase of targetCases) {
+    const staleTarget = testCase.tags.has('sitemeta-site-id-reference-v3-stale');
+    const result = validateGeneratedCase(testCase);
+    const plan = createGeneratedPlan(testCase);
+    const shape = sitemetaSiteIdReferenceVariant3Shape(testCase, { staleTarget });
+
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    assertSitemetaSiteIdReferenceVariant3EvidenceRedacted(testCase, plan, shape);
+
+    if (staleTarget) {
+      assertSitemetaSiteIdReferenceVariant3StaleCase({ testCase, result, plan, shape });
+      continue;
+    }
+
+    assertSitemetaSiteIdReferenceVariant3ReadyCase({ testCase, result, plan, shape });
+  }
+
+  assert.deepEqual(sortNumericObject(perTier), coverage.perTier);
+  assert.deepEqual(sortStringObject(statuses), coverage.statuses);
+});
+
+function sitemetaSiteIdReferenceVariant3Shape(testCase, { staleTarget }) {
+  const sitemetaRows = Object.entries(testCase.local.db.wp_sitemeta || {})
+    .filter(([, row]) => String(row.meta_key || '').startsWith('_rpp0902_sitemeta_site_id_reference_v3_'));
+
+  assert.equal(sitemetaRows.length, 1, `${testCase.id} should include one generated sitemeta site_id row`);
+
+  const [sourceSitemetaRowId, sitemetaRow] = sitemetaRows[0];
+  const sourceSiteId = Number(sitemetaRow.site_id);
+  const sourceSiteRowId = `id:${sourceSiteId}`;
+  const sourceSite = testCase.local.db.wp_site?.[sourceSiteRowId];
+  const mapEntry = (testCase.local.meta?.wordpressGraphIdentityMap?.rows || [])
+    .find((entry) => entry.table === 'wp_site' && entry.localId === sourceSiteRowId);
+  const targetSiteRowId = staleTarget ? sourceSiteRowId : mapEntry?.remoteId;
+  const targetSiteId = sitemetaSiteIdReferenceVariant3SiteIdFromRowId(targetSiteRowId);
+  const targetSite = testCase.remote.db.wp_site?.[targetSiteRowId];
+  const targetSitemetaRowId = `site_id:${targetSiteId}:meta_key:${sitemetaRow.meta_key}`;
+
+  assert.equal(sourceSitemetaRowId, `site_id:${sourceSiteId}:meta_key:${sitemetaRow.meta_key}`);
+  assert.ok(Number.isSafeInteger(sourceSiteId), `${testCase.id} sitemeta site_id should be numeric`);
+  assert.ok(sourceSite, `${testCase.id} missing local source site ${sourceSiteRowId}`);
+  assert.equal(sourceSite.id, sourceSiteId);
+  assert.ok(targetSite, `${testCase.id} missing remote target site ${targetSiteRowId}`);
+  assert.equal(targetSite.id, targetSiteId);
+
+  if (staleTarget) {
+    assert.equal(mapEntry, undefined, `${testCase.id} stale target should not use an identity map`);
+    assert.deepEqual(
+      testCase.local.db.wp_site[sourceSiteRowId],
+      testCase.base.db.wp_site[sourceSiteRowId],
+      `${testCase.id} stale local source site should match base`,
+    );
+    assert.notDeepEqual(
+      testCase.remote.db.wp_site[sourceSiteRowId],
+      testCase.base.db.wp_site[sourceSiteRowId],
+      `${testCase.id} stale site target should drift remotely`,
+    );
+  } else {
+    assert.ok(mapEntry, `${testCase.id} ready target should carry a wp_site identity map`);
+    assert.equal(testCase.remote.db.wp_site?.[sourceSiteRowId], undefined);
+    assert.equal(testCase.base.db.wp_site?.[sourceSiteRowId], undefined);
+    assert.equal(testCase.base.db.wp_site?.[targetSiteRowId], undefined);
+    assert.equal(sourceSite.domain, targetSite.domain);
+    assert.equal(sourceSite.path, targetSite.path);
+  }
+
+  return {
+    metaKey: sitemetaRow.meta_key,
+    sourceSiteId,
+    sourceSiteRowId,
+    sourceSiteResource: rowResource('wp_site', sourceSiteRowId),
+    sourceSiteResourceKey: rowResourceKey('wp_site', sourceSiteRowId),
+    targetSiteId,
+    targetSiteRowId,
+    targetSiteResource: rowResource('wp_site', targetSiteRowId),
+    targetSiteResourceKey: rowResourceKey('wp_site', targetSiteRowId),
+    sourceSitemetaRowId,
+    sourceSitemetaResource: rowResource('wp_sitemeta', sourceSitemetaRowId),
+    sourceSitemetaResourceKey: rowResourceKey('wp_sitemeta', sourceSitemetaRowId),
+    targetSitemetaRowId,
+    targetSitemetaResource: rowResource('wp_sitemeta', targetSitemetaRowId),
+    targetSitemetaResourceKey: rowResourceKey('wp_sitemeta', targetSitemetaRowId),
+    rawValues: [
+      sourceSite.domain,
+      targetSite.domain,
+      sitemetaRow.meta_value,
+    ].filter(Boolean),
+  };
+}
+
+function assertSitemetaSiteIdReferenceVariant3ReadyCase({ testCase, result, plan, shape }) {
+  assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+  assert.equal(result.status, 'ready', `${testCase.id} should validate as ready`);
+  assert.equal(result.applied, true, `${testCase.id} should apply`);
+  assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+  assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+  assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+  const sourceDecision = plan.decisions.find((decision) => decision.resourceKey === shape.sourceSiteResourceKey);
+  const targetDecision = plan.decisions.find((decision) => decision.resourceKey === shape.targetSiteResourceKey);
+  const sitemetaMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === shape.targetSitemetaResourceKey);
+  const sitemetaPrecondition = plan.preconditions.find((precondition) =>
+    precondition.resourceKey === shape.targetSitemetaResourceKey);
+
+  assert.equal(sourceDecision?.decision, 'map-local-identity-to-remote');
+  assert.equal(targetDecision?.decision, 'keep-remote');
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.sourceSiteResourceKey),
+    false,
+    `${testCase.id} should not create the mapped local source site`,
+  );
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.targetSiteResourceKey),
+    false,
+    `${testCase.id} should preserve the remote target site`,
+  );
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.sourceSitemetaResourceKey),
+    false,
+    `${testCase.id} should not plan the source sitemeta row after rewrite`,
+  );
+  assert.ok(sitemetaMutation, `${testCase.id} should plan the rewritten sitemeta row`);
+  assert.ok(sitemetaPrecondition, `${testCase.id} should precondition the rewritten sitemeta row`);
+
+  const plannedSitemeta = deserializeResourceValue(sitemetaMutation.value);
+  const rewrite = sitemetaMutation.wordpressGraphIdentity?.rewrites.find((entry) =>
+    entry.relationshipType === 'sitemeta-site');
+  const applied = applyPlan(cloneJson(testCase.remote), plan);
+  const appliedHash = resourceHash(applied.site, shape.targetSitemetaResource);
+
+  assert.ok(rewrite, `${testCase.id} should carry sitemeta-site rewrite evidence`);
+  assert.equal(sitemetaMutation.action, 'put');
+  assert.equal(sitemetaMutation.changeKind, 'create');
+  assert.equal(plannedSitemeta.site_id, shape.targetSiteId);
+  assert.equal(plannedSitemeta.meta_key, shape.metaKey);
+  assert.equal(rewrite.relationshipKey, 'wp_sitemeta.site_id');
+  assert.equal(rewrite.relationshipType, 'sitemeta-site');
+  assert.equal(rewrite.field, 'site_id');
+  assert.equal(rewrite.sourceResourceKey, shape.sourceSitemetaResourceKey);
+  assert.equal(rewrite.rewrittenResourceKey, shape.targetSitemetaResourceKey);
+  assert.equal(rewrite.sourceTargetResourceKey, shape.sourceSiteResourceKey);
+  assert.equal(rewrite.targetResourceKey, shape.targetSiteResourceKey);
+  assert.equal(sitemetaPrecondition.mutationId, sitemetaMutation.id);
+  assert.equal(sitemetaPrecondition.expectedHash, sitemetaMutation.remoteBeforeHash);
+  assert.equal(appliedHash, sitemetaMutation.localHash, `${testCase.id} did not apply the rewritten sitemeta hash`);
+  assert.equal(applied.site.db.wp_site[shape.sourceSiteRowId], undefined);
+  assert.equal(applied.site.db.wp_site[shape.targetSiteRowId].id, shape.targetSiteId);
+  assert.equal(applied.site.db.wp_sitemeta[shape.sourceSitemetaRowId], undefined);
+  assert.equal(applied.site.db.wp_sitemeta[shape.targetSitemetaRowId].site_id, shape.targetSiteId);
+}
+
+function assertSitemetaSiteIdReferenceVariant3StaleCase({ testCase, result, plan, shape }) {
+  assert.equal(plan.status, 'blocked', `${testCase.id} should plan as blocked`);
+  assert.equal(result.status, 'blocked', `${testCase.id} should validate as blocked`);
+  assert.equal(result.applied, false, `${testCase.id} stale sitemeta site_id graph should not apply`);
+  assert.equal(result.nonReadyRemoteUnchanged, true, `${testCase.id} stale graph should leave remote unchanged`);
+
+  const sitemetaMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === shape.sourceSitemetaResourceKey
+    || mutation.resourceKey === shape.targetSitemetaResourceKey);
+  const blocker = plan.blockers.find((entry) =>
+    entry.resourceKey === shape.sourceSitemetaResourceKey
+    && entry.references?.some((reference) => reference.relationshipType === 'sitemeta-site'));
+  const reference = blocker?.references.find((entry) => entry.relationshipType === 'sitemeta-site');
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+
+  assert.equal(sitemetaMutation, undefined, `${testCase.id} should not plan the stale sitemeta row`);
+  assert.ok(blocker, `${testCase.id} should expose a sitemeta site_id graph blocker`);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.ok(reference, `${testCase.id} should include sitemeta site_id target evidence`);
+  assert.equal(reference.relationshipKey, 'wp_sitemeta.site_id');
+  assert.equal(reference.relationshipType, 'sitemeta-site');
+  assert.equal(reference.sourceResourceKey, shape.sourceSitemetaResourceKey);
+  assert.equal(reference.targetResourceKey, shape.sourceSiteResourceKey);
+  assert.equal(reference.targetChange.localChange, 'unchanged');
+  assert.equal(reference.targetChange.remoteChange, 'update');
+  assert.ok(error instanceof PushPlanError, `${testCase.id} stale sitemeta site_id plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(digest(remoteBefore), remoteBeforeHash, `${testCase.id} stale refusal mutated remote`);
+}
+
+function assertSitemetaSiteIdReferenceVariant3EvidenceRedacted(testCase, plan, shape) {
+  const redacted = redactEvidence({
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    tags: [...testCase.tags].sort(),
+    status: plan.status,
+    summary: plan.summary,
+    preconditions: plan.preconditions,
+    mutations: plan.mutations,
+    blockers: plan.blockers,
+    decisions: plan.decisions,
+    rawSitemetaSiteProbe: {
+      value: {
+        localSite: testCase.local.db.wp_site?.[shape.sourceSiteRowId],
+        remoteSite: testCase.remote.db.wp_site?.[shape.targetSiteRowId],
+        sitemeta: testCase.local.db.wp_sitemeta?.[shape.sourceSitemetaRowId],
+      },
+    },
+  });
+  const serialized = JSON.stringify(redacted);
+
+  assert.ok(serialized.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} should redact raw sitemeta site evidence`);
+  assert.match(serialized, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash-only values`);
+  for (const value of shape.rawValues) {
+    assert.equal(serialized.includes(String(value)), false, `${testCase.id} leaked raw sitemeta site value ${value}`);
+  }
+}
+
+function sitemetaSiteIdReferenceVariant3SiteIdFromRowId(rowId) {
+  const match = /^id:(\d+)$/.exec(String(rowId || ''));
+  assert.ok(match, `invalid wp_site row id ${rowId}`);
+  return Number(match[1]);
+}
+
 test('RPP-0345 generated harness records comment_post_ID reference variant 3 coverage', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.commentPostReferenceVariant3;
