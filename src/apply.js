@@ -2908,6 +2908,28 @@ function pluginReferenceRewriteEnvelopeIssues(mutation, decisions = [], remote =
         code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_IDENTITY_MAP_DECISION_MISMATCH',
       });
     }
+    if (rewrite.sourceTargetLocalHash !== identityMapDecision.localHash) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_IDENTITY_MAP_SOURCE_LOCAL_HASH_MISMATCH',
+        expectedHash: hashEvidenceForDetails(identityMapDecision.localHash),
+        observedHash: hashEvidenceForDetails(rewrite.sourceTargetLocalHash),
+      });
+    }
+    if (rewrite.sourceTargetRemoteHash !== identityMapDecision.remoteHash) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_IDENTITY_MAP_SOURCE_REMOTE_HASH_MISMATCH',
+        expectedHash: hashEvidenceForDetails(identityMapDecision.remoteHash),
+        observedHash: hashEvidenceForDetails(rewrite.sourceTargetRemoteHash),
+      });
+    }
+    if (rewrite.identityMapSource !== (identityMapDecision.identityMapSource || null)) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_IDENTITY_MAP_SOURCE_MISMATCH',
+      });
+    }
     const contractEvidence = identityMapDecision.identityMapContractValidationEvidence || null;
     if (contractEvidence) {
       if (

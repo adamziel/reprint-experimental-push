@@ -1704,6 +1704,39 @@ test('reference-bound custom row driver rewrites identity-mapped source targets'
       },
     },
     {
+      label: 'rewrite-source-local-hash',
+      errorCode: 'PLAN_INVARIANT_VIOLATION',
+      issueCode: 'PLUGIN_DRIVER_REFERENCE_REWRITE_IDENTITY_MAP_SOURCE_LOCAL_HASH_MISMATCH',
+      mutate(forgedMutation) {
+        const rewrite = forgedMutation.pluginOwnedResource.referenceFieldRewrites[0];
+        rewrite.sourceTargetLocalHash = digest({ forged: 'plugin-reference-source-local-hash' });
+        forgedMutation.pluginOwnedResource.referenceTargetValidationEvidence.fields[0].referenceRewriteHash =
+          digest(rewrite);
+      },
+    },
+    {
+      label: 'rewrite-source-remote-hash',
+      errorCode: 'PLAN_INVARIANT_VIOLATION',
+      issueCode: 'PLUGIN_DRIVER_REFERENCE_REWRITE_IDENTITY_MAP_SOURCE_REMOTE_HASH_MISMATCH',
+      mutate(forgedMutation) {
+        const rewrite = forgedMutation.pluginOwnedResource.referenceFieldRewrites[0];
+        rewrite.sourceTargetRemoteHash = digest({ forged: 'plugin-reference-source-remote-hash' });
+        forgedMutation.pluginOwnedResource.referenceTargetValidationEvidence.fields[0].referenceRewriteHash =
+          digest(rewrite);
+      },
+    },
+    {
+      label: 'rewrite-identity-map-source',
+      errorCode: 'PLAN_INVARIANT_VIOLATION',
+      issueCode: 'PLUGIN_DRIVER_REFERENCE_REWRITE_IDENTITY_MAP_SOURCE_MISMATCH',
+      mutate(forgedMutation) {
+        const rewrite = forgedMutation.pluginOwnedResource.referenceFieldRewrites[0];
+        rewrite.identityMapSource = 'forged-plugin-reference-identity-map-source';
+        forgedMutation.pluginOwnedResource.referenceTargetValidationEvidence.fields[0].referenceRewriteHash =
+          digest(rewrite);
+      },
+    },
+    {
       label: 'rewrite-live-target-hash',
       errorCode: 'PLAN_INVARIANT_VIOLATION',
       issueCode: 'PLUGIN_DRIVER_REFERENCE_REWRITE_TARGET_REMOTE_HASH_MISMATCH',
@@ -3107,8 +3140,16 @@ test('apply refuses forged custom row driver contract evidence with unexpected r
     error = caught;
   }
 
-  assert.equal(payloadValidation.supported, true);
-  assert.equal(payloadValidation.evidence, null);
+  assert.equal(payloadValidation.supported, false);
+  assert.equal(payloadValidation.reasonCode, 'PLUGIN_DRIVER_CONTRACT_VALIDATION_EVIDENCE_MISMATCH');
+  assert.equal(payloadValidation.evidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_VALIDATION_EVIDENCE_MISMATCH');
+  assert.equal(payloadValidation.evidence.outcome, 'refused-before-mutation');
+  assert.equal(payloadValidation.evidence.rawValuesIncluded, false);
+  assert.equal(payloadValidation.evidence.contractHash, mutation.pluginOwnedResource.contractValidationEvidence.contractHash);
+  assert.equal(payloadValidation.evidence.contractValidationHash, pluginOwnedRowDriverContractValidationEvidenceHash(
+    mutation.pluginOwnedResource.contractValidationEvidence,
+  ));
+  assert.equal(JSON.stringify(payloadValidation.evidence).includes(rawSentinel), false);
   assert.equal(error?.code, 'PLUGIN_DRIVER_CONTRACT_VALIDATION_EVIDENCE_MISMATCH');
   assert.equal(error.details.resourceKey, resourceKey);
   assert.equal(error.details.pluginOwner, 'forms');

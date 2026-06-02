@@ -98,7 +98,7 @@ apply still must prove that the live source matches the receipt's preconditions.
 | Storage guards | Fixture upload files, fixture plugin-file creates/updates, typed fixture plugin activation/deactivation through option-lock CAS evidence, guarded WordPress row updates, fixture-scoped `wp_posts` creates through primary-key insert CAS evidence, allowlisted plugin-option creates/deletes, selected `wp_postmeta`/`wp_blogmeta` creates through named-lock CAS evidence, and fixture-scoped `wp_postmeta`/`wp_blogmeta` deletes through single-statement CAS evidence. |
 | Remote preservation | Remote-only changes and unplanned remote drift are preserved unless a planned change explicitly owns that resource. |
 | Conflict handling | Overlapping local and remote edits refuse before mutation. Non-ready entries suppress overlapping writes. |
-| Plugin-owned data | Owner context, merge-driver evidence, validation checks, and allowlist boundaries for plugin-owned mutations. |
+| Plugin-owned data | Owner context, explicit row-driver contracts, canonical contract-bound payload evidence, merge-driver evidence, validation checks, and allowlist boundaries for plugin-owned mutations. |
 | Authentication | Authenticated lab and production-shaped routes with session/receipt checks, receipt expiry, and protocol-bound dry-run evidence. Production auth integration is still a required integration point. |
 | Journaling | File-backed recovery journal plus recovery tests for partial apply, replay, finish, rollback, and refusal states. |
 | Release gates | Machine-checkable release evidence, provenance coverage, redaction checks, and GO/NO-GO evaluation. |

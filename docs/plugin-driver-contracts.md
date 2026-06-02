@@ -145,6 +145,10 @@ Planner and apply treat explicit row-driver contracts as more than allowlist
 shape. For custom row drivers outside the built-in driver set, apply requires:
 
 - accepted `plugin-driver-contract-validation` evidence,
+- any present contract validation evidence to be accepted and canonical; present
+  but malformed, refused, or hash-mismatched evidence produces hash-only
+  `contract-bound-row-driver` refusal evidence instead of downgrading to legacy
+  no-contract behavior,
 - exact resource key, plugin owner, driver, table, and `supportsDelete` binding
   in both the contract evidence and the mutation envelope,
 - present row payloads that carry `__pluginOwner` equal to the contract owner;
@@ -293,7 +297,10 @@ This is a validator boundary, not a generic plugin graph rewriter. It proves
 declared reference fields are shaped and hash-bound before mutation. The
 separate `referenceTargetValidationEvidence` proof must also show each target
 row is present, hash-stable against the live remote graph, and internally
-consistent with its primary row key. For example, a reference to
+consistent with its primary row key. When a plugin reference is rewritten
+through a WordPress graph identity map, apply also binds the rewrite evidence to
+the identity-map decision's source local hash, source remote hash, target remote
+hash, and identity-map source before mutation. For example, a reference to
 `row:["wp_posts","ID:2"]` is refused unless the live target row body has an
 `ID` value that normalizes to `2`; a hash-stable row stored under `ID:2` with
 body `ID:999` fails closed with

@@ -78,8 +78,27 @@ function validateContractBoundRowDriverPayload({
   supportsDelete,
   contractValidationEvidence,
 }) {
-  if (!acceptedContractValidationEvidence(contractValidationEvidence)) {
+  if (!contractValidationEvidence) {
     return { supported: true, evidence: null };
+  }
+  if (!acceptedContractValidationEvidence(contractValidationEvidence)) {
+    const evidence = invalidContractValidationEvidencePayloadRefusal({
+      resource,
+      owner,
+      driver,
+      table,
+      value,
+      action,
+      supportsDelete,
+      contractValidationEvidence,
+    });
+    return {
+      supported: false,
+      className: 'invalid-plugin-driver-payload',
+      reasonCode: evidence.reasonCode,
+      reason: 'Plugin-owned row driver contract-bound payload validation requires accepted contract validation evidence.',
+      evidence,
+    };
   }
 
   const expectedTable = contractValidationEvidence.table || table || null;
@@ -321,6 +340,90 @@ function validateContractBoundRowDriverPayload({
     reason: 'Plugin-owned row driver contract-bound payload validation failed.',
     evidence,
   };
+}
+
+function invalidContractValidationEvidencePayloadRefusal({
+  resource,
+  owner,
+  driver,
+  table,
+  value,
+  action,
+  supportsDelete,
+  contractValidationEvidence,
+}) {
+  const contractEvidenceIsObject = isPlainObject(contractValidationEvidence);
+  const expectedTable = contractEvidenceIsObject
+    ? contractValidationEvidence.table || table || null
+    : table || null;
+  const expectedOwner = contractEvidenceIsObject
+    ? contractValidationEvidence.pluginOwner || owner || null
+    : owner || null;
+  const expectedDriver = contractEvidenceIsObject
+    ? contractValidationEvidence.driver || driver || null
+    : driver || null;
+  const contractSupportsDelete = contractEvidenceIsObject
+    ? contractValidationEvidence.supportsDelete === true
+    : false;
+  const reasonCode = invalidContractValidationEvidencePayloadReasonCode(contractValidationEvidence);
+  const issues = [{
+    reasonCode,
+    field: 'contractValidationEvidence',
+    expected: 'accepted canonical plugin-owned row-driver contract validation evidence',
+    observed: contractEvidenceIsObject
+      ? {
+        reasonCode: contractValidationEvidence.reasonCode || null,
+        outcome: contractValidationEvidence.outcome || null,
+        hash: digest(contractValidationEvidence),
+      }
+      : {
+        type: Array.isArray(contractValidationEvidence)
+          ? 'array'
+          : typeof contractValidationEvidence,
+      },
+  }];
+
+  return {
+    schemaVersion: 1,
+    operation: 'plugin-driver-payload-validation',
+    validator: PLUGIN_DRIVER_CONTRACT_BOUND_VALIDATOR,
+    reasonCode,
+    outcome: 'refused-before-mutation',
+    issueCodes: issues.map((issue) => issue.reasonCode),
+    issues,
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    resourceKey: resource?.key || null,
+    pluginOwner: expectedOwner,
+    driver: expectedDriver,
+    table: expectedTable,
+    action,
+    supportsDelete: supportsDelete === true,
+    contractSupportsDelete,
+    contractHash: contractEvidenceIsObject ? contractValidationEvidence.contractHash || null : null,
+    rowIdentity: contractBoundRowIdentityEvidence(resource, value, action),
+    value: {
+      state: value === ABSENT ? 'absent' : 'present',
+      hash: digest(value),
+    },
+    contractValidationHash: contractEvidenceIsObject
+      ? pluginOwnedRowDriverContractValidationEvidenceHash(contractValidationEvidence)
+      : null,
+  };
+}
+
+function invalidContractValidationEvidencePayloadReasonCode(evidence) {
+  if (!isPlainObject(evidence)) {
+    return 'PLUGIN_DRIVER_CONTRACT_VALIDATION_EVIDENCE_INVALID';
+  }
+  if (
+    typeof evidence.reasonCode === 'string'
+    && evidence.reasonCode
+    && evidence.reasonCode !== 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+  ) {
+    return evidence.reasonCode;
+  }
+  return 'PLUGIN_DRIVER_CONTRACT_VALIDATION_EVIDENCE_MISMATCH';
 }
 
 export function pluginOwnedRowDriverRegistrationBindingHash(binding) {
