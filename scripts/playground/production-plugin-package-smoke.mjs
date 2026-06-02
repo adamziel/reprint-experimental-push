@@ -111,6 +111,12 @@ const driverFixture = {
   pluginOwner: 'driver-fixture',
   resourceKey: 'row:["wp_reprint_push_driver_fixture","entry_id:1"]',
 };
+const coreGuardedApplyFixture = {
+  postRowId: 'ID:1001',
+  postResourceKey: 'row:["wp_posts","ID:1001"]',
+  filePath: 'wp-content/uploads/reprint-push/shared.txt',
+  fileResourceKey: 'file:wp-content/uploads/reprint-push/shared.txt',
+};
 const packagedDriverRegistryGuardScriptPath = path.join(tmpDir, 'packaged-driver-registry-guards.php');
 let packagedDriverRegistryGuardResults = null;
 
@@ -316,6 +322,8 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
     driverReceiptRevokedCredentialGuard: {},
     arbitraryPluginFixturePackageProof: {},
     arbitraryPluginFixturePackage: {},
+    packagedLabControlGuard: {},
+    coreDbFileGuardedApply: {},
     final: {},
   };
 
@@ -456,6 +464,264 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
       finalMatchesLocal: result.after.finalMatchesLocal,
       visibleSurfaceHash: digest(visibleSurface(after.body.snapshot)),
     };
+    });
+  }
+
+  if (shouldRunScenario('core-db-file-guarded-apply')) {
+    await runScenario('core-db-file-guarded-apply', async () => {
+      await withPlaygroundServer(
+        'production-plugin-core-db-file-guarded-apply',
+        blueprintPath,
+        pluginDir,
+        async (server) => {
+          const client = authenticatedHttpClient({
+            sourceUrl: server.baseUrl,
+            credential: credentials,
+            routeProfile: 'production-shaped',
+          });
+
+          const preflight = await client.signedGet('/preflight');
+          assert.equal(preflight.status, 200);
+          assert.equal(preflight.body?.ok, true);
+          assert.equal(preflight.body?.routeProfile?.labBacked, false);
+          const session = preflight.body?.session?.id;
+          assert.equal(typeof session, 'string');
+          assert.ok(session.length > 0, 'signed preflight did not return a session id');
+
+          const baseResponse = await client.get('/snapshot');
+          assert.equal(baseResponse.status, 200);
+          assert.equal(baseResponse.body?.ok, true);
+          const baseSnapshot = baseResponse.body.snapshot;
+          const basePost = baseSnapshot?.db?.wp_posts?.[coreGuardedApplyFixture.postRowId];
+          assert.ok(basePost, 'packaged snapshot did not expose the guarded fixture post row');
+          assert.equal(
+            baseSnapshot?.files?.[coreGuardedApplyFixture.filePath],
+            'base upload content',
+            'packaged snapshot did not expose the guarded fixture upload file',
+          );
+
+          const labControlReject = await client.signedPost(
+            '/apply',
+            {
+              labDriftBeforeStorageWrite: {
+                mutationId: 'lab-control-must-not-run',
+                resourceKey: coreGuardedApplyFixture.fileResourceKey,
+                value: {
+                  content: 'packaged lab drift should never be written',
+                },
+              },
+            },
+            {
+              session,
+              idempotencyKey: 'production-plugin-core-lab-control-reject',
+            },
+          );
+          assert.equal(labControlReject.status, 400);
+          assert.equal(labControlReject.body?.ok, false);
+          assert.equal(labControlReject.body?.code, 'PACKAGED_LAB_CONTROL_REJECTED');
+          assert.equal(labControlReject.body?.mutationAttempted, false);
+          assert.deepEqual(labControlReject.body?.rejectedControls, ['labDriftBeforeStorageWrite']);
+          const afterLabControlReject = await client.get('/snapshot');
+          assert.equal(afterLabControlReject.status, 200);
+          assertVisibleSurfaceEqual(
+            afterLabControlReject.body.snapshot,
+            baseSnapshot,
+            'packaged lab-control rejection must not mutate',
+          );
+
+          const localSnapshot = deepClone(baseSnapshot);
+          localSnapshot.db.wp_posts[coreGuardedApplyFixture.postRowId] = {
+            ...localSnapshot.db.wp_posts[coreGuardedApplyFixture.postRowId],
+            post_title: 'Shared base post',
+            post_content: 'Packaged guarded DB row content',
+          };
+          localSnapshot.files[coreGuardedApplyFixture.filePath] =
+            'packaged guarded file content';
+
+          const plan = createPushPlan({
+            base: baseSnapshot,
+            local: localSnapshot,
+            remote: baseSnapshot,
+            now: new Date('2026-06-02T09:00:00.000Z'),
+          });
+          assert.equal(plan.status, 'ready', JSON.stringify({
+            blockers: plan.blockers,
+            conflicts: plan.conflicts,
+            summary: plan.summary,
+          }, null, 2));
+          assert.equal(plan.mutations.length, 2);
+          const postMutation = plan.mutations.find((mutation) =>
+            mutation.resourceKey === coreGuardedApplyFixture.postResourceKey);
+          const fileMutation = plan.mutations.find((mutation) =>
+            mutation.resourceKey === coreGuardedApplyFixture.fileResourceKey);
+          assert.ok(postMutation, 'packaged guarded apply plan is missing the post row mutation');
+          assert.ok(fileMutation, 'packaged guarded apply plan is missing the file mutation');
+
+          const applyIdempotencyKey = 'production-plugin-core-db-file-apply';
+          const dryRun = await client.signedPost(
+            '/dry-run',
+            { plan },
+            {
+              session,
+              idempotencyKey: applyIdempotencyKey,
+            },
+          );
+          assert.equal(dryRun.status, 200);
+          assert.equal(dryRun.body?.ok, true);
+          assert.ok(dryRun.body?.receipt?.receiptHash, 'guarded DB+file dry-run did not produce a receipt');
+
+          const applyBody = {
+            plan,
+            receipt: dryRun.body.receipt,
+          };
+          const apply = await client.signedPost('/apply', applyBody, {
+            session,
+            idempotencyKey: applyIdempotencyKey,
+          });
+          assert.equal(apply.status, 200);
+          assert.equal(apply.body?.ok, true);
+          assert.equal(apply.body?.applied, 2);
+          assert.equal(apply.body?.idempotency?.freshMutationWork, true);
+          assert.equal(apply.body?.applyRevalidation?.checkedAgainst, 'live-remote');
+          assert.equal(apply.body?.applyRevalidation?.verifiedCount, 2);
+
+          const afterApply = await client.get('/snapshot');
+          assert.equal(afterApply.status, 200);
+          assertVisibleSurfaceEqual(afterApply.body.snapshot, localSnapshot, 'guarded DB+file apply final source');
+
+          const replay = await client.signedPost('/apply', applyBody, {
+            session,
+            idempotencyKey: applyIdempotencyKey,
+          });
+          assert.equal(replay.status, 200);
+          assert.equal(replay.body?.ok, true);
+          assert.equal(replay.body?.code, 'BATCH_ALREADY_COMMITTED');
+          assert.equal(replay.body?.idempotency?.replayed, true);
+          assert.equal(replay.body?.idempotency?.freshMutationWork, false);
+          assert.equal(replay.body?.idempotency?.idempotencyKeyHash, apply.body.idempotency.idempotencyKeyHash);
+          assert.equal(replay.body?.idempotency?.requestHash, apply.body.idempotency.requestHash);
+
+          const conflict = await client.signedPost(
+            '/apply',
+            {
+              ...applyBody,
+              durableJournalBoundaryProbe: {
+                schemaVersion: 1,
+                type: 'same-key-different-body-conflict-before-mutation',
+              },
+            },
+            {
+              session,
+              idempotencyKey: applyIdempotencyKey,
+            },
+          );
+          assert.equal(conflict.status, 409);
+          assert.equal(conflict.body?.ok, false);
+          assert.equal(conflict.body?.code, 'IDEMPOTENCY_KEY_CONFLICT');
+          assert.equal(conflict.body?.idempotency?.conflict, true);
+          assert.equal(conflict.body?.idempotency?.freshMutationWork, false);
+          assert.equal(conflict.body?.idempotency?.idempotencyKeyHash, apply.body.idempotency.idempotencyKeyHash);
+          assert.notEqual(conflict.body?.idempotency?.requestHash, apply.body.idempotency.requestHash);
+          assert.equal(conflict.body?.idempotency?.conflictingRequestHash, apply.body.idempotency.requestHash);
+          assert.deepEqual(conflict.body?.idempotency?.mutationEventCounts, {
+            prepared: 0,
+            applied: 0,
+            preconditionFailed: 0,
+          });
+
+          const afterConflict = await client.get('/snapshot');
+          assert.equal(afterConflict.status, 200);
+          assertVisibleSurfaceEqual(afterConflict.body.snapshot, localSnapshot, 'same-key different-body conflict must not mutate');
+
+          const dbJournal = await client.signedGet('/db-journal?limit=160', {
+            session,
+            idempotencyKey: 'production-plugin-core-db-file-journal',
+          });
+          assert.equal(dbJournal.status, 200);
+          assert.equal(dbJournal.body?.ok, true);
+          assert.match(
+            dbJournal.body?.dbJournal?.scope || '',
+            /packaged production plugin journal surface|checked live production-shaped journal surface/i,
+          );
+          assert.equal(dbJournal.body?.dbJournal?.ownership?.ownsJournal, true);
+          assert.equal(dbJournal.body?.dbJournal?.ownership?.restartReadable, true);
+          assert.equal(dbJournal.body?.dbJournal?.leaseFence?.boundary, 'wpdb-single-statement-cas');
+          const rows = journalRows(dbJournal);
+          assert.ok(rows.some((row) => row.event === 'apply-committed'), 'DB journal missing apply-committed');
+          assert.ok(rows.some((row) => row.event === 'apply-replayed'), 'DB journal missing same-body apply-replayed');
+          assert.ok(rows.some((row) => row.event === 'idempotency-key-conflict'), 'DB journal missing same-key conflict event');
+          assert.equal(
+            rows.filter((row) =>
+              row.event === 'mutation-applied'
+              && row.idempotencyKeyHash === apply.body.idempotency.idempotencyKeyHash
+              && row.requestHash === apply.body.idempotency.requestHash).length,
+            2,
+            'DB journal did not record both guarded mutations for the apply request',
+          );
+
+          const postStorageGuard = storageGuardForAppliedResource(
+            rows,
+            coreGuardedApplyFixture.postResourceKey,
+            apply.body.idempotency.requestHash,
+            apply.body.idempotency.idempotencyKeyHash,
+          );
+          const fileStorageGuard = storageGuardForAppliedResource(
+            rows,
+            coreGuardedApplyFixture.fileResourceKey,
+            apply.body.idempotency.requestHash,
+            apply.body.idempotency.idempotencyKeyHash,
+          );
+          assert.equal(postStorageGuard?.boundary, 'wpdb-single-statement-cas');
+          assert.equal(postStorageGuard?.driver, 'wp-post');
+          assert.equal(postStorageGuard?.outcome, 'applied');
+          assert.equal(fileStorageGuard?.boundary, 'filesystem-compare-rename');
+          assert.equal(fileStorageGuard?.driver, 'fixture-upload-file');
+          assert.equal(fileStorageGuard?.outcome, 'applied');
+
+          summary.packagedLabControlGuard = {
+            status: labControlReject.status,
+            code: labControlReject.body?.code || null,
+            mutationAttempted: labControlReject.body?.mutationAttempted === true,
+            rejectedControls: labControlReject.body?.rejectedControls || [],
+            targetSnapshotUnchanged: digest(visibleSurface(afterLabControlReject.body.snapshot))
+              === digest(visibleSurface(baseSnapshot)),
+          };
+          summary.coreDbFileGuardedApply = {
+            planStatus: plan.status,
+            mutationCount: plan.mutations.length,
+            resourceKeys: plan.mutations.map((mutation) => mutation.resourceKey).sort(),
+            dryRunStatus: dryRun.status,
+            applyStatus: apply.status,
+            applied: apply.body?.applied,
+            freshMutationWork: apply.body?.idempotency?.freshMutationWork === true,
+            replayStatus: replay.status,
+            replayed: replay.body?.idempotency?.replayed === true,
+            replayFreshMutationWork: replay.body?.idempotency?.freshMutationWork ?? null,
+            conflictStatus: conflict.status,
+            conflictCode: conflict.body?.code || null,
+            conflictFreshMutationWork: conflict.body?.idempotency?.freshMutationWork ?? null,
+            finalMatchesLocal: digest(visibleSurface(afterConflict.body.snapshot))
+              === digest(visibleSurface(localSnapshot)),
+            dbJournal: {
+              scope: dbJournal.body?.dbJournal?.scope || null,
+              ownsJournal: dbJournal.body?.dbJournal?.ownership?.ownsJournal === true,
+              restartReadable: dbJournal.body?.dbJournal?.ownership?.restartReadable === true,
+              leaseBoundary: dbJournal.body?.dbJournal?.leaseFence?.boundary || null,
+              applyCommitted: rows.some((row) => row.event === 'apply-committed'),
+              replayed: rows.some((row) => row.event === 'apply-replayed'),
+              conflict: rows.some((row) => row.event === 'idempotency-key-conflict'),
+              mutationAppliedForRequest: rows.filter((row) =>
+                row.event === 'mutation-applied'
+                && row.idempotencyKeyHash === apply.body.idempotency.idempotencyKeyHash
+                && row.requestHash === apply.body.idempotency.requestHash).length,
+              storageGuardBoundaries: [
+                postStorageGuard?.boundary || null,
+                fileStorageGuard?.boundary || null,
+              ].sort(),
+            },
+          };
+        },
+      );
     });
   }
 
@@ -1854,6 +2120,31 @@ function parseMarkedJson(stdout, begin, end, missingMessage) {
 function assertVisibleSurfaceEqual(actual, expected, label) {
   assert.deepEqual(visibleSurface(actual), visibleSurface(expected), `${label} mismatch`);
   assert.equal(digest(visibleSurface(actual)), digest(visibleSurface(expected)), `${label} digest mismatch`);
+}
+
+function journalRows(response) {
+  const rows = response.body?.dbJournal?.latestRows;
+  return Array.isArray(rows) ? rows : [];
+}
+
+function storageGuardForAppliedResource(rows, resourceKey, requestHash, idempotencyKeyHash) {
+  const row = rows.find((entry) => {
+    if (entry?.event !== 'mutation-applied') {
+      return false;
+    }
+    if (entry.requestHash !== requestHash || entry.idempotencyKeyHash !== idempotencyKeyHash) {
+      return false;
+    }
+    const evidence = entry.resourceHashEvidence || {};
+    const mutation = evidence.mutation || evidence;
+    return mutation?.resourceKey === resourceKey || evidence.resourceKey === resourceKey;
+  });
+  if (!row) {
+    return null;
+  }
+  const evidence = row.resourceHashEvidence || {};
+  const mutation = evidence.mutation || evidence;
+  return mutation?.storageGuard || evidence.storageGuard || null;
 }
 
 function visibleSurface(snapshot) {

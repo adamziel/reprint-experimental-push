@@ -122,6 +122,95 @@ test('production apply maps receipt signature refusals before mutation work', ()
   );
 });
 
+test('packaged production apply rejects lab-only controls before journal claim or mutation setup', () => {
+  const callback = functionBody('reprint_push_lab_rest_authenticated_apply');
+  const applyWithJournal = functionBody('reprint_push_lab_rest_apply_with_db_journal');
+  const rejectLabControls = functionBody('reprint_push_lab_rest_reject_packaged_apply_lab_controls');
+  const controlKeys = functionBody('reprint_push_lab_rest_packaged_apply_lab_control_keys');
+  const statusForResult = functionBody('reprint_push_lab_rest_status_for_result');
+
+  assertBefore(
+    callback,
+    'reprint_push_lab_rest_json_payload($request)',
+    'reprint_push_lab_rest_reject_packaged_apply_lab_controls($request, $payload)',
+  );
+  assertBefore(
+    callback,
+    'reprint_push_lab_rest_reject_packaged_apply_lab_controls($request, $payload)',
+    "reprint_push_lab_rest_plan_payload($payload, 'apply')",
+  );
+  assertBefore(
+    callback,
+    'reprint_push_lab_rest_reject_packaged_apply_lab_controls($request, $payload)',
+    'reprint_push_lab_rest_apply_with_db_journal($request, true)',
+  );
+
+  assertBefore(
+    applyWithJournal,
+    'reprint_push_lab_rest_json_payload($request)',
+    'reprint_push_lab_rest_reject_packaged_apply_lab_controls($request, $payload)',
+  );
+  assertBefore(
+    applyWithJournal,
+    'reprint_push_lab_rest_reject_packaged_apply_lab_controls($request, $payload)',
+    'reprint_push_lab_rest_db_journal_context($payload, $idempotency_key, $profile)',
+  );
+  assertBefore(
+    applyWithJournal,
+    'reprint_push_lab_rest_reject_packaged_apply_lab_controls($request, $payload)',
+    'reprint_push_lab_db_journal_try_open_idempotency',
+  );
+  assertBefore(
+    applyWithJournal,
+    'reprint_push_lab_rest_reject_packaged_apply_lab_controls($request, $payload)',
+    'reprint_push_lab_rest_run_db_journal_apply',
+  );
+
+  assert.match(rejectLabControls, /reprint_push_lab_rest_package_mode_enabled\(\)/);
+  assert.match(rejectLabControls, /\(\(\$profile\['labBacked'\]\s*\?\?\s*true\)\s*===\s*false\)/);
+  assert.match(rejectLabControls, /'code'\s*=>\s*'PACKAGED_LAB_CONTROL_REJECTED'/);
+  assert.match(rejectLabControls, /'mutationAttempted'\s*=>\s*false/);
+  assert.match(rejectLabControls, /'rejectedControls'\s*=>\s*\$present/);
+  assert.doesNotMatch(rejectLabControls, /reprint_push_lab_db_journal_try_open_idempotency|reprint_push_protocol_run_payload|reprint_push_apply_resource|wp_update_post|\$wpdb->query/);
+
+  for (const key of [
+    'labFailAfterMutations',
+    'labDriftAfterPrepared',
+    'labDriftBeforeStorageWrite',
+    'labSimulateMissingDbCommit',
+    'labSimulateStaleClaimAllOld',
+    'labSimulateStaleRetryAfterStarted',
+    'labSimulateStaleRetryAfterClaim',
+    'labOmitDbJournalTargetPlannedRows',
+    'labDelayAfterStaleRetryClaimMs',
+    'labDelayAfterIdempotencyOpenMs',
+    'labDelayAfterDbJournalStartedMs',
+  ]) {
+    assert.match(controlKeys, new RegExp(`'${key}'`));
+  }
+  assert.doesNotMatch(controlKeys, /applyBatchSize|apply_batch_size/);
+  assert.match(statusForResult, /case 'PACKAGED_LAB_CONTROL_REJECTED':\s*case 'INVALID_PLAN':/);
+});
+
+test('packaged production snapshot ignores authenticated lab drift hooks', () => {
+  const snapshotDrift = functionBody('reprint_push_lab_rest_maybe_drift_after_authenticated_snapshot');
+
+  assertBefore(
+    snapshotDrift,
+    'reprint_push_lab_rest_package_mode_enabled()',
+    'reprint_push_lab_rest_get_auth_context($request)',
+  );
+  assertBefore(snapshotDrift, 'return null;', '$mode = (string) $request->get_param');
+  assert.doesNotMatch(
+    sourceSlice(
+      routeSource,
+      'if (reprint_push_lab_rest_package_mode_enabled())',
+      "if ($mode !== 'post-title')",
+    ),
+    /wp_update_post|update_option/,
+  );
+});
+
 test('production apply revalidates live source hashes after claim start and before mutation execution', () => {
   const applyWithJournal = functionBody('reprint_push_lab_rest_run_db_journal_apply');
   const liveRevalidation = functionBody('reprint_push_lab_rest_revalidate_apply_live_source_before_mutation');

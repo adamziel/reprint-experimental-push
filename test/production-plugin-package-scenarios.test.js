@@ -75,6 +75,18 @@ test('scenario parser exposes activation-hook effects as a concrete support-only
   );
 });
 
+test('scenario parser exposes source mutation guards as a concrete packaged apply check', () => {
+  const selected = parseProductionPluginPackageSelectedScenarios(
+    ['--scenario=source-mutation-guards'],
+    undefined,
+  );
+
+  assert.deepEqual(
+    Array.from(selected),
+    ['core-db-file-guarded-apply'],
+  );
+});
+
 test('scenario parser exposes the noncanonical contract evidence guard as a concrete check', () => {
   const selected = parseProductionPluginPackageSelectedScenarios(
     ['--scenario=driver-noncanonical-contract-evidence-guard'],

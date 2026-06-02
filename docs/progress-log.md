@@ -4,6 +4,35 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Packaged Source Mutation Guards
+
+- Last update: 2026-06-02 07:36 CEST +02:00.
+- Packaged production-shaped apply now rejects lab-only mutation, recovery, and
+  timing controls before plan parsing in the authenticated apply route and
+  before DB-journal context/claim setup in the shared apply executor.
+  `PACKAGED_LAB_CONTROL_REJECTED` returns HTTP 400 with
+  `mutationAttempted=false`; ordinary client apply batch sizing remains allowed.
+- The packaged snapshot route also ignores authenticated snapshot drift hooks in
+  package mode so a read route cannot be used as a lab mutation trigger.
+- Added `core-db-file-guarded-apply` and the `source-mutation-guards` smoke
+  alias. The focused packaged smoke proves a two-mutation live plan over
+  `/wp-json/reprint/v1/push/*`: `row:["wp_posts","ID:1001"]` writes through
+  `wpdb-single-statement-cas`, `file:wp-content/uploads/reprint-push/shared.txt`
+  writes through `filesystem-compare-rename`, DB journal ownership/readback is
+  checked, same-key same-body replay is non-mutating, same-key different-body
+  conflict returns `IDEMPOTENCY_KEY_CONFLICT`, and the final snapshot matches
+  the planned local state.
+- Verification: PHP syntax passed, production apply route source tests passed,
+  package scenario parser tests passed, and the focused package smoke passed:
+  `REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-guard-only
+  REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=core-db-file-guarded-apply
+  node ./scripts/playground/production-plugin-package-smoke.mjs`.
+- Caveat: this is packaged local WordPress production-shaped evidence for core
+  DB/file guarded source mutation. It does not complete generic production
+  plugin validators, broad graph identity mapping, large file streaming, hosted
+  external soak/visual/observability, or universal WordPress durable boundary
+  proof.
+
 ## 2026-06-02 - Packaged Plugin Driver Evidence Canonicality
 
 - Last update: 2026-06-02 07:22 CEST +02:00.

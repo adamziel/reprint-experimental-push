@@ -11,6 +11,9 @@ const localArbitraryPluginFixturePackageEvidenceScope = 'local-playground';
 const productionBackedEvidenceScope = 'production-backed';
 
 const scenarioGroups = {
+  'source-mutation-guards': [
+    'core-db-file-guarded-apply',
+  ],
   'arbitrary-plugin-fixture-package': [
     'driver-receipt-guards',
   ],
@@ -68,6 +71,7 @@ const scenarioGroups = {
 
 const scenarioNames = [
   'core-package-routes',
+  'core-db-file-guarded-apply',
   'driver-receipt-guards',
   'driver-noncanonical-contract-evidence-guard',
   'driver-activation-hook-effects-boundary',

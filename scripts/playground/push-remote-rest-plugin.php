@@ -1751,6 +1751,7 @@ function reprint_push_lab_rest_authenticated_apply(WP_REST_Request $request): WP
 
     try {
         $payload = reprint_push_lab_rest_json_payload($request);
+        reprint_push_lab_rest_reject_packaged_apply_lab_controls($request, $payload);
         $plan = reprint_push_lab_rest_plan_payload($payload, 'apply');
         $receipt_payload = reprint_push_lab_rest_receipt_payload($payload);
         if ($receipt_payload === null) {
@@ -2890,6 +2891,7 @@ function reprint_push_lab_rest_apply_with_db_journal(
         }
 
         $payload = reprint_push_lab_rest_json_payload($request);
+        reprint_push_lab_rest_reject_packaged_apply_lab_controls($request, $payload);
         $context = reprint_push_lab_rest_db_journal_context($payload, $idempotency_key, $profile);
         $committed = reprint_push_lab_db_journal_committed_row_for_key($context['idempotencyKeyHash']);
 
@@ -6607,6 +6609,55 @@ function reprint_push_lab_rest_receipt_payload(array $payload): ?array
     return $payload['receipt'];
 }
 
+function reprint_push_lab_rest_packaged_apply_lab_control_keys(): array
+{
+    return [
+        'labFailAfterMutations',
+        'labDriftAfterPrepared',
+        'labDriftBeforeStorageWrite',
+        'labSimulateMissingDbCommit',
+        'labSimulateStaleClaimAllOld',
+        'labSimulateStaleRetryAfterStarted',
+        'labSimulateStaleRetryAfterClaim',
+        'labOmitDbJournalTargetPlannedRows',
+        'labDelayAfterStaleRetryClaimMs',
+        'labDelayAfterIdempotencyOpenMs',
+        'labDelayAfterDbJournalStartedMs',
+    ];
+}
+
+function reprint_push_lab_rest_reject_packaged_apply_lab_controls(WP_REST_Request $request, array $payload): void
+{
+    $profile = reprint_push_lab_rest_route_profile($request);
+    $packaged_route = reprint_push_lab_rest_package_mode_enabled()
+        || (($profile['labBacked'] ?? true) === false);
+    if (!$packaged_route) {
+        return;
+    }
+
+    $present = [];
+    foreach (reprint_push_lab_rest_packaged_apply_lab_control_keys() as $key) {
+        if (array_key_exists($key, $payload)) {
+            $present[] = $key;
+        }
+    }
+    if (count($present) === 0) {
+        return;
+    }
+
+    reprint_push_protocol_fail([
+        'ok' => false,
+        'code' => 'PACKAGED_LAB_CONTROL_REJECTED',
+        'message' => 'Packaged production apply routes reject lab-only mutation, recovery, and timing controls.',
+        'mode' => 'apply',
+        'mutationAttempted' => false,
+        'routeProfile' => (string) ($profile['profile'] ?? ''),
+        'restNamespace' => (string) ($profile['restNamespace'] ?? ''),
+        'labBacked' => (bool) ($profile['labBacked'] ?? true),
+        'rejectedControls' => $present,
+    ]);
+}
+
 function reprint_push_lab_rest_lab_options(array $payload): array
 {
     $options = [];
@@ -6743,6 +6794,10 @@ function reprint_push_lab_rest_snapshot(WP_REST_Request $request): WP_REST_Respo
 
 function reprint_push_lab_rest_maybe_drift_after_authenticated_snapshot(WP_REST_Request $request): ?array
 {
+    if (reprint_push_lab_rest_package_mode_enabled()) {
+        return null;
+    }
+
     if (!is_array(reprint_push_lab_rest_get_auth_context($request))) {
         return null;
     }
@@ -7056,6 +7111,7 @@ function reprint_push_lab_rest_status_for_result(array $result): int
         case 'INVALID_ARGUMENT':
         case 'INVALID_CHUNK_MANIFEST':
         case 'INVALID_CHUNK_UPLOAD':
+        case 'PACKAGED_LAB_CONTROL_REJECTED':
         case 'INVALID_PLAN':
         case 'INVALID_RECEIPT':
         case 'AUTH_RECEIPT_SIGNATURE_INVALID':
