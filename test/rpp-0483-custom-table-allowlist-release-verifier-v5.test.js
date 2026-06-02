@@ -13,6 +13,7 @@ import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts
 
 const fixedNow = new Date('2026-05-30T12:48:30.000Z');
 const boundary = productionPluginDriverBoundary;
+const releaseBoundaryProofValue = 'rpp-0483-release-verifier-custom-table-allowlist';
 const releaseStateRowSchema = Object.freeze({
   required: ['state_id', 'payload', 'updated_marker', '__pluginOwner'],
   fields: {
@@ -22,11 +23,17 @@ const releaseStateRowSchema = Object.freeze({
       required: ['owner', 'mode', 'version', 'private_note', 'releaseBoundaryProof'],
       additionalProperties: false,
       properties: {
-        owner: 'string',
+        owner: {
+          type: 'string',
+          const: boundary.owner,
+        },
         mode: 'string',
         version: 'integer',
         private_note: 'string',
-        releaseBoundaryProof: 'string',
+        releaseBoundaryProof: {
+          type: 'string',
+          const: releaseBoundaryProofValue,
+        },
       },
     },
     updated_marker: 'string',
@@ -44,9 +51,19 @@ const normalizedReleaseStateRowSchema = Object.freeze({
       additionalProperties: false,
       properties: [
         { field: 'mode', type: 'string', required: true },
-        { field: 'owner', type: 'string', required: true },
+        {
+          field: 'owner',
+          type: 'string',
+          required: true,
+          constHash: digest(boundary.owner),
+        },
         { field: 'private_note', type: 'string', required: true },
-        { field: 'releaseBoundaryProof', type: 'string', required: true },
+        {
+          field: 'releaseBoundaryProof',
+          type: 'string',
+          required: true,
+          constHash: digest(releaseBoundaryProofValue),
+        },
         { field: 'version', type: 'integer', required: true },
       ],
     },
@@ -102,7 +119,7 @@ function releaseStateSnapshot(mode, version, marker, {
             mode,
             version,
             private_note: privateNote,
-            releaseBoundaryProof: 'rpp-0483-release-verifier-custom-table-allowlist',
+            releaseBoundaryProof: releaseBoundaryProofValue,
           },
           updated_marker: marker,
           __pluginOwner: boundary.owner,
@@ -180,6 +197,9 @@ function matchedReleaseStateSchemaValidation() {
         required: true,
         state: 'present',
         observedType: 'string',
+        constraint: 'const',
+        constraintHash: digest(boundary.owner),
+        observedHash: digest(boundary.owner),
         matched: true,
       },
       {
@@ -198,6 +218,9 @@ function matchedReleaseStateSchemaValidation() {
         required: true,
         state: 'present',
         observedType: 'string',
+        constraint: 'const',
+        constraintHash: digest(releaseBoundaryProofValue),
+        observedHash: digest(releaseBoundaryProofValue),
         matched: true,
       },
       {
@@ -243,6 +266,19 @@ function unexpectedReleaseStateSchemaValidation(extraPropertyCount = 1) {
     observedExtraPropertyCount: extraPropertyCount,
     matched: false,
   });
+  return evidence;
+}
+
+function constraintMismatchReleaseStateSchemaValidation({
+  fieldPath,
+  observedHash,
+} = {}) {
+  const evidence = matchedReleaseStateSchemaValidation();
+  evidence.status = 'mismatch';
+  const field = evidence.fields.find((entry) => entry.path === fieldPath);
+  field.state = 'constraint-mismatch';
+  field.observedHash = observedHash;
+  field.matched = false;
   return evidence;
 }
 
@@ -918,6 +954,51 @@ test('RPP-0483 release verifier blocks custom-table allowlist and apply carry-th
     assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
     assert.equal(summary.mutationBoundary.localHash, summary.localPluginStateEvidence.hash);
     assertNoRawSentinels(summary, 'planned payload row schema mismatch summary');
+  });
+
+  await t.test('forged payload row schema constraint is not release-verifier eligible with matching hashes', () => {
+    const topology = releaseStateTopology();
+    const plan = releaseStatePlan(topology);
+    const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey);
+    const constraintMismatchValue = cloneJson(topology.localEditedSnapshot.db[boundary.table][boundary.rowId]);
+    constraintMismatchValue.payload.releaseBoundaryProof = 'rpp-0483-private-forged-release-boundary-proof';
+    topology.localEditedSnapshot.db[boundary.table][boundary.rowId] = constraintMismatchValue;
+    mutation.value = serializeResourceValue(constraintMismatchValue);
+    mutation.localHash = digest(constraintMismatchValue);
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.value.hash = digest(constraintMismatchValue);
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.schemaValidation =
+      constraintMismatchReleaseStateSchemaValidation({
+        fieldPath: 'payload.releaseBoundaryProof',
+        observedHash: digest('rpp-0483-private-forged-release-boundary-proof'),
+      });
+    const summary = summarize(topology, releaseVerifierProof(plan));
+    const mismatch = summary.driverContractBoundary.driverPayloadValidation.schemaValidation.fields.find(
+      (field) => field.path === 'payload.releaseBoundaryProof',
+    );
+
+    assert.equal(summary.status, 'blocked');
+    assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+    assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
+    assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, false);
+    assert.equal(summary.driverContractBoundary.payloadActionMatchesMutation, true);
+    assert.equal(summary.driverContractBoundary.payloadValueHashMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.payloadSchemaValidationMatchesExpected, false);
+    assert.deepEqual(mismatch, {
+      field: 'releaseBoundaryProof',
+      path: 'payload.releaseBoundaryProof',
+      expectedType: 'string',
+      required: true,
+      state: 'constraint-mismatch',
+      observedType: 'string',
+      constraint: 'const',
+      constraintHash: digest(releaseBoundaryProofValue),
+      observedHash: digest('rpp-0483-private-forged-release-boundary-proof'),
+      matched: false,
+    });
+    assert.equal(summary.driverContractBoundary.contractBound, false);
+    assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
+    assert.equal(JSON.stringify(summary).includes('rpp-0483-private-forged-release-boundary-proof'), false);
+    assertNoRawSentinels(summary, 'planned payload row schema constraint mismatch summary');
   });
 
   await t.test('unexpected nested payload properties are not release-verifier eligible with redacted evidence', () => {

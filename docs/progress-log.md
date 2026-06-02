@@ -4,21 +4,28 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-06-02 - Nested Schema-Bound Plugin Row Contracts
+## 2026-06-02 - Hash-Constrained Plugin Row Schema Contracts
 
-- Last update: 2026-06-02 08:16 CEST +02:00.
+- Last update: 2026-06-02 08:28 CEST +02:00.
 - Plugin-owned row driver contracts now accept optional `rowSchema` metadata
   for schema-bound custom rows. The normalized schema is included in the
   contract hash and canonical contract evidence, so schema-bearing contracts
   cannot be swapped without changing the contract fingerprint.
+- Scalar `const` and `enum` row-schema constraints now normalize to hash-only
+  `constHash` and sorted `enumHashes`. Raw constraint values are not carried in
+  contract or payload evidence, and malformed or non-scalar constraints fail
+  closed before becoming accepted contracts.
 - Contract-bound payload validation now emits hash-only `schemaValidation`
   evidence when a schema is declared. Present rows with missing required fields,
-  wrong field types, or undeclared nested object properties fail closed before
+  wrong field types, scalar constraint mismatches, or undeclared nested object
+  properties fail closed before
   mutation with `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_FIELD_MISSING`,
-  `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_TYPE_MISMATCH`, or
+  `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_TYPE_MISMATCH`,
+  `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_CONSTRAINT_MISMATCH`, or
   `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_UNEXPECTED_FIELD`. Unexpected nested
   properties are reported by declared object path and count only, not raw extra
-  key name.
+  key name; constraint evidence reports only `constraint`, `constraintHash`,
+  and `observedHash`.
 - The PHP registered-driver path now exports normalized row schemas into
   snapshot policy entries and validates exact schema evidence during
   plugin-owned mutation checks. The RPP-0483 production-shaped verifier now
@@ -30,7 +37,7 @@ linked implementation artifacts.
   registration API, RPP-0441/RPP-0481, and RPP-0483 verifier tests passed. See
   [ao-plugin-driver-row-schema.md](evidence/ao-plugin-driver-row-schema.md).
 - Caveat: this is a schema-bound row contract, not a full generic plugin
-  merge-driver system. Enum/const rules, merge strategies,
+  merge-driver system. Merge strategies, richer JSON Schema semantics,
   plugin-owned files, and activation/update effects remain release-scope work.
 
 ## 2026-06-02 - Contract-Bound Plugin Row Identity

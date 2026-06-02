@@ -28,6 +28,9 @@ live production-owned external evidence.
 - the verifier binds the allowlist row schema and contract hash to the
   mutation contract, and rejects allowlist row-schema mismatches even when the
   owner/driver/table tuple is exact;
+- hash-only scalar row-schema constraints are carried through the verifier, and
+  forged payloads that violate a `const` or `enum` constraint stay blocked even
+  when the payload value hash is recomputed;
 - nested schema-bound payload evidence rejects undeclared payload properties
   with redacted count-only evidence rather than raw extra key names;
 - forged payload evidence with surplus raw sidecars is not release-verifier
@@ -56,9 +59,9 @@ node scripts/release/artifact-redaction-scan.mjs docs/evidence/rpp-0483-custom-t
 git diff --check
 ```
 
-Observed result: the focused RPP-0483 test exited 0 with 23 subtests ok, the
+Observed result: the focused RPP-0483 test exited 0 with 24 subtests ok, the
 combined plugin-driver contract, PHP registration API, and RPP-0483 run exited
-0 with 59 tests ok, and the adjacent RPP-0441/RPP-0481 driver-registration
+0 with 64 tests ok, and the adjacent RPP-0441/RPP-0481 driver-registration
 release-verifier run exited 0 with 3 tests ok. The shared production-shaped
 plugin-driver boundary subset exited 0 with 11 tests ok. JS syntax checks, PHP
 lint, scoped redaction scan, and whitespace checks exited cleanly.

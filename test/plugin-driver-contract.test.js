@@ -109,6 +109,38 @@ function nestedSchemaBoundCustomTableContract(extra = {}) {
   });
 }
 
+function constrainedSchemaBoundCustomTableContract(extra = {}) {
+  return explicitCustomTableContract({
+    rowSchema: {
+      required: ['entry_id', 'payload', 'updated_marker', '__pluginOwner'],
+      fields: {
+        entry_id: 'integer',
+        payload: {
+          type: 'object',
+          required: ['mode', 'version'],
+          additionalProperties: false,
+          properties: {
+            mode: {
+              type: 'string',
+              enum: ['local-constraint', 'local-constraint-alt'],
+            },
+            version: {
+              type: 'integer',
+              const: 2,
+            },
+          },
+        },
+        updated_marker: {
+          type: 'string',
+          const: 'local',
+        },
+        __pluginOwner: 'string',
+      },
+    },
+    ...extra,
+  });
+}
+
 const normalizedCustomTableRowSchema = Object.freeze({
   schemaVersion: 1,
   fields: [
@@ -135,6 +167,43 @@ const normalizedNestedCustomTableRowSchema = Object.freeze({
       ],
     },
     { field: 'updated_marker', type: 'string', required: true },
+  ],
+});
+
+const constrainedModeEnumHashes = Object.freeze(
+  ['local-constraint', 'local-constraint-alt'].map((value) => digest(value)).sort(),
+);
+const normalizedConstrainedCustomTableRowSchema = Object.freeze({
+  schemaVersion: 1,
+  fields: [
+    { field: '__pluginOwner', type: 'string', required: true },
+    { field: 'entry_id', type: 'integer', required: true },
+    {
+      field: 'payload',
+      type: 'object',
+      required: true,
+      additionalProperties: false,
+      properties: [
+        {
+          field: 'mode',
+          type: 'string',
+          required: true,
+          enumHashes: constrainedModeEnumHashes,
+        },
+        {
+          field: 'version',
+          type: 'integer',
+          required: true,
+          constHash: digest(2),
+        },
+      ],
+    },
+    {
+      field: 'updated_marker',
+      type: 'string',
+      required: true,
+      constHash: digest('local'),
+    },
   ],
 });
 
@@ -229,6 +298,66 @@ test('nested additionalProperties contracts must be enforceable object schemas',
     }).valid,
     false,
   );
+});
+
+test('schema constraint normalization stores hashes and preserves hash-form contract compatibility', () => {
+  const rawConstraintContract = constrainedSchemaBoundCustomTableContract();
+  const hashConstraintContract = constrainedSchemaBoundCustomTableContract({
+    rowSchema: normalizedConstrainedCustomTableRowSchema,
+  });
+  const normalized = normalizePluginOwnedRowDriverRowSchema(rawConstraintContract.rowSchema).normalized;
+
+  assert.deepEqual(normalized, normalizedConstrainedCustomTableRowSchema);
+  assert.equal(
+    pluginOwnedRowDriverContractHash(rawConstraintContract),
+    pluginOwnedRowDriverContractHash(hashConstraintContract),
+  );
+  const serialized = JSON.stringify(normalized);
+  assert.equal(serialized.includes('local-constraint'), false);
+  assert.equal(serialized.includes('local-constraint-alt'), false);
+  assert.equal(serialized.includes('"local"'), false);
+});
+
+test('invalid schema constraints fail closed before becoming contracts', () => {
+  const invalidSchemas = [
+    {
+      fields: {
+        payload: {
+          type: 'object',
+          const: {},
+        },
+      },
+    },
+    {
+      fields: {
+        mode: {
+          type: 'string',
+          enum: ['accepted', 1],
+        },
+      },
+    },
+    {
+      fields: {
+        mode: {
+          type: 'string',
+          const: 'accepted',
+          enum: ['accepted'],
+        },
+      },
+    },
+    {
+      fields: {
+        mode: {
+          type: 'string',
+          constHash: 'not-a-sha256',
+        },
+      },
+    },
+  ];
+
+  for (const rowSchema of invalidSchemas) {
+    assert.equal(normalizePluginOwnedRowDriverRowSchema(rowSchema).valid, false);
+  }
 });
 
 function planFor(base, local, remote) {
@@ -664,6 +793,112 @@ test('nested schema-bound custom row driver blocks unexpected plugin payload pro
   assert.equal(JSON.stringify(blocker).includes('local-nested-extra-token'), false);
   assert.equal(JSON.stringify(blocker).includes('private_note'), false);
   assert.equal(JSON.stringify(blocker).includes('auth_token'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('schema-bound custom row driver validates hash-only scalar constraints', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'local-constraint', version: 2 },
+      updated_marker: 'local',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-constraint-alt';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(constrainedSchemaBoundCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const payloadEvidence = mutation.pluginOwnedResource.driverPayloadValidationEvidence;
+  const result = applyPlan(remote, plan);
+  const modeEvidence = payloadEvidence.schemaValidation.fields.find((field) => field.path === 'payload.mode');
+  const versionEvidence = payloadEvidence.schemaValidation.fields.find((field) => field.path === 'payload.version');
+
+  assert.equal(plan.status, 'ready');
+  assert.deepEqual(
+    mutation.pluginOwnedResource.contractValidationEvidence.rowSchema,
+    normalizedConstrainedCustomTableRowSchema,
+  );
+  assert.deepEqual(modeEvidence, {
+    field: 'mode',
+    path: 'payload.mode',
+    expectedType: 'string',
+    required: true,
+    state: 'present',
+    observedType: 'string',
+    constraint: 'enum',
+    constraintHash: digest(constrainedModeEnumHashes),
+    observedHash: digest('local-constraint-alt'),
+    matched: true,
+  });
+  assert.deepEqual(versionEvidence, {
+    field: 'version',
+    path: 'payload.version',
+    expectedType: 'integer',
+    required: true,
+    state: 'present',
+    observedType: 'integer',
+    constraint: 'const',
+    constraintHash: digest(2),
+    observedHash: digest(2),
+    matched: true,
+  });
+  assert.equal(result.appliedMutations, 1);
+  assert.equal(JSON.stringify(payloadEvidence).includes('local-constraint-alt'), false);
+  assert.equal(JSON.stringify(payloadEvidence).includes('local-constraint'), false);
+});
+
+test('schema-bound custom row driver blocks scalar constraint mismatches', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'local-constraint', version: 2 },
+      updated_marker: 'local',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'constraint-private-mode';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(constrainedSchemaBoundCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const mismatch = blocker.driverPayloadValidationEvidence.schemaValidation.fields.find(
+    (field) => field.path === 'payload.mode',
+  );
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'invalid-plugin-driver-payload');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_CONSTRAINT_MISMATCH');
+  assert.deepEqual(mismatch, {
+    field: 'mode',
+    path: 'payload.mode',
+    expectedType: 'string',
+    required: true,
+    state: 'constraint-mismatch',
+    observedType: 'string',
+    constraint: 'enum',
+    constraintHash: digest(constrainedModeEnumHashes),
+    observedHash: digest('constraint-private-mode'),
+    matched: false,
+  });
+  assert.equal(JSON.stringify(blocker).includes('constraint-private-mode'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-constraint'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
   assert.equal(JSON.stringify(remote), remoteBefore);
 });

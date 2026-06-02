@@ -665,6 +665,13 @@ function reprint_push_normalize_plugin_owned_row_driver_row_schema_field(array $
         'type' => (string) $args['type'],
         'required' => !empty($args['required']),
     ];
+    $constraint = reprint_push_normalize_plugin_owned_row_driver_row_schema_field_constraint(
+        (string) $args['type'],
+        $definition
+    );
+    if ($constraint !== []) {
+        $normalized = array_merge($normalized, $constraint);
+    }
     if (array_key_exists('additionalProperties', $definition)) {
         if ((string) $args['type'] !== 'object') {
             throw new RuntimeException('Plugin-owned row driver rowSchema additionalProperties is only supported for object fields.');
@@ -688,6 +695,83 @@ function reprint_push_normalize_plugin_owned_row_driver_row_schema_field(array $
         $normalized['properties'] = $nested['fields'];
     }
     return $normalized;
+}
+
+function reprint_push_normalize_plugin_owned_row_driver_row_schema_field_constraint(
+    string $type,
+    array $definition
+): array {
+    $has_raw_const = array_key_exists('const', $definition);
+    $has_const_hash = array_key_exists('constHash', $definition);
+    $has_raw_enum = array_key_exists('enum', $definition);
+    $has_enum_hashes = array_key_exists('enumHashes', $definition);
+    $constraint_count = (($has_raw_const || $has_const_hash) ? 1 : 0)
+        + (($has_raw_enum || $has_enum_hashes) ? 1 : 0);
+
+    if ($constraint_count === 0) {
+        return [];
+    }
+    if (!in_array($type, ['boolean', 'integer', 'null', 'number', 'string'], true)) {
+        throw new RuntimeException('Plugin-owned row driver rowSchema const/enum constraints are only supported for scalar fields.');
+    }
+    if ($constraint_count > 1 || ($has_raw_const && $has_const_hash) || ($has_raw_enum && $has_enum_hashes)) {
+        throw new RuntimeException('Plugin-owned row driver rowSchema must declare exactly one const or enum constraint representation.');
+    }
+
+    if ($has_raw_const) {
+        $const_type = reprint_push_plugin_driver_payload_row_schema_value_type($definition['const']);
+        if ($const_type !== $type) {
+            throw new RuntimeException('Plugin-owned row driver rowSchema const value must match the field type.');
+        }
+        return [
+            'constHash' => hash('sha256', reprint_push_stable_json($definition['const'])),
+        ];
+    }
+    if ($has_const_hash) {
+        if (!reprint_push_is_sha256_hex($definition['constHash'])) {
+            throw new RuntimeException('Plugin-owned row driver rowSchema constHash must be a SHA-256 hex string.');
+        }
+        return [
+            'constHash' => (string) $definition['constHash'],
+        ];
+    }
+    if ($has_raw_enum) {
+        if (!is_array($definition['enum']) || !array_is_list($definition['enum']) || count($definition['enum']) === 0) {
+            throw new RuntimeException('Plugin-owned row driver rowSchema enum must be a non-empty array.');
+        }
+        $enum_hashes = [];
+        foreach ($definition['enum'] as $value) {
+            $value_type = reprint_push_plugin_driver_payload_row_schema_value_type($value);
+            if ($value_type !== $type) {
+                throw new RuntimeException('Plugin-owned row driver rowSchema enum values must match the field type.');
+            }
+            $enum_hashes[] = hash('sha256', reprint_push_stable_json($value));
+        }
+        $enum_hashes = array_values(array_unique($enum_hashes));
+        sort($enum_hashes, SORT_STRING);
+        return [
+            'enumHashes' => $enum_hashes,
+        ];
+    }
+
+    if (!is_array($definition['enumHashes'] ?? null) || !array_is_list($definition['enumHashes']) || count($definition['enumHashes']) === 0) {
+        throw new RuntimeException('Plugin-owned row driver rowSchema enumHashes must be a non-empty array.');
+    }
+    foreach ($definition['enumHashes'] as $hash) {
+        if (!reprint_push_is_sha256_hex($hash)) {
+            throw new RuntimeException('Plugin-owned row driver rowSchema enumHashes must contain SHA-256 hex strings.');
+        }
+    }
+    $enum_hashes = array_values(array_unique(array_map('strval', $definition['enumHashes'])));
+    sort($enum_hashes, SORT_STRING);
+    return [
+        'enumHashes' => $enum_hashes,
+    ];
+}
+
+function reprint_push_is_sha256_hex($value): bool
+{
+    return is_string($value) && preg_match('/^[a-f0-9]{64}$/', $value) === 1;
 }
 
 function reprint_push_add_wordpress_graph_contracts(array &$snapshot): void
@@ -3994,19 +4078,30 @@ function reprint_push_plugin_driver_payload_row_schema_field_evidence(
         $observed_exists = $value_is_object && array_key_exists($field_name, $value);
         $observed = $observed_exists ? $value[$field_name] : null;
         $observed_type = $observed_exists ? reprint_push_plugin_driver_payload_row_schema_value_type($observed) : null;
-        $matched = $observed_exists
+        $type_matched = $observed_exists
             ? $observed_type === (string) $field['type']
             : empty($field['required']);
+        $constraint_evidence = ($observed_exists && $type_matched)
+            ? reprint_push_plugin_driver_payload_row_schema_constraint_evidence($field, $observed)
+            : null;
+        $matched = $type_matched && ($constraint_evidence === null || !empty($constraint_evidence['matched']));
         $evidence = [
             'field' => $field_name,
             'expectedType' => (string) $field['type'],
             'required' => !empty($field['required']),
-            'state' => $observed_exists ? 'present' : 'missing',
+            'state' => ($observed_exists && $type_matched && $constraint_evidence !== null && empty($constraint_evidence['matched']))
+                ? 'constraint-mismatch'
+                : ($observed_exists ? 'present' : 'missing'),
             'observedType' => $observed_type,
             'matched' => $matched,
         ];
         if ($path_prefix !== '') {
             $evidence['path'] = $path;
+        }
+        if ($constraint_evidence !== null) {
+            $evidence['constraint'] = $constraint_evidence['constraint'];
+            $evidence['constraintHash'] = $constraint_evidence['constraintHash'];
+            $evidence['observedHash'] = $constraint_evidence['observedHash'];
         }
         $fields[] = $evidence;
         if ($matched && (string) $field['type'] === 'object' && is_array($field['properties'] ?? null)) {
@@ -4046,6 +4141,30 @@ function reprint_push_plugin_driver_payload_row_schema_field_evidence(
         }
     }
     return $fields;
+}
+
+function reprint_push_plugin_driver_payload_row_schema_constraint_evidence(
+    array $field,
+    $observed
+): ?array {
+    $observed_hash = hash('sha256', reprint_push_stable_json($observed));
+    if (isset($field['constHash'])) {
+        return [
+            'constraint' => 'const',
+            'constraintHash' => (string) $field['constHash'],
+            'observedHash' => $observed_hash,
+            'matched' => $observed_hash === (string) $field['constHash'],
+        ];
+    }
+    if (is_array($field['enumHashes'] ?? null)) {
+        return [
+            'constraint' => 'enum',
+            'constraintHash' => hash('sha256', reprint_push_stable_json($field['enumHashes'])),
+            'observedHash' => $observed_hash,
+            'matched' => in_array($observed_hash, $field['enumHashes'], true),
+        ];
+    }
+    return null;
 }
 
 function reprint_push_plugin_driver_payload_row_schema_value_type($value): string
@@ -4095,6 +4214,15 @@ function reprint_push_plugin_driver_payload_row_schema_evidence_matches(
         }
         if (array_key_exists('observedExtraPropertyCount', $field)) {
             $expected_keys[] = 'observedExtraPropertyCount';
+        }
+        if (array_key_exists('constraint', $field)) {
+            $expected_keys[] = 'constraint';
+        }
+        if (array_key_exists('constraintHash', $field)) {
+            $expected_keys[] = 'constraintHash';
+        }
+        if (array_key_exists('observedHash', $field)) {
+            $expected_keys[] = 'observedHash';
         }
         if (!is_array($field)
             || !reprint_push_array_has_exact_keys($field, $expected_keys)) {

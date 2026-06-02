@@ -14,16 +14,20 @@ The first schema language is intentionally small:
 - required row fields
 - nested object `properties`
 - `additionalProperties: false` for declared object properties
+- scalar `const` and `enum` constraints normalized to hash-only `constHash` or
+  sorted `enumHashes`
 - field types: `string`, `integer`, `number`, `boolean`, `object`, `array`,
   and `null`
 
 Planner, apply, PHP registration/export, and the RPP-0483 production-shaped
 verifier now recompute schema validation evidence. A forged ready plan that
 changes a schema-bound field type, adds an undeclared nested payload property,
-or rewrites payload evidence while recomputing the value hash still refuses
-before mutation. Unexpected nested properties are reported at the declared
-object path with `observedExtraPropertyCount`; the evidence does not name the
-raw extra keys.
+violates a scalar `const` or `enum` constraint, or rewrites payload evidence
+while recomputing the value hash still refuses before mutation. Unexpected
+nested properties are reported at the declared object path with
+`observedExtraPropertyCount`; scalar constraints are reported with
+`constraint`, `constraintHash`, and `observedHash`. The evidence does not name
+raw extra keys or copy raw constraint values.
 
 ## Verification
 
@@ -44,6 +48,7 @@ Coverage includes:
 - accepted schema-bound custom row-driver payload evidence
 - planner refusal for malformed schema contracts
 - planner refusal for row payloads with wrong schema-bound field types
+- planner refusal for row payloads with scalar constraint mismatches
 - planner refusal for undeclared nested object properties without exposing raw
   extra key names
 - apply refusal for forged ready plans with recomputed value hashes but invalid
@@ -58,6 +63,7 @@ Coverage includes:
 
 This is not a full generic plugin merge driver or JSON Schema implementation.
 It proves a plugin-declared row schema contract for required fields, nested
-object properties, and closed declared objects. Enum/const rules, merge
-strategies, activation/update effects, and broader plugin-owned file contracts
-remain separate release-scope work.
+object properties, closed declared objects, and scalar `const`/`enum`
+constraints. Merge strategies, activation/update effects, richer JSON Schema
+semantics, and broader plugin-owned file contracts remain separate
+release-scope work.

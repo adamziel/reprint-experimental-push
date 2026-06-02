@@ -11916,6 +11916,9 @@ export function summarizeProductionPluginDriverBoundaryProof({
               ...(Number.isInteger(field?.observedExtraPropertyCount)
                 ? { observedExtraPropertyCount: field.observedExtraPropertyCount }
                 : {}),
+              ...(field?.constraint ? { constraint: field.constraint } : {}),
+              ...(field?.constraintHash ? { constraintHash: field.constraintHash } : {}),
+              ...(field?.observedHash ? { observedHash: field.observedHash } : {}),
               matched: field?.matched === true,
             }))
             : [],
@@ -12124,16 +12127,27 @@ function contractBoundRowSchemaFieldEvidence({
     const observedExists = valueIsObject && Object.prototype.hasOwnProperty.call(value, field.field);
     const observed = observedExists ? value[field.field] : undefined;
     const observedType = observedExists ? contractBoundRowSchemaValueType(observed) : null;
-    const matched = observedExists
+    const typeMatched = observedExists
       ? observedType === field.type
       : field.required !== true;
+    const constraintEvidence = observedExists && typeMatched
+      ? contractBoundRowSchemaConstraintEvidence(field, observed)
+      : null;
+    const matched = typeMatched && (constraintEvidence?.matched ?? true);
     fields.push({
       field: field.field,
       ...(pathPrefix ? { path } : {}),
       expectedType: field.type,
       required: field.required === true,
-      state: observedExists ? 'present' : 'missing',
+      state: observedExists && typeMatched && constraintEvidence?.matched === false
+        ? 'constraint-mismatch'
+        : observedExists ? 'present' : 'missing',
       observedType,
+      ...(constraintEvidence ? {
+        constraint: constraintEvidence.constraint,
+        constraintHash: constraintEvidence.constraintHash,
+        observedHash: constraintEvidence.observedHash,
+      } : {}),
       matched,
     });
     if (matched && field.type === 'object' && Array.isArray(field.properties)) {
@@ -12161,6 +12175,27 @@ function contractBoundRowSchemaFieldEvidence({
     }
   }
   return fields;
+}
+
+function contractBoundRowSchemaConstraintEvidence(field, observed) {
+  const observedHash = digest(observed);
+  if (field.constHash) {
+    return {
+      constraint: 'const',
+      constraintHash: field.constHash,
+      observedHash,
+      matched: observedHash === field.constHash,
+    };
+  }
+  if (Array.isArray(field.enumHashes)) {
+    return {
+      constraint: 'enum',
+      constraintHash: digest(field.enumHashes),
+      observedHash,
+      matched: field.enumHashes.includes(observedHash),
+    };
+  }
+  return null;
 }
 
 function contractBoundRowSchemaValueType(value) {
@@ -12291,9 +12326,24 @@ function pluginDriverSchemaValidationEvidenceExactShape(evidence) {
       if (hasOwn(field, 'observedExtraPropertyCount')) {
         expectedKeys.push('observedExtraPropertyCount');
       }
+      if (hasOwn(field, 'constraint')) {
+        expectedKeys.push('constraint');
+      }
+      if (hasOwn(field, 'constraintHash')) {
+        expectedKeys.push('constraintHash');
+      }
+      if (hasOwn(field, 'observedHash')) {
+        expectedKeys.push('observedHash');
+      }
       return hasExactObjectKeys(field, expectedKeys)
         && (!hasOwn(field, 'observedExtraPropertyCount')
-          || Number.isInteger(field.observedExtraPropertyCount));
+          || Number.isInteger(field.observedExtraPropertyCount))
+        && (!hasOwn(field, 'constraint')
+          || ['const', 'enum'].includes(field.constraint))
+        && (!hasOwn(field, 'constraintHash')
+          || bareSha256Pattern.test(field.constraintHash))
+        && (!hasOwn(field, 'observedHash')
+          || bareSha256Pattern.test(field.observedHash));
     });
 }
 

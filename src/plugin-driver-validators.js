@@ -217,15 +217,22 @@ function validateContractBoundRowDriverPayload({
         ? 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_FIELD_MISSING'
         : firstMismatch?.state === 'unexpected'
           ? 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_UNEXPECTED_FIELD'
-          : 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_TYPE_MISMATCH',
+          : firstMismatch?.state === 'constraint-mismatch'
+            ? 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_CONSTRAINT_MISMATCH'
+            : 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_TYPE_MISMATCH',
       field: firstMismatch?.path || firstMismatch?.field || 'rowSchema',
       expected: firstMismatch ? {
         type: firstMismatch.expectedType,
         required: firstMismatch.required,
+        ...(firstMismatch.constraint ? {
+          constraint: firstMismatch.constraint,
+          constraintHash: firstMismatch.constraintHash,
+        } : {}),
       } : null,
       observed: firstMismatch ? {
         state: firstMismatch.state,
         type: firstMismatch.observedType,
+        ...(firstMismatch.observedHash ? { hash: firstMismatch.observedHash } : {}),
       } : null,
     });
   }
@@ -313,16 +320,27 @@ function contractBoundRowSchemaFieldEvidence({
     const observedExists = valueIsObject && Object.prototype.hasOwnProperty.call(value, field.field);
     const observed = observedExists ? value[field.field] : undefined;
     const observedType = observedExists ? contractBoundRowSchemaValueType(observed) : null;
-    const matched = observedExists
+    const typeMatched = observedExists
       ? observedType === field.type
       : field.required !== true;
+    const constraintEvidence = observedExists && typeMatched
+      ? contractBoundRowSchemaConstraintEvidence(field, observed)
+      : null;
+    const matched = typeMatched && (constraintEvidence?.matched ?? true);
     fields.push({
       field: field.field,
       ...(pathPrefix ? { path } : {}),
       expectedType: field.type,
       required: field.required === true,
-      state: observedExists ? 'present' : 'missing',
+      state: observedExists && typeMatched && constraintEvidence?.matched === false
+        ? 'constraint-mismatch'
+        : observedExists ? 'present' : 'missing',
       observedType,
+      ...(constraintEvidence ? {
+        constraint: constraintEvidence.constraint,
+        constraintHash: constraintEvidence.constraintHash,
+        observedHash: constraintEvidence.observedHash,
+      } : {}),
       matched,
     });
     if (matched && field.type === 'object' && Array.isArray(field.properties)) {
@@ -350,6 +368,27 @@ function contractBoundRowSchemaFieldEvidence({
     }
   }
   return fields;
+}
+
+function contractBoundRowSchemaConstraintEvidence(field, observed) {
+  const observedHash = digest(observed);
+  if (field.constHash) {
+    return {
+      constraint: 'const',
+      constraintHash: field.constHash,
+      observedHash,
+      matched: observedHash === field.constHash,
+    };
+  }
+  if (Array.isArray(field.enumHashes)) {
+    return {
+      constraint: 'enum',
+      constraintHash: digest(field.enumHashes),
+      observedHash,
+      matched: field.enumHashes.includes(observedHash),
+    };
+  }
+  return null;
 }
 
 function contractBoundRowSchemaValueType(value) {

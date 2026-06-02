@@ -38,7 +38,9 @@ Optional fields:
   Version 1 supports required row fields, nested object `properties`,
   `additionalProperties: false` for declared object properties, and field
   types: `string`, `integer`, `number`, `boolean`, `object`, `array`, and
-  `null`.
+  `null`. Scalar fields may also declare `const` or `enum` constraints; the
+  normalized contract stores these as `constHash` or sorted `enumHashes`, never
+  as raw values.
 - `contractHash`: stable hash of the declared resource key, owner, driver,
   table, delete support, contract kind, contract version, and optional
   normalized row schema.
@@ -61,6 +63,9 @@ that declares an explicit contract becomes strict:
 - malformed `rowSchema` objects or unsupported schema field types refuse before
   mutation with `PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA` or
   `PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA_TYPE`
+- malformed schema constraints, mixed raw/hash constraint forms, constraints on
+  non-scalar fields, or empty enum sets refuse before mutation with
+  `PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA`
 - accepted contracts emit `plugin-driver-contract-validation` evidence
 - accepted contracts must carry the expected `contractHash`, and apply
   recomputes it before trusting the evidence
@@ -117,7 +122,9 @@ shape. For custom row drivers outside the built-in driver set, apply requires:
   `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_FIELD_MISSING`; wrong field types
   refuse with `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_TYPE_MISMATCH`; extra
   object properties under `additionalProperties: false` refuse with
-  `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_UNEXPECTED_FIELD`,
+  `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_UNEXPECTED_FIELD`; scalar `const` or
+  `enum` mismatches refuse with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_CONSTRAINT_MISMATCH`,
 - accepted `contract-bound-row-driver` payload validation evidence,
 - hash-only value and contract evidence, with `rawValuesIncluded: false`,
 - carried payload evidence that matches apply's recomputed mutation action,
@@ -169,6 +176,9 @@ Schema-bound contracts also emit a hash-only `schemaValidation` object when
       "required": true,
       "state": "present",
       "observedType": "string",
+      "constraint": "enum",
+      "constraintHash": "...",
+      "observedHash": "...",
       "matched": true
     }
   ]
@@ -176,9 +186,12 @@ Schema-bound contracts also emit a hash-only `schemaValidation` object when
 ```
 
 The validation evidence reports field names, expected types, observed type
-classes, optional declared schema paths, and match booleans. It does not copy
-raw plugin row values. For undeclared object properties it reports the declared
-object path and an `observedExtraPropertyCount`, not the raw extra key names.
+classes, optional declared schema paths, hash-only constraint identities, and
+match booleans. It does not copy raw plugin row values. For undeclared object
+properties it reports the declared object path and an
+`observedExtraPropertyCount`, not the raw extra key names. For scalar `const`
+and `enum` rules it reports only `constraint`, `constraintHash`, and
+`observedHash`.
 The production-shaped RPP-0483 verifier now includes
 `payloadSchemaValidationMatchesExpected`, exact payload evidence shape checks,
 and allowlist row-schema/contract-hash binding; it refuses proofs whose value
@@ -193,8 +206,8 @@ apply them.
 The row-driver contract is the first step toward a broader plugin API. Future
 contracts should cover:
 
-- richer schema constraints such as enum/const rules
 - merge-driver conflict policies for plugin-owned payloads
+- richer JSON Schema semantics beyond scalar `const`/`enum`
 - plugin-owned files
 - plugin activation and update side effects
 - plugin-provided graph identities

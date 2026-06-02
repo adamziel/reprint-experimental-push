@@ -454,6 +454,14 @@ function normalizePluginOwnedRowDriverRowSchemaField({
     type,
     required: required === true,
   };
+  const constraints = normalizePluginOwnedRowDriverRowSchemaFieldConstraints({
+    type,
+    definition,
+  });
+  if (!constraints.valid) {
+    return constraints;
+  }
+  Object.assign(normalized, constraints.normalized);
   if (
     definition
     && typeof definition === 'object'
@@ -519,6 +527,157 @@ function normalizePluginOwnedRowDriverRowSchemaField({
   };
 }
 
+function normalizePluginOwnedRowDriverRowSchemaFieldConstraints({
+  type,
+  definition,
+}) {
+  if (!definition || typeof definition !== 'object' || Array.isArray(definition)) {
+    return { valid: true, normalized: {} };
+  }
+  const hasRawConst = hasOwn(definition, 'const');
+  const hasConstHash = hasOwn(definition, 'constHash');
+  const hasRawEnum = hasOwn(definition, 'enum');
+  const hasEnumHashes = hasOwn(definition, 'enumHashes');
+  const constraintCount = Number(hasRawConst || hasConstHash) + Number(hasRawEnum || hasEnumHashes);
+  if (constraintCount === 0) {
+    return { valid: true, normalized: {} };
+  }
+  if (!SUPPORTED_ROW_SCHEMA_CONSTRAINT_TYPES.has(type)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: 'const or enum constraints only on scalar fields',
+      observed: type ?? null,
+    };
+  }
+  if (constraintCount > 1 || (hasRawConst && hasConstHash) || (hasRawEnum && hasEnumHashes)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: 'exactly one const or enum constraint representation',
+      observed: 'multiple constraints',
+    };
+  }
+  if (hasRawConst) {
+    const constType = rowSchemaConstraintValueType(definition.const);
+    if (constType !== type) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+        required: `${type} const value`,
+        observed: constType,
+      };
+    }
+    return {
+      valid: true,
+      normalized: {
+        constHash: digest(definition.const),
+      },
+    };
+  }
+  if (hasConstHash) {
+    if (!isSha256Hex(definition.constHash)) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+        required: 'sha256 constHash',
+        observed: definition.constHash ?? null,
+      };
+    }
+    return {
+      valid: true,
+      normalized: {
+        constHash: definition.constHash,
+      },
+    };
+  }
+  if (hasRawEnum) {
+    if (!Array.isArray(definition.enum) || definition.enum.length === 0) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+        required: 'non-empty enum array',
+        observed: Array.isArray(definition.enum) ? 0 : typeof definition.enum,
+      };
+    }
+    const enumHashes = [];
+    for (const value of definition.enum) {
+      const valueType = rowSchemaConstraintValueType(value);
+      if (valueType !== type) {
+        return {
+          valid: false,
+          normalized: null,
+          reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+          required: `${type} enum values`,
+          observed: valueType,
+        };
+      }
+      enumHashes.push(digest(value));
+    }
+    return {
+      valid: true,
+      normalized: {
+        enumHashes: [...new Set(enumHashes)].sort(),
+      },
+    };
+  }
+  if (!Array.isArray(definition.enumHashes) || definition.enumHashes.length === 0) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: 'non-empty enumHashes array',
+      observed: Array.isArray(definition.enumHashes) ? 0 : typeof definition.enumHashes,
+    };
+  }
+  if (!definition.enumHashes.every(isSha256Hex)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: 'sha256 enumHashes',
+      observed: 'invalid enum hash',
+    };
+  }
+  return {
+    valid: true,
+    normalized: {
+      enumHashes: [...new Set(definition.enumHashes)].sort(),
+    },
+  };
+}
+
+function rowSchemaConstraintValueType(value) {
+  if (value === null) {
+    return 'null';
+  }
+  if (Number.isInteger(value)) {
+    return 'integer';
+  }
+  if (typeof value === 'number') {
+    return 'number';
+  }
+  if (typeof value === 'boolean') {
+    return 'boolean';
+  }
+  if (typeof value === 'string') {
+    return 'string';
+  }
+  if (Array.isArray(value)) {
+    return 'array';
+  }
+  return typeof value;
+}
+
+function isSha256Hex(value) {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+
 const SUPPORTED_ROW_SCHEMA_TYPES = new Set([
   'array',
   'boolean',
@@ -526,6 +685,14 @@ const SUPPORTED_ROW_SCHEMA_TYPES = new Set([
   'null',
   'number',
   'object',
+  'string',
+]);
+
+const SUPPORTED_ROW_SCHEMA_CONSTRAINT_TYPES = new Set([
+  'boolean',
+  'integer',
+  'null',
+  'number',
   'string',
 ]);
 

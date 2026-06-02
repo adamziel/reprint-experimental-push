@@ -33,6 +33,10 @@ function sha256Evidence(value) {
   return sha256String(stableStringify(value));
 }
 
+function digest(value) {
+  return createHash('sha256').update(stableStringify(value)).digest('hex');
+}
+
 function assertSha256Evidence(value) {
   assert.match(value, sha256Pattern);
 }
@@ -361,16 +365,22 @@ reprint_push_register_plugin_owned_row_driver([
         'required' => ['id', 'payload', '__pluginOwner'],
         'fields' => [
             'id' => 'integer',
-            'payload' => [
-                'type' => 'object',
-                'required' => ['mode', 'version'],
-                'additionalProperties' => false,
-                'properties' => [
-                    'mode' => 'string',
-                    'version' => 'integer',
-                ],
-            ],
-            '__pluginOwner' => 'string',
+	        'payload' => [
+	            'type' => 'object',
+	            'required' => ['mode', 'version'],
+	            'additionalProperties' => false,
+	            'properties' => [
+	                'mode' => [
+	                    'type' => 'string',
+	                    'enum' => ['schema-bound-private-mode', 'schema-bound-private-alt-mode'],
+	                ],
+	                'version' => [
+	                    'type' => 'integer',
+	                    'const' => 1,
+	                ],
+	            ],
+	        ],
+	        '__pluginOwner' => 'string',
         ],
     ],
     'exportRowsCallback' => 'rpp_driver_api_export_rows',
@@ -436,8 +446,21 @@ echo json_encode([
           required: true,
           additionalProperties: false,
           properties: [
-            { field: 'mode', type: 'string', required: true },
-            { field: 'version', type: 'integer', required: true },
+            {
+              field: 'mode',
+              type: 'string',
+              required: true,
+              enumHashes: [
+                digest('schema-bound-private-alt-mode'),
+                digest('schema-bound-private-mode'),
+              ].sort(),
+            },
+            {
+              field: 'version',
+              type: 'integer',
+              required: true,
+              constHash: digest(1),
+            },
           ],
         },
       ],
@@ -782,8 +805,14 @@ $row_schema = [
             'required' => ['mode', 'version'],
             'additionalProperties' => false,
             'properties' => [
-                'mode' => 'string',
-                'version' => 'integer',
+                'mode' => [
+                    'type' => 'string',
+                    'enum' => ['schema-bound-private-mode', 'schema-bound-private-alt-mode'],
+                ],
+                'version' => [
+                    'type' => 'integer',
+                    'const' => 1,
+                ],
             ],
         ],
         '__pluginOwner' => 'string',
@@ -826,33 +855,51 @@ $base_mutation = [
 ];
 $forged_schema_payload = $base_mutation;
 $forged_schema_payload['value']['value']['payload']['private_note'] = 'schema-bound-private-payload';
-$forged_schema_payload['pluginOwnedResource'] = rpp_schema_bound_policy(
-    $resource_key,
+	$forged_schema_payload['pluginOwnedResource'] = rpp_schema_bound_policy(
+	    $resource_key,
     'wp_fixture_schema_bound_rows',
     'fixture-schema-bound-plugin',
-    'fixture-schema-bound-driver',
-    false,
-    'put',
-    $forged_schema_payload['value']['value'],
-    $row_schema
-);
+	    'fixture-schema-bound-driver',
+	    false,
+	    'put',
+	    $forged_schema_payload['value']['value'],
+	    $row_schema
+	);
+	$forged_constraint_payload = $base_mutation;
+	$forged_constraint_payload['value']['value']['payload']['mode'] = 'schema-bound-private-forged-mode';
+	$forged_constraint_payload['pluginOwnedResource'] = rpp_schema_bound_policy(
+	    $resource_key,
+	    'wp_fixture_schema_bound_rows',
+	    'fixture-schema-bound-plugin',
+	    'fixture-schema-bound-driver',
+	    false,
+	    'put',
+	    $forged_constraint_payload['value']['value'],
+	    $row_schema
+	);
 
-echo json_encode([
-    'accepted' => rpp_driver_api_capture(static function () use ($base_mutation, $snapshot): bool {
-        reprint_push_assert_supported_plugin_owned_mutation($base_mutation, $snapshot);
-        return true;
+	echo json_encode([
+	    'accepted' => rpp_driver_api_capture(static function () use ($base_mutation, $snapshot): bool {
+	        reprint_push_assert_supported_plugin_owned_mutation($base_mutation, $snapshot);
+	        return true;
     }),
-    'forgedSchemaPayload' => rpp_driver_api_capture(static function () use ($forged_schema_payload, $snapshot): bool {
-        reprint_push_assert_supported_plugin_owned_mutation($forged_schema_payload, $snapshot);
-        return true;
-    }),
-    'schemaValidation' => $forged_schema_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['schemaValidation'],
-    'normalizedSchema' => $base_mutation['pluginOwnedResource']['contractValidationEvidence']['rowSchema'],
-]);
+	    'forgedSchemaPayload' => rpp_driver_api_capture(static function () use ($forged_schema_payload, $snapshot): bool {
+	        reprint_push_assert_supported_plugin_owned_mutation($forged_schema_payload, $snapshot);
+	        return true;
+	    }),
+	    'forgedConstraintPayload' => rpp_driver_api_capture(static function () use ($forged_constraint_payload, $snapshot): bool {
+	        reprint_push_assert_supported_plugin_owned_mutation($forged_constraint_payload, $snapshot);
+	        return true;
+	    }),
+	    'schemaValidation' => $forged_schema_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['schemaValidation'],
+	    'constraintValidation' => $forged_constraint_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['schemaValidation'],
+	    'normalizedSchema' => $base_mutation['pluginOwnedResource']['contractValidationEvidence']['rowSchema'],
+	]);
 `);
 
   assert.deepEqual(report.accepted, { ok: true, value: true });
-  assert.equal(report.forgedSchemaPayload.ok, false);
+	  assert.equal(report.forgedSchemaPayload.ok, false);
+	  assert.equal(report.forgedConstraintPayload.ok, false);
   assert.equal(
     report.forgedSchemaPayload.error.message,
     'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_schema_bound_rows","id:7"]',
@@ -872,19 +919,52 @@ echo json_encode([
     },
   );
   assert.equal(JSON.stringify(report.schemaValidation).includes('private_note'), false);
-  assert.deepEqual(
-    report.normalizedSchema.fields.find((field) => field.field === 'payload'),
-    {
-      field: 'payload',
-      type: 'object',
-      required: true,
-      additionalProperties: false,
-      properties: [
-        { field: 'mode', type: 'string', required: true },
-        { field: 'version', type: 'integer', required: true },
-      ],
-    },
-  );
-  assert.equal(JSON.stringify(report).includes('schema-bound-private-mode'), false);
-  assert.equal(JSON.stringify(report).includes('schema-bound-private-payload'), false);
-});
+	  assert.deepEqual(
+	    report.normalizedSchema.fields.find((field) => field.field === 'payload'),
+	    {
+	      field: 'payload',
+	      type: 'object',
+	      required: true,
+	      additionalProperties: false,
+	      properties: [
+	        {
+	          field: 'mode',
+	          type: 'string',
+	          required: true,
+	          enumHashes: [
+	            digest('schema-bound-private-alt-mode'),
+	            digest('schema-bound-private-mode'),
+	          ].sort(),
+	        },
+	        {
+	          field: 'version',
+	          type: 'integer',
+	          required: true,
+	          constHash: digest(1),
+	        },
+	      ],
+	    },
+	  );
+	  assert.deepEqual(
+	    report.constraintValidation.fields.find((field) => field.path === 'payload.mode'),
+	    {
+	      field: 'mode',
+	      path: 'payload.mode',
+	      expectedType: 'string',
+	      required: true,
+	      state: 'constraint-mismatch',
+	      observedType: 'string',
+	      constraint: 'enum',
+	      constraintHash: digest([
+	        digest('schema-bound-private-alt-mode'),
+	        digest('schema-bound-private-mode'),
+	      ].sort()),
+	      observedHash: digest('schema-bound-private-forged-mode'),
+	      matched: false,
+	    },
+	  );
+	  assert.equal(JSON.stringify(report).includes('schema-bound-private-mode'), false);
+	  assert.equal(JSON.stringify(report).includes('schema-bound-private-alt-mode'), false);
+	  assert.equal(JSON.stringify(report).includes('schema-bound-private-forged-mode'), false);
+	  assert.equal(JSON.stringify(report).includes('schema-bound-private-payload'), false);
+	});
