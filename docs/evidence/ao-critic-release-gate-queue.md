@@ -33,6 +33,6 @@ Release posture: **NO-GO**
 4. Add a negative `RPP-0040` check for forged verify-release evidence where
    `mutationAttempted: true` or the status marker is missing/malformed.
 5. Keep `NO-GO` / `PRODUCTION_EVIDENCE_REQUIRED` wording adjacent to any
-   synthetic `20/20` or `release-ready` marker in release-gate docs.
+   synthetic `21/21` or `release-ready` marker in release-gate docs.
 
 No checklist item should move from this critic pass alone.

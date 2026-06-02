@@ -43,6 +43,7 @@ const expectedOpenProductionProofGapIds = Object.freeze([
   'apply-route-pre-mutation',
   'journal-route-read-only',
   'recovery-inspect-read-only',
+  'storage-boundary-cas',
   'tmux-status-marker',
   'progress-release-timestamp',
   'agents-release-gates-row',

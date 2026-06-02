@@ -21,6 +21,7 @@ const releaseBoundaryProvenanceCategories = new Set([
   'identity',
   'route',
   'recovery',
+  'storage',
   'operator-proof',
 ]);
 
@@ -79,8 +80,8 @@ function completeEvidence(scope, overrides = {}) {
     tmuxStatusMarker: {
       ok: true,
       marker: scope === 'final-release'
-        ? '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]'
-        : '[release-gates:candidate-for-review final=0/20 candidate=20/20 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]',
+        ? '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]'
+        : '[release-gates:candidate-for-review final=0/21 candidate=21/21 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -89,6 +90,15 @@ function completeEvidence(scope, overrides = {}) {
       ok: true,
       exitCode: 1,
       reason: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+      scope,
+    },
+    storageBoundaryCas: {
+      ok: true,
+      casBound: true,
+      allFinalWritesGuarded: true,
+      storageBoundaryRevalidated: true,
+      staleAtWriteRejected: true,
+      observed: 'all-final-target-writes-storage-boundary-cas-guarded',
       scope,
     },
     ...overrides,
@@ -219,7 +229,7 @@ test('release gate CLI fails closed with JSON and named missing evidence buckets
       ['remote-changed-url', 'REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED', 'REPRINT_PUSH_REMOTE_CHANGED_URL'],
     ],
   );
-  assert.match(report.statusMarker, /^\[release-gates-ci:held final=\d+\/20 candidate=\d+\/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED\]$/);
+  assert.match(report.statusMarker, /^\[release-gates-ci:held final=\d+\/21 candidate=\d+\/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED\]$/);
 });
 
 test('release gate CLI does not inflate complete local candidate evidence into release readiness', () => {
@@ -234,9 +244,9 @@ test('release gate CLI does not inflate complete local candidate evidence into r
   assert.equal(report.status, 'candidate-for-review');
   assert.equal(report.candidateMovement.allowed, true);
   assert.equal(report.releaseMovement.allowed, false);
-  assert.equal(report.releaseMovement.finalGates, '0/20');
-  assert.equal(report.releaseMovement.candidateGates, '20/20');
-  assert.equal(report.missingProductionEvidenceBuckets.reduce((sum, bucket) => sum + bucket.gateCount, 0), 20);
+  assert.equal(report.releaseMovement.finalGates, '0/21');
+  assert.equal(report.releaseMovement.candidateGates, '21/21');
+  assert.equal(report.missingProductionEvidenceBuckets.reduce((sum, bucket) => sum + bucket.gateCount, 0), 21);
   assert.ok(
     report.missingProductionEvidenceBuckets.every((bucket) => bucket.gates.every((gate) => gate.status === 'candidate')),
     'candidate gates must still be reported as missing production evidence',
@@ -260,13 +270,14 @@ test('release gate CLI keeps synthetic final release evidence at NO-GO without p
   assert.equal(report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(report.releaseEvidenceProvenance.required, true);
   assert.equal(report.releaseEvidenceProvenance.ready, false);
-  assert.equal(report.releaseEvidenceProvenance.requiredEvidenceIds.length, 19);
+  assert.equal(report.releaseEvidenceProvenance.requiredEvidenceIds.length, 20);
   assert.ok(report.releaseEvidenceProvenance.requiredEvidenceIds.includes('release-gate:application-password-binding'));
   assert.ok(report.releaseEvidenceProvenance.requiredEvidenceIds.includes('release-gate:preflight-route-identity'));
   assert.ok(report.releaseEvidenceProvenance.requiredEvidenceIds.includes('release-gate:journal-route-read-only'));
+  assert.ok(report.releaseEvidenceProvenance.requiredEvidenceIds.includes('release-gate:storage-boundary-cas'));
   assert.equal(report.releaseEvidenceProvenance.requiredEvidenceIds.includes('release-gate:release-movement-summary'), false);
   const provenanceBucket = report.missingProductionEvidenceBuckets.find((bucket) => bucket.bucket === 'provenance');
-  assert.equal(provenanceBucket.gateCount, 19);
+  assert.equal(provenanceBucket.gateCount, 20);
   assert.ok(provenanceBucket.gates.every((gate) => gate.code === 'PRODUCTION_EVIDENCE_REQUIRED'));
 });
 
@@ -305,8 +316,8 @@ test('release gate CLI keeps stale or local-only production-required provenance 
     ],
   );
   assert.deepEqual(report.releaseEvidenceProvenance.summary.productionRequired, {
-    total: 19,
-    accepted: 17,
+    total: 20,
+    accepted: 18,
     rejected: 2,
   });
 });
@@ -336,9 +347,9 @@ test('release gate CLI rejects production-run provenance for final production ev
   assert.equal(report.releaseEvidenceProvenance.required, true);
   assert.equal(report.releaseEvidenceProvenance.ready, false);
   assert.deepEqual(report.releaseEvidenceProvenance.summary.productionRequired, {
-    total: 19,
+    total: 20,
     accepted: 0,
-    rejected: 19,
+    rejected: 20,
   });
 });
 
@@ -376,8 +387,8 @@ test('release gate CLI rejects arbitrary provenance subject hashes even when fin
     ['release-gate:source-url', 'SUBJECT_HASH_MISMATCH'],
   ]);
   assert.deepEqual(report.releaseEvidenceProvenance.summary.productionRequired, {
-    total: 19,
-    accepted: 18,
+    total: 20,
+    accepted: 19,
     rejected: 1,
   });
 });
@@ -417,10 +428,10 @@ test('release gate CLI fails closed on same source URL drift with final brackete
     reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
   });
   assert.equal(report.releaseMovement.allowed, false);
-  assert.equal(report.releaseMovement.finalGates, '19/20');
+  assert.equal(report.releaseMovement.finalGates, '20/21');
   assert.equal(
     report.statusMarker,
-    '[release-gates-ci:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]',
+    '[release-gates-ci:held final=20/21 candidate=20/21 reason=SAME_SOURCE_IDENTITY_REQUIRED]',
   );
   assert.deepEqual(report.missingProductionEvidenceBuckets, [
     {
@@ -450,7 +461,7 @@ test('release gate CLI fails closed on same source URL drift with final brackete
 });
 
 test('release gate CLI emits tmux-visible proof status marker for RPP-0037', () => {
-  const tmuxMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+  const tmuxMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
   const evidenceFile = writeEvidence({
     scope: 'final-release',
     evidence: completeEvidence('final-release', {
@@ -477,7 +488,7 @@ test('release gate CLI emits tmux-visible proof status marker for RPP-0037', () 
     reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
   });
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
   assert.equal(report.statusMarker, tmuxMarker);
   assert.ok(result.stdout.includes(tmuxMarker), 'stdout should expose the final bracketed marker for tmux capture');
   assert.deepEqual(gate, {
@@ -516,14 +527,14 @@ test('release gate CLI exits zero only when final release evidence and provenanc
   assert.equal(report.releaseStatus, 'GO');
   assert.equal(report.status, 'release-ready');
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.gates, '20/20');
+  assert.equal(report.releaseMovement.gates, '21/21');
   assert.deepEqual(report.missingProductionEvidenceBuckets, []);
   assert.equal(report.primaryFailureCode, null);
   assert.equal(report.releaseEvidenceProvenance.required, true);
   assert.equal(report.releaseEvidenceProvenance.ready, true);
   assert.deepEqual(report.releaseEvidenceProvenance.summary.productionRequired, {
-    total: 19,
-    accepted: 19,
+    total: 20,
+    accepted: 20,
     rejected: 0,
   });
 });

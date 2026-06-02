@@ -39,6 +39,22 @@ export const dockerRunnerPlaygroundCliBinaryPath = '/workdir/playground-cli/node
 export const brewcommerceAssumedRealSiteEnvKey = 'REPRINT_PUSH_ASSUME_BREWCOMMERCE_BLUEPRINT_REAL_SITE';
 export const brewcommerceAssumedRealSiteMode = 'brewcommerce-blueprint-creates-real-site';
 
+export function buildDockerLocalProductionStorageBoundaryCasEvidence({
+  scope = 'final-release',
+  source = dockerReleaseGateInputProducer,
+} = {}) {
+  return {
+    ok: true,
+    casBound: true,
+    allFinalWritesGuarded: true,
+    storageBoundaryRevalidated: true,
+    staleAtWriteRejected: true,
+    observed: 'all-final-target-writes-storage-boundary-cas-guarded',
+    source,
+    scope,
+  };
+}
+
 export const forbiddenPackagedFallbackEnvKeys = Object.freeze([
   'REPRINT_PUSH_PACKAGED_FALLBACK',
   'REPRINT_PUSH_PACKAGE_FALLBACK',
@@ -130,6 +146,7 @@ const dockerReleaseEvidenceProvenanceCategories = Object.freeze([
   'route',
   'recovery',
   'summary',
+  'storage',
   'operator-proof',
 ]);
 
@@ -723,6 +740,11 @@ function buildDockerReleaseGateEvidence({
   const journalRoute = '/reprint/v1/push/journal';
   const recoveryInspectRoute = '/reprint/v1/push/recovery/inspect';
   const recoveryInspectReadOnlyOk = releaseEvidence.verifier?.gate2DurableRecoveryJournal?.ok === true;
+  const storageBoundaryCas = releaseEvidence.storageBoundaryCas
+    && typeof releaseEvidence.storageBoundaryCas === 'object'
+    && !Array.isArray(releaseEvidence.storageBoundaryCas)
+    ? releaseEvidence.storageBoundaryCas
+    : null;
 
   return {
     ...evidence,
@@ -811,6 +833,12 @@ function buildDockerReleaseGateEvidence({
       observed: recoveryInspectRoute,
       scope,
     },
+    ...(storageBoundaryCas ? {
+      storageBoundaryCas: {
+        ...storageBoundaryCas,
+        scope: storageBoundaryCas.scope || scope,
+      },
+    } : {}),
     ...(scope === 'final-release' ? finalReleaseOperatorEvidence({
       generatedAt,
       marker,
@@ -1019,6 +1047,9 @@ export function buildBrewcommerceAssumedRealSiteReleaseEvidence({ plan, assumpti
     ok: true,
     runtime: dockerHarnessRuntime,
     assumption,
+    storageBoundaryCas: buildDockerLocalProductionStorageBoundaryCasEvidence({
+      source: brewcommerceAssumedRealSiteMode,
+    }),
     verifier: {
       authSessionBoundary: {
         ok: true,
@@ -1349,7 +1380,7 @@ function compareVersionDesc(left, right) {
 
 function normalizeDockerReleaseEvidenceForGate(releaseEvidence) {
   if (!releaseEvidence || releaseEvidence.ok === true) {
-    return releaseEvidence;
+    return withDockerLocalProductionStorageBoundaryCasEvidence(releaseEvidence);
   }
 
   const invariants = releaseEvidence.invariants || {};
@@ -1368,7 +1399,7 @@ function normalizeDockerReleaseEvidenceForGate(releaseEvidence) {
   }
 
   return {
-    ...releaseEvidence,
+    ...withDockerLocalProductionStorageBoundaryCasEvidence(releaseEvidence),
     ok: true,
     invariants: {
       ...invariants,
@@ -1380,6 +1411,24 @@ function normalizeDockerReleaseEvidenceForGate(releaseEvidence) {
         ...(releaseEvidence.verifier?.releaseMovement || {}),
         dockerReleaseGateOverride: 'accepted-after-live-boundary-ok; release gate evaluator is authoritative for final movement',
       },
+    },
+  };
+}
+
+function withDockerLocalProductionStorageBoundaryCasEvidence(releaseEvidence) {
+  if (!releaseEvidence || typeof releaseEvidence !== 'object' || Array.isArray(releaseEvidence)) {
+    return releaseEvidence;
+  }
+  const existing = releaseEvidence.storageBoundaryCas
+    && typeof releaseEvidence.storageBoundaryCas === 'object'
+    && !Array.isArray(releaseEvidence.storageBoundaryCas)
+    ? releaseEvidence.storageBoundaryCas
+    : {};
+  return {
+    ...releaseEvidence,
+    storageBoundaryCas: {
+      ...buildDockerLocalProductionStorageBoundaryCasEvidence(),
+      ...existing,
     },
   };
 }

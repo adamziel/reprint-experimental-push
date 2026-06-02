@@ -20,8 +20,8 @@ const remoteChangedUrl = 'https://changed.example.test/push';
 const checkedUser = 'admin';
 const secretValue = 'RPP_0100_SHOULD_NOT_LEAK';
 const verifierStatusMarker = '[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]';
-const releaseGateReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
-const releaseGateHeldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=VERIFY_RELEASE_FAILURE_REASON_REQUIRED]';
+const releaseGateReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const releaseGateHeldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=VERIFY_RELEASE_FAILURE_REASON_REQUIRED]';
 const requiredVerifyFailureEvidence = 'nonzero verify:release exit with named reason';
 const focusedCommand = 'umask 0022 && node --test test/release-verifier-failure-reason-carry-through-focused-regression.test.js';
 
@@ -169,6 +169,7 @@ function completeFinalEvidence(overrides = {}) {
       sourceUrl,
       scope,
     },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: tmuxStatusMarkerEvidence(verifierStatusMarker),
     progressReleaseTimestamp: { iso: fixedNow, scope },
     agentsReleaseGateStatusRow: { ok: true, present: true, observed: 'release-gates-status-row-no-go', scope },
@@ -398,7 +399,7 @@ test('release verifier carries verify:release nonzero failure reason and final m
   assert.equal(releaseGateReport.statusMarker, releaseGateReadyMarker);
   assert.ok(releaseGateResult.stdout.includes(releaseGateReadyMarker));
   assert.equal(releaseGateReport.releaseMovement.allowed, true);
-  assert.equal(releaseGateReport.releaseMovement.finalGates, '20/20');
+  assert.equal(releaseGateReport.releaseMovement.finalGates, '21/21');
   assert.equal(releaseGateReport.mutationAttempted, false);
   assert.deepEqual(releaseGateReport.mutationPolicy, expectedMutationPolicy);
   assert.deepEqual(verifyFailureGate.evidence, {
@@ -435,7 +436,7 @@ test('release verifier carries verify:release nonzero failure reason and final m
   assert.equal(missingReasonReport.statusMarker, releaseGateHeldMarker);
   assert.ok(missingReasonResult.stdout.includes(releaseGateHeldMarker));
   assert.equal(missingReasonReport.releaseMovement.allowed, false);
-  assert.equal(missingReasonReport.releaseMovement.finalGates, '19/20');
+  assert.equal(missingReasonReport.releaseMovement.finalGates, '20/21');
   assert.equal(missingReasonReport.mutationAttempted, false);
   assert.deepEqual(missingReasonReport.mutationPolicy, expectedMutationPolicy);
   assert.equal(missingReasonGate.status, 'failed');

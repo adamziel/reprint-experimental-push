@@ -362,8 +362,8 @@ test('RPP-0991 evidence blocks release movement without production-backed repair
   assert.equal(result.report.gateState, 'held');
   assert.equal(result.report.mutationAttempted, false);
   assert.equal(result.report.releaseMovement.allowed, false);
-  assert.equal(result.report.releaseMovement.finalGates, '3/20');
-  assert.equal(result.report.releaseMovement.candidateGates, '3/20');
+  assert.equal(result.report.releaseMovement.finalGates, '3/21');
+  assert.equal(result.report.releaseMovement.candidateGates, '3/21');
   assert.equal(result.report.statusMarker, report.releaseGateSnapshot.statusMarker);
   assert.deepEqual(result.report.totals, report.releaseGateSnapshot.totals);
 

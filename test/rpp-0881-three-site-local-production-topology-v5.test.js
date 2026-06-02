@@ -160,12 +160,12 @@ test('RPP-0881 carries release verifier through three-site topology v5 fail-clos
   assert.equal(proof.releaseGate.candidateMovementAllowed, false);
   assert.equal(proof.releaseGate.primaryFailureCode, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
   assert.deepEqual(proof.releaseGate.releaseGateTotals, {
-    gates: 20,
+    gates: 21,
     passed: 0,
     candidate: 5,
-    missing: 15,
+    missing: 16,
     failed: 0,
-    blocking: 20,
+    blocking: 21,
   });
   assert.equal(proof.evidenceLimits.mode, 'hash-count-surface-only');
   assert.equal(proof.evidenceLimits.rawPayloadCount, 0);

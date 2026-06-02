@@ -147,9 +147,9 @@ mutation, changes no release gate status file, and keeps final release at
     "expectedGateState": "candidate-for-review",
     "expectedCandidateMovementAllowed": true,
     "expectedReleaseMovementAllowed": false,
-    "expectedFinalGates": "0/20",
-    "expectedCandidateGates": "20/20",
-    "expectedStatusMarker": "[release-gates-ci:candidate-for-review final=0/20 candidate=20/20 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]",
+    "expectedFinalGates": "0/21",
+    "expectedCandidateGates": "21/21",
+    "expectedStatusMarker": "[release-gates-ci:candidate-for-review final=0/21 candidate=21/21 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]",
     "expectedFinalReleaseStatus": "NO-GO"
   },
   "finalReleaseEvaluator": {
@@ -158,11 +158,11 @@ mutation, changes no release gate status file, and keeps final release at
     "observedReleaseStatus": "NO-GO",
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "primaryFailureBucket": "topology",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20"
+    "finalGates": "3/21",
+    "candidateGates": "3/21"
   },
   "statusRowReadback": {
     "path": ".agents/RELEASE_GATES.md",
@@ -222,7 +222,7 @@ remains blocked and final release remains **NO-GO**.
 | --- | --- | --- |
 | Audited commit | `git rev-parse HEAD` | `5b286eb425951efffda6a06618255cc1f8d718cc` before adding this evidence |
 | Gate status row readback | `node scripts/release/agents-release-gates-status-row.mjs .agents/RELEASE_GATES.md` | `releaseVerdict` `0/4`, release status `NO-GO`, all four gates `support_only` |
-| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T02:25:00.000Z` | exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, final `3/20` |
+| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T02:25:00.000Z` | exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, final `3/21` |
 | Focused syntax check | `node --check test/rpp-0927-security-review-checklist-v2.test.js` | JavaScript syntax accepted |
 | Focused RPP-0927 regression | `node --test --test-name-pattern RPP-0927 test/rpp-0927-security-review-checklist-v2.test.js` | support evidence cannot move final release and final release stays `NO-GO` |
 | Evidence redaction scan | `node scripts/release/artifact-redaction-scan.mjs docs/evidence/rpp-0927-security-review-checklist-v2.md` | evidence artifact scans cleanly |

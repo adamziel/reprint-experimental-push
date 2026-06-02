@@ -35,6 +35,7 @@ const expectedFinalReleaseRiskIds = [
   'apply-route-pre-mutation',
   'journal-route-read-only',
   'recovery-inspect-read-only',
+  'storage-boundary-cas',
   'tmux-status-marker',
   'progress-release-timestamp',
   'agents-release-gates-row',
@@ -47,6 +48,7 @@ const expectedProofClasses = [
   'identity',
   'route',
   'recovery',
+  'storage',
   'operator-proof',
 ];
 
@@ -140,17 +142,17 @@ test('RPP-0970 v4 closes no risk without production-backed closure proof', () =>
 
   assert.equal(record.goNoGoRecord.decision, 'NO-GO');
   assert.equal(record.goNoGoRecord.productionClosureProofObserved, false);
-  assert.equal(record.goNoGoRecord.remainingRiskCount, 29);
+  assert.equal(record.goNoGoRecord.remainingRiskCount, 30);
   assert.equal(record.goNoGoRecord.closedRiskCount, 0);
-  assert.equal(record.goNoGoRecord.namedOrClosedRiskCount, 29);
+  assert.equal(record.goNoGoRecord.namedOrClosedRiskCount, 30);
   assert.equal(record.goNoGoRecord.closureBlocked, true);
   assert.equal(record.goNoGoRecord.proofClassActionMapComplete, true);
   assert.equal(record.goNoGoRecord.releaseGateStatusMovement, 'none');
   assert.deepEqual(record.closedRisks, []);
-  assert.equal(allRisks.length, 29);
-  assert.equal(uniqueRiskIds.size, 29);
-  assert.equal(openRisks.length, 29);
-  assert.equal(releaseBlockers.length, 29);
+  assert.equal(allRisks.length, 30);
+  assert.equal(uniqueRiskIds.size, 30);
+  assert.equal(openRisks.length, 30);
+  assert.equal(releaseBlockers.length, 30);
   assert.match(record.goNoGoRecord.dispositionRule, /remains open unless production-backed closure proof closes it/);
 
   for (const risk of record.closedRisks) {
@@ -229,9 +231,9 @@ test('RPP-0970 v4 final-release evaluator remains held without production closur
   assert.equal(result.report.statusMarker, record.releaseGateSnapshot.statusMarker);
   assert.equal(result.report.mutationAttempted, false);
   assert.equal(result.report.releaseMovement.allowed, false);
-  assert.equal(result.report.releaseMovement.finalGates, '3/20');
-  assert.equal(result.report.releaseMovement.candidateGates, '3/20');
-  assert.equal(result.report.totals.blocking, 17);
+  assert.equal(result.report.releaseMovement.finalGates, '3/21');
+  assert.equal(result.report.releaseMovement.candidateGates, '3/21');
+  assert.equal(result.report.totals.blocking, 18);
 });
 
 function loadEvidence(filePath) {

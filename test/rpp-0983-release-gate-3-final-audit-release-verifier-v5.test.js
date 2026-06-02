@@ -31,7 +31,7 @@ const topologyEvidenceIds = [
   'release-gate:local-url',
   'release-gate:remote-changed-url',
 ];
-const releaseReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=OK]';
+const releaseReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=OK]';
 const mutationPolicy = {
   readOnly: true,
   reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
@@ -66,6 +66,7 @@ function completeFinalEvidence(options = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'recovery-inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: { ok: true, marker, scope },
     progressReleaseTimestamp: { iso: fixedNow, scope },
     agentsReleaseGateStatusRow: readAgentsReleaseGatesStatusRow({
@@ -224,7 +225,7 @@ function topologyProvenanceFailClosedCases() {
 }
 
 function markerFor(reason) {
-  return `[release-gates-ci:held final=19/20 candidate=19/20 reason=${reason}]`;
+  return `[release-gates-ci:held final=20/21 candidate=20/21 reason=${reason}]`;
 }
 
 function operatorProofProvenanceRows(failureReason) {
@@ -403,8 +404,8 @@ function assertHeldTopologyGate(result, expected) {
   assert.equal(report.primaryFailureBucket, 'topology');
   assert.equal(report.primaryFailureCode, expected.code);
   assert.equal(report.releaseMovement.allowed, false);
-  assert.equal(report.releaseMovement.finalGates, '19/20');
-  assert.equal(report.releaseMovement.candidateGates, '19/20');
+  assert.equal(report.releaseMovement.finalGates, '20/21');
+  assert.equal(report.releaseMovement.candidateGates, '20/21');
   assert.equal(report.statusMarker, markerFor(expected.code));
   assert.ok(result.stdout.includes(markerFor(expected.code)), 'stdout JSON must expose the held CI marker');
   assert.equal(report.mutationAttempted, false);
@@ -439,8 +440,8 @@ function assertTopologyProvenanceBlocksRelease(result, expected) {
   assert.equal(report.primaryFailureBucket, 'provenance');
   assert.equal(report.primaryFailureCode, expected.expectedCode);
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
-  assert.equal(report.releaseMovement.candidateGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
+  assert.equal(report.releaseMovement.candidateGates, '21/21');
   assert.equal(report.mutationAttempted, false);
   assert.deepEqual(report.mutationPolicy, mutationPolicy);
   assert.equal(report.releaseEvidenceProvenance.required, true);

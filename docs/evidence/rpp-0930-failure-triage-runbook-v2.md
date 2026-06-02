@@ -44,10 +44,10 @@ open and the final release verdict stays **NO-GO**.
     "failureTriageRiskRegisterComplete": true,
     "finalReleaseRiskRegisterComplete": true,
     "remainingFailureTriageRiskCount": 12,
-    "remainingFinalReleaseRiskCount": 17,
-    "remainingRiskCount": 29,
+    "remainingFinalReleaseRiskCount": 18,
+    "remainingRiskCount": 30,
     "closedRiskCount": 0,
-    "namedOrClosedRiskCount": 29,
+    "namedOrClosedRiskCount": 30,
     "dispositionRule": "Each RPP-0930 failure-triage or final-release risk remains open unless production-backed closure proof closes it."
   },
   "failureTriageRiskRegister": [
@@ -330,6 +330,18 @@ open and the final release verdict stays **NO-GO**.
       "closureRequired": "Production-backed recovery inspect read-only evidence supplied to the final release evaluator."
     },
     {
+      "id": "storage-boundary-cas",
+      "rpp": "RPP-0021",
+      "category": "storage",
+      "title": "Storage-boundary CAS proof",
+      "code": "STORAGE_BOUNDARY_CAS_REQUIRED",
+      "disposition": "open",
+      "releaseBlocker": true,
+      "productionBackedClosureObserved": false,
+      "namedRisk": "Storage-boundary CAS proof is required for every final target write before release movement.",
+      "closureRequired": "Production-backed evidence that every final target write is guarded at the storage boundary, revalidated before mutation, and rejects stale-at-write attempts."
+    },
+    {
       "id": "tmux-status-marker",
       "rpp": "RPP-0017",
       "category": "operator-proof",
@@ -436,6 +448,13 @@ open and the final release verdict stays **NO-GO**.
       ]
     },
     {
+      "bucket": "storage",
+      "riskCount": 1,
+      "riskIds": [
+        "storage-boundary-cas"
+      ]
+    },
+    {
       "bucket": "operator-proof",
       "riskCount": 4,
       "riskIds": [
@@ -452,12 +471,12 @@ open and the final release verdict stays **NO-GO**.
     "releaseStatus": "NO-GO",
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "primaryFailureBucket": "topology",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20",
-    "blockingRiskCount": 17
+    "finalGates": "3/21",
+    "candidateGates": "3/21",
+    "blockingRiskCount": 18
   },
   "statusRowReadback": {
     "command": "node scripts/release/agents-release-gates-status-row.mjs .agents/RELEASE_GATES.md",
@@ -506,7 +525,7 @@ was observed, so the record closes zero risks and keeps each risk open.
 | Purpose | Exact command | Expected result |
 | --- | --- | --- |
 | Audited commit | `git rev-parse HEAD` | `8ca2573ada0a344735cb0c78560d7dabd4c403a2` before adding this evidence |
-| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T02:30:00.000Z` | exit `1`, final release `NO-GO`, 17 blocking final-release risks, no mutation |
+| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T02:30:00.000Z` | exit `1`, final release `NO-GO`, 18 blocking final-release risks, no mutation |
 | Release-gate status row readback | `node scripts/release/agents-release-gates-status-row.mjs .agents/RELEASE_GATES.md` | release verdict `0/4`, all gates `support_only`, release status `NO-GO` |
 | Syntax check | `node --check test/rpp-0930-failure-triage-runbook-v2.test.js` | JavaScript syntax accepted |
 | Focused RPP-0930 regression | `node --test --test-name-pattern RPP-0930 test/rpp-0930-failure-triage-runbook-v2.test.js` | evidence names all remaining failure-triage and final-release risks and keeps them open |

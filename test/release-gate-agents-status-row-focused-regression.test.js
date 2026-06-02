@@ -21,8 +21,8 @@ const localUrl = 'https://local.example.test/push';
 const remoteChangedUrl = 'https://changed.example.test/push';
 const fixedNow = '2026-05-28T03:19:00.000Z';
 const focusedCommand = 'node --test test/release-gate-agents-status-row-focused-regression.test.js test/release-gates-status-row.test.js test/release-gate-status-row-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js';
-const finalMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
-const dishonestMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=AGENTS_RELEASE_GATES_ROW_REQUIRED]';
+const finalMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const dishonestMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=AGENTS_RELEASE_GATES_ROW_REQUIRED]';
 const requiredStatusRowEvidence = ['machine-readable release gate status row'];
 const expectedStatusRow = {
   ok: true,
@@ -63,6 +63,7 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: { ok: true, marker: finalMarker, scope },
     progressReleaseTimestamp: { iso: fixedNow, scope },
     agentsReleaseGateStatusRow: expectedStatusRow,
@@ -156,8 +157,8 @@ test('focused .agents status row regression rejects dishonest release verdict fo
   assert.equal(report.statusMarker, dishonestMarker);
   assert.ok(result.stdout.includes(dishonestMarker), 'stdout JSON must expose the dishonest-row held marker');
   assert.equal(report.releaseMovement.allowed, false);
-  assert.equal(report.releaseMovement.finalGates, '19/20');
-  assert.equal(report.releaseMovement.candidateGates, '19/20');
+  assert.equal(report.releaseMovement.finalGates, '20/21');
+  assert.equal(report.releaseMovement.candidateGates, '20/21');
   assert.equal(report.mutationAttempted, false);
   assert.deepEqual(report.mutationPolicy, {
     readOnly: true,
@@ -231,7 +232,7 @@ test('focused .agents status row regression records matrix while release stays N
   assert.equal(report.statusMarker, finalMarker);
   assert.ok(result.stdout.includes(finalMarker), 'stdout JSON must expose the generated status-row final marker');
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
   assert.equal(report.mutationAttempted, false);
   assert.deepEqual(gate.evidence, {
     ...expectedStatusRow,

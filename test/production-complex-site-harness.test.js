@@ -8,6 +8,7 @@ import {
   brewcommerceAssumedRealSiteEnvKey,
   brewcommerceAssumedRealSiteMode,
   buildDockerLocalProductionReleaseEvidenceProvenance,
+  buildDockerLocalProductionStorageBoundaryCasEvidence,
   buildDockerTopologyPlan,
   buildPrerequisiteGateArtifact,
   dockerRunnerAuthSessionSourceScriptPath,
@@ -41,6 +42,23 @@ const graphEnv = Object.freeze({
   REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF: '1',
   REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF: '1',
 });
+
+function buildPassedDockerReleaseEvidence() {
+  return {
+    ok: true,
+    storageBoundaryCas: buildDockerLocalProductionStorageBoundaryCasEvidence(),
+    verifier: {
+      authSessionBoundary: { manageOptions: true },
+      gate2DurableRecoveryJournal: { ok: true },
+      boundary: { verdict: 'LIVE_RELEASE_BOUNDARY_OK' },
+    },
+    invariants: {
+      receiptHashPresent: true,
+      applyRevalidationCoveredEveryMutation: true,
+      durableJournalGateOk: true,
+    },
+  };
+}
 
 test('Docker prerequisite probe fails closed when the Docker CLI is missing', () => {
   const probe = probeDockerPrerequisites({
@@ -384,7 +402,7 @@ test('Fail-closed release gate artifact is deterministic enough for audit input'
   assert.equal(artifact.releaseGateEvaluation.primaryFailureCode, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
   assert.match(
     artifact.releaseGateEvaluation.statusMarker,
-    /^\[docker-local-production-release-gates:held final=\d+\/20 candidate=\d+\/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED\]$/,
+    /^\[docker-local-production-release-gates:held final=\d+\/21 candidate=\d+\/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED\]$/,
   );
   assert.match(artifact.deterministic.canonicalSha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(validateReleaseGateArtifact(artifact), {
@@ -414,19 +432,7 @@ test('Passed Docker release artifact records verify:release topology without pac
       throw new Error(`Unexpected args: ${args.join(' ')}`);
     },
   });
-  const releaseEvidence = {
-    ok: true,
-    verifier: {
-      authSessionBoundary: { manageOptions: true },
-      gate2DurableRecoveryJournal: { ok: true },
-      boundary: { verdict: 'LIVE_RELEASE_BOUNDARY_OK' },
-    },
-    invariants: {
-      receiptHashPresent: true,
-      applyRevalidationCoveredEveryMutation: true,
-      durableJournalGateOk: true,
-    },
-  };
+  const releaseEvidence = buildPassedDockerReleaseEvidence();
   const releaseEvidenceProvenance = buildDockerLocalProductionReleaseEvidenceProvenance({
     generatedAt: '2026-05-28T00:00:00.000Z',
   });
@@ -456,9 +462,9 @@ test('Passed Docker release artifact records verify:release topology without pac
   assert.equal(artifact.evidence.dockerVerifyReleaseTopology.releaseCommandIsVerifyRelease, true);
   assert.equal(artifact.evidence.dockerVerifyReleaseTopology.topologyVariant, dockerTopologyVariant);
   assert.equal(artifact.releaseGateEvaluation.releaseMovement.allowed, true);
-  assert.equal(artifact.releaseGateEvaluation.totals.passed, 20);
-  assert.equal(artifact.releaseEvidenceProvenance.requiredProductionEvidence.length, 20);
-  assert.equal(artifact.releaseEvidenceProvenance.evidenceRows.length, 20);
+  assert.equal(artifact.releaseGateEvaluation.totals.passed, 21);
+  assert.equal(artifact.releaseEvidenceProvenance.requiredProductionEvidence.length, 21);
+  assert.equal(artifact.releaseEvidenceProvenance.evidenceRows.length, 21);
   assert.equal(
     artifact.releaseEvidenceProvenance.evidenceRows.every((row) => row.sourceKind === 'local-candidate'),
     true,
@@ -500,9 +506,9 @@ test('Passed Docker release artifact records verify:release topology without pac
   assert.equal(gateResult.report.releaseEvidenceProvenance.required, true);
   assert.equal(gateResult.report.releaseEvidenceProvenance.ready, false);
   assert.deepEqual(gateResult.report.releaseEvidenceProvenance.summary.productionRequired, {
-    total: 20,
+    total: 21,
     accepted: 0,
-    rejected: 20,
+    rejected: 21,
   });
 });
 
@@ -522,19 +528,7 @@ test('Docker local release provenance cannot be upgraded to production by caller
       throw new Error(`Unexpected args: ${args.join(' ')}`);
     },
   });
-  const releaseEvidence = {
-    ok: true,
-    verifier: {
-      authSessionBoundary: { manageOptions: true },
-      gate2DurableRecoveryJournal: { ok: true },
-      boundary: { verdict: 'LIVE_RELEASE_BOUNDARY_OK' },
-    },
-    invariants: {
-      receiptHashPresent: true,
-      applyRevalidationCoveredEveryMutation: true,
-      durableJournalGateOk: true,
-    },
-  };
+  const releaseEvidence = buildPassedDockerReleaseEvidence();
   const forgedProductionProvenance = buildDockerLocalProductionReleaseEvidenceProvenance({
     generatedAt: '2026-05-28T00:00:00.000Z',
   });
@@ -695,8 +689,8 @@ test('Assumed BrewCommerce real-site path stays fail-closed without Docker execu
   assert.equal(artifact.evidence.dockerVerifyReleaseTopology.topologyValidationOk, true);
   assert.equal(artifact.releaseGateEvaluation.ok, false);
   assert.equal(artifact.releaseGateEvaluation.releaseMovement.allowed, false);
-  assert.equal(artifact.releaseEvidenceProvenance.requiredProductionEvidence.length, 20);
-  assert.equal(artifact.releaseEvidenceProvenance.evidenceRows.length, 20);
+  assert.equal(artifact.releaseEvidenceProvenance.requiredProductionEvidence.length, 21);
+  assert.equal(artifact.releaseEvidenceProvenance.evidenceRows.length, 21);
   assert.equal(validateReleaseGateArtifact(artifact).ok, true);
 
   const gateResult = runReleaseGateCli([
@@ -718,9 +712,9 @@ test('Assumed BrewCommerce real-site path stays fail-closed without Docker execu
   assert.equal(gateResult.report.releaseMovement.allowed, false);
   assert.equal(gateResult.report.releaseEvidenceProvenance.required, true);
   assert.equal(gateResult.report.releaseEvidenceProvenance.ready, false);
-  assert.equal(gateResult.report.releaseEvidenceProvenance.summary.productionRequired.total, 20);
+  assert.equal(gateResult.report.releaseEvidenceProvenance.summary.productionRequired.total, 21);
   assert.equal(gateResult.report.releaseEvidenceProvenance.summary.productionRequired.accepted, 0);
-  assert.equal(gateResult.report.releaseEvidenceProvenance.summary.productionRequired.rejected, 20);
+  assert.equal(gateResult.report.releaseEvidenceProvenance.summary.productionRequired.rejected, 21);
 });
 
 test('Runner planner proof script preserves the docker runtime and env-shaped complex fixture', () => {

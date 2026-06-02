@@ -67,7 +67,7 @@ The focused test covers these surfaces:
 The variant-5 wrapper evaluates the local release-gate contract and stores only
 a sanitized projection: gate ids, status counts, topology gate statuses, route
 gate statuses, missing final-release gate ids, and hashes. The accepted fixture
-records 15 local-candidate gates out of 20 release gates and keeps the release
+records 15 local-candidate gates out of 21 release gates and keeps the release
 state held because final-release evidence is absent.
 
 The carried topology gates are `source-url`, `local-url`,

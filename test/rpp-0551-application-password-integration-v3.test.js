@@ -22,9 +22,9 @@ const checkedSecret = 'RPP_0551_CHECKED_SHOULD_NOT_LEAK';
 const driftedSecret = 'RPP_0551_DRIFTED_SHOULD_NOT_LEAK';
 const rotatedSecret = 'RPP_0551_ROTATED_SHOULD_NOT_LEAK';
 const requiredApplicationPasswordEvidence = ['Application Password bound to checked source identity'];
-const releaseGateReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
-const applicationPasswordHeldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=APPLICATION_PASSWORD_BINDING_REQUIRED]';
-const readbackHeldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED]';
+const releaseGateReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const applicationPasswordHeldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=APPLICATION_PASSWORD_BINDING_REQUIRED]';
+const readbackHeldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED]';
 const liveSourceHeldMarker = '[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]';
 const mutationPolicy = Object.freeze({
   readOnly: true,
@@ -60,9 +60,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -489,7 +490,7 @@ test('RPP-0551 generated positive Application Password binding/readback remains 
   assert.equal(report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(report.statusMarker, releaseGateReadyMarker);
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
   assert.equal(report.mutationAttempted, false);
   assert.deepEqual(bindingGate, {
     id: 'application-password-binding',
@@ -580,9 +581,9 @@ test('RPP-0551 generated Application Password binding negatives fail exact gates
     assert.deepEqual(report.releaseMovement, {
       allowed: false,
       state: 'held',
-      gates: '19/20',
-      finalGates: '19/20',
-      candidateGates: '19/20',
+      gates: '20/21',
+      finalGates: '20/21',
+      candidateGates: '20/21',
       reason: 'Application Password credential binding drifted from the checked source identity.',
       missingEvidence: [
         {

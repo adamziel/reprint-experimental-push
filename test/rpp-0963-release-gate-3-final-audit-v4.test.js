@@ -60,6 +60,7 @@ function completeFinalEvidence(options = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'recovery-inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: { ok: true, marker, scope },
     progressReleaseTimestamp: { iso: fixedNow, scope },
     agentsReleaseGateStatusRow: readAgentsReleaseGatesStatusRow({
@@ -171,7 +172,7 @@ function topologyFailClosedCases() {
 }
 
 function markerFor(reason) {
-  return `[release-gates-ci:held final=19/20 candidate=19/20 reason=${reason}]`;
+  return `[release-gates-ci:held final=20/21 candidate=20/21 reason=${reason}]`;
 }
 
 function operatorProofProvenanceRows(failureReason) {
@@ -316,8 +317,8 @@ function assertHeldTopologyGate(result, expected) {
   assert.equal(report.primaryFailureBucket, 'topology');
   assert.equal(report.primaryFailureCode, expected.code);
   assert.equal(report.releaseMovement.allowed, false);
-  assert.equal(report.releaseMovement.finalGates, '19/20');
-  assert.equal(report.releaseMovement.candidateGates, '19/20');
+  assert.equal(report.releaseMovement.finalGates, '20/21');
+  assert.equal(report.releaseMovement.candidateGates, '20/21');
   assert.equal(report.statusMarker, markerFor(expected.code));
   assert.ok(result.stdout.includes(markerFor(expected.code)), 'stdout JSON must expose the held CI marker');
   assert.equal(report.mutationAttempted, false);

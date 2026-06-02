@@ -74,7 +74,9 @@ Observed smoke summary:
     "status": 400,
     "code": "PACKAGED_LAB_CONTROL_REJECTED",
     "mutationAttempted": false,
-    "rejectedControls": ["labDriftBeforeStorageWrite"],
+    "rejectedControls": [
+      "labDriftBeforeStorageWrite"
+    ],
     "targetSnapshotUnchanged": true
   },
   "coreDbFileGuardedApply": {

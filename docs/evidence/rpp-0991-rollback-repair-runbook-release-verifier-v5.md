@@ -359,18 +359,18 @@ rollback or repair proof and makes no release-gate status movement.
     "primaryFailureBucket": "topology",
     "status": "held",
     "gateState": "held",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20",
+    "finalGates": "3/21",
+    "candidateGates": "3/21",
     "totals": {
-      "gates": 20,
+      "gates": 21,
       "passed": 3,
       "candidate": 0,
-      "missing": 17,
+      "missing": 18,
       "failed": 0,
-      "blocking": 17
+      "blocking": 18
     }
   },
   "auditCommands": [

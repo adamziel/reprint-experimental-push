@@ -225,12 +225,12 @@ route bodies, credential material, or remote tunnel output.
     "releaseMovementAllowed": false,
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "releaseGateTotals": {
-      "gates": 20,
+      "gates": 21,
       "passed": 0,
       "candidate": 5,
-      "missing": 15,
+      "missing": 16,
       "failed": 0,
-      "blocking": 20
+      "blocking": 21
     },
     "requiredCarryThrough": [
       "npm-run-verify-release-carried-through-by-topology-command",
@@ -324,7 +324,7 @@ route bodies, credential material, or remote tunnel output.
       "integrationRecommendation"
     ]
   },
-  "scopeComparisonHash": "851114a0c53f3efba7368e6b43376cc30bdf07fe3cebc9cdd4a4d575b0b09fbc",
+  "scopeComparisonHash": "8df90e8f8d12cf27ba4239dfce0544520ed51506873e7ffdcf3d2ec31360ffc6",
   "validation": {
     "commands": [
       {

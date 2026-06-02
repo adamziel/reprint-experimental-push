@@ -36,12 +36,48 @@ Observed deterministic coverage:
 {
   "totalGeneratedCases": 80,
   "targets": {
-    "serialized-options": { "total": 20, "statuses": { "conflict": 10, "ready": 10 } },
-    "wp-posts": { "total": 20, "statuses": { "conflict": 10, "ready": 10 } },
-    "plugin-owned-options": { "total": 20, "statuses": { "conflict": 10, "ready": 10 } },
-    "users-usermeta-graph": { "total": 20, "statuses": { "blocked": 3, "conflict": 7, "ready": 10 } }
+    "serialized-options": {
+      "total": 20,
+      "statuses": {
+        "conflict": 10,
+        "ready": 10
+      }
+    },
+    "wp-posts": {
+      "total": 20,
+      "statuses": {
+        "conflict": 10,
+        "ready": 10
+      }
+    },
+    "plugin-owned-options": {
+      "total": 20,
+      "statuses": {
+        "conflict": 10,
+        "ready": 10
+      }
+    },
+    "users-usermeta-graph": {
+      "total": 20,
+      "statuses": {
+        "blocked": 3,
+        "conflict": 7,
+        "ready": 10
+      }
+    }
   },
-  "perTier": { "0": 2, "1": 2, "2": 2, "3": 2, "4": 2, "5": 2, "6": 2, "7": 2, "8": 2, "9": 2 }
+  "perTier": {
+    "0": 2,
+    "1": 2,
+    "2": 2,
+    "3": 2,
+    "4": 2,
+    "5": 2,
+    "6": 2,
+    "7": 2,
+    "8": 2,
+    "9": 2
+  }
 }
 ```
 

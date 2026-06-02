@@ -20,8 +20,8 @@ const secretReason = 'A live source URL is present but production credentials or
 const verifierReason = 'explicit live source URL is present but production credentials are missing';
 const focusedCommand = 'node --test test/release-verifier-missing-production-secret-carry-through-focused-regression.test.js test/release-gate-missing-production-secret-regression.test.js test/release-gate-missing-production-secret-generated.test.js test/release-verifier-auth-source-readback-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js';
 const statusMarker = '[verify-release:held exit=1 reason=REPRINT_PUSH_SECRET_REQUIRED mutationAttempted=false]';
-const releaseGateHeldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_SECRET_REQUIRED]';
-const releaseGateReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const releaseGateHeldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=REPRINT_PUSH_SECRET_REQUIRED]';
+const releaseGateReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
 
 const expectedSecretEvidence = {
   required: [
@@ -78,6 +78,7 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
       marker: releaseGateReadyMarker,
@@ -395,9 +396,9 @@ test('release verifier carries missing production secret through before mutation
   assert.deepEqual(releaseGateReport.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: secretReason,
     missingEvidence: [
       {
@@ -427,7 +428,7 @@ test('release verifier missing production secret carry-through keeps credential-
   assert.equal(releaseGateReport.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(releaseGateReport.statusMarker, releaseGateReadyMarker);
   assert.equal(releaseGateReport.releaseMovement.allowed, true);
-  assert.equal(releaseGateReport.releaseMovement.finalGates, '20/20');
+  assert.equal(releaseGateReport.releaseMovement.finalGates, '21/21');
   assert.equal(releaseGateReport.mutationAttempted, false);
   assert.equal(secretGate.status, 'passed');
   assert.equal(secretGate.code, 'OK');

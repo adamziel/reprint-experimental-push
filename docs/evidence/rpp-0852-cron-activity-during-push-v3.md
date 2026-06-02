@@ -54,7 +54,7 @@ Final release status and integration recommendation remain **NO-GO**.
     "topologyCommand": "npm run verify:release:docker-local-production",
     "runtime": "docker-local-wordpress",
     "gate": "GATE-3",
-    "artifactHash": "42b4752b7679ac5523d94eccf158dd35abf6afab8e933e7d56f9cc599adb980e"
+    "artifactHash": "85aad4796990e5203c3be06f4fe392b9676423fc454abf3fe05b99be355f122d"
   },
   "successContract": {
     "criterion": "verify-release-passes-on-cron-active-current-topology-without-packaged-fallback-or-exact-unavailable-capability",
@@ -307,7 +307,7 @@ Final release status and integration recommendation remain **NO-GO**.
     "supportOnlyNoGo": true,
     "productionBackedArtifactRequiredBeforeRelease": true
   },
-  "supportReportHash": "sha256:bc9802ef3bb911c225a7b828afbee2468807a0ff26fc09e5cbe5b7ac88c95a20"
+  "supportReportHash": "sha256:6ab7a219a4e11be818a2f57f0c0f500ef3519afbc1bd2aaf0666a3aaad9ad206"
 }
 ```
 

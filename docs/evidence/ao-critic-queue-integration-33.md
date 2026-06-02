@@ -5,7 +5,7 @@ was restacked after RPP-0340 landed.
 
 Current verified truth after refresh: `origin/lane/evidence-integration-20260527`
 is `5fcd3008e`; checklist lint is `126 checked / 874 open`; release remains
-`NO-GO` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` and `3/20` final gates.
+`NO-GO` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` and `3/21` final gates.
 
 Findings:
 

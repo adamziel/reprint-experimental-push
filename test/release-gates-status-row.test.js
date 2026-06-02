@@ -44,9 +44,10 @@ function completeEvidence(scope = 'final-release', overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow.toISOString(), scope },
@@ -154,7 +155,7 @@ test('.agents/RELEASE_GATES.md status row scenario matrix remains honest and NO-
   assert.equal(negative.report.primaryFailureBucket, 'operator-proof');
   assert.equal(negative.report.primaryFailureCode, 'AGENTS_RELEASE_GATES_ROW_REQUIRED');
   assert.equal(negative.report.releaseMovement.allowed, false);
-  assert.equal(negative.report.releaseMovement.finalGates, '19/20');
+  assert.equal(negative.report.releaseMovement.finalGates, '20/21');
   assert.equal(negative.report.mutationAttempted, false);
   assert.equal(negativeGate.status, 'failed');
   assert.equal(negativeGate.code, 'AGENTS_RELEASE_GATES_ROW_REQUIRED');
@@ -173,7 +174,7 @@ test('.agents/RELEASE_GATES.md status row scenario matrix remains honest and NO-
   assert.equal(positive.report.primaryFailureBucket, 'provenance');
   assert.equal(positive.report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(positive.report.releaseMovement.allowed, true);
-  assert.equal(positive.report.releaseMovement.finalGates, '20/20');
+  assert.equal(positive.report.releaseMovement.finalGates, '21/21');
   assert.equal(positive.report.mutationAttempted, false);
   assert.equal(positiveGate.status, 'passed');
   assert.equal(positiveGate.code, 'OK');

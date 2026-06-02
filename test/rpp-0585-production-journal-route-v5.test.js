@@ -31,7 +31,7 @@ const rawPayload = 'rpp-0585-private-payload-value';
 const rawOptionValue = 'rpp-0585-private-option-value';
 const proofCapturedAt = '2026-05-31T13:00:00Z';
 const fixedNow = '2026-05-31T13:00:00.000Z';
-const releaseGateHeldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=JOURNAL_ROUTE_READ_ONLY_REQUIRED]';
+const releaseGateHeldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=JOURNAL_ROUTE_READ_ONLY_REQUIRED]';
 const requiredJournalRouteEvidence = ['journal route read-only proof'];
 const hashPattern = /^[a-f0-9]{64}$/;
 
@@ -913,9 +913,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]',
+      marker: '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -1059,8 +1060,8 @@ function assertHeldJournalRouteGate(result, expectedObserved) {
     reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
   });
   assert.equal(report.releaseMovement.allowed, false);
-  assert.equal(report.releaseMovement.finalGates, '19/20');
-  assert.equal(report.releaseMovement.candidateGates, '19/20');
+  assert.equal(report.releaseMovement.finalGates, '20/21');
+  assert.equal(report.releaseMovement.candidateGates, '20/21');
   assert.equal(report.evaluation.gates.filter((entry) => entry.status !== 'passed').length, 1);
   assert.equal(gate.code, 'JOURNAL_ROUTE_READ_ONLY_REQUIRED');
   assert.equal(gate.blocking, true);

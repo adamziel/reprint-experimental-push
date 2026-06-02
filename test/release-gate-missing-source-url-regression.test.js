@@ -13,7 +13,7 @@ const sourceUrl = 'https://source.example.test/push';
 const localUrl = 'https://local.example.test/push';
 const remoteChangedUrl = 'https://changed.example.test/push';
 const secretValue = 'RPP_0061_SHOULD_NOT_LEAK';
-const expectedMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]';
+const expectedMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]';
 const expectedMissingSourceEvidence = {
   required: 'REPRINT_PUSH_SOURCE_URL',
   observed: 'missing-live-source',
@@ -45,9 +45,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -154,9 +155,9 @@ test('missing REPRINT_PUSH_SOURCE_URL checked command fails closed without mutat
   assert.deepEqual(report.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: 'REPRINT_PUSH_SOURCE_URL is required before release gates can run preflight, dry-run, apply, or recovery.',
     missingEvidence: [
       {

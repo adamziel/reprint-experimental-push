@@ -63,6 +63,9 @@
     "verify:release:docker-local-production": "node ./scripts/docker/production-complex-site-harness.mjs",
     "test:docker:production-complex-site-harness": "node --test test/production-complex-site-harness.test.js",
     "check:release-gates": "node ./scripts/release/check-release-gates.mjs",
+    "refresh:progress-surface": "node ./scripts/release/refresh-progress-surface.mjs",
+    "refresh:progress-surface:watch": "node ./scripts/release/refresh-progress-surface.mjs --watch --interval-ms 600000",
+    "check:progress-surface": "node ./scripts/release/refresh-progress-surface.mjs --check",
     "publish:progress-page": "node ./scripts/release/publish-progress-page.mjs",
     "publish:progress-page:dry-run": "node ./scripts/release/publish-progress-page.mjs --dry-run"
   },

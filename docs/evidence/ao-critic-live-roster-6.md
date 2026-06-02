@@ -10,7 +10,7 @@ Release remains **NO-GO**.
 
 Evidence from this critic pass:
 
-- `check-release-gates` exits `1` with primary code `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, 20 total gates, 3 green gates, and 17 blocking missing gates.
+- `check-release-gates` exits `1` with primary code `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, 21 total gates, 3 green gates, and 18 blocking missing gates.
 - `required-release-checks-report` exits `1` with 10 required observation rows missing.
 - Checklist linter reports 94 checked / 906 open with no risky claims.
 - Artifact redaction scan over docs/evidence, audits, progress docs, supervisor feedback, and progress HTML reports 0 rejected files.

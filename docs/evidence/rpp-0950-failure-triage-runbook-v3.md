@@ -46,10 +46,10 @@ safe operator actions are non-mutating, and the final release verdict stays
     "failureTriageRiskRegisterComplete": true,
     "finalReleaseRiskRegisterComplete": true,
     "remainingFailureTriageRiskCount": 12,
-    "remainingFinalReleaseRiskCount": 17,
-    "remainingRiskCount": 29,
+    "remainingFinalReleaseRiskCount": 18,
+    "remainingRiskCount": 30,
     "closedRiskCount": 0,
-    "namedOrClosedRiskCount": 29,
+    "namedOrClosedRiskCount": 30,
     "closureBlocked": true,
     "closureBlockReason": "Production-backed closure proof is absent for every remaining final-release and failure-triage risk.",
     "proofClassActionMapComplete": true,
@@ -336,6 +336,18 @@ safe operator actions are non-mutating, and the final release verdict stays
       "closureRequired": "Production-backed recovery inspect read-only evidence supplied to the final release evaluator."
     },
     {
+      "id": "storage-boundary-cas",
+      "rpp": "RPP-0021",
+      "category": "storage",
+      "title": "Storage-boundary CAS proof",
+      "code": "STORAGE_BOUNDARY_CAS_REQUIRED",
+      "disposition": "open",
+      "releaseBlocker": true,
+      "productionBackedClosureObserved": false,
+      "namedRisk": "Storage-boundary CAS proof is required for every final target write before release movement.",
+      "closureRequired": "Production-backed evidence that every final target write is guarded at the storage boundary, revalidated before mutation, and rejects stale-at-write attempts."
+    },
+    {
       "id": "tmux-status-marker",
       "rpp": "RPP-0017",
       "category": "operator-proof",
@@ -442,6 +454,13 @@ safe operator actions are non-mutating, and the final release verdict stays
       ]
     },
     {
+      "bucket": "storage",
+      "riskCount": 1,
+      "riskIds": [
+        "storage-boundary-cas"
+      ]
+    },
+    {
       "bucket": "operator-proof",
       "riskCount": 4,
       "riskIds": [
@@ -517,6 +536,17 @@ safe operator actions are non-mutating, and the final release verdict stays
       "releasePosture": "NO-GO"
     },
     {
+      "proofClass": "storage",
+      "riskIds": [
+        "storage-boundary-cas"
+      ],
+      "failureSignal": "Storage-boundary CAS proof is missing for one or more final target writes.",
+      "safeOperatorAction": "Preserve storage guard evidence and require production-backed stale-at-write rejection proof before closure.",
+      "prohibitedAction": "Do not treat planner-level hashes, support-only smokes, or fixture CAS evidence as production storage closure proof.",
+      "closureRule": "Block closure until production-backed storage-boundary CAS proof closes the listed risk.",
+      "releasePosture": "NO-GO"
+    },
+    {
       "proofClass": "operator-proof",
       "riskIds": [
         "tmux-status-marker",
@@ -537,12 +567,12 @@ safe operator actions are non-mutating, and the final release verdict stays
     "releaseStatus": "NO-GO",
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "primaryFailureBucket": "topology",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20",
-    "blockingRiskCount": 17
+    "finalGates": "3/21",
+    "candidateGates": "3/21",
+    "blockingRiskCount": 18
   },
   "statusRowReadback": {
     "command": "node scripts/release/agents-release-gates-status-row.mjs .agents/RELEASE_GATES.md",
@@ -581,8 +611,8 @@ safe operator actions are non-mutating, and the final release verdict stays
 
 ## Audit finding
 
-The final go/no-go record names all 29 remaining risks: 12 failure-triage
-risks carried through the RPP-0930 runbook v2 pattern and 17 final-release
+The final go/no-go record names all 30 remaining risks: 12 failure-triage
+risks carried through the RPP-0930 runbook v2 pattern and 18 final-release
 risks from the current go/no-go decision record. No production-backed closure
 proof was observed, so the record closes zero risks, blocks closure for every
 remaining risk, and maps each failing final-release proof class to safe
@@ -593,7 +623,7 @@ non-mutating operator action.
 | Purpose | Exact command | Expected result |
 | --- | --- | --- |
 | Audited commit | `git rev-parse HEAD` | `0099a1920c0b9b61a4835867b04422e3abcdce69` before adding this evidence |
-| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T03:10:00.000Z` | exit `1`, final release `NO-GO`, 17 blocking final-release risks, no mutation |
+| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T03:10:00.000Z` | exit `1`, final release `NO-GO`, 18 blocking final-release risks, no mutation |
 | Release-gate status row readback | `node scripts/release/agents-release-gates-status-row.mjs .agents/RELEASE_GATES.md` | release verdict `0/4`, all gates `support_only`, release status `NO-GO` |
 | Syntax check | `node --check test/rpp-0950-failure-triage-runbook-v3.test.js` | JavaScript syntax accepted |
 | Focused RPP-0950 regression | `node --test --test-name-pattern RPP-0950 test/rpp-0950-failure-triage-runbook-v3.test.js` | evidence names all remaining risks, maps failing proof classes to safe action, and keeps them open |

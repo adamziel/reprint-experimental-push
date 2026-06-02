@@ -12,7 +12,7 @@ Checklist snapshot: linter parses 113 checked / 887 open; checklist header still
   origin lane is `c3b151b5d`, which includes `RPP-0219` raw-value redaction
   support.
 - `check-release-gates` still exits `1` with primary code
-  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, and 3/20
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, and 3/21
   gates.
 - `origin/session/rpp-28-rpp-0219-integration-20260528` matches the current lane
   head exactly.

@@ -9,7 +9,7 @@ Write scope: support-only decision evidence and focused regression test.
 ## Evidence verdict
 
 This evidence confirms that the final go/no-go decision record names the current
-17 remaining final-release risks and keeps all of them open. No
+18 remaining final-release risks and keeps all of them open. No
 production-backed closure proof was observed, no risk was closed, and final
 release remains `NO-GO`.
 
@@ -38,18 +38,18 @@ release remains `NO-GO`.
     "releaseStatus": "NO-GO",
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "primaryFailureBucket": "topology",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20",
+    "finalGates": "3/21",
+    "candidateGates": "3/21",
     "totals": {
-      "gates": 20,
+      "gates": 21,
       "passed": 3,
       "candidate": 0,
-      "missing": 17,
+      "missing": 18,
       "failed": 0,
-      "blocking": 17
+      "blocking": 18
     }
   },
   "goNoGoRecord": {
@@ -57,9 +57,9 @@ release remains `NO-GO`.
     "reason": "Production-backed closure proof is absent for every remaining blocking final-release risk.",
     "productionClosureProofObserved": false,
     "riskRegisterComplete": true,
-    "remainingRiskCount": 17,
+    "remainingRiskCount": 18,
     "closedRiskCount": 0,
-    "namedOrClosedRiskCount": 17,
+    "namedOrClosedRiskCount": 18,
     "dispositionRule": "Each remaining release risk remains open unless production-backed closure proof closes it."
   },
   "missingProductionEvidenceBuckets": [
@@ -104,6 +104,13 @@ release remains `NO-GO`.
       "gateIds": [
         "journal-route-read-only",
         "recovery-inspect-read-only"
+      ]
+    },
+    {
+      "bucket": "storage",
+      "gateCount": 1,
+      "gateIds": [
+        "storage-boundary-cas"
       ]
     },
     {
@@ -275,6 +282,18 @@ release remains `NO-GO`.
       "closureRequired": "Production-backed recovery inspect read-only evidence supplied to the final release evaluator."
     },
     {
+      "id": "storage-boundary-cas",
+      "rpp": "RPP-0021",
+      "category": "storage",
+      "title": "Storage-boundary CAS proof",
+      "code": "STORAGE_BOUNDARY_CAS_REQUIRED",
+      "disposition": "open",
+      "releaseBlocker": true,
+      "productionBackedClosureObserved": false,
+      "namedRisk": "Storage-boundary CAS proof is required for every final target write before release movement.",
+      "closureRequired": "Production-backed evidence that every final target write is guarded at the storage boundary, revalidated before mutation, and rejects stale-at-write attempts."
+    },
+    {
       "id": "tmux-status-marker",
       "rpp": "RPP-0017",
       "category": "operator-proof",
@@ -352,7 +371,7 @@ release remains `NO-GO`.
 | Purpose | Exact command | Expected result |
 | --- | --- | --- |
 | Audited commit | `git rev-parse HEAD` | `a53973083198269d2e4f653b423a0681a0c471ee` before adding this evidence |
-| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T04:50:00.000Z` | exit `1`, final release `NO-GO`, 17 blocking risks, no mutation |
+| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T04:50:00.000Z` | exit `1`, final release `NO-GO`, 18 blocking risks, no mutation |
 | Focused RPP-0980 regression | `node --test --test-name-pattern RPP-0980 test/rpp-0980-go-no-go-release-decision-record-v4.test.js` | decision and evidence records name all remaining risks and keep them open |
 | Artifact redaction scan | `node scripts/release/artifact-redaction-scan.mjs docs/evidence/rpp-0980-go-no-go-release-decision-record-v4.md` | no raw URLs, credentials, cookies, payloads, or private values |
 

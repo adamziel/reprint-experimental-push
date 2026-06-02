@@ -35,9 +35,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -146,7 +147,7 @@ test('generated dry-run route eligibility fixture passes when dry-run is eligibl
   assert.equal(report.primaryFailureBucket, 'provenance');
   assert.equal(report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
   assert.equal(report.mutationAttempted, false);
   assert.deepEqual(gate.evidence, {
     ok: true,
@@ -172,7 +173,7 @@ test('generated dry-run route rejection fails closed before mutation for RPP-005
   const report = parseReport(result);
   const routeBucket = report.missingProductionEvidenceBuckets.find((bucket) => bucket.bucket === 'route');
   const gate = gateById(report, 'dry-run-route-eligibility');
-  const expectedMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED]';
+  const expectedMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED]';
   const expectedEvidence = {
     ok: false,
     eligible: false,
@@ -207,9 +208,9 @@ test('generated dry-run route rejection fails closed before mutation for RPP-005
   assert.deepEqual(report.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: 'Dry-run route eligibility proof failed.',
     missingEvidence: [
       {

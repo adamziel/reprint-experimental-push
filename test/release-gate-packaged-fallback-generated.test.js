@@ -32,6 +32,7 @@ const expectedProvenanceGatePairs = [
   ['release-gate:progress-release-timestamp', 'PRODUCTION_EVIDENCE_REQUIRED'],
   ['release-gate:agents-release-gates-row', 'PRODUCTION_EVIDENCE_REQUIRED'],
   ['release-gate:verify-release-failure-reason', 'PRODUCTION_EVIDENCE_REQUIRED'],
+  ['release-gate:storage-boundary-cas', 'PRODUCTION_EVIDENCE_REQUIRED'],
 ];
 
 function releaseEnv() {
@@ -64,9 +65,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -176,13 +178,13 @@ test('generated packaged fallback scenario matrix fails closed without mutation 
         readOnly: true,
         reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
       },
-      statusMarker: '[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED]',
+      statusMarker: '[release-gates-ci:held final=20/21 candidate=20/21 reason=REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED]',
       releaseMovement: {
         allowed: false,
         state: 'held',
-        gates: '19/20',
-        finalGates: '19/20',
-        candidateGates: '19/20',
+        gates: '20/21',
+        finalGates: '20/21',
+        candidateGates: '20/21',
         reason: 'Packaged production-plugin fallback is support evidence only and cannot move release gates.',
         missingEvidence: [
           {
@@ -246,13 +248,13 @@ test('generated packaged fallback scenario matrix fails closed without mutation 
         readOnly: true,
         reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
       },
-      statusMarker: '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]',
+      statusMarker: '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]',
       releaseMovement: {
         allowed: true,
         state: 'release-ready',
-        gates: '20/20',
-        finalGates: '20/20',
-        candidateGates: '20/20',
+        gates: '21/21',
+        finalGates: '21/21',
+        candidateGates: '21/21',
         reason: 'all release gates are backed by final release evidence',
         missingEvidence: [],
       },
@@ -276,7 +278,7 @@ test('generated packaged fallback scenario matrix fails closed without mutation 
       boundaryBucket: null,
       provenanceBucketSummary: {
         bucket: 'provenance',
-        gateCount: 19,
+        gateCount: 20,
         gates: expectedProvenanceGatePairs,
       },
     },

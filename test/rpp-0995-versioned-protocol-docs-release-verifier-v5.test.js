@@ -305,9 +305,9 @@ test('RPP-0995 final-release evaluator remains held without production closure p
   assert.equal(result.report.statusMarker, record.releaseGateSnapshot.expectedStatusMarker);
   assert.equal(result.report.mutationAttempted, false);
   assert.equal(result.report.releaseMovement.allowed, false);
-  assert.equal(result.report.releaseMovement.finalGates, '3/20');
-  assert.equal(result.report.releaseMovement.candidateGates, '3/20');
-  assert.equal(result.report.totals.blocking, 17);
+  assert.equal(result.report.releaseMovement.finalGates, '3/21');
+  assert.equal(result.report.releaseMovement.candidateGates, '3/21');
+  assert.equal(result.report.totals.blocking, 18);
 });
 
 function loadEvidence(filePath) {

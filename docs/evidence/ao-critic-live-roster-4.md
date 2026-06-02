@@ -13,7 +13,7 @@ Current release-gate command evidence:
 - `node ./scripts/release/check-release-gates.mjs` exits `1`;
 - `primaryFailureCode: REPRINT_PUSH_LIVE_SOURCE_REQUIRED`;
 - `releaseMovement.allowed: false`;
-- `finalGates: 3/20`;
+- `finalGates: 3/21`;
 - 17 missing blocking gates.
 
 The checklist linter is now integrated and reports 0 risky claims on the current tree, but most live-team work remains standalone or branch-local. Full-suite blockers are still relevant: focused probes for authenticated push lifecycle and snapshot apply gate behavior still fail.

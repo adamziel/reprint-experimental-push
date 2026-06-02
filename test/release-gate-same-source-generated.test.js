@@ -35,9 +35,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -138,7 +139,7 @@ test('generated same-source fixture emits a final bracketed release-ready marker
   const result = runCheckedCommand(writeEvidence(generatedFixture()));
   const report = parseReport(result);
   const gate = gateById(report, 'same-source-identity');
-  const expectedMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+  const expectedMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
 
   assert.equal(result.status, 1, result.stdout);
   assert.equal(report.ok, false);
@@ -146,7 +147,7 @@ test('generated same-source fixture emits a final bracketed release-ready marker
   assert.equal(report.primaryFailureBucket, 'provenance');
   assert.equal(report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
   assert.equal(report.statusMarker, expectedMarker);
   assert.ok(result.stdout.includes(expectedMarker), 'stdout JSON must expose the final bracketed marker');
   assert.equal(report.mutationAttempted, false);
@@ -174,7 +175,7 @@ test('generated same-source drift fails closed before mutation for RPP-0050', ()
   const report = parseReport(result);
   const identityBucket = report.missingProductionEvidenceBuckets.find((bucket) => bucket.bucket === 'identity');
   const gate = gateById(report, 'same-source-identity');
-  const expectedMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]';
+  const expectedMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=SAME_SOURCE_IDENTITY_REQUIRED]';
   const expectedEvidence = {
     ok: false,
     same: false,
@@ -208,9 +209,9 @@ test('generated same-source drift fails closed before mutation for RPP-0050', ()
   assert.deepEqual(report.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: 'Source URL identity drifted across the checked release path.',
     missingEvidence: [
       {

@@ -25,8 +25,8 @@ const remoteChangedUrl = 'https://changed.example.test/push';
 const checkedUser = 'admin';
 const secretValue = 'RPP_0099_SHOULD_NOT_LEAK';
 const verifierStatusMarker = '[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]';
-const releaseGateReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
-const releaseGateHeldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=AGENTS_RELEASE_GATES_ROW_REQUIRED]';
+const releaseGateReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const releaseGateHeldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=AGENTS_RELEASE_GATES_ROW_REQUIRED]';
 const focusedCommand = 'umask 0022 && node --test test/release-verifier-agents-status-row-carry-through-focused-regression.test.js test/release-gate-agents-status-row-focused-regression.test.js test/release-gates-status-row.test.js test/release-gate-status-row-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js';
 const checkedCommand = 'timeout 300s npm run verify:release';
 const verifyReleaseCommand = 'npm run verify:release';
@@ -163,6 +163,7 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: tmuxStatusMarkerEvidenceFromVerifierReport(),
     progressReleaseTimestamp: { iso: fixedNow, scope },
     agentsReleaseGateStatusRow: statusRowEvidenceFromVerifierReport(expectedStatusRow),
@@ -375,7 +376,7 @@ test('release verifier carries parsed .agents status row evidence into release g
   assert.equal(releaseGateReport.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(releaseGateReport.statusMarker, releaseGateReadyMarker);
   assert.equal(releaseGateReport.releaseMovement.allowed, true);
-  assert.equal(releaseGateReport.releaseMovement.finalGates, '20/20');
+  assert.equal(releaseGateReport.releaseMovement.finalGates, '21/21');
   assert.equal(releaseGateReport.mutationAttempted, false);
   assert.deepEqual(releaseGateReport.mutationPolicy, expectedMutationPolicy);
   assert.deepEqual(statusRowGate, {
@@ -476,7 +477,7 @@ test('release verifier .agents status row carry-through records negative and pos
   assert.equal(negativeReport.statusMarker, releaseGateHeldMarker);
   assert.ok(negativeResult.stdout.includes(releaseGateHeldMarker));
   assert.equal(negativeReport.releaseMovement.allowed, false);
-  assert.equal(negativeReport.releaseMovement.finalGates, '19/20');
+  assert.equal(negativeReport.releaseMovement.finalGates, '20/21');
   assert.equal(negativeReport.mutationAttempted, false);
   assert.deepEqual(negativeReport.mutationPolicy, expectedMutationPolicy);
   assert.deepEqual(negativeGate, {
@@ -509,7 +510,7 @@ test('release verifier .agents status row carry-through records negative and pos
   assert.equal(positiveReport.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(positiveReport.statusMarker, releaseGateReadyMarker);
   assert.equal(positiveReport.releaseMovement.allowed, true);
-  assert.equal(positiveReport.releaseMovement.finalGates, '20/20');
+  assert.equal(positiveReport.releaseMovement.finalGates, '21/21');
   assert.equal(positiveReport.mutationAttempted, false);
   assert.deepEqual(positiveGate.evidence, {
     ...positiveCarriedRow,
@@ -554,6 +555,6 @@ test('RPP-0099 evidence note records focused command, scenario matrix, and imple
   assert.ok(evidenceNote.includes('Evidence toward `RPP-0099` release verifier `.agents/RELEASE_GATES.md` status row carry-through.'));
   assert.ok(evidenceNote.includes(`- Command: \`${focusedCommand}\``));
   assert.ok(evidenceNote.includes('- Observed status: `pass`; tests: `37/37`; negative code: `AGENTS_RELEASE_GATES_ROW_REQUIRED`; positive release status: `NO-GO`.'));
-  assert.ok(evidenceNote.includes('Scenario matrix: `dishonest-release-verdict` fails closed at `19/20`; generated `0/4` row passes the row gate and leaves release movement held only by provenance.'));
+  assert.ok(evidenceNote.includes('Scenario matrix: `dishonest-release-verdict` fails closed at `20/21`; generated `0/4` row passes the row gate and leaves release movement held only by provenance.'));
   assert.ok(evidenceNote.includes('No shared release-verifier implementation file changed.'));
 });

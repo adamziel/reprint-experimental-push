@@ -196,9 +196,9 @@ at **NO-GO** with the verdict held.
     "expectedGateState": "candidate-for-review",
     "expectedCandidateMovementAllowed": true,
     "expectedReleaseMovementAllowed": false,
-    "expectedFinalGates": "0/20",
-    "expectedCandidateGates": "20/20",
-    "expectedStatusMarker": "[release-gates-ci:candidate-for-review final=0/20 candidate=20/20 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]",
+    "expectedFinalGates": "0/21",
+    "expectedCandidateGates": "21/21",
+    "expectedStatusMarker": "[release-gates-ci:candidate-for-review final=0/21 candidate=21/21 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]",
     "expectedFinalReleaseStatus": "NO-GO"
   },
   "blockedMovementScenarios": {
@@ -206,8 +206,8 @@ at **NO-GO** with the verdict held.
       "scope": "final-release",
       "expectedGateState": "held",
       "expectedReleaseMovementAllowed": false,
-      "expectedFinalGates": "3/20",
-      "expectedCandidateGates": "3/20",
+      "expectedFinalGates": "3/21",
+      "expectedCandidateGates": "3/21",
       "requiredMissingGateIds": [
         "source-url",
         "local-url",
@@ -222,8 +222,8 @@ at **NO-GO** with the verdict held.
       "scope": "final-release",
       "expectedGateState": "held",
       "expectedReleaseMovementAllowed": false,
-      "expectedFinalGates": "6/20",
-      "expectedCandidateGates": "6/20",
+      "expectedFinalGates": "6/21",
+      "expectedCandidateGates": "6/21",
       "requiredMissingGateIds": [
         "auth-source-readback",
         "production-secret",
@@ -235,8 +235,8 @@ at **NO-GO** with the verdict held.
       "scope": "final-release",
       "expectedGateState": "held",
       "expectedReleaseMovementAllowed": false,
-      "expectedFinalGates": "7/20",
-      "expectedCandidateGates": "7/20",
+      "expectedFinalGates": "7/21",
+      "expectedCandidateGates": "7/21",
       "requiredMissingGateIds": [
         "source-url",
         "local-url",
@@ -251,11 +251,11 @@ at **NO-GO** with the verdict held.
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "primaryFailureBucket": "topology",
     "status": "held",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20"
+    "finalGates": "3/21",
+    "candidateGates": "3/21"
   },
   "statusRowReadback": {
     "path": ".agents/RELEASE_GATES.md",
@@ -289,7 +289,7 @@ at **NO-GO** with the verdict held.
   },
   "unresolvedFinalReleaseRiskPolicy": {
     "finalReleaseRisksRemainOpen": true,
-    "unresolvedRiskCount": 17,
+    "unresolvedRiskCount": 18,
     "closedByThisEvidence": 0,
     "releaseGateStatusMovement": "none",
     "requiredToClose": "fresh production-backed final-release evidence"
@@ -439,6 +439,17 @@ at **NO-GO** with the verdict held.
       "gateMovementAllowed": false
     },
     {
+      "id": "storage-boundary-cas",
+      "rpp": "RPP-0021",
+      "bucket": "storage",
+      "code": "STORAGE_BOUNDARY_CAS_REQUIRED",
+      "status": "open",
+      "requiredProductionBackedEvidence": true,
+      "productionBacked": false,
+      "releaseGateSatisfied": false,
+      "gateMovementAllowed": false
+    },
+    {
       "id": "tmux-status-marker",
       "rpp": "RPP-0017",
       "bucket": "operator-proof",
@@ -517,7 +528,7 @@ open, and final release remains **NO-GO** with the verdict held.
 | --- | --- | --- |
 | Audited commit | `git rev-parse HEAD` | `b2c0bb0ffd01dde19d136cd78241621e4aefaa46` before adding this evidence |
 | Gate status row readback | `node scripts/release/agents-release-gates-status-row.mjs .agents/RELEASE_GATES.md` | `releaseVerdict` `0/4`, release status `NO-GO`, all four gates `support_only` |
-| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T03:00:00.000Z` | exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, final `3/20`, verdict `held` |
+| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T03:00:00.000Z` | exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, final `3/21`, verdict `held` |
 | Focused syntax check | `node --check test/rpp-0967-security-review-checklist-v4.test.js` | JavaScript syntax accepted |
 | Focused RPP-0967 regression | `node --test --test-name-pattern RPP-0967 test/rpp-0967-security-review-checklist-v4.test.js` | support evidence cannot move final release, missing source/local/changed or credential proof blocks movement, unresolved final-release risks stay open, and final release stays `NO-GO` |
 | Evidence redaction scan | `node scripts/release/artifact-redaction-scan.mjs docs/evidence/rpp-0967-security-review-checklist-v4.md` | evidence artifact scans cleanly |

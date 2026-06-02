@@ -54,7 +54,7 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
     "runtime": "docker-local-wordpress",
     "gate": "GATE-3",
     "releaseVerifierCommand": "npm run verify:release",
-    "blockedArtifactHash": "e6467967ae3ac4fde80129a4c863b7609f7fd127a7150e2e01ca27f7e5169e2b"
+    "blockedArtifactHash": "70296b050252af0fe0c2d09d907ca3a61ce3e88d3f4b52c7b0f7052d6bd7fc63"
   },
   "successContract": {
     "criterion": "verify-release-passes-without-packaged-fallback-on-docker-wordpress-topology-or-exact-unavailable-capability",
@@ -244,12 +244,12 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
       "releaseMovementAllowed": false,
       "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
       "releaseGateTotals": {
-        "gates": 20,
+        "gates": 21,
         "passed": 0,
         "candidate": 5,
-        "missing": 15,
+        "missing": 16,
         "failed": 0,
-        "blocking": 20
+        "blocking": 21
       },
       "requiredCarryThrough": [
         "topology-command-invokes-npm-run-verify-release",
@@ -284,10 +284,10 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
     ],
     "releaseEnvBindingDigest": "sha256:d0ec3f39463b65413c6249468d4b698a5adef55035a118120cfcc5fa44fa72b6",
     "blockerMatrixDigest": "sha256:938247c4442236af4ad40024cf5bbef03d35f5bb9245f7311bb1847bbc1e3eca",
-    "releaseVerifierCarryThroughDigest": "sha256:9feb1a95eb6ff291c44fe215e41c5fc474351a06573f2454d2b31b2b70ffd2db",
+    "releaseVerifierCarryThroughDigest": "sha256:01dbd8f9717b5a4298e944bc5b6ea0336d3bafe0d7fba68c8656fea3e905dfbf",
     "serviceSurfaceDigest": "sha256:62ac55140ec23fcb8e557c098fdf49179d972e55a924566a7039651fd185828b",
     "requirementDigest": "sha256:46f369393efdaa5c9c98ced13c46087fe6a1b2613afa04f5062537bb63f0147f",
-    "scopeHash": "sha256:5f71c7783d35350e308b4d2f83a768eb5cd1b0076ab79b24df8756d59dc638ad"
+    "scopeHash": "sha256:b26eaffaaec63f6484beb19c3f520520ee4abe586f9d216686d34c84cd24cc26"
   },
   "releaseGate": {
     "acceptedForReleaseGate": false,
@@ -333,7 +333,7 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
     "noProductionBackedProofClaim": true,
     "supportOnlyNoGo": true
   },
-  "supportReportHash": "sha256:94771c8b89890a92286ec28a5467f2b2f029228ab715b2c8de56e3fdbce710f9"
+  "supportReportHash": "sha256:0b04e856cfaf99ca5b59ded86ae9a4c9fd046481f92a9e258019281805af14c2"
 }
 ```
 

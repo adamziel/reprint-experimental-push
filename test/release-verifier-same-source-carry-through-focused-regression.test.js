@@ -16,8 +16,8 @@ const localUrl = 'https://local.example.test/push';
 const secretValue = 'RPP_0090_SHOULD_NOT_LEAK';
 const sameSourceReason = 'Source URL identity drifted across the checked release path.';
 const statusMarker = '[verify-release:held exit=1 reason=SAME_SOURCE_IDENTITY_REQUIRED mutationAttempted=false]';
-const releaseGateHeldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]';
-const releaseGateReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const releaseGateHeldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=SAME_SOURCE_IDENTITY_REQUIRED]';
+const releaseGateReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
 const checkedRoutes = ['preflight', 'dry-run', 'apply', 'journal', 'recovery-inspect'];
 const requiredSameSourceEvidence = ['preflight, dry-run, apply, and recovery use the same source URL'];
 
@@ -120,6 +120,7 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
       marker: releaseGateReadyMarker,
@@ -416,9 +417,9 @@ test('release verifier carries same-source identity drift before mutation for RP
   assert.deepEqual(releaseGateReport.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: sameSourceReason,
     missingEvidence: [
       {
@@ -448,7 +449,7 @@ test('release verifier same-source carry-through keeps the positive same-source 
   assert.equal(releaseGateReport.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(releaseGateReport.statusMarker, releaseGateReadyMarker);
   assert.equal(releaseGateReport.releaseMovement.allowed, true);
-  assert.equal(releaseGateReport.releaseMovement.finalGates, '20/20');
+  assert.equal(releaseGateReport.releaseMovement.finalGates, '21/21');
   assert.equal(releaseGateReport.mutationAttempted, false);
   assert.deepEqual(sameSourceGate, {
     id: 'same-source-identity',

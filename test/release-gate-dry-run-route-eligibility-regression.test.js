@@ -17,7 +17,7 @@ const expectedDryRunRoute = '/wp-json/reprint-push/v1/dry-run';
 const ineligibleObservedStatus = 'dry-run-route-rejected-before-plan-upload';
 const requiredDryRunEvidence = ['dry-run route eligibility checked before apply'];
 const expectedFailureReason = 'Dry-run route eligibility proof failed.';
-const expectedHeldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED]';
+const expectedHeldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED]';
 
 const expectedMutationPolicy = Object.freeze({
   readOnly: true,
@@ -44,9 +44,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -161,7 +162,7 @@ test('dry-run route eligibility regression passes exact final evidence before pr
   assert.equal(report.primaryFailureBucket, 'provenance');
   assert.equal(report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
   assert.equal(report.mutationAttempted, false);
   assert.deepEqual(gate.evidence, {
     ok: true,
@@ -231,9 +232,9 @@ test('dry-run route eligibility regression fails closed before mutation for RPP-
   assert.deepEqual(report.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: expectedFailureReason,
     missingEvidence: [
       {

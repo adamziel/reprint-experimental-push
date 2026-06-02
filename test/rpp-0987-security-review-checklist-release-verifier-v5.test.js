@@ -51,6 +51,7 @@ const unresolvedFinalReleaseRiskIds = [
   'apply-route-pre-mutation',
   'journal-route-read-only',
   'recovery-inspect-read-only',
+  'storage-boundary-cas',
   'tmux-status-marker',
   'progress-release-timestamp',
   'agents-release-gates-row',
@@ -132,7 +133,7 @@ test('RPP-0987 release-verifier carry-through is support-only and final fail-clo
   assert.equal(report.releaseVerifierCarryThrough.finalReleaseStatus, 'NO-GO');
   assert.equal(
     report.releaseVerifierCarryThrough.statusMarker,
-    '[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]',
+    '[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]',
   );
   assert.equal(report.releaseVerifierCarryThrough.mutationAttempted, false);
   assert.deepEqual(report.releaseVerifierCarryThrough.requiredProductionBackedProofClasses, [
@@ -241,12 +242,12 @@ test('RPP-0987 support evidence can support candidate review but cannot move fin
   assert.equal(evaluation.releaseMovement.candidateGates, report.supportOnlyEvaluator.expectedCandidateGates);
   assert.equal(marker, report.supportOnlyEvaluator.expectedStatusMarker);
   assert.deepEqual(evaluation.totals, {
-    gates: 20,
+    gates: 21,
     passed: 0,
-    candidate: 20,
+    candidate: 21,
     missing: 0,
     failed: 0,
-    blocking: 20,
+    blocking: 21,
   });
   assert.ok(
     evaluation.releaseMovement.missingEvidence.every((gate) => gate.status === 'candidate'),
@@ -397,9 +398,10 @@ function completeSupportEvidence(scope) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'recovery-inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates-ci:held final=0/20 candidate=20/20 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]',
+      marker: '[release-gates-ci:held final=0/21 candidate=21/21 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNowIso, scope },

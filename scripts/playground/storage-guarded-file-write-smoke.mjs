@@ -241,6 +241,7 @@ await withPlaygroundServer('storage-guard-file-positive', baseBlueprint, async (
   assert.match(updateEvidence.storageGuard?.plannedStorageHash ?? '', /^[a-f0-9]{64}$/);
   assert.match(updateEvidence.storageGuard?.physicalPathHash ?? '', /^[a-f0-9]{64}$/);
   assert.ok(Array.isArray(updateEvidence.storageGuard?.comparedFields));
+  assertStorageGuardCoverageMatches(updateEvidence, positiveUpdate);
 
   assert.ok(createEvidence, 'missing applied evidence for guarded file create');
   assert.equal(createEvidence.preconditionCheck, 'storage-boundary-cas');
@@ -256,6 +257,7 @@ await withPlaygroundServer('storage-guard-file-positive', baseBlueprint, async (
   assert.match(createEvidence.storageGuard?.plannedStorageHash ?? '', /^[a-f0-9]{64}$/);
   assert.match(createEvidence.storageGuard?.physicalPathHash ?? '', /^[a-f0-9]{64}$/);
   assert.ok(Array.isArray(createEvidence.storageGuard?.comparedFields));
+  assertStorageGuardCoverageMatches(createEvidence, positiveCreate);
   assertStoredJournalHasNoRawFixtureData(dbJournal.body);
 
   summary.positive = {
@@ -299,6 +301,7 @@ await withPlaygroundServer('storage-guard-plugin-file-positive', baseBlueprint, 
   assert.match(updateEvidence.storageGuard?.plannedStorageHash ?? '', /^[a-f0-9]{64}$/);
   assert.match(updateEvidence.storageGuard?.physicalPathHash ?? '', /^[a-f0-9]{64}$/);
   assert.ok(Array.isArray(updateEvidence.storageGuard?.comparedFields));
+  assertStorageGuardCoverageMatches(updateEvidence, pluginPositiveUpdate);
   assertStoredJournalHasNoRawFixtureData(dbJournal.body);
 
   summary.pluginPositive = {
@@ -417,6 +420,7 @@ await withPlaygroundServer('storage-guard-file-drift', baseBlueprint, async (ser
   assert.equal(failedEvidence.observedHash, driftHash);
   assert.equal(failedEvidence.storageGuard?.boundary, 'filesystem-compare-rename');
   assert.equal(failedEvidence.storageGuard?.outcome, 'stale-at-write');
+  assertStorageGuardCoverageMatches(failedEvidence, failureMutation);
   assertStoredJournalHasNoRawFixtureData(dbJournal.body);
 
   const replay = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: idempotencyKey });
@@ -974,6 +978,23 @@ function assertNoPreparedAfter(entries, failedIndex) {
     !prepared.some((entry) => Number(mutationEvidence(entry).mutationOrder) > failedIndex),
     'later mutation-prepared event written after storage guard failure',
   );
+}
+
+function assertStorageGuardCoverageMatches(evidence, mutation) {
+  const coverage = evidence.storageGuardCoverage;
+  const guard = evidence.storageGuard;
+  assert.ok(coverage, `missing storageGuardCoverage for ${mutation.id}`);
+  assert.ok(guard, `missing storageGuard for ${mutation.id}`);
+  assert.equal(coverage.covered, true);
+  assert.equal(coverage.mutationId, mutation.id);
+  assert.equal(coverage.resourceKey, mutation.resourceKey);
+  assert.equal(coverage.resourceType, mutation.resource.type);
+  assert.equal(coverage.boundary, guard.boundary);
+  assert.equal(coverage.driver, guard.driver);
+  assert.equal(coverage.operation, guard.operation);
+  assert.equal(coverage.mutationAttempted, false);
+  assert.equal(coverage.resolutionPolicy, 'preserve-remote-state-and-stop');
+  assert.equal(guard.logicalPath, mutation.resource.path);
 }
 
 function assertStoredJournalHasNoRawFixtureData(body) {

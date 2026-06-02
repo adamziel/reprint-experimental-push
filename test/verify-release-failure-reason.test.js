@@ -13,7 +13,7 @@ const sourceUrl = 'https://source.example.test/push';
 const localUrl = 'https://local.example.test/push';
 const remoteChangedUrl = 'https://changed.example.test/push';
 const verifyReleaseStatusMarker = '[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]';
-const releaseGateStatusMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const releaseGateStatusMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
 
 function runVerifyReleaseMissingSource() {
   return spawnSync('npm', ['run', 'verify:release'], {
@@ -68,9 +68,10 @@ function completeEvidence(scope, overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow.toISOString(), scope },
@@ -232,7 +233,7 @@ test('verify:release nonzero failure reason emits a status marker and release-ga
   assert.equal(checked.report.releaseStatus, 'NO-GO');
   assert.equal(checked.report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(checked.report.releaseMovement.allowed, true);
-  assert.equal(checked.report.releaseMovement.finalGates, '20/20');
+  assert.equal(checked.report.releaseMovement.finalGates, '21/21');
   assert.equal(checked.report.statusMarker, releaseGateStatusMarker);
   assert.equal(checked.report.mutationAttempted, false);
   assert.deepEqual(checked.report.mutationPolicy, {

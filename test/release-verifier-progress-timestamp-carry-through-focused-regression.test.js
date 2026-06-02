@@ -27,8 +27,8 @@ const checkedCommand = 'timeout 300s npm run verify:release';
 const progressProofCommand = 'node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js';
 const focusedCommand = 'umask 0022 && node --test test/release-verifier-progress-timestamp-carry-through-focused-regression.test.js test/release-gate-progress-release-timestamp-focused-regression.test.js test/progress-html-release-timestamp.test.js test/release-gate-cli.test.js test/release-gates.test.js';
 const verifierHeldMarker = '[verify-release:held exit=1 reason=PROGRESS_RELEASE_TIMESTAMP_REQUIRED mutationAttempted=false]';
-const releaseGateHeldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=PROGRESS_RELEASE_TIMESTAMP_REQUIRED]';
-const releaseGateReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const releaseGateHeldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=PROGRESS_RELEASE_TIMESTAMP_REQUIRED]';
+const releaseGateReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
 
 const expectedMutationPolicy = Object.freeze({
   readOnly: true,
@@ -111,6 +111,7 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
       marker: releaseGateReadyMarker,
@@ -407,7 +408,7 @@ test('release verifier carries the progress.html release timestamp into release 
   assert.equal(releaseGateReport.statusMarker, releaseGateReadyMarker);
   assert.ok(releaseGateResult.stdout.includes(releaseGateReadyMarker));
   assert.equal(releaseGateReport.releaseMovement.allowed, true);
-  assert.equal(releaseGateReport.releaseMovement.finalGates, '20/20');
+  assert.equal(releaseGateReport.releaseMovement.finalGates, '21/21');
   assert.equal(releaseGateReport.mutationAttempted, false);
   assert.deepEqual(releaseGateReport.mutationPolicy, expectedMutationPolicy);
   assert.deepEqual(timestampGate, {
@@ -478,7 +479,7 @@ test('release verifier progress timestamp carry-through fails closed on stale or
   assert.equal(releaseGateReport.statusMarker, releaseGateHeldMarker);
   assert.ok(releaseGateResult.stdout.includes(releaseGateHeldMarker));
   assert.equal(releaseGateReport.releaseMovement.allowed, false);
-  assert.equal(releaseGateReport.releaseMovement.finalGates, '19/20');
+  assert.equal(releaseGateReport.releaseMovement.finalGates, '20/21');
   assert.equal(releaseGateReport.mutationAttempted, false);
   assert.deepEqual(releaseGateReport.mutationPolicy, expectedMutationPolicy);
   assert.deepEqual(timestampGate, {
@@ -497,9 +498,9 @@ test('release verifier progress timestamp carry-through fails closed on stale or
   assert.deepEqual(releaseGateReport.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: 'Release timestamp evidence must be an ISO-parseable timestamp.',
     missingEvidence: [
       {

@@ -51,18 +51,18 @@ or completion files, and keeps final release at **NO-GO**.
     "releaseStatus": "NO-GO",
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "primaryFailureBucket": "topology",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20",
+    "finalGates": "3/21",
+    "candidateGates": "3/21",
     "totals": {
-      "gates": 20,
+      "gates": 21,
       "passed": 3,
       "candidate": 0,
-      "missing": 17,
+      "missing": 18,
       "failed": 0,
-      "blocking": 17
+      "blocking": 18
     }
   },
   "riskDisposition": {
@@ -163,6 +163,12 @@ or completion files, and keeps final release at **NO-GO**.
       "code": "RECOVERY_INSPECT_READ_ONLY_REQUIRED",
       "title": "recovery inspect read-only evidence",
       "bucket": "recovery"
+    },
+    {
+      "id": "storage-boundary-cas",
+      "code": "STORAGE_BOUNDARY_CAS_REQUIRED",
+      "title": "storage boundary compare-and-swap evidence",
+      "bucket": "storage"
     },
     {
       "id": "tmux-status-marker",
@@ -402,7 +408,7 @@ The final release verdict remains **NO-GO**.
 | `git log --oneline --all --grep='audit' -16` | `fc7f442a0`, `9519d3015`, `73f80f83b`, `bb4d8be67`, `940e23e46`, `fe3af9d8e` | Located recent audit evidence commits, including the RPP-0926 critic-audit pattern, without moving any release gate. |
 | `git log --oneline --all --grep='critic audit' -12` | `940e23e46`, `fe3af9d8e` | Located prior critic-audit support records used as the pattern for this update. |
 | `git show -s --format='%H %s' acf32f006 9548397c4 244117a4b bd7ab6e19 bbe942e59 95de26357 bb4d8be67 3804aaa23 fc7f442a0 9519d3015 73f80f83b 940e23e46 fe3af9d8e` | full hashes listed below | Expanded short commit anchors to full hashes and subjects for the audit record. |
-| `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T02:56:00.000Z` | none | Confirmed held final release evaluator state: `NO-GO`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, `final=3/20`, `candidate=3/20`. |
+| `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T02:56:00.000Z` | none | Confirmed held final release evaluator state: `NO-GO`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, `final=3/21`, `candidate=3/21`. |
 
 ## Commit anchors
 
@@ -450,7 +456,7 @@ All remaining release-blocking gaps below stay open; this audit closes none.
 
 This support-only evidence causes no release-gate status movement. It records the
 held evaluator state only: final release remains **NO-GO**, release movement is
-not allowed, and all 17 named release blockers stay open.
+not allowed, and all 18 named release blockers stay open.
 
 ## Required validation commands
 

@@ -34,6 +34,7 @@ const expectedFinalReleaseRiskIds = [
   'apply-route-pre-mutation',
   'journal-route-read-only',
   'recovery-inspect-read-only',
+  'storage-boundary-cas',
   'tmux-status-marker',
   'progress-release-timestamp',
   'agents-release-gates-row',
@@ -53,6 +54,7 @@ const expectedProofClasses = [
   'identity',
   'route',
   'recovery',
+  'storage',
   'operator-proof',
 ];
 
@@ -108,7 +110,7 @@ test('RPP-0950 names every remaining final-release risk from the go/no-go record
 
   assert.equal(record.sourceDecisionRecord, 'docs/evidence/rpp-0920-go-no-go-release-decision-record.md');
   assert.equal(record.goNoGoRecord.finalReleaseRiskRegisterComplete, true);
-  assert.equal(record.goNoGoRecord.remainingFinalReleaseRiskCount, 17);
+  assert.equal(record.goNoGoRecord.remainingFinalReleaseRiskCount, expectedFinalReleaseRiskIds.length);
   assert.deepEqual(record.finalReleaseRiskRegister.map((risk) => risk.id), expectedFinalReleaseRiskIds);
   assert.deepEqual(record.finalReleaseRiskRegister, rpp0920.remainingRisks);
   assert.deepEqual(
@@ -134,17 +136,17 @@ test('RPP-0950 go/no-go record closes no risk without production-backed closure 
 
   assert.equal(record.goNoGoRecord.decision, 'NO-GO');
   assert.equal(record.goNoGoRecord.productionClosureProofObserved, false);
-  assert.equal(record.goNoGoRecord.remainingRiskCount, 29);
+  assert.equal(record.goNoGoRecord.remainingRiskCount, 30);
   assert.equal(record.goNoGoRecord.closedRiskCount, 0);
-  assert.equal(record.goNoGoRecord.namedOrClosedRiskCount, 29);
+  assert.equal(record.goNoGoRecord.namedOrClosedRiskCount, 30);
   assert.equal(record.goNoGoRecord.closureBlocked, true);
   assert.equal(record.goNoGoRecord.proofClassActionMapComplete, true);
   assert.equal(record.goNoGoRecord.releaseGateStatusMovement, 'none');
   assert.deepEqual(record.closedRisks, []);
-  assert.equal(allRisks.length, 29);
-  assert.equal(uniqueRiskIds.size, 29);
-  assert.equal(openRisks.length, 29);
-  assert.equal(releaseBlockers.length, 29);
+  assert.equal(allRisks.length, 30);
+  assert.equal(uniqueRiskIds.size, 30);
+  assert.equal(openRisks.length, 30);
+  assert.equal(releaseBlockers.length, 30);
   assert.match(record.goNoGoRecord.dispositionRule, /remains open unless production-backed closure proof closes it/);
 });
 
@@ -210,8 +212,8 @@ test('RPP-0950 final-release evaluator remains held without production closure p
   assert.equal(result.report.statusMarker, record.releaseGateSnapshot.statusMarker);
   assert.equal(result.report.mutationAttempted, false);
   assert.equal(result.report.releaseMovement.allowed, false);
-  assert.equal(result.report.releaseMovement.finalGates, '3/20');
-  assert.equal(result.report.totals.blocking, 17);
+  assert.equal(result.report.releaseMovement.finalGates, '3/21');
+  assert.equal(result.report.totals.blocking, 18);
 });
 
 function loadEvidence(filePath) {

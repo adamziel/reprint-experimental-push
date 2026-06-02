@@ -36,9 +36,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: journalReadOnlyEvidence(),
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -164,7 +165,7 @@ test('generated journal route read-only fixture preserves the positive read-only
   const result = runCheckedCommand(writeEvidence(fixture));
   const report = parseReport(result);
   const gate = gateById(report, 'journal-route-read-only');
-  const expectedMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+  const expectedMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
 
   assert.deepEqual(fixture.scenarioMatrix.map((entry) => entry.scenario), [
     'negative-journal-write-observed',
@@ -176,7 +177,7 @@ test('generated journal route read-only fixture preserves the positive read-only
   assert.equal(report.primaryFailureBucket, 'provenance');
   assert.equal(report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
   assert.equal(report.statusMarker, expectedMarker);
   assert.ok(result.stdout.includes(expectedMarker), 'stdout JSON must expose the final bracketed marker');
   assert.equal(report.mutationAttempted, false);
@@ -210,7 +211,7 @@ test('generated journal route write-observed fixture fails closed before any ver
   const recoveryBucket = report.missingProductionEvidenceBuckets.find((bucket) => bucket.bucket === 'recovery');
   const gate = gateById(report, 'journal-route-read-only');
   const positiveGate = gateById(positiveReport, 'journal-route-read-only');
-  const expectedMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=JOURNAL_ROUTE_READ_ONLY_REQUIRED]';
+  const expectedMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=JOURNAL_ROUTE_READ_ONLY_REQUIRED]';
   const expectedEvidence = {
     ok: false,
     readOnly: false,
@@ -306,9 +307,9 @@ test('generated journal route write-observed fixture fails closed before any ver
   assert.deepEqual(report.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: 'Journal route was not proven read-only.',
     missingEvidence: [
       {

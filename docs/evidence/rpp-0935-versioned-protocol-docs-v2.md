@@ -456,7 +456,7 @@ remains open and the final release verdict stays **NO-GO**.
     "expectedExit": 1,
     "expectedReleaseStatus": "NO-GO",
     "expectedPrimaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
-    "expectedStatusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "expectedStatusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "expectedMutationAttempted": false,
     "expectedReleaseMovementAllowed": false
   },

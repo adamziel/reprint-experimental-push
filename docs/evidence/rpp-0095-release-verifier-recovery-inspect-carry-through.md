@@ -18,7 +18,7 @@ This slice carries the recovery inspect read-only proof through the release-veri
 1. A recovery inspect write-observed verifier report emits the tmux-visible marker `RECOVERY_INSPECT_READ_ONLY_REQUIRED`, records `mutationAttempted: false` at the verifier boundary, and carries exact `recoveryInspectReadOnly` evidence into `check-release-gates`.
 2. The positive recovery inspect read-only path keeps the gate passed with final-release evidence while the overall release remains held by production provenance.
 
-The focused test also asserts the release-gate checker remains read-only, the release-gate status marker is held at 19/20 for the negative path, and the sentinel credential string is absent from verifier and release-gate output.
+The focused test also asserts the release-gate checker remains read-only, the release-gate status marker is held at 20/21 for the negative path, and the sentinel credential string is absent from verifier and release-gate output.
 
 ## Validation commands
 

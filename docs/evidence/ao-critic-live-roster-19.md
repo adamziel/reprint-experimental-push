@@ -2,7 +2,7 @@
 
 Base after fetch: `origin/lane/evidence-integration-20260527` at `5e5ffa2b5`.
 
-Release status remains `NO-GO`: checklist lint reports `117` checked / `883` open with `0` risky claims, while `check-release-gates` still reports `releaseMovement.allowed: false`, gates `3/20`, primary blocker `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, and `mutationAttempted: false`.
+Release status remains `NO-GO`: checklist lint reports `117` checked / `883` open with `0` risky claims, while `check-release-gates` still reports `releaseMovement.allowed: false`, gates `3/21`, primary blocker `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, and `mutationAttempted: false`.
 
 Focused audit results:
 - `RPP-0051` is now integrated lane truth; `RPP-0052` and `RPP-0053` both conflict with current lane in `docs/evidence/ao-release-gates.md`, and they conflict with each other in that file.

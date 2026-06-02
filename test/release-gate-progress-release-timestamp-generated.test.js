@@ -16,8 +16,8 @@ const remoteChangedUrl = 'https://changed.example.test/push';
 const progressTimestamp = '2026-05-28T03:18:00.000Z';
 const generatedCommand = 'node --test test/release-gate-progress-release-timestamp-generated.test.js test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js';
 const progressHtmlCommand = 'node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js';
-const finalMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
-const heldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=PROGRESS_RELEASE_TIMESTAMP_REQUIRED]';
+const finalMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const heldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=PROGRESS_RELEASE_TIMESTAMP_REQUIRED]';
 const invalidTimestamp = 'release-proof-timestamp-missing-or-stale';
 const requiredTimestampEvidence = 'ISO-parseable release timestamp';
 
@@ -41,6 +41,7 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
       marker: finalMarker,
@@ -246,7 +247,7 @@ test('generated progress timestamp proof links command and observed status while
   assert.equal(report.primaryFailureBucket, 'provenance');
   assert.equal(report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
   assert.equal(report.statusMarker, finalMarker);
   assert.ok(result.stdout.includes(finalMarker), 'stdout JSON must expose the final timestamp proof marker');
   assert.equal(report.mutationAttempted, false);

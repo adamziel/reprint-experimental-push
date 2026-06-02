@@ -35,6 +35,7 @@ const missingFinalReleaseGateIds = Object.freeze([
   'auth-source-readback',
   'application-password-binding',
   'manage-options-capability',
+  'storage-boundary-cas',
   'progress-release-timestamp',
   'agents-release-gates-row',
 ]);
@@ -238,7 +239,7 @@ test('RPP-0883 carries external WordPress topology variant 5 through the release
   assert.equal(proof.releaseVerifier.gateSummary.totalGateCount, RELEASE_GATE_DEFINITIONS.length);
   assert.equal(proof.releaseVerifier.gateSummary.passedCount, 0);
   assert.equal(proof.releaseVerifier.gateSummary.candidateCount, 15);
-  assert.equal(proof.releaseVerifier.gateSummary.missingCount, 5);
+  assert.equal(proof.releaseVerifier.gateSummary.missingCount, missingFinalReleaseGateIds.length);
   assert.equal(proof.releaseVerifier.gateSummary.failedCount, 0);
   assert.deepEqual(proof.releaseVerifier.gateSummary.topologyGateStatuses.map((entry) => [entry.id, entry.status]), [
     ['source-url', 'candidate'],

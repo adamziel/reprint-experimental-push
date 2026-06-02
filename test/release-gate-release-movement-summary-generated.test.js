@@ -12,8 +12,8 @@ const fixedNow = '2026-05-28T00:00:00.000Z';
 const sourceUrl = 'https://source.example.test/push';
 const localUrl = 'https://local.example.test/push';
 const remoteChangedUrl = 'https://changed.example.test/push';
-const releaseReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
-const deniedMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]';
+const releaseReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const deniedMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=SAME_SOURCE_IDENTITY_REQUIRED]';
 const requiredSourceIdentityEvidence = ['preflight, dry-run, apply, and recovery use the same source URL'];
 const expectedProvenanceGateIds = [
   'release-gate:source-url',
@@ -35,6 +35,7 @@ const expectedProvenanceGateIds = [
   'release-gate:progress-release-timestamp',
   'release-gate:agents-release-gates-row',
   'release-gate:verify-release-failure-reason',
+  'release-gate:storage-boundary-cas',
 ];
 const expectedSummaryGateEvidence = {
   producedBy: 'evaluateReleaseGates',
@@ -64,9 +65,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -123,13 +125,13 @@ function generatedFixture(sourceIdentity = sameSourceIdentityEvidence()) {
       deniedScenario: {
         code: 'SAME_SOURCE_IDENTITY_REQUIRED',
         allowed: false,
-        finalGates: '19/20',
+        finalGates: '20/21',
         marker: deniedMarker,
       },
       allowedScenario: {
         code: 'PRODUCTION_EVIDENCE_REQUIRED',
         allowed: true,
-        finalGates: '20/20',
+        finalGates: '21/21',
         releaseStatus: 'NO-GO',
         marker: releaseReadyMarker,
       },
@@ -221,9 +223,9 @@ test('generated releaseMovement denied summary exits with named code for RPP-005
   assert.deepEqual(report.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: 'Source URL identity drifted across the checked release path.',
     missingEvidence: [
       {
@@ -303,9 +305,9 @@ test('generated releaseMovement allowed summary remains NO-GO without provenance
   assert.deepEqual(report.releaseMovement, {
     allowed: true,
     state: 'release-ready',
-    gates: '20/20',
-    finalGates: '20/20',
-    candidateGates: '20/20',
+    gates: '21/21',
+    finalGates: '21/21',
+    candidateGates: '21/21',
     reason: 'all release gates are backed by final release evidence',
     missingEvidence: [],
   });
@@ -315,7 +317,7 @@ test('generated releaseMovement allowed summary remains NO-GO without provenance
   assert.deepEqual(compactProvenanceBuckets(report), [
     {
       bucket: 'provenance',
-      gateCount: 19,
+      gateCount: 20,
       codes: expectedProvenanceGateIds.map(() => 'PRODUCTION_EVIDENCE_REQUIRED'),
       ids: expectedProvenanceGateIds,
     },
@@ -325,7 +327,7 @@ test('generated releaseMovement allowed summary remains NO-GO without provenance
       scenario: 'denied-source-identity-drift',
       expectedCode: 'SAME_SOURCE_IDENTITY_REQUIRED',
       expectedAllowed: false,
-      expectedFinalGates: '19/20',
+      expectedFinalGates: '20/21',
       expectedMarker: deniedMarker,
     },
     {
@@ -333,7 +335,7 @@ test('generated releaseMovement allowed summary remains NO-GO without provenance
       exitCode: 1,
       primaryFailureCode: 'PRODUCTION_EVIDENCE_REQUIRED',
       releaseAllowed: true,
-      finalGates: '20/20',
+      finalGates: '21/21',
       summaryAllowed: true,
       summaryMissingEvidence: 0,
       marker: releaseReadyMarker,

@@ -84,11 +84,11 @@ test('RPP-0902 final release evaluator fails closed without production-backed du
   assert.equal(result.report.releaseStatus, 'NO-GO');
   assert.equal(result.report.primaryFailureBucket, 'topology');
   assert.equal(result.report.primaryFailureCode, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
-  assert.equal(result.report.statusMarker, '[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]');
+  assert.equal(result.report.statusMarker, '[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]');
   assert.equal(result.report.mutationAttempted, false);
   assert.equal(result.report.releaseMovement.allowed, false);
-  assert.equal(result.report.releaseMovement.finalGates, '3/20');
-  assert.equal(result.report.releaseMovement.candidateGates, '3/20');
+  assert.equal(result.report.releaseMovement.finalGates, '3/21');
+  assert.equal(result.report.releaseMovement.candidateGates, '3/21');
   assert.equal(gatesById.get('journal-route-read-only')?.status, 'missing');
   assert.equal(gatesById.get('journal-route-read-only')?.code, 'JOURNAL_ROUTE_READ_ONLY_REQUIRED');
   assert.equal(gatesById.get('recovery-inspect-read-only')?.status, 'missing');
@@ -185,11 +185,11 @@ function expectedAuditReport() {
       observedReleaseStatus: 'NO-GO',
       primaryFailureCode: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
       primaryFailureBucket: 'topology',
-      statusMarker: '[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]',
+      statusMarker: '[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]',
       mutationAttempted: false,
       releaseMovementAllowed: false,
-      finalGates: '3/20',
-      candidateGates: '3/20',
+      finalGates: '3/21',
+      candidateGates: '3/21',
       missingRecoveryEvidenceCodes: [
         'JOURNAL_ROUTE_READ_ONLY_REQUIRED',
         'RECOVERY_INSPECT_READ_ONLY_REQUIRED',

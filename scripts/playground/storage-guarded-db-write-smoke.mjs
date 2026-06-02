@@ -143,6 +143,7 @@ await withPlaygroundServer('storage-option-create', optionCreateBlueprint, async
   assert.equal(evidence.storageGuard?.outcome, 'applied');
   assert.equal(evidence.storageGuard?.rowsAffected, 1);
   assert.equal(evidence.storageGuard?.logicalTable, 'wp_options');
+  assertStorageGuardCoverageMatches(evidence, optionCreateMutation);
   assertStoredJournalHasNoRawFixtureData(dbJournal.body);
 
   summary.optionCreate = {
@@ -219,6 +220,7 @@ for (const [scenarioIndex, scenario] of failureScenarios.entries()) {
   assert.equal(failedEvidence.storageGuard?.logicalTable, scenario.table);
   assert.equal(failedEvidence.storageGuard?.outcome, 'stale-at-write');
   assert.equal(failedEvidence.storageGuard?.rowsAffected, 0);
+  assertStorageGuardCoverageMatches(failedEvidence, scenario.mutation);
   assertStoredJournalHasNoRawFixtureData(dbJournal.body);
 
   let replay = null;
@@ -480,6 +482,7 @@ function assertPositiveStorageGuardEvidence(evidenceEntries, plan) {
     assert.match(evidence.storageGuard?.expectedStorageHash ?? '', /^[a-f0-9]{64}$/);
     assert.match(evidence.storageGuard?.sqlShapeHash ?? '', /^[a-f0-9]{64}$/);
     assert.ok(Array.isArray(evidence.storageGuard?.comparedColumns));
+    assertStorageGuardCoverageMatches(evidence, mutation);
   }
 }
 
@@ -494,6 +497,7 @@ function assertUnsupportedSurfacesDoNotClaimStorageGuard(evidenceEntries, plan) 
       assert.equal(evidence.storageGuard.operation, 'update');
       assert.equal(evidence.storageGuard.outcome, 'applied');
       assert.equal(evidence.storageGuard.logicalPath, mutation.resource.path);
+      assertStorageGuardCoverageMatches(evidence, mutation);
       continue;
     }
     assert.equal(evidence.storageGuard, undefined, `unsupported surface claimed storageGuard: ${mutation.resourceKey}`);
@@ -511,6 +515,29 @@ function guardedTables(evidenceEntries) {
 
 function unsupportedMutation(plan, evidence) {
   return plan.mutations.find((mutation) => mutation.id === evidence.mutationId && mutation.resource.type !== 'row');
+}
+
+function assertStorageGuardCoverageMatches(evidence, mutation) {
+  const coverage = evidence.storageGuardCoverage;
+  const guard = evidence.storageGuard;
+  assert.ok(coverage, `missing storageGuardCoverage for ${mutation.id}`);
+  assert.ok(guard, `missing storageGuard for ${mutation.id}`);
+  assert.equal(coverage.covered, true);
+  assert.equal(coverage.mutationId, mutation.id);
+  assert.equal(coverage.resourceKey, mutation.resourceKey);
+  assert.equal(coverage.boundary, guard.boundary);
+  assert.equal(coverage.operation, guard.operation);
+  assert.equal(coverage.resourceType, mutation.resource.type);
+  assert.equal(coverage.mutationAttempted, false);
+  assert.equal(coverage.resolutionPolicy, 'preserve-remote-state-and-stop');
+  if (mutation.resource.type === 'row') {
+    assert.equal(coverage.logicalTable, guard.logicalTable);
+    assert.equal(coverage.driver, 'wordpress-row-storage-guard');
+    assert.match(guard.driver ?? '', /\S/);
+  }
+  if (mutation.resource.type === 'file') {
+    assert.equal(coverage.driver, guard.driver);
+  }
 }
 
 function assertLaterMutationsStayedOld(snapshot, plan, failedIndex, preconditionsByMutation) {

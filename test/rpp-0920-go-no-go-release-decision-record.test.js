@@ -27,6 +27,7 @@ const expectedRiskIds = [
   'apply-route-pre-mutation',
   'journal-route-read-only',
   'recovery-inspect-read-only',
+  'storage-boundary-cas',
   'tmux-status-marker',
   'progress-release-timestamp',
   'agents-release-gates-row',
@@ -47,6 +48,7 @@ const expectedRiskCodes = [
   'APPLY_ROUTE_PRE_MUTATION_REQUIRED',
   'JOURNAL_ROUTE_READ_ONLY_REQUIRED',
   'RECOVERY_INSPECT_READ_ONLY_REQUIRED',
+  'STORAGE_BOUNDARY_CAS_REQUIRED',
   'TMUX_STATUS_MARKER_REQUIRED',
   'PROGRESS_RELEASE_TIMESTAMP_REQUIRED',
   'AGENTS_RELEASE_GATES_ROW_REQUIRED',
@@ -89,6 +91,11 @@ const expectedBuckets = [
     gateIds: ['journal-route-read-only', 'recovery-inspect-read-only'],
   },
   {
+    bucket: 'storage',
+    gateCount: 1,
+    gateIds: ['storage-boundary-cas'],
+  },
+  {
     bucket: 'operator-proof',
     gateCount: 4,
     gateIds: [
@@ -125,9 +132,9 @@ test('RPP-0920 decision record is support-only NO-GO and names every remaining r
     reason: 'Production-backed closure proof is absent for every remaining blocking final-release risk.',
     productionClosureProofObserved: false,
     riskRegisterComplete: true,
-    remainingRiskCount: 17,
+    remainingRiskCount: 18,
     closedRiskCount: 0,
-    namedOrClosedRiskCount: 17,
+    namedOrClosedRiskCount: 18,
     dispositionRule: 'Each remaining release risk remains open unless production-backed closure proof closes it.',
   });
   assert.equal(report.remainingRisks.length, expectedRiskIds.length);
@@ -171,9 +178,9 @@ test('RPP-0920 evidence aligns with the decision record and keeps risk closure a
     reason: decision.decision.reason,
     productionClosureProofObserved: false,
     riskRegisterComplete: true,
-    remainingRiskCount: 17,
+    remainingRiskCount: 18,
     closedRiskCount: 0,
-    namedOrClosedRiskCount: 17,
+    namedOrClosedRiskCount: 18,
     dispositionRule: decision.decision.dispositionRule,
   });
   assert.deepEqual(report.remainingRisks, decision.remainingRisks);
@@ -203,18 +210,18 @@ test('RPP-0920 risk register matches the current final release gate evaluator', 
   assert.equal(report.releaseStatus, 'NO-GO');
   assert.equal(report.primaryFailureCode, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
   assert.equal(report.primaryFailureBucket, 'topology');
-  assert.equal(report.statusMarker, '[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]');
+  assert.equal(report.statusMarker, '[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]');
   assert.equal(report.mutationAttempted, false);
   assert.equal(report.releaseMovement.allowed, false);
-  assert.equal(report.releaseMovement.finalGates, '3/20');
-  assert.equal(report.releaseMovement.candidateGates, '3/20');
+  assert.equal(report.releaseMovement.finalGates, '3/21');
+  assert.equal(report.releaseMovement.candidateGates, '3/21');
   assert.deepEqual(report.totals, {
-    gates: 20,
+    gates: 21,
     passed: 3,
     candidate: 0,
-    missing: 17,
+    missing: 18,
     failed: 0,
-    blocking: 17,
+    blocking: 18,
   });
   assert.deepEqual(
     report.missingProductionEvidenceBuckets.map((bucket) => ({

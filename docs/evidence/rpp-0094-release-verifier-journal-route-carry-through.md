@@ -9,7 +9,7 @@ Focused evidence for the Near / release-gates RPP-0094 slice: carry release-veri
 - `test/release-verifier-journal-route-carry-through-focused-regression.test.js`
   - records a verifier-shaped `JOURNAL_ROUTE_READ_ONLY_REQUIRED` payload for a write-observed journal route proof;
   - carries `journalRouteReadOnly` and `verifyReleaseFailure` into the release-gate CLI;
-  - asserts the negative `POST`/row-growth path fails closed with `[release-gates-ci:held final=19/20 candidate=19/20 reason=JOURNAL_ROUTE_READ_ONLY_REQUIRED]`;
+  - asserts the negative `POST`/row-growth path fails closed with `[release-gates-ci:held final=20/21 candidate=20/21 reason=JOURNAL_ROUTE_READ_ONLY_REQUIRED]`;
   - asserts the positive `GET`/stable-row path passes the journal gate while remaining `NO-GO` only for final production provenance;
   - preserves the negative/positive scenario matrix and asserts the evaluator remains read-only.
 

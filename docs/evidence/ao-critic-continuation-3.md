@@ -14,7 +14,7 @@ Current release-gate evidence from `node ./scripts/release/check-release-gates.m
 - `status: held`;
 - `primaryFailureCode: REPRINT_PUSH_LIVE_SOURCE_REQUIRED`;
 - `releaseMovement.allowed: false`;
-- `finalGates: 3/20` with `17` missing blocking gates.
+- `finalGates: 3/21` with `17` missing blocking gates.
 
 The direct integration avoided protected handoff/runtime scratch diffs, but the progress docs on the lane are stale until the active `rpp-26` progress update lands. The integrated `rpp-28` evidence is focused-only: this audit's `npm test` run still fails with `475` passing, `23` failing, and `11` skipped tests.
 

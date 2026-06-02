@@ -61,6 +61,7 @@ const expectedGapIds = Object.freeze([
   'apply-route-pre-mutation',
   'journal-route-read-only',
   'recovery-inspect-read-only',
+  'storage-boundary-cas',
   'tmux-status-marker',
   'progress-release-timestamp',
   'agents-release-gates-row',
@@ -81,6 +82,7 @@ const expectedGapCodes = Object.freeze([
   'APPLY_ROUTE_PRE_MUTATION_REQUIRED',
   'JOURNAL_ROUTE_READ_ONLY_REQUIRED',
   'RECOVERY_INSPECT_READ_ONLY_REQUIRED',
+  'STORAGE_BOUNDARY_CAS_REQUIRED',
   'TMUX_STATUS_MARKER_REQUIRED',
   'PROGRESS_RELEASE_TIMESTAMP_REQUIRED',
   'AGENTS_RELEASE_GATES_ROW_REQUIRED',
@@ -184,15 +186,15 @@ test('RPP-0926 evidence names remaining release-blocking gaps and keeps the verd
 
   assert.deepEqual(report.remainingReleaseBlockingEvidenceGaps.map((gap) => gap.id), expectedGapIds);
   assert.deepEqual(report.remainingReleaseBlockingEvidenceGaps.map((gap) => gap.code), expectedGapCodes);
-  assert.equal(report.remainingReleaseBlockingEvidenceGaps.length, 17);
+  assert.equal(report.remainingReleaseBlockingEvidenceGaps.length, 18);
 
   assert.deepEqual(report.releaseGateSnapshot.totals, {
-    gates: 20,
+    gates: 21,
     passed: 3,
     candidate: 0,
-    missing: 17,
+    missing: 18,
     failed: 0,
-    blocking: 17,
+    blocking: 18,
   });
   assert.equal(report.releaseGateSnapshot.exitCode, 1);
   assert.equal(report.releaseGateSnapshot.releaseStatus, 'NO-GO');
@@ -201,7 +203,7 @@ test('RPP-0926 evidence names remaining release-blocking gaps and keeps the verd
   assert.equal(report.releaseGateSnapshot.releaseMovementAllowed, false);
   assert.equal(
     report.releaseGateSnapshot.statusMarker,
-    '[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]',
+    '[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]',
   );
 
   assert.match(text, /All remaining release-blocking gaps below stay open; this audit closes none\./);
@@ -232,8 +234,8 @@ test('RPP-0926 artifacts remain redacted and final release gates remain NO-GO', 
   assert.equal(result.report.statusMarker, report.releaseGateSnapshot.statusMarker);
   assert.equal(result.report.mutationAttempted, false);
   assert.equal(result.report.releaseMovement.allowed, false);
-  assert.equal(result.report.releaseMovement.finalGates, '3/20');
-  assert.equal(result.report.releaseMovement.candidateGates, '3/20');
+  assert.equal(result.report.releaseMovement.finalGates, '3/21');
+  assert.equal(result.report.releaseMovement.candidateGates, '3/21');
   assert.deepEqual(result.report.totals, report.releaseGateSnapshot.totals);
   assert.deepEqual(
     result.report.releaseMovement.missingEvidence.map((gap) => gap.id),

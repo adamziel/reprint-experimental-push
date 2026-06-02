@@ -47,8 +47,8 @@ function completeEvidence(scope = 'final-release', overrides = {}) {
     tmuxStatusMarker: {
       ok: true,
       marker: scope === 'final-release'
-        ? '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]'
-        : '[release-gates:candidate-for-review final=0/20 candidate=20/20 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]',
+        ? '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]'
+        : '[release-gates:candidate-for-review final=0/21 candidate=21/21 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow.toISOString(), scope },
@@ -57,6 +57,15 @@ function completeEvidence(scope = 'final-release', overrides = {}) {
       ok: true,
       exitCode: 1,
       reason: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+      scope,
+    },
+    storageBoundaryCas: {
+      ok: true,
+      casBound: true,
+      allFinalWritesGuarded: true,
+      storageBoundaryRevalidated: true,
+      staleAtWriteRejected: true,
+      observed: 'all-final-target-writes-storage-boundary-cas-guarded',
       scope,
     },
     ...overrides,
@@ -77,14 +86,20 @@ function writeReleaseGateEvidenceFixture(payload) {
 }
 
 test('release gate definitions are machine-readable and cover the near release-gate foundation items', () => {
-  assert.equal(RELEASE_GATE_DEFINITIONS.length, 20);
+  assert.equal(RELEASE_GATE_DEFINITIONS.length, 21);
   assert.deepEqual(
     RELEASE_GATE_DEFINITIONS.slice(0, 5).map((gate) => gate.rpp),
     ['RPP-0001', 'RPP-0002', 'RPP-0003', 'RPP-0004', 'RPP-0005'],
   );
   assert.deepEqual(
-    RELEASE_GATE_DEFINITIONS.slice(-5).map((gate) => gate.rpp),
-    ['RPP-0016', 'RPP-0017', 'RPP-0018', 'RPP-0019', 'RPP-0020'],
+    RELEASE_GATE_DEFINITIONS.slice(-5).map((gate) => gate.id),
+    [
+      'storage-boundary-cas',
+      'tmux-status-marker',
+      'progress-release-timestamp',
+      'agents-release-gates-row',
+      'verify-release-failure-reason',
+    ],
   );
 });
 
@@ -139,7 +154,7 @@ test('packaged production-plugin fallback is rejected even when every other gate
     scope: 'final-release',
   });
   assert.equal(evaluation.releaseMovement.allowed, false);
-  assert.equal(evaluation.releaseMovement.finalGates, '19/20');
+  assert.equal(evaluation.releaseMovement.finalGates, '20/21');
   assert.equal(evaluation.releaseMovement.reason, 'Packaged production-plugin fallback is support evidence only and cannot move release gates.');
 });
 
@@ -162,7 +177,7 @@ test('wrong remote alias rejection holds release movement without weakening othe
     scope: 'final-release',
   });
   assert.equal(evaluation.releaseMovement.allowed, false);
-  assert.equal(evaluation.releaseMovement.finalGates, '19/20');
+  assert.equal(evaluation.releaseMovement.finalGates, '20/21');
   assert.equal(evaluation.releaseMovement.missingEvidence.length, 1);
 });
 
@@ -235,7 +250,7 @@ test('check-release-gates command proves auth source readback drift before mutat
     reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
   });
   assert.equal(result.report.releaseMovement.allowed, false);
-  assert.equal(result.report.releaseMovement.finalGates, '19/20');
+  assert.equal(result.report.releaseMovement.finalGates, '20/21');
   assert.deepEqual(result.report.missingProductionEvidenceBuckets, [
     {
       bucket: 'auth',
@@ -315,7 +330,7 @@ test('check-release-gates command proves Application Password binding drift befo
     reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
   });
   assert.equal(result.report.releaseMovement.allowed, false);
-  assert.equal(result.report.releaseMovement.finalGates, '19/20');
+  assert.equal(result.report.releaseMovement.finalGates, '20/21');
   assert.deepEqual(result.report.missingProductionEvidenceBuckets, [
     {
       bucket: 'auth',
@@ -387,11 +402,50 @@ test('same source URL identity drift emits a final bracketed marker for RPP-0030
     required: ['preflight, dry-run, apply, and recovery use the same source URL'],
   });
   assert.equal(evaluation.releaseMovement.allowed, false);
-  assert.equal(evaluation.releaseMovement.finalGates, '19/20');
+  assert.equal(evaluation.releaseMovement.finalGates, '20/21');
   assert.equal(evaluation.releaseMovement.reason, 'Source URL identity drifted across the checked release path.');
   assert.equal(
     formatReleaseGateStatusMarker(evaluation),
-    '[release-gates:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]',
+    '[release-gates:held final=20/21 candidate=20/21 reason=SAME_SOURCE_IDENTITY_REQUIRED]',
+  );
+});
+
+test('storage-boundary CAS evidence is a named blocking release gate', () => {
+  const storageFailure = {
+    ok: false,
+    casBound: false,
+    allFinalWritesGuarded: true,
+    storageBoundaryRevalidated: true,
+    staleAtWriteRejected: false,
+    observed: 'stale-at-write-proof-missing',
+    scope: 'final-release',
+  };
+  const evaluation = evaluateReleaseGates({
+    env: releaseEnv(),
+    evidence: completeEvidence('final-release', {
+      storageBoundaryCas: storageFailure,
+    }),
+    scope: 'final-release',
+    now: fixedNow,
+  });
+  const gate = gateById(evaluation, 'storage-boundary-cas');
+
+  assert.equal(gate.status, 'failed');
+  assert.equal(gate.code, 'STORAGE_BOUNDARY_CAS_REQUIRED');
+  assert.equal(gate.reason, 'Storage-boundary CAS evidence is incomplete or failed.');
+  assert.deepEqual(gate.evidence, {
+    ...storageFailure,
+    required: [
+      'all final target writes are guarded at the storage boundary',
+      'storage-boundary revalidation runs before mutation',
+      'stale-at-write attempts are rejected without later mutation',
+    ],
+  });
+  assert.equal(evaluation.releaseMovement.allowed, false);
+  assert.equal(evaluation.releaseMovement.finalGates, '20/21');
+  assert.equal(
+    formatReleaseGateStatusMarker(evaluation),
+    '[release-gates:held final=20/21 candidate=20/21 reason=STORAGE_BOUNDARY_CAS_REQUIRED]',
   );
 });
 
@@ -438,7 +492,7 @@ test('check-release-gates command proves preflight route identity drift before m
     reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
   });
   assert.equal(result.report.releaseMovement.allowed, false);
-  assert.equal(result.report.releaseMovement.finalGates, '19/20');
+  assert.equal(result.report.releaseMovement.finalGates, '20/21');
   assert.deepEqual(result.report.missingProductionEvidenceBuckets, [
     {
       bucket: 'route',
@@ -523,7 +577,7 @@ test('check-release-gates command proves dry-run route eligibility failure for R
     reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
   });
   assert.equal(result.report.releaseMovement.allowed, false);
-  assert.equal(result.report.releaseMovement.finalGates, '19/20');
+  assert.equal(result.report.releaseMovement.finalGates, '20/21');
   assert.deepEqual(result.report.missingProductionEvidenceBuckets, [
     {
       bucket: 'route',
@@ -611,7 +665,7 @@ test('check-release-gates command links apply route pre-mutation proof for RPP-0
     reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
   });
   assert.equal(result.report.releaseMovement.allowed, true);
-  assert.equal(result.report.releaseMovement.finalGates, '20/20');
+  assert.equal(result.report.releaseMovement.finalGates, '21/21');
 
   const gate = gateById(result.report.evaluation, 'apply-route-pre-mutation');
   assert.equal(gate.status, 'passed');
@@ -648,7 +702,7 @@ test('check-release-gates command records journal route read-only scenario matri
       expected: {
         exitCode: 1,
         releaseAllowed: false,
-        finalGates: '19/20',
+        finalGates: '20/21',
         primaryFailureBucket: 'recovery',
         primaryFailureCode: 'JOURNAL_ROUTE_READ_ONLY_REQUIRED',
         gateStatus: 'failed',
@@ -715,7 +769,7 @@ test('check-release-gates command records journal route read-only scenario matri
       expected: {
         exitCode: 1,
         releaseAllowed: true,
-        finalGates: '20/20',
+        finalGates: '21/21',
         primaryFailureBucket: 'provenance',
         primaryFailureCode: 'PRODUCTION_EVIDENCE_REQUIRED',
         gateStatus: 'passed',
@@ -861,10 +915,10 @@ test('check-release-gates command proves recovery inspect read-only marker for R
       expected: {
         exitCode: 1,
         releaseAllowed: false,
-        finalGates: '19/20',
+        finalGates: '20/21',
         primaryFailureBucket: 'recovery',
         primaryFailureCode: 'RECOVERY_INSPECT_READ_ONLY_REQUIRED',
-        statusMarker: '[release-gates-ci:held final=19/20 candidate=19/20 reason=RECOVERY_INSPECT_READ_ONLY_REQUIRED]',
+        statusMarker: '[release-gates-ci:held final=20/21 candidate=20/21 reason=RECOVERY_INSPECT_READ_ONLY_REQUIRED]',
         gateStatus: 'failed',
         gateCode: 'RECOVERY_INSPECT_READ_ONLY_REQUIRED',
         gateReason: 'Recovery inspect route was not proven read-only.',
@@ -931,10 +985,10 @@ test('check-release-gates command proves recovery inspect read-only marker for R
       expected: {
         exitCode: 1,
         releaseAllowed: true,
-        finalGates: '20/20',
+        finalGates: '21/21',
         primaryFailureBucket: 'provenance',
         primaryFailureCode: 'PRODUCTION_EVIDENCE_REQUIRED',
-        statusMarker: '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]',
+        statusMarker: '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]',
         gateStatus: 'passed',
         gateCode: 'OK',
         gateReason: 'Recovery inspect read-only proof is backed by final release evidence.',
@@ -1028,7 +1082,7 @@ test('check-release-gates command proves recovery inspect read-only marker for R
   assert.deepEqual(observedMatrix, [
     {
       scenario: 'negative-recovery-inspect-write-observed',
-      marker: '[release-gates-ci:held final=19/20 candidate=19/20 reason=RECOVERY_INSPECT_READ_ONLY_REQUIRED]',
+      marker: '[release-gates-ci:held final=20/21 candidate=20/21 reason=RECOVERY_INSPECT_READ_ONLY_REQUIRED]',
       gateStatus: 'failed',
       gateCode: 'RECOVERY_INSPECT_READ_ONLY_REQUIRED',
       readOnly: false,
@@ -1041,7 +1095,7 @@ test('check-release-gates command proves recovery inspect read-only marker for R
     },
     {
       scenario: 'positive-recovery-inspect-read-only',
-      marker: '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]',
+      marker: '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]',
       gateStatus: 'passed',
       gateCode: 'OK',
       readOnly: true,
@@ -1109,9 +1163,9 @@ test('check-release-gates command summarizes allowed and denied releaseMovement 
   assert.deepEqual(denied.report.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: 'Source URL identity drifted across the checked release path.',
     missingEvidence: [
       {
@@ -1163,9 +1217,9 @@ test('check-release-gates command summarizes allowed and denied releaseMovement 
   assert.deepEqual(allowed.report.releaseMovement, {
     allowed: true,
     state: 'release-ready',
-    gates: '20/20',
-    finalGates: '20/20',
-    candidateGates: '20/20',
+    gates: '21/21',
+    finalGates: '21/21',
+    candidateGates: '21/21',
     reason: 'all release gates are backed by final release evidence',
     missingEvidence: [],
   });
@@ -1174,7 +1228,7 @@ test('check-release-gates command summarizes allowed and denied releaseMovement 
   assert.equal(allowed.report.missingProductionEvidenceBuckets.length, 1);
   const provenanceBucket = allowed.report.missingProductionEvidenceBuckets[0];
   assert.equal(provenanceBucket.bucket, 'provenance');
-  assert.equal(provenanceBucket.gateCount, 19);
+  assert.equal(provenanceBucket.gateCount, 20);
   assert.ok(provenanceBucket.gates.every((gate) => gate.code === 'PRODUCTION_EVIDENCE_REQUIRED'));
   const missingProvenanceIds = provenanceBucket.gates.map((gate) => gate.id);
   assert.ok(missingProvenanceIds.includes('release-gate:application-password-binding'));
@@ -1183,6 +1237,7 @@ test('check-release-gates command summarizes allowed and denied releaseMovement 
   assert.ok(missingProvenanceIds.includes('release-gate:apply-route-pre-mutation'));
   assert.ok(missingProvenanceIds.includes('release-gate:journal-route-read-only'));
   assert.ok(missingProvenanceIds.includes('release-gate:recovery-inspect-read-only'));
+  assert.ok(missingProvenanceIds.includes('release-gate:storage-boundary-cas'));
   assert.ok(missingProvenanceIds.includes('release-gate:tmux-status-marker'));
   assert.equal(missingProvenanceIds.includes('release-gate:release-movement-summary'), false);
 
@@ -1229,7 +1284,7 @@ test('check-release-gates command summarizes allowed and denied releaseMovement 
         exitCode: 1,
         primaryFailureCode: 'SAME_SOURCE_IDENTITY_REQUIRED',
         releaseAllowed: false,
-        finalGates: '19/20',
+        finalGates: '20/21',
         summaryAllowed: false,
         summaryMissingEvidence: 1,
         mutationAttempted: false,
@@ -1239,7 +1294,7 @@ test('check-release-gates command summarizes allowed and denied releaseMovement 
         exitCode: 1,
         primaryFailureCode: 'PRODUCTION_EVIDENCE_REQUIRED',
         releaseAllowed: true,
-        finalGates: '20/20',
+        finalGates: '21/21',
         summaryAllowed: true,
         summaryMissingEvidence: 0,
         mutationAttempted: false,
@@ -1311,7 +1366,7 @@ test('check-release-gates command proves missing production secret before mutati
     reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
   });
   assert.equal(result.report.releaseMovement.allowed, false);
-  assert.equal(result.report.releaseMovement.finalGates, '19/20');
+  assert.equal(result.report.releaseMovement.finalGates, '20/21');
   assert.deepEqual(result.report.missingProductionEvidenceBuckets, [
     {
       bucket: 'auth',
@@ -1391,7 +1446,7 @@ test('remaining release gates name missing evidence keys and hold release moveme
     assert.equal(gate.evidence.evidenceKey, evidenceKey, gateId);
     assert.equal(gate.evidence.scope, 'missing', gateId);
     assert.equal(evaluation.releaseMovement.allowed, false, gateId);
-    assert.equal(evaluation.releaseMovement.finalGates, '19/20', gateId);
+    assert.equal(evaluation.releaseMovement.finalGates, '20/21', gateId);
     assert.ok(
       evaluation.releaseMovement.missingEvidence.some((entry) => entry.id === gateId && entry.code === expectedCode),
       gateId,
@@ -1426,7 +1481,7 @@ test('explicit failed route, auth, and read-only proof evidence stays fail-close
     assert.equal(gate.code, expectedCode, gateId);
     assert.equal(gate.evidence.scope, 'final-release', gateId);
     assert.equal(evaluation.releaseMovement.allowed, false, gateId);
-    assert.equal(evaluation.releaseMovement.finalGates, '19/20', gateId);
+    assert.equal(evaluation.releaseMovement.finalGates, '20/21', gateId);
   }
 });
 
@@ -1466,7 +1521,7 @@ test('operator proof gates reject stale marker, timestamp, status row, and zero-
     assert.equal(gate.status, 'failed', gateId);
     assert.equal(gate.code, expectedCode, gateId);
     assert.equal(evaluation.releaseMovement.allowed, false, gateId);
-    assert.equal(evaluation.releaseMovement.finalGates, '19/20', gateId);
+    assert.equal(evaluation.releaseMovement.finalGates, '20/21', gateId);
   }
 });
 
@@ -1480,16 +1535,16 @@ test('local candidate evidence can be complete while final release readiness rem
 
   assert.equal(candidate.status, 'candidate-for-review');
   assert.equal(candidate.candidateMovement.allowed, true);
-  assert.equal(candidate.candidateMovement.gates, '20/20');
+  assert.equal(candidate.candidateMovement.gates, '21/21');
   assert.equal(candidate.releaseMovement.allowed, false);
   assert.equal(candidate.releaseMovement.gates, 'candidate-for-review');
-  assert.equal(candidate.releaseMovement.finalGates, '0/20');
-  assert.equal(candidate.releaseMovement.candidateGates, '20/20');
+  assert.equal(candidate.releaseMovement.finalGates, '0/21');
+  assert.equal(candidate.releaseMovement.candidateGates, '21/21');
   assert.equal(
     candidate.releaseMovement.reason,
     'local candidate evidence is complete, but final release evidence is still required; release hold remains fail-closed',
   );
-  assert.equal(candidate.releaseMovement.missingEvidence.length, 20);
+  assert.equal(candidate.releaseMovement.missingEvidence.length, 21);
   assert.ok(candidate.releaseMovement.missingEvidence.every((entry) => entry.status === 'candidate'));
 
   const final = evaluateReleaseGates({
@@ -1501,7 +1556,7 @@ test('local candidate evidence can be complete while final release readiness rem
 
   assert.equal(final.status, 'release-ready');
   assert.equal(final.releaseMovement.allowed, true);
-  assert.equal(final.releaseMovement.gates, '20/20');
+  assert.equal(final.releaseMovement.gates, '21/21');
   assert.equal(final.releaseMovement.missingEvidence.length, 0);
 });
 
@@ -1517,7 +1572,7 @@ test('status marker and summary expose a concise fail-closed machine-readable ve
 
   assert.match(
     marker,
-    /^\[release-gates:held final=\d+\/20 candidate=\d+\/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED\]$/,
+    /^\[release-gates:held final=\d+\/21 candidate=\d+\/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED\]$/,
   );
   assert.equal(summary.status, 'held');
   assert.equal(summary.releaseMovement.allowed, false);

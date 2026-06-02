@@ -81,8 +81,8 @@ No release-gate status file was edited by this audit.
     "expectedGateState": "candidate-for-review",
     "expectedReleaseMovementAllowed": false,
     "expectedCandidateMovementAllowed": true,
-    "expectedFinalGates": "0/20",
-    "expectedCandidateGates": "20/20",
+    "expectedFinalGates": "0/21",
+    "expectedCandidateGates": "21/21",
     "expectedStatusMarkerReason": "LOCAL_CANDIDATE_EVIDENCE_ONLY",
     "expectedFinalReleaseStatus": "NO-GO"
   },
@@ -92,11 +92,11 @@ No release-gate status file was edited by this audit.
     "observedReleaseStatus": "NO-GO",
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "primaryFailureBucket": "topology",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20",
+    "finalGates": "3/21",
+    "candidateGates": "3/21",
     "missingLiveEvidenceBuckets": [
       "topology",
       "auth",
@@ -108,7 +108,8 @@ No release-gate status file was edited by this audit.
       "REPRINT_PUSH_SECRET_REQUIRED",
       "APPLICATION_PASSWORD_BINDING_REQUIRED",
       "JOURNAL_ROUTE_READ_ONLY_REQUIRED",
-      "RECOVERY_INSPECT_READ_ONLY_REQUIRED"
+      "RECOVERY_INSPECT_READ_ONLY_REQUIRED",
+      "STORAGE_BOUNDARY_CAS_REQUIRED"
     ],
     "missingRecoveryEvidenceCodes": [
       "JOURNAL_ROUTE_READ_ONLY_REQUIRED",
@@ -150,7 +151,7 @@ No release-gate status file was edited by this audit.
 | --- | --- | --- |
 | Audited commit | `git rev-parse HEAD` | `000a1f2f5b5f65bbc65496667a0b9b163fc3090f` before adding this evidence |
 | Gate status row readback | `node scripts/release/agents-release-gates-status-row.mjs .agents/RELEASE_GATES.md` | `GATE-2` status `support_only`, `releaseVerdict` `0/4`, release status `NO-GO` |
-| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T02:49:00.000Z` | exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, final `3/20`; missing topology, auth, and recovery proof keeps release held |
+| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T02:49:00.000Z` | exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, final `3/21`; missing topology, auth, and recovery proof keeps release held |
 | Focused syntax check | `node --check test/rpp-0942-release-gate-2-final-audit-v3.test.js` | JavaScript syntax accepted |
 | Focused RPP-0942 regression | `node --test --test-name-pattern RPP-0942 test/rpp-0942-release-gate-2-final-audit-v3.test.js` | focused audit passes while preserving `support_only` and `NO-GO` |
 | Evidence redaction scan | `node scripts/release/artifact-redaction-scan.mjs docs/evidence/rpp-0942-release-gate-2-final-audit-v3.md` | audit artifact scans cleanly |

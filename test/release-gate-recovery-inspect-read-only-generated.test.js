@@ -15,8 +15,8 @@ const remoteChangedUrl = 'https://changed.example.test/push';
 const command = 'node scripts/playground/production-shaped-apply-revalidation-smoke.mjs';
 const checkedRecoveryRoute = '/wp-json/reprint/v1/push/recovery/inspect';
 const requiredRecoveryInspectEvidence = ['recovery inspect read-only proof'];
-const releaseReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
-const heldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=RECOVERY_INSPECT_READ_ONLY_REQUIRED]';
+const releaseReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const heldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=RECOVERY_INSPECT_READ_ONLY_REQUIRED]';
 
 function completeFinalEvidence(overrides = {}) {
   const scope = 'final-release';
@@ -38,9 +38,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: recoveryInspectReadOnlyEvidence(),
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -180,7 +181,7 @@ test('generated recovery inspect read-only fixture emits final marker and preser
   assert.equal(report.primaryFailureBucket, 'provenance');
   assert.equal(report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
   assert.equal(report.statusMarker, releaseReadyMarker);
   assert.ok(result.stdout.includes(releaseReadyMarker), 'stdout JSON must expose the tmux-visible final marker');
   assert.equal(report.mutationAttempted, false);
@@ -319,9 +320,9 @@ test('generated recovery inspect write-observed fixture fails closed with held m
   assert.deepEqual(report.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: 'Recovery inspect route was not proven read-only.',
     missingEvidence: [
       {

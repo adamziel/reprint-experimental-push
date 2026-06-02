@@ -15,8 +15,8 @@ const remoteChangedUrl = 'https://changed.example.test/push';
 const expectedRoutePrefix = '/wp-json/reprint-push/v1';
 const secretValue = 'RPP_0070_SHOULD_NOT_LEAK';
 const sameSourceReason = 'Source URL identity drifted across the checked release path.';
-const heldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]';
-const readyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const heldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=SAME_SOURCE_IDENTITY_REQUIRED]';
+const readyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
 const requiredSameSourceEvidence = ['preflight, dry-run, apply, and recovery use the same source URL'];
 
 const expectedDriftEvidence = Object.freeze({
@@ -108,9 +108,10 @@ function completeFinalEvidence(sourceIdentity = matchingSourceIdentityEvidence()
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -234,9 +235,9 @@ test('same source URL identity regression fails closed before mutation for RPP-0
   assert.deepEqual(report.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: sameSourceReason,
     missingEvidence: [
       {
@@ -285,7 +286,7 @@ test('matching same source proof passes the gate while release remains NO-GO wit
   assert.equal(report.statusMarker, readyMarker);
   assert.ok(result.stdout.includes(readyMarker), 'stdout JSON must expose the final release-ready gate marker');
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
   assert.equal(report.releaseEvidenceProvenance.required, true);
   assert.equal(report.releaseEvidenceProvenance.ready, false);
   assert.equal(report.mutationAttempted, false);

@@ -6,7 +6,7 @@ Final release: **NO-GO**
 
 This record is support documentation only. It does not approve release, does not
 authorize production apply, does not move release gates, and does not close any
-production release risk. The current final-release evaluator names 17 remaining
+production release risk. The current final-release evaluator names 18 remaining
 blocking risks. Because no production-backed closure proof is present in this
 slice, every named remaining risk stays open.
 
@@ -29,9 +29,9 @@ slice, every named remaining risk stays open.
     "reason": "Production-backed closure proof is absent for every remaining blocking final-release risk.",
     "productionClosureProofObserved": false,
     "riskRegisterComplete": true,
-    "remainingRiskCount": 17,
+    "remainingRiskCount": 18,
     "closedRiskCount": 0,
-    "namedOrClosedRiskCount": 17,
+    "namedOrClosedRiskCount": 18,
     "dispositionRule": "Each remaining release risk remains open unless production-backed closure proof closes it."
   },
   "auditedContext": {
@@ -46,17 +46,17 @@ slice, every named remaining risk stays open.
     "releaseStatus": "NO-GO",
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "primaryFailureBucket": "topology",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20",
+    "finalGates": "3/21",
+    "candidateGates": "3/21",
     "totals": {
-      "gates": 20,
+      "gates": 21,
       "passed": 3,
       "candidate": 0,
-      "missing": 17,
+      "missing": 18,
       "failed": 0,
-      "blocking": 17
+      "blocking": 18
     }
   },
   "missingProductionEvidenceBuckets": [
@@ -101,6 +101,13 @@ slice, every named remaining risk stays open.
       "gateIds": [
         "journal-route-read-only",
         "recovery-inspect-read-only"
+      ]
+    },
+    {
+      "bucket": "storage",
+      "gateCount": 1,
+      "gateIds": [
+        "storage-boundary-cas"
       ]
     },
     {
@@ -272,6 +279,18 @@ slice, every named remaining risk stays open.
       "closureRequired": "Production-backed recovery inspect read-only evidence supplied to the final release evaluator."
     },
     {
+      "id": "storage-boundary-cas",
+      "rpp": "RPP-0021",
+      "category": "storage",
+      "title": "Storage-boundary CAS proof",
+      "code": "STORAGE_BOUNDARY_CAS_REQUIRED",
+      "disposition": "open",
+      "releaseBlocker": true,
+      "productionBackedClosureObserved": false,
+      "namedRisk": "Storage-boundary CAS proof is required for every final target write before release movement.",
+      "closureRequired": "Production-backed evidence that every final target write is guarded at the storage boundary, revalidated before mutation, and rejects stale-at-write attempts."
+    },
+    {
       "id": "tmux-status-marker",
       "rpp": "RPP-0017",
       "category": "operator-proof",
@@ -383,6 +402,7 @@ All remaining risks below are open. None are closed by this support-only record.
 | RPP-0013 apply-route-pre-mutation | Open | Yes | Apply route pre-mutation rejection proof is required before release movement. |
 | RPP-0014 journal-route-read-only | Open | Yes | Journal route read-only proof is required before release movement. |
 | RPP-0015 recovery-inspect-read-only | Open | Yes | Recovery inspect read-only proof is required before release movement. |
+| RPP-0021 storage-boundary-cas | Open | Yes | Storage-boundary CAS proof is required for every final target write before release movement. |
 | RPP-0017 tmux-status-marker | Open | Yes | A final bracketed stdout status marker is required for tmux-visible release gate proof. |
 | RPP-0018 progress-release-timestamp | Open | Yes | A release timestamp tied to current evidence is required before release movement. |
 | RPP-0019 agents-release-gates-row | Open | Yes | .agents/RELEASE_GATES.md status row evidence is required before release movement. |
@@ -394,7 +414,7 @@ Closed risks: none. Production-backed closure proof observed: none.
 
 Decision: **NO-GO**.
 
-The release remains held at `3/20` final gates and `3/20` candidate gates. The
+The release remains held at `3/21` final gates and `3/21` candidate gates. The
 primary blocking failure is `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`. No mutation was
 attempted by the evaluator, no release-gate status moved, and no checklist,
 progress log, progress page, dashboard, or status file movement is authorized by

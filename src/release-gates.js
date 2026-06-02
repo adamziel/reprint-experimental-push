@@ -128,6 +128,18 @@ const RELEASE_GATE_DATA = [
     requiredEvidence: ['machine-readable releaseMovement summary produced by evaluator'],
   },
   {
+    id: 'storage-boundary-cas',
+    rpp: 'RPP-0021',
+    title: 'Storage-boundary CAS proof',
+    category: 'storage',
+    evidenceKey: 'storageBoundaryCas',
+    requiredEvidence: [
+      'all final target writes are guarded at the storage boundary',
+      'storage-boundary revalidation runs before mutation',
+      'stale-at-write attempts are rejected without later mutation',
+    ],
+  },
+  {
     id: 'tmux-status-marker',
     rpp: 'RPP-0017',
     title: 'tmux stdout proof status marker',
@@ -370,6 +382,8 @@ function evaluateGate(definition, context) {
       });
     case 'verify-release-failure-reason':
       return evaluateVerifyReleaseFailureGate(definition, context);
+    case 'storage-boundary-cas':
+      return evaluateStorageBoundaryCasGate(definition, context);
     default:
       return missingGate(definition, context, {
         code: 'UNKNOWN_RELEASE_GATE',
@@ -760,6 +774,50 @@ function evaluateVerifyReleaseFailureGate(definition, context) {
     observed,
     exitCode,
     reason,
+    scope: evidence.scope,
+  });
+}
+
+function evaluateStorageBoundaryCasGate(definition, context) {
+  const evidence = evidenceObject(context.evidence[definition.evidenceKey]);
+  if (!evidence) {
+    return missingGate(definition, context, {
+      code: 'STORAGE_BOUNDARY_CAS_REQUIRED',
+      reason: 'Storage-boundary CAS proof is required for every final target write before release movement.',
+      evidence: missingEvidence(definition),
+    });
+  }
+
+  const checks = {
+    ok: booleanField(evidence, ['ok', 'casBound']),
+    allFinalWritesGuarded: booleanField(evidence, ['allFinalWritesGuarded', 'finalTargetWritesCovered']),
+    storageBoundaryRevalidated: booleanField(evidence, ['storageBoundaryRevalidated', 'revalidatedBeforeWrite']),
+    staleAtWriteRejected: booleanField(evidence, ['staleAtWriteRejected', 'staleWriteRejected']),
+  };
+  const failedChecks = Object.entries(checks)
+    .filter(([, value]) => value !== true)
+    .map(([key]) => key);
+
+  if (failedChecks.length > 0) {
+    return failedGate(definition, context, {
+      code: evidence.code || 'STORAGE_BOUNDARY_CAS_REQUIRED',
+      reason: evidence.reason || 'Storage-boundary CAS evidence is incomplete or failed.',
+      evidence: {
+        ...evidence,
+        required: evidence.required || definition.requiredEvidence,
+        observed: evidence.observed || {
+          failedChecks,
+          checks,
+        },
+        scope: normalizeScope(evidence.scope || context.scope),
+      },
+    });
+  }
+
+  return satisfiedGate(definition, context, {
+    ...evidence,
+    required: evidence.required || definition.requiredEvidence,
+    observed: evidence.observed || 'all-final-target-writes-storage-boundary-cas-guarded',
     scope: evidence.scope,
   });
 }

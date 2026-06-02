@@ -12,7 +12,7 @@ RPP-0098 has focused evidence toward the Near / release-gates verifier path for 
 
 - The verifier-shaped payload preserves the `progressReleaseTimestamp` object under both the top-level verifier report and `topologyEvidence.progressReleaseTimestamp` before it is handed to `check-release-gates`.
 - The positive path carries the `progress.html` proof timestamp through the release-gate CLI, passes the `progress-release-timestamp` gate with final-release evidence, and keeps the overall release `NO-GO` only because production provenance is still required.
-- The stale/non-ISO carried timestamp path emits `[verify-release:held exit=1 reason=PROGRESS_RELEASE_TIMESTAMP_REQUIRED mutationAttempted=false]`, fails closed with `[release-gates-ci:held final=19/20 candidate=19/20 reason=PROGRESS_RELEASE_TIMESTAMP_REQUIRED]`, and records `mutationAttempted: false`.
+- The stale/non-ISO carried timestamp path emits `[verify-release:held exit=1 reason=PROGRESS_RELEASE_TIMESTAMP_REQUIRED mutationAttempted=false]`, fails closed with `[release-gates-ci:held final=20/21 candidate=20/21 reason=PROGRESS_RELEASE_TIMESTAMP_REQUIRED]`, and records `mutationAttempted: false`.
 - The focused assertions confirm the sentinel credential value is absent from verifier-shaped stdout/stderr and release-gate stdout/stderr.
 
 No progress.html, checklist, or shared release-verifier implementation files were edited. Focused checks passed but the checklist item remains unchecked.

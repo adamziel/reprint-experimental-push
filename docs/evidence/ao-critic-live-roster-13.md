@@ -12,7 +12,7 @@ Checklist snapshot: linter parses 110 checked / 890 open; checklist header still
   `origin/session/rpp-34-rpp-0421-driver-registration-api-proof` as equivalent,
   and `node --test test/playground-snapshot-lib.test.js` exits `0` on the lane.
 - `check-release-gates` still exits `1` with primary code
-  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, and 3/20
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, and 3/21
   gates.
 - All named queued refs merge-tree cleanly against `67d50f384`, but sibling
   checks expose restack needs:

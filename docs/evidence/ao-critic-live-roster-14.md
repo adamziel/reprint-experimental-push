@@ -11,7 +11,7 @@ Checklist snapshot: linter parses 111 checked / 889 open; checklist header still
 - The lane advanced beyond the refill snapshot `67d50f384`; `RPP-0217` is now
   integrated through `6d92f9517` plus progress refresh `3d4a985dd`.
 - `check-release-gates` still exits `1` with primary code
-  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, and 3/20
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, and 3/21
   gates.
 - `origin/session/rpp-28-rpp-0217-integration-20260528` matches the lane head
   exactly.

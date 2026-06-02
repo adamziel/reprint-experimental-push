@@ -105,21 +105,21 @@ test('RPP-0982 support evidence alone can reach candidate review but cannot move
   assert.equal(derivedFinalReleaseStatus(evaluation), 'NO-GO');
   assert.equal(evaluation.releaseMovement.allowed, false);
   assert.equal(evaluation.releaseMovement.state, 'candidate-for-review');
-  assert.equal(evaluation.releaseMovement.finalGates, '0/20');
-  assert.equal(evaluation.releaseMovement.candidateGates, '20/20');
+  assert.equal(evaluation.releaseMovement.finalGates, '0/21');
+  assert.equal(evaluation.releaseMovement.candidateGates, '21/21');
   assert.equal(evaluation.candidateMovement.allowed, true);
-  assert.equal(evaluation.candidateMovement.gates, '20/20');
+  assert.equal(evaluation.candidateMovement.gates, '21/21');
   assert.deepEqual(evaluation.totals, {
-    gates: 20,
+    gates: 21,
     passed: 0,
-    candidate: 20,
+    candidate: 21,
     missing: 0,
     failed: 0,
-    blocking: 20,
+    blocking: 21,
   });
   assert.equal(
     marker,
-    '[release-gates-ci:candidate-for-review final=0/20 candidate=20/20 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]',
+    '[release-gates-ci:candidate-for-review final=0/21 candidate=21/21 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]',
   );
   assert.ok(
     evaluation.releaseMovement.missingEvidence.every((gate) => gate.status === 'candidate'),
@@ -147,19 +147,19 @@ test('RPP-0982 final release evaluator remains held without production-backed so
   assert.equal(result.report.releaseStatus, 'NO-GO');
   assert.equal(result.report.primaryFailureBucket, 'topology');
   assert.equal(result.report.primaryFailureCode, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
-  assert.equal(result.report.statusMarker, '[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]');
+  assert.equal(result.report.statusMarker, '[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]');
   assert.equal(result.report.mutationAttempted, false);
   assert.equal(result.report.releaseMovement.allowed, false);
-  assert.equal(result.report.releaseMovement.finalGates, '3/20');
-  assert.equal(result.report.releaseMovement.candidateGates, '3/20');
+  assert.equal(result.report.releaseMovement.finalGates, '3/21');
+  assert.equal(result.report.releaseMovement.candidateGates, '3/21');
   assert.equal(topologyBucket?.gateCount, 3);
   assert.deepEqual(result.report.evaluation.totals, {
-    gates: 20,
+    gates: 21,
     passed: 3,
     candidate: 0,
-    missing: 17,
+    missing: 18,
     failed: 0,
-    blocking: 17,
+    blocking: 18,
   });
   assert.equal(gatesById.get('source-url')?.status, 'missing');
   assert.equal(gatesById.get('source-url')?.code, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
@@ -392,8 +392,8 @@ function expectedAuditReport() {
       expectedGateState: 'candidate-for-review',
       expectedReleaseMovementAllowed: false,
       expectedCandidateMovementAllowed: true,
-      expectedFinalGates: '0/20',
-      expectedCandidateGates: '20/20',
+      expectedFinalGates: '0/21',
+      expectedCandidateGates: '21/21',
       expectedStatusMarkerReason: 'LOCAL_CANDIDATE_EVIDENCE_ONLY',
       expectedFinalReleaseStatus: 'NO-GO',
     },
@@ -403,11 +403,11 @@ function expectedAuditReport() {
       observedReleaseStatus: 'NO-GO',
       primaryFailureCode: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
       primaryFailureBucket: 'topology',
-      statusMarker: '[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]',
+      statusMarker: '[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]',
       mutationAttempted: false,
       releaseMovementAllowed: false,
-      finalGates: '3/20',
-      candidateGates: '3/20',
+      finalGates: '3/21',
+      candidateGates: '3/21',
       criticalMissingLiveEvidenceBuckets: [
         'topology',
         'auth',
@@ -427,6 +427,7 @@ function expectedAuditReport() {
         'APPLICATION_PASSWORD_BINDING_REQUIRED',
         'JOURNAL_ROUTE_READ_ONLY_REQUIRED',
         'RECOVERY_INSPECT_READ_ONLY_REQUIRED',
+        'STORAGE_BOUNDARY_CAS_REQUIRED',
       ],
       missingRecoveryEvidenceCodes: [
         'JOURNAL_ROUTE_READ_ONLY_REQUIRED',
@@ -479,8 +480,8 @@ function completeReleaseEvidence(scope) {
   const localUrl = 'https://local-edited.example.test/reprint-push';
   const remoteChangedUrl = 'https://remote-changed.example.test/reprint-push';
   const marker = scope === 'final-release'
-    ? '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-backed-by-final-release-evidence]'
-    : '[release-gates-ci:held final=0/20 candidate=20/20 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]';
+    ? '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-backed-by-final-release-evidence]'
+    : '[release-gates-ci:held final=0/21 candidate=21/21 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]';
 
   return {
     sourceUrl: { observed: sourceUrl, scope },
@@ -509,6 +510,7 @@ function completeReleaseEvidence(scope) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'recovery-inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
       marker,

@@ -48,6 +48,7 @@ const unresolvedProductionProofGapIds = [
   'apply-route-pre-mutation',
   'journal-route-read-only',
   'recovery-inspect-read-only',
+  'storage-boundary-cas',
   'tmux-status-marker',
   'progress-release-timestamp',
   'agents-release-gates-row',
@@ -184,12 +185,12 @@ test('RPP-0992 release verifier moves only with final-release-scoped evidence', 
   assert.equal(supportMarker, report.supportOnlyEvaluator.expectedStatusMarker);
   assert.equal(supportOnly.releaseMovement.allowed ? 'GO' : 'NO-GO', report.supportOnlyEvaluator.expectedFinalReleaseStatus);
   assert.deepEqual(supportOnly.totals, {
-    gates: 20,
+    gates: 21,
     passed: 0,
-    candidate: 20,
+    candidate: 21,
     missing: 0,
     failed: 0,
-    blocking: 20,
+    blocking: 21,
   });
   assert.ok(
     supportOnly.releaseMovement.missingEvidence.every((gate) => gate.status === 'candidate'),
@@ -223,8 +224,8 @@ test('RPP-0992 release verifier moves only with final-release-scoped evidence', 
     report.productionBackedRuleEvaluator.expectedStatusMarkerWithCompleteFinalReleaseEvidence,
   );
   assert.deepEqual(productionBackedRule.totals, {
-    gates: 20,
-    passed: 20,
+    gates: 21,
+    passed: 21,
     candidate: 0,
     missing: 0,
     failed: 0,
@@ -417,9 +418,10 @@ function completeEvidence(scope) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'recovery-inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates-ci:held final=0/20 candidate=20/20 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]',
+      marker: '[release-gates-ci:held final=0/21 candidate=21/21 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNowIso, scope },

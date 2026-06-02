@@ -13,9 +13,9 @@ const sourceUrl = 'https://source.example.test/push';
 const localUrl = 'https://local.example.test/push';
 const remoteChangedUrl = 'https://changed.example.test/push';
 const verifyReleaseStatusMarker = '[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]';
-const releaseGateStatusMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const releaseGateStatusMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
 const invalidVerifyFailureMarker = '[verify-release:held exit=0 reason=missing-nonzero-failure mutationAttempted=false]';
-const invalidReleaseGateMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=VERIFY_RELEASE_FAILURE_REASON_REQUIRED]';
+const invalidReleaseGateMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=VERIFY_RELEASE_FAILURE_REASON_REQUIRED]';
 const requiredVerifyFailureEvidence = 'nonzero verify:release exit with named reason';
 
 function runVerifyReleaseMissingSource() {
@@ -62,9 +62,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -295,7 +296,7 @@ test('generated verify:release evidence stays NO-GO and preserves exact nonzero 
   assert.equal(report.primaryFailureBucket, 'provenance');
   assert.equal(report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
   assert.equal(report.statusMarker, releaseGateStatusMarker);
   assert.ok(result.stdout.includes(releaseGateStatusMarker), 'stdout JSON must expose the final release-gate marker');
   assert.equal(report.mutationAttempted, false);

@@ -17,7 +17,14 @@ Observed lightweight command results:
     "releaseStatus": "NO-GO",
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "primaryFailureBucket": "topology",
-    "totals": { "gates": 20, "passed": 3, "candidate": 0, "missing": 17, "failed": 0, "blocking": 17 }
+    "totals": {
+      "gates": 21,
+      "passed": 3,
+      "candidate": 0,
+      "missing": 18,
+      "failed": 0,
+      "blocking": 18
+    }
   },
   "checklistCompletionLint": {
     "exit": 0,

@@ -12,9 +12,9 @@ const fixedNow = '2026-05-28T00:00:00.000Z';
 const sourceUrl = 'https://source.example.test/push';
 const localUrl = 'https://local.example.test/push';
 const remoteChangedUrl = 'https://changed.example.test/push';
-const releaseReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
-const heldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=TMUX_STATUS_MARKER_REQUIRED]';
-const malformedMarker = 'release-gates-ci:release-ready final=20/20 candidate=20/20 reason=missing-brackets';
+const releaseReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const heldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=TMUX_STATUS_MARKER_REQUIRED]';
+const malformedMarker = 'release-gates-ci:release-ready final=21/21 candidate=21/21 reason=missing-brackets';
 const expectedMutationPolicy = Object.freeze({
   readOnly: true,
   reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
@@ -40,6 +40,7 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: tmuxStatusMarkerEvidence(),
     progressReleaseTimestamp: { iso: fixedNow, scope },
     agentsReleaseGateStatusRow: { ok: true, present: true, observed: 'release-gates-status-row-no-go', scope },
@@ -128,7 +129,7 @@ test('tmux stdout proof focused regression records exact marker evidence for RPP
       expectedReason: 'The tmux stdout status marker is missing or not bracketed.',
       expectedReportMarker: heldMarker,
       expectedReleaseAllowed: false,
-      expectedFinalGates: '19/20',
+      expectedFinalGates: '20/21',
       expectedEvidence: {
         required: 'final bracketed stdout status marker',
         observed: malformedMarker,
@@ -143,7 +144,7 @@ test('tmux stdout proof focused regression records exact marker evidence for RPP
       expectedReason: 'tmux stdout proof status marker is backed by final release evidence.',
       expectedReportMarker: releaseReadyMarker,
       expectedReleaseAllowed: true,
-      expectedFinalGates: '20/20',
+      expectedFinalGates: '21/21',
       expectedEvidence: {
         required: 'final bracketed stdout status marker',
         observed: releaseReadyMarker,
@@ -192,7 +193,7 @@ test('tmux stdout proof focused regression records exact marker evidence for RPP
       gateStatus: 'failed',
       gateCode: 'TMUX_STATUS_MARKER_REQUIRED',
       observed: malformedMarker,
-      finalGates: '19/20',
+      finalGates: '20/21',
       releaseAllowed: false,
       reportMarker: heldMarker,
       mutationAttempted: false,
@@ -202,7 +203,7 @@ test('tmux stdout proof focused regression records exact marker evidence for RPP
       gateStatus: 'passed',
       gateCode: 'OK',
       observed: releaseReadyMarker,
-      finalGates: '20/20',
+      finalGates: '21/21',
       releaseAllowed: true,
       reportMarker: releaseReadyMarker,
       mutationAttempted: false,

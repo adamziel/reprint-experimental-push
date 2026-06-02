@@ -51,18 +51,18 @@ or completion files, and keeps final release at **NO-GO**.
     "releaseStatus": "NO-GO",
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "primaryFailureBucket": "topology",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20",
+    "finalGates": "3/21",
+    "candidateGates": "3/21",
     "totals": {
-      "gates": 20,
+      "gates": 21,
       "passed": 3,
       "candidate": 0,
-      "missing": 17,
+      "missing": 18,
       "failed": 0,
-      "blocking": 17
+      "blocking": 18
     }
   },
   "riskDisposition": {
@@ -163,6 +163,12 @@ or completion files, and keeps final release at **NO-GO**.
       "code": "RECOVERY_INSPECT_READ_ONLY_REQUIRED",
       "title": "recovery inspect read-only evidence",
       "bucket": "recovery"
+    },
+    {
+      "id": "storage-boundary-cas",
+      "code": "STORAGE_BOUNDARY_CAS_REQUIRED",
+      "title": "storage boundary compare-and-swap evidence",
+      "bucket": "storage"
     },
     {
       "id": "tmux-status-marker",
@@ -376,7 +382,7 @@ The final release verdict remains **NO-GO**.
 | `git log --oneline --all --grep='RPP-0920' -8` | `a3d55cd6d`, `809926c1e` | Located the support-only go/no-go record and its integration progress commit. |
 | `git log --oneline --all --grep='audit' -12` | `adb750be8`, `f83ce7f0f`, `b86d41498`, `3fd76ca37`, `fe3af9d8e` | Located recent audit evidence commits, including the RPP-0906 critic-audit pattern, without moving any release gate. |
 | `git show -s --format='%H %s' 6cf89e186 09f6e6c3a 9d0a63b8e 50b30c619 a3d55cd6d 809926c1e 3fd76ca37 adb750be8 f83ce7f0f b86d41498 fe3af9d8e` | full hashes listed below | Expanded short commit anchors to full hashes and subjects for the audit record. |
-| `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T02:20:00.000Z` | none | Confirmed held final release evaluator state: `NO-GO`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, `final=3/20`, `candidate=3/20`. |
+| `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T02:20:00.000Z` | none | Confirmed held final release evaluator state: `NO-GO`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, `final=3/21`, `candidate=3/21`. |
 
 ## Commit anchors
 

@@ -15,8 +15,8 @@ const remoteChangedUrl = 'https://changed.example.test/push';
 const checkedUser = 'editor';
 const secretValue = 'RPP_0069_SHOULD_NOT_LEAK';
 const capabilityReason = 'The checked production user does not prove manage_options capability.';
-const heldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=MANAGE_OPTIONS_CAPABILITY_REQUIRED]';
-const readyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const heldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=MANAGE_OPTIONS_CAPABILITY_REQUIRED]';
+const readyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
 
 const expectedFailedCapabilityEvidence = Object.freeze({
   ok: false,
@@ -94,9 +94,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -188,7 +189,7 @@ test('manage_options capability variant-2 scenario matrix records negative and p
       expectedBucket: 'auth',
       expectedMarker: heldMarker,
       expectedReleaseAllowed: false,
-      expectedFinalGates: '19/20',
+      expectedFinalGates: '20/21',
       expectedObserved: 'subscriber',
       expectedUser: 'editor',
       expectedCapability: false,
@@ -201,7 +202,7 @@ test('manage_options capability variant-2 scenario matrix records negative and p
       expectedBucket: 'provenance',
       expectedMarker: readyMarker,
       expectedReleaseAllowed: true,
-      expectedFinalGates: '20/20',
+      expectedFinalGates: '21/21',
       expectedObserved: 'manage_options',
       expectedUser: 'admin',
       expectedCapability: true,
@@ -251,7 +252,7 @@ test('manage_options capability variant-2 scenario matrix records negative and p
       checkedUser: 'editor',
       observed: 'subscriber',
       hasManageOptions: false,
-      finalGates: '19/20',
+      finalGates: '20/21',
       releaseAllowed: false,
       primaryFailureCode: 'MANAGE_OPTIONS_CAPABILITY_REQUIRED',
       mutationAttempted: false,
@@ -263,7 +264,7 @@ test('manage_options capability variant-2 scenario matrix records negative and p
       checkedUser: 'admin',
       observed: 'manage_options',
       hasManageOptions: true,
-      finalGates: '20/20',
+      finalGates: '21/21',
       releaseAllowed: true,
       primaryFailureCode: 'PRODUCTION_EVIDENCE_REQUIRED',
       mutationAttempted: false,
@@ -310,9 +311,9 @@ test('manage_options capability regression fails closed before mutation for RPP-
   assert.deepEqual(report.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: capabilityReason,
     missingEvidence: [
       {
@@ -361,7 +362,7 @@ test('positive manage_options proof passes the gate while release remains NO-GO 
   assert.equal(report.statusMarker, readyMarker);
   assert.ok(result.stdout.includes(readyMarker), 'stdout JSON must expose the final release-ready gate marker');
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
   assert.equal(report.releaseEvidenceProvenance.required, true);
   assert.equal(report.releaseEvidenceProvenance.ready, false);
   assert.equal(report.mutationAttempted, false);

@@ -7,114 +7,100 @@
   <style>
     :root {
       color-scheme: light;
-      --ink: #15171a;
-      --muted: #5b636b;
-      --line: #d8dee4;
+      --ink: #171a1f;
+      --muted: #5d6673;
+      --line: #d7dde4;
       --paper: #ffffff;
-      --wash: #f6f8fa;
-      --blue: #1d5d9b;
+      --wash: #f4f6f8;
+      --blue: #165b9f;
       --green: #1f7a4d;
-      --amber: #9a6400;
-      --red: #a33a31;
+      --amber: #8a5b00;
+      --red: #9f332b;
+      --red-wash: #fff1ef;
+      --green-wash: #ecf8f0;
+      --amber-wash: #fff7e3;
     }
 
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--ink);
       background: var(--wash);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       line-height: 1.5;
     }
 
     main {
-      width: min(1080px, calc(100% - 32px));
+      width: min(1180px, calc(100% - 32px));
       margin: 0 auto;
-      padding: 34px 0 56px;
+      padding: 28px 0 48px;
     }
 
     h1, h2, h3, p { margin: 0; }
 
     h1 {
-      font-size: clamp(2rem, 5vw, 3.1rem);
+      font-size: 2.45rem;
       line-height: 1.05;
       letter-spacing: 0;
     }
 
     h2 {
-      font-size: 1.18rem;
+      font-size: 1.08rem;
       line-height: 1.25;
       letter-spacing: 0;
     }
 
     h3 {
-      font-size: 0.98rem;
+      font-size: 0.95rem;
       line-height: 1.3;
       letter-spacing: 0;
     }
 
+    p, td, th, li { font-size: 0.95rem; }
     p { color: var(--muted); }
-
-    a {
-      color: var(--blue);
-      text-underline-offset: 0.18em;
-    }
+    a { color: var(--blue); text-underline-offset: 0.18em; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; }
 
     header {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 20px;
+      gap: 18px;
       align-items: end;
-      margin-bottom: 24px;
-      padding-bottom: 22px;
+      margin-bottom: 18px;
+      padding-bottom: 18px;
       border-bottom: 1px solid var(--line);
     }
 
     .eyebrow {
-      margin-bottom: 8px;
+      margin-bottom: 7px;
       color: var(--blue);
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
     .lead {
-      max-width: 760px;
-      margin-top: 12px;
-      font-size: 1rem;
-    }
-
-    .update-stamp {
-      display: inline-flex;
-      align-items: center;
-      min-height: 34px;
-      margin-top: 14px;
-      border: 1px solid rgba(31, 122, 77, 0.28);
-      border-radius: 6px;
-      padding: 4px 12px;
-      background: #eefaf3;
-      color: var(--green);
-      font-size: 0.92rem;
-      font-weight: 800;
-      white-space: nowrap;
+      max-width: 820px;
+      margin-top: 10px;
+      color: #36404b;
     }
 
     .actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
       justify-content: flex-end;
+      gap: 8px;
     }
 
     .button {
       display: inline-flex;
       align-items: center;
-      min-height: 38px;
+      min-height: 36px;
       border: 1px solid var(--line);
       border-radius: 6px;
-      padding: 6px 11px;
+      padding: 6px 10px;
       background: var(--paper);
       color: var(--ink);
       font-weight: 700;
@@ -122,11 +108,24 @@
       white-space: nowrap;
     }
 
-    .status-strip {
+    .stamp {
+      display: inline-flex;
+      width: fit-content;
+      margin-top: 12px;
+      border: 1px solid rgba(22, 91, 159, 0.22);
+      border-radius: 6px;
+      padding: 4px 10px;
+      background: #eef5fb;
+      color: var(--blue);
+      font-size: 0.84rem;
+      font-weight: 800;
+    }
+
+    .metrics {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
     }
 
     .metric, .panel {
@@ -136,35 +135,36 @@
     }
 
     .metric {
-      min-height: 104px;
-      padding: 15px;
+      min-height: 98px;
+      padding: 14px;
     }
 
     .metric strong {
       display: block;
       margin-bottom: 4px;
-      font-size: 1.9rem;
+      font-size: 1.75rem;
       line-height: 1;
     }
 
     .metric span {
       color: var(--muted);
-      font-size: 0.92rem;
+      font-size: 0.88rem;
     }
 
-    .metric .held { color: var(--red); }
-    .metric .ok { color: var(--green); }
+    .held { color: var(--red); }
+    .ok { color: var(--green); }
+    .warn { color: var(--amber); }
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
-      gap: 18px;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.74fr);
+      gap: 16px;
       align-items: start;
     }
 
     .panel {
-      margin-bottom: 18px;
-      padding: 18px;
+      margin-bottom: 16px;
+      padding: 16px;
     }
 
     .panel-head {
@@ -177,82 +177,98 @@
 
     .panel-head span {
       color: var(--muted);
-      font-size: 0.88rem;
-    }
-
-    .checklist {
-      display: grid;
-      gap: 9px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .checklist li {
-      display: grid;
-      grid-template-columns: 22px minmax(0, 1fr);
-      gap: 9px;
-      align-items: start;
-      min-width: 0;
-    }
-
-    .checklist input {
-      width: 16px;
-      height: 16px;
-      margin-top: 3px;
-      accent-color: var(--green);
-    }
-
-    .checklist strong {
-      display: block;
-      margin-bottom: 1px;
-    }
-
-    .checklist span {
-      display: block;
-      color: var(--muted);
-      font-size: 0.92rem;
-      overflow-wrap: anywhere;
-    }
-
-    .pending input {
-      accent-color: var(--amber);
-    }
-
-    .tag-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .tag {
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 4px 9px;
-      color: var(--muted);
-      background: var(--wash);
       font-size: 0.86rem;
-      font-weight: 700;
+      white-space: nowrap;
     }
 
-    .note {
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-
-    .links {
+    .stage-list, .plain-list {
       display: grid;
-      gap: 8px;
+      gap: 10px;
       margin: 0;
       padding: 0;
       list-style: none;
     }
 
-    .links li {
+    .stage-list li {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 12px;
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+
+    .stage-list li:first-child { border-top: 0; padding-top: 0; }
+
+    .state {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 26px;
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: var(--amber-wash);
+      color: var(--amber);
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .state.ok { background: var(--green-wash); color: var(--green); }
+    .state.held { background: var(--red-wash); color: var(--red); }
+
+    .plain-list li {
+      display: grid;
+      grid-template-columns: 16px minmax(0, 1fr);
+      gap: 8px;
+      color: var(--muted);
+    }
+
+    .plain-list li::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      margin-top: 9px;
+      border-radius: 999px;
+      background: var(--blue);
+    }
+
+    .notice {
+      border: 1px solid rgba(159, 51, 43, 0.28);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--red-wash);
+    }
+
+    .notice p { color: #5d221d; }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th, td {
+      border-top: 1px solid var(--line);
+      padding: 9px 8px;
+      text-align: left;
+      vertical-align: top;
       overflow-wrap: anywhere;
     }
+
+    th {
+      color: #2d3540;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .storage-row td { background: #fff6f4; }
 
     .proof-item {
       border-top: 1px solid var(--line);
@@ -260,1638 +276,367 @@
       padding-top: 12px;
     }
 
-    .status {
+    .proof-item .status {
       display: inline-flex;
-      margin-bottom: 5px;
+      margin-bottom: 6px;
       border: 1px solid rgba(31, 122, 77, 0.28);
       border-radius: 999px;
       padding: 2px 8px;
       color: var(--green);
-      background: #eefaf3;
+      background: var(--green-wash);
       font-size: 0.78rem;
       font-weight: 800;
     }
 
-    code {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 0.92em;
-    }
-
-    @media (max-width: 820px) {
-      header, .layout, .status-strip {
+    @media (max-width: 900px) {
+      header, .layout, .metrics, .grid-two {
         grid-template-columns: 1fr;
       }
 
-      .actions {
-        justify-content: flex-start;
-      }
+      h1 { font-size: 2rem; }
+      .actions { justify-content: flex-start; }
+      .panel-head { display: block; }
+      .panel-head span { display: block; margin-top: 4px; white-space: normal; }
+      .stage-list li { grid-template-columns: 1fr; gap: 6px; }
     }
   </style>
 </head>
 <body>
-  <main>
+  <main data-generated-at="2026-06-02T22:15:49.118Z">
     <header>
       <div>
-        <p class="eyebrow">Evidence-led project status</p>
+        <p class="eyebrow">Evidence-led release status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, Docker-local, and release-gate proof, including root-closed plugin row schemas and registered-table refusal guards, but final release still lacks production-bound provenance.</p>
-        <time class="update-stamp" datetime="2026-06-02T17:20:00+02:00">Last updated: June 2, 2026, 17:20 CEST</time>
+        <p class="lead">Final release remains <strong>NO-GO</strong>. The current working tree has a 21-gate release model; the evaluator is held at <strong>3/21</strong> with 18 missing blockers. DB/file guarded-write smokes pass locally, but storage-boundary CAS is still an explicit final-release blocker.</p>
+        <time class="stamp" datetime="2026-06-02T22:15:49.118Z">Refreshed locally: 2026-06-02T22:15:49.118Z</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
-        <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
-        <a class="button" href="docs/progress-log.md">Progress log</a>
-        <a class="button" href="docs/evidence/ao-progress-report.md">Evidence report</a>
+        <a class="button" href="docs/reprint-push-completion-checklist.md">Checklist</a>
+        <a class="button" href="docs/evidence/ao-progress-report.md">Report</a>
+        <a class="button" href="docs/release/go-no-go-release-decision-record.md">Go/No-Go</a>
+        <a class="button" href="docs/release/progress-surface-refresh.md">Refresh</a>
       </nav>
     </header>
 
-    <section class="status-strip" aria-label="Current summary">
+    <section class="metrics" aria-label="Current summary">
       <div class="metric">
         <strong class="held">NO-GO</strong>
-        <span>final release status</span>
+        <span>final release</span>
       </div>
       <div class="metric">
-        <strong>1000</strong>
-        <span>checked RPP goals</span>
+        <strong>3/21</strong>
+        <span>final gates</span>
       </div>
       <div class="metric">
-        <strong>0</strong>
-        <span>open RPP goals</span>
+        <strong class="warn">18</strong>
+        <span>blocking gates</span>
       </div>
       <div class="metric">
-        <strong class="ok">771</strong>
-        <span>generated push cases</span>
+        <strong class="ok">1000/1000</strong>
+        <span>RPP checklist</span>
+      </div>
+      <div class="metric">
+        <strong>620</strong>
+        <span>generated cases</span>
       </div>
     </section>
 
     <div class="layout">
-      <section class="panel" aria-labelledby="done-title">
+      <section class="panel" aria-labelledby="state-title">
         <div class="panel-head">
-          <h2 id="done-title">Evidence Checked</h2>
-          <span>Integrated on the lane</span>
+          <h2 id="state-title">Current State</h2>
+          <span>[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]</span>
         </div>
-        <ul class="checklist">
+        <ul class="stage-list">
           <li>
-            <input type="checkbox" checked disabled aria-label="Release gates checked">
-            <span><strong>Fail-closed release gates</strong>100/100 release-gate checklist items are checked; final release still holds without production URLs, credentials, and provenance.</span>
+            <span class="state ok">checked</span>
+            <span><strong>Support evidence integration</strong><br>Checklist is 1000/1000. Local, generated, graph, plugin-driver, Docker-local, recovery, and audit evidence remain support evidence unless production provenance is supplied.</span>
           </li>
           <li>
-            <input type="checkbox" checked disabled aria-label="Generated harness checked">
-            <span><strong>Generated push harness</strong>100/100 generated harness tests pass across 771 deterministic three-way push cases, with release-verifier variant-5 carry-through now covering file create/update/delete mix, directory descendant conflict, file type-swap conflict, row create/update/delete mix, wp_options scalar option targets, wp_options serialized option targets, wp_posts create/update/delete targets, wp_postmeta create/update/delete targets, wp_users/wp_usermeta graph targets, wp_comments/wp_commentmeta graph targets, wp_terms/wp_termmeta graph targets, wp_term_taxonomy graph targets, wp_term_relationships graph targets, plugin-owned option targets, plugin-owned custom-table changes targets, atomic plugin install stack targets, stale remote after dry-run targets, same independent content targets, remote-only preservation targets, and large ready plan tier targets, plus post_parent page hierarchy variant-3, post_author identity-map variant-3, postmeta post_id reference variant-3, comment_post_ID reference variant-3, commentmeta comment reference variant-3, GUID/slug collision ready/stale targets, cross-table create batch mapping variant-3 targets, production importer/exporter identity-map variant-3 targets, owner context stale metadata variant-3 targets, remote plugin removal refusal variant-3 targets, arbitrary plugin fixture package variant-3 targets, production dry-run route variant-3 targets, production dry-run route variant-4 targets, production dry-run route variant-5 targets, production apply route variant-3 targets, production apply route variant-4 targets, production apply route variant-5 targets, production journal route variant-3 targets, production journal route variant-4 targets, production journal route variant-5 targets, production recovery mutate route variant-3 targets, production recovery mutate route variant-4 targets, production recovery mutate route variant-5 targets, short-lived push session variant-3 targets, short-lived push session variant-4 targets, short-lived push session variant-5 targets, session source URL binding variant-3 targets, session source URL binding variant-4 targets, session source URL binding variant-5 targets, session user identity binding variant-3 targets, session user identity binding variant-4 targets, session user identity binding variant-5 targets, request signature canonicalization variant-3 targets, request signature canonicalization variant-4 targets, request signature canonicalization variant-5 targets, nonce replay store variant-3 targets, nonce replay store variant-4 targets, nonce replay store variant-5 targets, receipt expiry validation variant-3 targets, receipt expiry validation variant-4 targets, receipt expiry validation variant-5 targets, idempotency key requirement variant-3 targets, idempotency key requirement variant-4 targets, idempotency key requirement variant-5 targets, same-key different-body conflict variant-3 targets, same-key different-body conflict variant-4 targets, same-key different-body conflict variant-5 targets, capability downgrade rejection variant-3 targets, capability downgrade rejection variant-4 targets, capability downgrade rejection variant-5 targets, credential rotation behavior variant-3 targets, credential rotation behavior variant-4 targets, credential rotation behavior variant-5 targets, restart-readable committed state variant-3 targets, old remote recovery classification variant-3 targets, new remote recovery classification variant-3 targets, blocked recovery classification variant-3 targets, unknown drift classification variant-3 targets, same-key replay after commit variant-3 targets, same-key replay after rejection variant-3 targets, different-body idempotency conflict variant-3 targets, process kill before first mutation variant-3 targets, process kill mid mutation set variant-3 targets, missing commit finalization variant-3 targets, manual recovery audit export variant-3 targets, journal table schema migration variant-4 targets, journal ownership record variant-4 targets, single-writer lease claim variant-4 targets, stale-claim rejection variant-4 targets, claim expiry policy variant-4 targets, journal pagination variant-4 targets, restart-readable open state variant-4 targets, restart-readable staged state variant-4 targets, restart-readable committed state variant-4 targets, same-key replay after rejection variant-4 targets, production audit event schema variant-3 targets, production audit event schema variant-4 targets, production audit event schema variant-5 targets, production snapshot hashes route variant-4 targets, production snapshot hashes route variant-5 targets, driver audit evidence redaction variant-3 targets, same independent content variant-4, stale remote after dry-run variant-4, atomic plugin install stack variant-4, plugin-owned custom-table changes variant-4, plugin-owned option changes variant-4, wp_term_relationships graph variant-4, wp_term_taxonomy graph variant-4, wp_terms/wp_termmeta graph variant-4, wp_comments/wp_commentmeta graph variant-4, wp_users/wp_usermeta graph variant-4, wp_postmeta create/update/delete variant-4, wp_posts create/update/delete variant-4, wp_options serialized option changes variant-4, wp_options scalar option changes variant-4, row create/update/delete mix variant-4, file type-swap conflict variant-4, directory descendant conflict variant-4, file create/update/delete mix variant-4, large ready plan tier variant-3, remote-only preservation variant-3, wp_postmeta variant-3, same independent content variant-3, wp_terms/wp_termmeta variant-3, wp_term_taxonomy variant-3, wp_term_relationships variant-3, plugin-owned option variant-3, plugin-owned custom-table variant-3, stale remote after dry-run variant-3, post-author graph targets, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
+            <span class="state held">held</span>
+            <span><strong>Release-gate evaluator</strong><br>The local evaluator is read-only, reports <code>mutationAttempted: false</code>, and holds release movement on <code>REPRINT_PUSH_LIVE_SOURCE_REQUIRED</code>.</span>
           </li>
           <li>
-            <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
-            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, mutation/precondition one-to-one mapping and release-verifier carry-through, remoteBeforeHash binding and release-verifier carry-through, localHash binding and release-verifier carry-through, already-in-sync no-op safety and release-verifier carry-through, atomic group blocker propagation, blocked plan apply refusal before mutation or journal writes and release-verifier carry-through, conflict plan apply refusal with forged conflict-mutation rejection and release-verifier carry-through, forged ready plan hash-redaction defense, keep-remote generated preservation and release-verifier carry-through, forged ready plan defense, raw-value redaction, planner summary generated count consistency and release-verifier carry-through, same-content, large plans, remote-only plugin metadata preservation and release-verifier carry-through, stale plugin owner-context refusal, local plugin data stale owner-context release-verifier carry-through, unknown plugin-owned resource refusal, conflict hash redaction, independent file/row and row/file preservation, local delete/remote edit refusal, local directory delete/remote descendant create refusal, and local file type-swap/remote descendant generated ready/conflict refusal.</span>
+            <span class="state held">blocked</span>
+            <span><strong>Production binding</strong><br>Production topology, auth, identity, route, recovery, storage CAS, and operator proof are still missing.</span>
           </li>
           <li>
-            <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, journal pagination variant-3 file/SQLite proof, stale claim refusal, claim-expiry policy and variant-3 same-path release-gate proof, single-writer lease claim variant-3 fencing, stale-claim rejection variant-3 owner-identity proof, restart-readable open-state v2 and variant-3 file/SQLite proof, restart-readable staged-state v2 and variant-3 file/SQLite proof, restart-readable committed-state v2 and variant-3 file/SQLite owner proof, old-remote restart classification release-proof carry-through v2 and variant-3 same-path release proof, new-remote classification variant-3 SQLite proof, new-remote release-verifier variant-5 SQLite proof, blocked recovery classification variant-3 durable rows, unknown drift classification variant-3 preserved-remote retry proof, unknown-drift release-verifier variant-5 preserved-remote proof, same-key replay after commit variant-3 lease-owner audit proof, same-key replay after commit release-verifier variant-5 lease-owner proof, same-key replay after rejection variant-3 same-path proof, different-body idempotency conflict variant-3 SQLite proof, different-body idempotency conflict release-verifier variant-5 SQLite proof, process kill before first mutation variant-3 restart proof, process kill before first mutation release-verifier variant-5 restart proof, process kill mid mutation set variant-3 preserved-remote retry proof, process kill mid mutation set release-verifier variant-5 preserved-remote proof, missing commit finalization variant-3 lease-owner proof, missing commit finalization release-verifier variant-5 lease-owner proof, manual recovery audit export variant-3 same-path proof, manual recovery audit export release-verifier variant-5 same-path proof, journal table schema migration variant-4 SQLite proof, journal ownership record variant-4 file/SQLite proof, single-writer lease claim variant-4 preserved-remote proof, stale-claim rejection variant-4 owner-identity proof, claim-expiry policy variant-4 same-path proof, journal pagination variant-4 file/SQLite proof, restart-readable open-state variant-4 process-boundary proof, restart-readable staged-state variant-4 preserved-remote proof, restart-readable committed-state variant-4 owner proof, same-key replay after rejection variant-4 same-path proof, same-key replay after rejection release-verifier variant-5 same-path proof, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay v2 release-proof carry-through, different-body idempotency conflict v2, process kill before mutation set v2, process kill mid mutation set v2, missing commit finalization v2, before-mutation process-kill readback, manual recovery audit export, journal schema migration through variant 3, ownership-record SQLite readback and variant-3 file/SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span class="state ok">checked</span>
+            <span><strong>Storage smokes</strong><br><code>npm run test:playground:storage-guarded-db-write</code> and <code>npm run test:playground:storage-guarded-file-write</code> pass as support evidence only.</span>
           </li>
           <li>
-            <input type="checkbox" checked disabled aria-label="Graph identity checked">
-            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, production importer/exporter identity-map metadata, post_parent page hierarchy local, generated variant-3, and release-verifier proof, postmeta post_id release-verifier proof, category term taxonomy release-verifier carry-through and variant-3 local proof, post_tag taxonomy release-verifier carry-through and variant-3 local proof, custom taxonomy fail-closed release-verifier carry-through and variant-3 local proof, termmeta term reference release-verifier carry-through and variant-3 local proof, term relationship object reference release-verifier carry-through and variant-3 local proof, term relationship taxonomy reference release-verifier carry-through and variant-3 local proof, nav menu item fail-closed release-verifier carry-through and variant-3 local proof, `wp_navigation` fail-closed release-verifier carry-through and variant-3 local proof, serialized block reference release-verifier carry-through and variant-3 local proof, GUID/slug collision release-verifier carry-through and variant-3 local proof, cross-table create batch release-verifier carry-through and variant-3 local proof, production importer/exporter identity-map release-verifier carry-through and variant-3 local proof, comment post, comment parent, comment user, and commentmeta comment release-verifier proof, featured image fail-closed release-verifier proof, post-author release-verifier proof, generated post_author identity-map variant-3 proof, generated comment_post_ID variant-3 proof, generated comment_parent thread reference variant-3 proof, generated commentmeta comment reference variant-3 proof, focused post_author stale-target regression, focused featured image attachment stale/unsupported-target regression, focused postmeta post_id rewrite and stale-target regression, focused term relationship object ready/stale regression, focused comment_post_ID rewrite and stale-target regression, focused comment_parent stable-target and rewrite regression, focused comment user stale-target and unsupported-target regression, focused commentmeta comment generated-model regression, focused category taxonomy apply regression, focused post_tag taxonomy identity-map rewrite and fail-closed regression, focused custom taxonomy fail-closed and identity-map rewrite regression, focused termmeta term fail-closed regression, featured image attachment references, term relationship taxonomy references, nav menu item fail-closed references, `wp_navigation` fail-closed references, cross-table create batch mapping, post_tag taxonomy proof, serialized block reference detection, GUID/slug collision handling variant-2 generated ready/stale proof, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
-          </li>
-          <li>
-            <input type="checkbox" checked disabled aria-label="Plugin driver checked">
-            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through and variant-3 local apply proof, exact custom-table allowlist proof with release-verifier carry-through, root-closed plugin row schema contracts, registered-table metadata-stripping refusal, wp_postmeta, wp_termmeta, and wp_usermeta release-verifier carry-through, plugin activation dependency release-verifier carry-through and variant-3 generated-style proof, plugin update dependency release-verifier carry-through, plugin uninstall/delete release-verifier carry-through and variant-3 local proof, direct active_plugins mutation refusal release-verifier carry-through and variant-3 local proof, owner-context stale plugin-file release-verifier carry-through and variant-3 local proof, owner-context stale metadata release-verifier carry-through and variant-3 local proof, remote plugin removal refusal release-verifier carry-through and variant-3 local proof, driver delete-support, dry-run-validation, apply-validation, and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence and variant-3 local proof, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, generated wp_options, wp_postmeta, wp_termmeta, and wp_usermeta driver semantics variant-3 coverage, generated driver apply-validation variant-3 coverage, generated driver audit redaction variant-3 coverage, supported/unsupported wp_usermeta, dry-run validation hook, owner identity binding variant-3 and variant-4 coverage, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
-          </li>
-          <li>
-            <input type="checkbox" checked disabled aria-label="Local production candidate checked">
-            <span><strong>Local production-shaped candidate</strong>RPP-0802 records Docker WordPress topology prerequisite blockers without packaged fallback, RPP-0804 records BrewCommerce blueprint import/export survival requirements, Brewcommerce-derived local proof exercises a complex WordPress topology, RPP-0805 records WooCommerce product catalog candidate scope versus release-ready gaps, RPP-0806 records WooCommerce order refusal plus exact Docker unavailable capability, RPP-0808 records classic-theme source/local/changed URL identity scope, RPP-0810 records multisite subdomain candidate scope versus release-ready gaps, RPP-0811 records object-cache topology exact Docker unavailable capability, RPP-0813 records maintenance-mode source/local/changed URL identity scope, RPP-0815 records plugin activation-hook candidate scope versus release-ready gaps, RPP-0816 records plugin update-hook exact Docker unavailable capability, RPP-0818 records TLS/HTTPS source/local/changed URL identity scope, RPP-0819 records sandbox 8080 ingress rule proof with import/export survival scope, RPP-0821 records three-site topology exact Docker unavailable capability, RPP-0822 records Docker WordPress topology v2 exact Docker CLI unavailable capability, RPP-0823 records external WordPress source/local/changed URL identity scope, RPP-0824 records BrewCommerce blueprint import/export survival requirements variant-2, RPP-0825 records WooCommerce product catalog variant-2 candidate scope, RPP-0826 records WooCommerce order safety refusal exact Docker unavailable capability, RPP-0827 records block theme templates variant-2 support topology scope, RPP-0828 records classic theme files variant-2 URL identity scope, RPP-0830 records multisite subdomain variant-2 candidate scope, RPP-0831 records object-cache topology exact Docker unavailable capability, RPP-0832 records cron activity during push variant-2 support topology scope, RPP-0833 records maintenance-mode variant-2 URL identity scope, RPP-0834 records large media library topology variant-2 plugin and graph survival scope, RPP-0835 records plugin activation-hook variant-2 candidate scope, RPP-0836 records plugin update-hook topology exact Docker unavailable capability, RPP-0837 records REST route matrix variant-2 support topology scope, RPP-0838 records TLS/HTTPS source proof variant-2 URL identity scope, RPP-0839 records sandbox 8080 ingress rule variant-2 survival scope, RPP-0840 records no-tunnel policy variant-2 candidate scope, RPP-0841 records three-site topology variant-3 exact Docker unavailable capability, RPP-0842 records Docker WordPress topology v3 generated coverage with exact Docker CLI unavailable capability, RPP-0843 records external WordPress topology variant-3 URL identity scope, RPP-0844 records BrewCommerce blueprint import variant-3 plugin and graph survival scope, RPP-0845 records WooCommerce product catalog variant-3 candidate scope, RPP-0846 records WooCommerce order safety refusal variant-3 exact Docker unavailable capability, RPP-0847 records block theme templates variant-3 hash-only topology scope, RPP-0848 records classic theme files variant-3 URL identity scope, RPP-0849 records multisite subdirectory topology variant-3 plugin and graph survival scope, RPP-0850 records multisite subdomain variant-3 candidate scope, RPP-0851 records object-cache topology variant-3 exact Docker unavailable capability, RPP-0852 records cron activity during push variant-3 support topology scope, RPP-0853 records maintenance-mode variant-3 URL identity scope, RPP-0854 records large media library topology variant-3 plugin and graph survival scope, RPP-0855 records plugin activation-hook variant-3 candidate scope, RPP-0856 records plugin update-hook variant-3 exact Docker unavailable capability, RPP-0857 records REST route matrix variant-3 support topology scope, RPP-0858 records TLS/HTTPS source proof variant-3 URL identity scope, RPP-0859 records sandbox 8080 ingress rule variant-3 import/export survival scope, RPP-0860 records no-tunnel policy variant-3 candidate scope, RPP-0861 records three-site topology variant-4 exact Docker unavailable capability, RPP-0862 records Docker WordPress topology variant-4 verify-release DNS/ingress scope, RPP-0863 records external WordPress topology variant-4 route-bound URL identity scope, RPP-0864 records BrewCommerce blueprint import variant-4 same-artifact survival scope, RPP-0865 records WooCommerce product catalog variant-4 candidate scope, RPP-0866 records WooCommerce order safety refusal variant-4 exact Docker unavailable capability, RPP-0867 records block theme templates variant-4 template-part reference scope, RPP-0868 records classic theme files variant-4 URL identity scope, RPP-0869 records multisite subdirectory variant-4 sequence-bound survival scope, RPP-0870 records multisite subdomain variant-4 candidate scope, RPP-0871 records object-cache topology variant-4 exact Docker unavailable capability, RPP-0872 records cron activity during push variant-4 support topology scope, RPP-0873 records maintenance-mode variant-4 URL identity scope, RPP-0874 records large media library topology variant-4 same-artifact survival scope, RPP-0875 records plugin activation-hook variant-4 candidate scope, RPP-0876 records plugin update-hook variant-4 exact Docker unavailable capability, RPP-0877 records REST route matrix variant-4 support topology scope, RPP-0878 records TLS/HTTPS source proof variant-4 URL identity scope, RPP-0879 records sandbox 8080 ingress rule variant-4 survival scope, RPP-0880 records no-tunnel policy variant-4 candidate scope, RPP-0881 records three-site topology variant-5 release-verifier exact Docker unavailable capability, RPP-0882 records Docker WordPress topology variant-5 verify-release carry-through scope, RPP-0883 records external WordPress topology variant-5 release-verifier URL identity scope, RPP-0884 records BrewCommerce blueprint import variant-5 same-artifact release-verifier survival scope, RPP-0885 records WooCommerce product catalog variant-5 candidate scope, RPP-0886 records WooCommerce order safety refusal variant-5 exact Docker unavailable capability, RPP-0887 records block theme templates variant-5 release-verifier template scope, RPP-0888 records classic theme files variant-5 release-verifier URL identity scope, RPP-0889 records multisite subdirectory variant-5 same-artifact release-verifier survival scope, RPP-0890 records multisite subdomain variant-5 candidate scope, RPP-0891 records object-cache topology variant-5 exact Docker unavailable capability, RPP-0892 records cron activity during push variant-5 release-verifier readback scope, RPP-0893 records maintenance-mode variant-5 release-verifier URL identity scope, RPP-0894 records large media library topology variant-5 same-artifact release-verifier survival scope, RPP-0895 records plugin activation-hook variant-5 candidate scope, RPP-0896 records plugin update-hook variant-5 exact Docker unavailable capability, RPP-0897 records REST route matrix variant-5 same-run release-verifier route receipt scope, RPP-0898 records TLS/HTTPS source proof variant-5 URL identity scope, RPP-0899 records sandbox 8080 ingress rule variant-5 same-artifact release-verifier survival scope, and RPP-0900 records no-tunnel policy variant-5 candidate scope, but this is still support evidence, not final release proof.</span>
-          </li>
-          <li>
-            <input type="checkbox" checked disabled aria-label="Release operations checked">
-            <span><strong>Release operations</strong>RPP-0901 records the release gate 1 final audit, RPP-0902 records the durable recovery journal boundary audit, RPP-0903 records the live topology final audit, RPP-0904 adds support-only operator safe-recovery documentation, RPP-0905 records the objective audit NO-GO risk register, RPP-0906 records the critic audit disposition, RPP-0907 records the release security review checklist, RPP-0908 records the privacy/redaction review, RPP-0909 records the operator runbook, RPP-0910 records the failure triage runbook, RPP-0911 records the rollback/repair runbook, RPP-0912 records the CI required checks list, RPP-0913 records the GitHub Pages progress publish proof, RPP-0914 records the release artifact package, RPP-0915 records the versioned protocol docs, RPP-0916 records the migration docs, RPP-0917 records the support escalation guide, RPP-0918 records the telemetry-free audit mode, RPP-0919 records the post-release monitoring plan, RPP-0920 records the go/no-go release decision record, RPP-0921 records the release gate 1 final audit v2, RPP-0922 records the release gate 2 final audit v2, RPP-0923 records the release gate 3 final audit v2, RPP-0924 records the release gate 4 final audit v2, RPP-0925 records the objective audit update v2, RPP-0926 records the critic audit update v2, RPP-0927 records the security review checklist v2, RPP-0928 records the privacy/redaction review v2, RPP-0929 records the operator runbook v2, RPP-0930 records the failure triage runbook v2, RPP-0931 records the rollback/repair runbook v2, RPP-0932 records the CI required checks list v2, RPP-0933 records the GitHub Pages progress publish proof v2, RPP-0934 records the release artifact package v2, RPP-0935 records the versioned protocol docs v2, RPP-0936 records the migration docs v2, RPP-0937 records the support escalation guide v2, RPP-0938 records the telemetry-free audit mode v2, RPP-0939 records the post-release monitoring plan v2, RPP-0940 records the go/no-go release decision record v2, RPP-0941 records the release gate 1 final audit v3, RPP-0942 records the release gate 2 final audit v3, RPP-0943 records the release gate 3 final audit v3, RPP-0944 records the release gate 4 final audit v3, RPP-0945 records the objective audit update v3, RPP-0946 records the critic audit update v3, RPP-0947 records the security review checklist v3, RPP-0948 records the privacy/redaction review v3, RPP-0949 records the operator runbook v3, RPP-0950 records the failure triage runbook v3, RPP-0951 records the rollback/repair runbook v3, RPP-0952 records the CI required checks list v3, RPP-0953 records the GitHub Pages progress publish proof v3, RPP-0954 records the release artifact package v3, RPP-0955 records the versioned protocol docs v3, RPP-0956 records the migration docs v3, RPP-0957 records the support escalation guide v3, RPP-0958 records the telemetry-free audit mode v3, RPP-0959 records the post-release monitoring plan v3, RPP-0960 records the go/no-go release decision record v3, RPP-0961 records the release gate 1 final audit v4, RPP-0962 records the release gate 2 final audit v4, RPP-0963 records the release gate 3 final audit v4, RPP-0964 records the release gate 4 final audit v4, RPP-0965 records the objective audit update v4, RPP-0966 records the critic audit update v4, RPP-0967 records the security review checklist v4, RPP-0968 records the privacy/redaction review v4, RPP-0969 records the operator runbook v4, RPP-0970 records the failure triage runbook v4, RPP-0971 records the rollback/repair runbook v4, RPP-0972 records the CI required checks list v4, RPP-0973 records the GitHub Pages progress publish proof v4, RPP-0974 records the release artifact package v4, RPP-0975 records the versioned protocol docs v4, RPP-0976 records the migration docs v4, RPP-0977 records the support escalation guide v4, RPP-0978 records the telemetry-free audit mode v4, RPP-0979 records the post-release monitoring plan v4, RPP-0980 records the go/no-go release decision record v4, RPP-0981 records the release gate 1 final audit verifier v5, RPP-0982 records the release gate 2 final audit verifier v5, RPP-0983 records the release gate 3 final audit verifier v5, RPP-0984 records the release gate 4 final audit verifier v5, RPP-0985 records the objective audit update verifier v5, RPP-0986 records the critic audit update verifier v5, RPP-0987 records the security review checklist verifier v5, RPP-0988 records the privacy/redaction review verifier v5, RPP-0989 records the operator runbook verifier v5, RPP-0990 records the failure triage runbook verifier v5, RPP-0991 records the rollback/repair runbook verifier v5, RPP-0992 records the CI required checks list verifier v5, RPP-0993 records the GitHub Pages progress publish verifier v5, RPP-0994 records the release artifact package verifier v5, RPP-0995 records the versioned protocol docs verifier v5, RPP-0996 records the migration docs verifier v5, RPP-0997 records the support escalation guide verifier v5, RPP-0998 records the telemetry-free audit mode verifier v5, RPP-0999 records the post-release monitoring plan verifier v5, and RPP-1000 records the go/no-go release decision record verifier v5. These audits keep final release NO-GO and require production-backed evidence before any release-gate movement.</span>
-          </li>
-          <li>
-            <input type="checkbox" checked disabled aria-label="Reporting guardrails checked">
-            <span><strong>Reporting guardrails</strong>Checklist completion lint, artifact redaction scan, release evidence provenance checks, and required release checks reporting are active.</span>
+            <span class="state">active</span>
+            <span><strong>Progress reporting</strong><br>This page/report can be regenerated locally with <code>npm run refresh:progress-surface</code> or refreshed every 10 minutes with <code>npm run refresh:progress-surface:watch</code>.</span>
           </li>
         </ul>
       </section>
 
-      <section class="panel" aria-labelledby="pending-title">
+      <aside class="panel" aria-labelledby="plan-title">
         <div class="panel-head">
-          <h2 id="pending-title">Evidence Not Checked Yet</h2>
-          <span>Still blocking release</span>
+          <h2 id="plan-title">Current Plan</h2>
+          <span>Do not move gates from this page</span>
         </div>
-        <ul class="checklist pending">
-          <li>
-            <input type="checkbox" disabled aria-label="Production source topology not checked">
-            <span><strong>Production topology</strong>Real source, local edited, and changed-remote WordPress URLs must be captured and identity-checked.</span>
-          </li>
-          <li>
-            <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding and live endpoint proof including variant-3 support proof, variant-4 live loopback support proof, and release-verifier variant-5 support proof, credential rotation including variant-2 live-source revalidation, variant-3 support proof, variant-4 support proof, and variant-5 support proof, manage_options, capability downgrade rejection including variant-2 dry-run receipt binding, variant-3 support proof, and variant-4 support proof, short-lived push-session receipt binding including variant-3 generated support proof, variant-4 support proof, and variant-5 support proof, session source URL binding including variant-3 support proof and variant-4 support proof, session user identity binding including variant-3 support proof and variant-4 support proof, request signature canonicalization including variant-3 support proof and variant-4 support proof, nonce replay store including variant-3 support proof and variant-4 support proof, receipt expiry validation including variant-3 support proof and variant-4 support proof, idempotency key requirement including variant-3 support proof and variant-4 support proof, same-key same-body replay including variant-3 support proof, variant-4 live loopback support proof, and release-verifier variant-5 support proof, same-key different-body conflict including variant-3 support proof and variant-4 support proof, production-shaped preflight including variant-3 support proof, variant-4 support proof, and release-verifier variant-5 support proof, snapshot-hashes including variant-3 negative-auth support proof, variant-4 support proof, and variant-5 support proof, dry-run including variant-3 receipt-binding support proof, variant-4 support proof, and variant-5 support proof, apply including variant-3 live-source revalidation support proof, variant-4 support proof, and variant-5 support proof, journal route including variant-3 release-summary support proof, variant-4 release-summary support proof, and variant-5 support proof, recovery inspect including variant-3 support proof, variant-4 live loopback support proof, and release-verifier variant-5 support proof, recovery mutate negative-auth including variant-3 support proof, variant-4 support proof, and variant-5 support proof, audit-event schema route proof including variant-2 verify:release summary carry-through, variant-3 support proof, variant-4 support proof, and variant-5 support proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
-          </li>
-          <li>
-            <input type="checkbox" disabled aria-label="External durability not checked">
-            <span><strong>External durability</strong>Docker or external WordPress crash/restart journal durability and recovery readback are still missing.</span>
-          </li>
-          <li>
-            <input type="checkbox" disabled aria-label="Rollback repair not checked">
-            <span><strong>Rollback and repair</strong>Operator repair finalization and failed-apply recovery need release-level evidence.</span>
-          </li>
-          <li>
-            <input type="checkbox" disabled aria-label="Broad plugin semantics not checked">
-            <span><strong>Broader plugin semantics</strong>WooCommerce/HPOS, cron/cache effects, generated files, and activation/update side effects remain out of scope.</span>
-          </li>
-          <li>
-            <input type="checkbox" disabled aria-label="Production chunking not checked">
-            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency and variant-2 guardedLarge replay proof, bounded parallel snapshot hashing including variant-4 gate-order proof, remote hash pagination including variant-2 fail-closed page proof and variant-4 runtime/resource gate proof, dry-run batch sizing including variant-2 fail-closed batch evidence and variant-4 guarded stale-write refusal, apply batch sizing including variant-2 resumable apply proof and variant-4 completed-resume idempotency proof, large post table benchmark variant-2 support proof and variant-4 deterministic repeat proof, large media library benchmark variant-4 fast-path gate proof, large plugin file benchmark variant-4 command-shape proof, timeout budget proof variant-4 no-duplicate-work proof, long-push progress reporting variant-4 support proof and release-verifier variant-5 support proof, rollout threshold configuration variant-4 fast-path gate proof and release-verifier variant-5 support proof, memory ceiling proof variant-4 stale-storage refusal, MySQL CAS write guard variant-4 support proof, MySQL CAS write guard release-verifier variant-5 support proof, SQLite CAS write guard variant-4 support proof, SQLite CAS write guard release-verifier variant-5 support proof, transaction boundary policy variant-4 support proof, transaction boundary release-verifier variant-5 support proof, filesystem compare-and-rename write variant-4 support proof, filesystem compare-and-rename release-verifier variant-5 support proof, filesystem fsync evidence variant-4 support proof, filesystem fsync evidence release-verifier variant-5 support proof, large upload chunk manifest variant-4 support proof, large upload chunk manifest release-verifier variant-5 support proof, chunk hash verification variant-4 support proof, chunk hash verification release-verifier variant-5 support proof, chunk resume after interruption variant-4 support proof, chunk resume after interruption release-verifier variant-5 support proof, chunk replay idempotency variant-4 support proof, chunk replay idempotency release-verifier variant-5 support proof, parallel snapshot hashing release-verifier variant-5 support proof, remote hash pagination release-verifier variant-5 support proof, dry-run batch sizing release-verifier variant-5 support proof, apply batch sizing release-verifier variant-5 support proof, large post table benchmark release-verifier variant-5 support proof, large media library benchmark release-verifier variant-5 support proof, large plugin file benchmark release-verifier variant-5 support proof, memory ceiling proof release-verifier variant-5 support proof, timeout budget proof release-verifier variant-5 support proof, MySQL CAS write guard variant-3 support proof, SQLite CAS write guard variant-3 support proof, transaction boundary policy variant-3 support proof, filesystem compare-and-rename write variant-3 support proof, filesystem fsync evidence variant-3 support proof, large upload chunk manifest variant-3 support proof, chunk hash verification variant-3 support proof, chunk resume after interruption variant-3 support proof, chunk replay idempotency variant-3 support proof, parallel snapshot hashing variant-3 support proof, remote hash pagination variant-3 support proof, dry-run batch sizing variant-3 support proof, apply batch sizing variant-3 support proof, large post table benchmark variant-3 support proof, large media library benchmark variant-3 support proof, large plugin file benchmark variant-3 support proof, timeout budget proof variant-3 support proof, long-push progress reporting variant-3 support proof, rollout threshold configuration variant-3 support proof, memory ceiling proof variant-3 support proof, MySQL and SQLite CAS write guard variant-2 support proof, filesystem compare-and-rename write variant-2 support proof, filesystem fsync evidence variant-2 support proof, transaction boundary policy variant-2 support proof, a large post table planner/apply benchmark, a large media library storage/row-precondition benchmark including variant-2 fast-path gating proof and variant-3 fast-path gate proof, a large plugin file atomic-group benchmark including variant-2 plugin-file proof and variant-3 generated storage proof, a filesystem memory-ceiling proof including variant-2 stale-storage refusal and variant-3 guarded stale-storage proof, timeout-budget resume proof including variant-2 receipt-backed resume and variant-3 receipt-backed resume, and long-push progress reporting including variant-2 progress stream proof and variant-3 generated progress proof, rollout threshold configuration variant-2 proof and variant-3 gate proof, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
-          </li>
-          <li>
-            <input type="checkbox" disabled aria-label="Release CI not checked">
-            <span><strong>Release CI and audit</strong>Full release suite, external-runtime re-audit, and critic-observed red-suite fixes still need closure.</span>
-          </li>
+        <ul class="plain-list">
+          <li>Keep release posture <strong>NO-GO</strong> until production-scoped evidence backs every missing gate.</li>
+          <li>Convert support proof into production-bound topology, credentials, route, recovery, storage, and operator proof.</li>
+          <li>Handle <code>storage-boundary-cas</code> as a named release blocker, not an implied closure from passed DB/file storage smokes.</li>
+          <li>Refresh this surface locally during active work; publish proof remains separate.</li>
         </ul>
-      </section>
+      </aside>
     </div>
 
-    <section class="panel" aria-labelledby="latest-title">
+    <section class="panel" aria-labelledby="storage-title">
       <div class="panel-head">
-        <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>Plugin row schema and registered-table guards</span>
+        <h2 id="storage-title">Explicit Storage Blocker</h2>
+        <span>STORAGE_BOUNDARY_CAS_REQUIRED</span>
       </div>
-      <p>The latest refresh lets explicit plugin-owned row-driver schemas close the top-level row envelope with `additionalProperties: false`, and keeps registered plugin-driver tables inside the contract boundary when row owner metadata is stripped. Planner, apply, and the PHP registration/snapshot path now refuse undeclared top-level row fields or metadata-stripped registered-table mutations before mutation. Counts remain 1000/0; final release remains NO-GO.</p>
-      <div class="tag-row" aria-label="Latest validation">
-        <span class="tag">plugin-driver JS/PHP: 64/64</span>
-        <span class="tag">registration/RPP-0481: 9/9</span>
-        <span class="tag">driver smoke: pass</span>
-        <span class="tag">root additionalProperties false</span>
-        <span class="tag">registered table guard</span>
-        <span class="tag">contract hash-bound</span>
-        <span class="tag">apply revalidation</span>
-        <span class="tag">raw extra keys hidden</span>
-        <span class="tag">NO-GO retained</span>
-        <span class="tag">support evidence only</span>
-        <span class="tag">PHP parity</span>
-        <span class="tag">syntax checks pass</span>
-        <span class="tag">RPP-0732 focused: 2/2</span>
-        <span class="tag">RPP-0712 adjacent: 5/5</span>
-        <span class="tag">batch gates</span>
-        <span class="tag">runtime/resources</span>
-        <span class="tag">stale evidence refused</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0648 focused: 3/3</span>
-        <span class="tag">RPP-0647 adjacent: 3/3</span>
-        <span class="tag">file + SQLite</span>
-        <span class="tag">staged restart-readable</span>
-        <span class="tag">stale/invalid refused</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0349 focused: 5/5</span>
-        <span class="tag">RPP-0369 adjacent: 2/2</span>
-        <span class="tag">mapped category target</span>
-        <span class="tag">stable identity</span>
-        <span class="tag">stale/unsupported refused</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0453 focused: 3/3</span>
-        <span class="tag">RPP-0473 adjacent: 2/2</span>
-        <span class="tag">owner file apply</span>
-        <span class="tag">stale owner context refused</span>
-        <span class="tag">forged evidence refused</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0542 focused: 3/3</span>
-        <span class="tag">snapshot route: 7/7</span>
-        <span class="tag">negative auth blocked</span>
-        <span class="tag">pre-JSON refusal</span>
-        <span class="tag">stale route refused</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0731 focused: 2/2</span>
-        <span class="tag">pagination benchmark: 1/1</span>
-        <span class="tag">runtime/resources</span>
-        <span class="tag">page gates</span>
-        <span class="tag">stale pages refused</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0647 focused: 3/3</span>
-        <span class="tag">RPP-0646 adjacent: 2/2</span>
-        <span class="tag">file + SQLite</span>
-        <span class="tag">restart-readable</span>
-        <span class="tag">stale state refused</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0541 focused: 3/3</span>
-        <span class="tag">preflight adjacent: 5/5</span>
-        <span class="tag">support-only route</span>
-        <span class="tag">stale proof refused</span>
-        <span class="tag">hash-only auth failure</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0452 focused: 3/3</span>
-        <span class="tag">RPP-0472 adjacent: 3/3</span>
-        <span class="tag">active_plugins refused</span>
-        <span class="tag">checked driver allowed</span>
-        <span class="tag">stale/forged fail closed</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0348 focused: 1/1</span>
-        <span class="tag">generated adjacent: 4/4</span>
-        <span class="tag">commentmeta adjacent: 2/2</span>
-        <span class="tag">full harness: 100/100</span>
-        <span class="tag">620 cases</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0730 focused: 2/2</span>
-        <span class="tag">RPP-0710 adjacent: 1/1</span>
-        <span class="tag">fast path gated</span>
-        <span class="tag">stale blocked</span>
-        <span class="tag">test secret scan: pass</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0451 focused: 3/3</span>
-        <span class="tag">uninstall adjacent: 6/6</span>
-        <span class="tag">delete refused</span>
-        <span class="tag">exact checked driver</span>
-        <span class="tag">stale/forged fail closed</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0540 focused: 3/3</span>
-        <span class="tag">audit route: 3/3</span>
-        <span class="tag">RPP-0520 adjacent: 1/1</span>
-        <span class="tag">hash-only auth failure</span>
-        <span class="tag">verifier summary path</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0646 focused: 2/2</span>
-        <span class="tag">journal subset: 3/3</span>
-        <span class="tag">RPP-0642/0645: 3/3</span>
-        <span class="tag">file + SQLite</span>
-        <span class="tag">stale cursor refused</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0346 focused: 1/1</span>
-        <span class="tag">generated adjacent: 5/5</span>
-        <span class="tag">comment-parent adjacent: 7/7</span>
-        <span class="tag">planner subset: 4/4</span>
-        <span class="tag">full harness: 99/99</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0450 focused: 3/3</span>
-        <span class="tag">activation adjacent: 5/5</span>
-        <span class="tag">update verifier: 3/3</span>
-        <span class="tag">RPP-0729 focused: 2/2</span>
-        <span class="tag">chunk replay adjacent: 4/4</span>
-        <span class="tag">guarded/perf: 19/19</span>
-        <span class="tag">benchmark: ok</span>
-        <span class="tag">duplicate work: 0</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0539 focused: 2/2</span>
-        <span class="tag">RPP-0519 adjacent: 2/2</span>
-        <span class="tag">auth subset: 6/6</span>
-        <span class="tag">rotated receipt bound</span>
-        <span class="tag">live source revalidated</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0449 focused: 3/3</span>
-        <span class="tag">activation adjacent: 3/3</span>
-        <span class="tag">update adjacent: 5/5</span>
-        <span class="tag">dependency metadata</span>
-        <span class="tag">remote data preserved</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0645 focused: 1/1</span>
-        <span class="tag">recovery adjacent: 7/7</span>
-        <span class="tag">RPP-0642/0643/0644: 5/5</span>
-        <span class="tag">claim advances once</span>
-        <span class="tag">same recovery path</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0345 focused: 1/1</span>
-        <span class="tag">generated adjacent: 5/5</span>
-        <span class="tag">comment lineage: 7/7</span>
-        <span class="tag">generated harness: 98/98</span>
-        <span class="tag">target cases: 20</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0725 focused: 3/3</span>
-        <span class="tag">fsync adjacent: 8/8</span>
-        <span class="tag">bounded benchmark: ok</span>
-        <span class="tag">fast-path gated</span>
-        <span class="tag">stale unsafe blocked</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0538 focused: 2/2</span>
-        <span class="tag">RPP-0518 adjacent: 3/3</span>
-        <span class="tag">RPP-0536 adjacent: 1/1</span>
-        <span class="tag">auth subset: 9/9</span>
-        <span class="tag">receipt binding</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0448 focused: 2/2</span>
-        <span class="tag">serialized adjacent: 3/3</span>
-        <span class="tag">generated adjacent: 4/4</span>
-        <span class="tag">wp_options driver: 4/4</span>
-        <span class="tag">local apply mutation</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0644 focused: 1/1</span>
-        <span class="tag">recovery adjacent: 5/5</span>
-        <span class="tag">RPP-0642/0643: 4/4</span>
-        <span class="tag">restart-readable lease</span>
-        <span class="tag">stale claim rejected</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0537 focused: 2/2</span>
-        <span class="tag">RPP-0517 static: 1/1</span>
-        <span class="tag">RPP-0536 adjacent: 1/1</span>
-        <span class="tag">RPP-0615/0616: 3/3</span>
-        <span class="tag">auth replay subset: 26/26</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0344 focused: 1/1</span>
-        <span class="tag">generated adjacent: 3/3</span>
-        <span class="tag">postmeta lineage: 8/8</span>
-        <span class="tag">generated harness: 97/97</span>
-        <span class="tag">target cases: 20</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0724 focused: 3/3</span>
-        <span class="tag">filesystem adjacent: 6/6</span>
-        <span class="tag">bounded benchmark: pass</span>
-        <span class="tag">direct core/focused/benchmark: 9/9</span>
-        <span class="tag">stale rename blocked</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0643 focused: 2/2</span>
-        <span class="tag">direct focused: 2/2</span>
-        <span class="tag">lease adjacent: 5/5</span>
-        <span class="tag">RPP-0642 ownership: 2/2</span>
-        <span class="tag">single-writer fenced</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0447 focused: 3/3</span>
-        <span class="tag">wp_usermeta adjacent: 16/16</span>
-        <span class="tag">live precondition</span>
-        <span class="tag">unsupported row refused</span>
-        <span class="tag">hash-only evidence</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0343 focused: 1/1</span>
-        <span class="tag">generated adjacent: 2/2</span>
-        <span class="tag">post-author lineage: 6/6</span>
-        <span class="tag">generated harness: 96/96</span>
-        <span class="tag">target cases: 20</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0723 focused: 2/2</span>
-        <span class="tag">RPP-0703 adjacent: 1/1</span>
-        <span class="tag">guarded benchmark: pass</span>
-        <span class="tag">duplicate mutation: 0</span>
-        <span class="tag">speed claims blocked</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0536 focused: 1/1</span>
-        <span class="tag">RPP-0516/0615/0616: 5/5</span>
-        <span class="tag">auth replay subset: 29/29</span>
-        <span class="tag">fresh mutation: false</span>
-        <span class="tag">hash-only replay</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0446 focused: 2/2</span>
-        <span class="tag">termmeta lineage: 16/16</span>
-        <span class="tag">live precondition</span>
-        <span class="tag">stale row refused</span>
-        <span class="tag">hash-only journal</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0642 focused: 2/2</span>
-        <span class="tag">ownership adjacent: 2/2</span>
-        <span class="tag">file journal readback</span>
-        <span class="tag">SQLite readback</span>
-        <span class="tag">claim hash only</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0722 focused: 2/2</span>
-        <span class="tag">SQLite CAS adjacent: 6/6</span>
-        <span class="tag">benchmark: pass</span>
-        <span class="tag">node:sqlite CAS</span>
-        <span class="tag">hash-only CAS evidence</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0721 focused: 2/2</span>
-        <span class="tag">MySQL CAS adjacent: 7/7</span>
-        <span class="tag">benchmark: pass</span>
-        <span class="tag">deterministic no-MySQL mode</span>
-        <span class="tag">hash-only CAS evidence</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0641 focused: 1/1</span>
-        <span class="tag">schema adjacent: 3/3</span>
-        <span class="tag">recovery schema: 10/10</span>
-        <span class="tag">SQLite reopen proof</span>
-        <span class="tag">legacy reads fail closed</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0341 focused: 1/1</span>
-        <span class="tag">generated adjacent: 4/4</span>
-        <span class="tag">post_parent adjacent: 6/6</span>
-        <span class="tag">generated harness: 95/95</span>
-        <span class="tag">target cases: 20</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0534 focused: 3/3</span>
-        <span class="tag">RPP-0514 adjacent: 3/3</span>
-        <span class="tag">auth/receipt pattern: 72/72</span>
-        <span class="tag">expired receipt refused</span>
-        <span class="tag">live revalidation kept</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0300 focused: 1/1</span>
-        <span class="tag">RPP-0260/RPP-0280: 2/2</span>
-        <span class="tag">atomic lineage: 5/5</span>
-        <span class="tag">generated cases: 10</span>
-        <span class="tag">beforeMutation: 0</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0299 focused: 1/1</span>
-        <span class="tag">RPP-0239/0259/0279: 3/3</span>
-        <span class="tag">scenario matrix row</span>
-        <span class="tag">raw evidence rejected</span>
-        <span class="tag">hash-only proof</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0298 focused: 2/2</span>
-        <span class="tag">RPP-0238/0258/0278: 4/4</span>
-        <span class="tag">forged attempts: 4</span>
-        <span class="tag">PLAN_INVARIANT_VIOLATION</span>
-        <span class="tag">beforeMutation: 0</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0196 focused: 2/2</span>
-        <span class="tag">RPP-0116/0136/0156/0176/0196: 6/6</span>
-        <span class="tag">generated target cases: 20</span>
-        <span class="tag">ready atomic groups: 10</span>
-        <span class="tag">missing dependency refused</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0290 focused: 1/1</span>
-        <span class="tag">RPP-0210/0230/0270/0290: 4/4</span>
-        <span class="tag">summary counts exact</span>
-        <span class="tag">preconditions one-for-one</span>
-        <span class="tag">hash-only envelope</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0289 focused: 1/1</span>
-        <span class="tag">RPP-0249/0269/0289: 3/3</span>
-        <span class="tag">conflict evidence hash-only</span>
-        <span class="tag">no mutation/precondition</span>
-        <span class="tag">remote hash stable</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0288 focused: 2/2</span>
-        <span class="tag">RPP-0248/0268/0288: 4/4</span>
-        <span class="tag">unknown plugin-owned refused</span>
-        <span class="tag">no mutation/precondition</span>
-        <span class="tag">remote hash stable</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0285 focused: 2/2</span>
-        <span class="tag">RPP-0205/0225/0265/0285: 5/5</span>
-        <span class="tag">push-planner: 148/148</span>
-        <span class="tag">type swap blocked</span>
-        <span class="tag">remote descendant kept</span>
-        <span class="tag">journal untouched</span>
-        <span class="tag">hash-only evidence: pass</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0270 focused: 1/1</span>
-        <span class="tag">RPP-0210/0270: 2/2</span>
-        <span class="tag">push-planner: 148/148</span>
-        <span class="tag">ready/conflict/blocked: 2/1/2</span>
-        <span class="tag">atomic groups counted</span>
-        <span class="tag">summary counts stable</span>
-        <span class="tag">hash-only evidence: pass</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0265 focused: 1/1</span>
-        <span class="tag">RPP-0205/0225/0265: 3/3</span>
-        <span class="tag">push-planner: 148/148</span>
-        <span class="tag">type swap blocked</span>
-        <span class="tag">remote descendant kept</span>
-        <span class="tag">PLAN_NOT_READY before mutation</span>
-        <span class="tag">hash-only evidence: pass</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0194 focused: 2/2</span>
-        <span class="tag">RPP-0154/0174/0194: 5/5</span>
-        <span class="tag">target cases: 20</span>
-        <span class="tag">per-tier: 2 each</span>
-        <span class="tag">ready/conflict: 10/10</span>
-        <span class="tag">stale replay refused</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0193 focused: 2/2</span>
-        <span class="tag">RPP-0153/0173/0193: 4/4</span>
-        <span class="tag">target cases: 10</span>
-        <span class="tag">per-tier: 1 each</span>
-        <span class="tag">ready/blocked: 5/5</span>
-        <span class="tag">stale replay refused</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0339 focused: 2/2</span>
-        <span class="tag">RPP-0379/0399/local-production: 25/25</span>
-        <span class="tag">post/postmeta create batch</span>
-        <span class="tag">live preconditions</span>
-        <span class="tag">apply revalidation</span>
-        <span class="tag">hash-only carry-through</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0192 focused: 2/2</span>
-        <span class="tag">RPP-0152/0172/0192: 4/4</span>
-        <span class="tag">target cases: 20</span>
-        <span class="tag">per-tier: 2 each</span>
-        <span class="tag">ready/blocked/conflict: 10/4/6</span>
-        <span class="tag">stale replay refused</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0336 focused: 2/2</span>
-        <span class="tag">RPP-0316/0376/0396: 9/9</span>
-        <span class="tag">wp_navigation postmeta target</span>
-        <span class="tag">identity-map rewrite</span>
-        <span class="tag">PLAN_NOT_READY before mutation</span>
-        <span class="tag">hash-only evidence: pass</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0337 focused: 1/1</span>
-        <span class="tag">RPP-0317/0377/0397: 7/7</span>
-        <span class="tag">core/media-text mediaId</span>
-        <span class="tag">unsupported page target</span>
-        <span class="tag">zero mutations</span>
-        <span class="tag">PLAN_NOT_READY before mutation</span>
-        <span class="tag">hash-only evidence: pass</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0335 focused: 2/2</span>
-        <span class="tag">RPP-0315/0375/0395: 6/6</span>
-        <span class="tag">nav menu item fail-closed: pass</span>
-        <span class="tag">metadata/taxonomy/relationship blockers: pass</span>
-        <span class="tag">PLAN_NOT_READY before mutation: pass</span>
-        <span class="tag">hash-only evidence: pass</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0328 focused: 3/3</span>
-        <span class="tag">RPP-0308/0328/0388: 8/8</span>
-        <span class="tag">commentmeta comment cases: 20</span>
-        <span class="tag">ready/stale: 10/10</span>
-        <span class="tag">stale stop before mutation: pass</span>
-        <span class="tag">hash-only reference evidence: pass</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0191 focused: 2/2</span>
-        <span class="tag">wp_terms/termmeta v5 cases: 20</span>
-        <span class="tag">ready/stale: 10/10</span>
-        <span class="tag">RPP-0151/0171/0191: 4/4</span>
-        <span class="tag">stale replay beforeMutation: 0</span>
-        <span class="tag">hash-only evidence: pass</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0331 focused: 2/2</span>
-        <span class="tag">RPP-0311/0371/0391: 11/11</span>
-        <span class="tag">custom taxonomy fail-closed: pass</span>
-        <span class="tag">identity-map rewrite: pass</span>
-        <span class="tag">PLAN_NOT_READY before mutation: pass</span>
-        <span class="tag">hash-only evidence: pass</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0330 focused: 3/3</span>
-        <span class="tag">RPP-0390/post_tag adjacent: 10/10</span>
-        <span class="tag">RPP-0329/RPP-0389: 4/4</span>
-        <span class="tag">post_tag carry-through: pass</span>
-        <span class="tag">apply revalidation omitted: fail closed</span>
-        <span class="tag">hash-only evidence: pass</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0329 focused: 2/2</span>
-        <span class="tag">RPP-0309/RPP-0389: 5/5</span>
-        <span class="tag">category taxonomy carry-through: pass</span>
-        <span class="tag">apply revalidation omitted: fail closed</span>
-        <span class="tag">hash-only evidence: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0326 focused: 1/1</span>
-        <span class="tag">RPP-0386 adjacent: 4/4</span>
-        <span class="tag">stable/rewrite/stale: pass</span>
-        <span class="tag">stale refusal beforeMutation: 0</span>
-        <span class="tag">hash-only evidence: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0190 focused: 2/2</span>
-        <span class="tag">wp_comments/commentmeta v5 cases: 20</span>
-        <span class="tag">ready/stale: 10/10</span>
-        <span class="tag">RPP-0150/0170/0190: 4/4</span>
-        <span class="tag">stale replay beforeMutation: 0</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0327 focused: 2/2</span>
-        <span class="tag">RPP-0307/RPP-0387: 4/4</span>
-        <span class="tag">blocked mutations: 0</span>
-        <span class="tag">forged replay beforeMutation: 0</span>
-        <span class="tag">hash-only evidence: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0189 focused: 2/2</span>
-        <span class="tag">wp_users/usermeta v5 cases: 20</span>
-        <span class="tag">ready/stale: 10/10</span>
-        <span class="tag">RPP-0149/0169/0189: 4/4</span>
-        <span class="tag">stale replay beforeMutation: 0</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0323 focused: 1/1</span>
-        <span class="tag">post-author cases: 20</span>
-        <span class="tag">ready/stale: 10/10</span>
-        <span class="tag">RPP-0303 adjacent: 1/1</span>
-        <span class="tag">RPP-0383 adjacent: 3/3</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0188 focused: 2/2</span>
-        <span class="tag">wp_postmeta v5 cases: 20</span>
-        <span class="tag">ready/conflict: 10/10</span>
-        <span class="tag">RPP-0148/0168/0188: 4/4</span>
-        <span class="tag">no unplanned overwrite: 10</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0187 focused: 2/2</span>
-        <span class="tag">wp_posts v5 cases: 20</span>
-        <span class="tag">ready/conflict: 10/10</span>
-        <span class="tag">RPP-0147/0167/0187: 4/4</span>
-        <span class="tag">stale replay beforeMutation: 0</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0186 focused: 2/2</span>
-        <span class="tag">serialized v5 cases: 20</span>
-        <span class="tag">ready/conflict: 10/10</span>
-        <span class="tag">RPP-0146/0166/0186: 4/4</span>
-        <span class="tag">redaction beforeMutation: 0</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0185 focused: 2/2</span>
-        <span class="tag">scalar v5 cases: 20</span>
-        <span class="tag">ready/conflict: 10/10</span>
-        <span class="tag">RPP-0145/0165/0185: 4/4</span>
-        <span class="tag">stale replay beforeMutation: 0</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0184 focused: 2/2</span>
-        <span class="tag">row mix v5 cases: 20</span>
-        <span class="tag">ready/conflict: 10/10</span>
-        <span class="tag">RPP-0144/0164/0184: 4/4</span>
-        <span class="tag">stale replay beforeMutation: 0</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0183 focused: 2/2</span>
-        <span class="tag">type-swap v5 cases: 20</span>
-        <span class="tag">ready/conflict: 10/10</span>
-        <span class="tag">RPP-0163/0183: 3/3</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0182 focused: 2/2</span>
-        <span class="tag">directory descendant v5 cases: 20</span>
-        <span class="tag">ready/conflict: 10/10</span>
-        <span class="tag">RPP-0142/0162/0182: 4/4</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0181 focused: 3/3</span>
-        <span class="tag">variant-5 file cases: 20</span>
-        <span class="tag">ready/conflict: 10/10</span>
-        <span class="tag">RPP-0181/RPP-0281: 6/6</span>
-        <span class="tag">RPP-0180 regression: 1/1</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0179 focused: 1/1</span>
-        <span class="tag">remote-only cases: 9</span>
-        <span class="tag">beforeMutation calls: 0</span>
-        <span class="tag">RPP-0119/0139/0159: 3/3</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">RPP-0180 focused: 1/1</span>
-        <span class="tag">variant-4 ready cases: 10</span>
-        <span class="tag">generated cases: 620</span>
-        <span class="tag">RPP-0120/0140/0160: 3/3</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0709 supplemental: 4/4</span>
-        <span class="tag">RPP-0709/RPP-0710 focused: 2/2</span>
-        <span class="tag">guarded/performance: 19/19</span>
-        <span class="tag">large replay skips: 96/96</span>
-        <span class="tag">duplicate replay work: 0</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0701 focused: 7/7</span>
-        <span class="tag">benchmark: 80 writes</span>
-        <span class="tag">duplicate-key: 5</span>
-        <span class="tag">unsafe multiple-match: 0</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0612 focused: 1/1</span>
-        <span class="tag">RPP-0612/RPP-0632: 2/2</span>
-        <span class="tag">recovery journal/repair: 50/50</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0611 focused: 2/2</span>
-        <span class="tag">RPP-0611/RPP-0621 pattern: 2/2</span>
-        <span class="tag">recovery journal/repair: 49/49</span>
-        <span class="tag">RPP-0612 adjacent: 1/1</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0517 focused: 2/2</span>
-        <span class="tag">idempotency/replay: 28/28</span>
-        <span class="tag">production-shaped smoke: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0487 focused: 6/6</span>
-        <span class="tag">wp_usermeta adjacent: 16/16</span>
-        <span class="tag">RPP-0487/0467/0427/0407: 16/16</span>
-        <span class="tag">generated harness: 90/90</span>
-        <span class="tag">package scenarios: 9/9</span>
-        <span class="tag">package verifier guards: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0458 focused: 1/1</span>
-        <span class="tag">RPP-0442/0445/0458: 3/3</span>
-        <span class="tag">RPP-0417/0456/0458: 3/3</span>
-        <span class="tag">planner apply-validation: 3/3</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0445 focused: 1/1</span>
-        <span class="tag">RPP-0442/0444/0445: 3/3</span>
-        <span class="tag">wp_postmeta plugin-driver: 13/13</span>
-        <span class="tag">generated cases: 620</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0444 focused: 1/1</span>
-        <span class="tag">wp_options adjacent: 4/4</span>
-        <span class="tag">RPP-0442 focused: 3/3</span>
-        <span class="tag">worker focused: 1/1</span>
-        <span class="tag">generated docs updated</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0611 focused: 2/2</span>
-        <span class="tag">SQLite metadata: 1/1</span>
-        <span class="tag">recovery journal/repair: 49/49</span>
-        <span class="tag">RPP-0612 adjacent: 1/1</span>
-        <span class="tag">production-shaped: 125/136 pass</span>
-        <span class="tag">11 skipped</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0516 focused: 2/2</span>
-        <span class="tag">auth replay adjacent: 29/29</span>
-        <span class="tag">protocol: 8/8</span>
-        <span class="tag">full auth client: 135/135</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0442 focused: 3/3</span>
-        <span class="tag">owner adjacent: 4/4</span>
-        <span class="tag">summary aggregate: 1/1</span>
-        <span class="tag">precondition invariants: 2/2</span>
-        <span class="tag">planner summary: 1/1</span>
-        <span class="tag">instrumented generated cases: 620</span>
-        <span class="tag">unfiltered runner stalled</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0400 focused: 2/2</span>
-        <span class="tag">identity-map adjacent: 6/6</span>
-        <span class="tag">graph inventory adjacent: 4/4</span>
-        <span class="tag">production-shaped: 123/134 pass</span>
-        <span class="tag">11 skipped</span>
-        <span class="tag">hygiene: 23/23</span>
-        <span class="tag">raw fixture scan</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0399 focused: 3/3</span>
-        <span class="tag">planner adjacent: 7/7</span>
-        <span class="tag">driver adjacent: 8/8</span>
-        <span class="tag">complex-site adjacent: 3/3</span>
-        <span class="tag">production-shaped: 123/134 pass</span>
-        <span class="tag">11 skipped</span>
-        <span class="tag">hygiene: 23/23</span>
-        <span class="tag">raw fixture scan</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0398 focused: 2/2</span>
-        <span class="tag">generated harness: 86/86</span>
-        <span class="tag">GUID/slug cases: 20</span>
-        <span class="tag">production-shaped: 123/134 pass</span>
-        <span class="tag">11 skipped</span>
-        <span class="tag">hygiene: 23/23</span>
-        <span class="tag">raw fixture scan</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0397 focused: 2/2</span>
-        <span class="tag">serialized adjacent: 5/5</span>
-        <span class="tag">graph inventory adjacent: 7/7</span>
-        <span class="tag">release adjacent: 6/6</span>
-        <span class="tag">production-shaped: 123/134 pass</span>
-        <span class="tag">11 skipped</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0396 focused: 3/3</span>
-        <span class="tag">wp_navigation adjacent: 6/6</span>
-        <span class="tag">serialized block adjacent: 4/4</span>
-        <span class="tag">release adjacent: 4/4</span>
-        <span class="tag">identity-map rewrite</span>
-        <span class="tag">missing revalidation fail-closed</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0395 focused: 2/2</span>
-        <span class="tag">nav menu adjacent: 4/4</span>
-        <span class="tag">unmapped graph adjacent: 7/7</span>
-        <span class="tag">blocked plan: 5 blockers</span>
-        <span class="tag">apply refusal before mutation</span>
-        <span class="tag">hash-only raw scan</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0394 focused: 2/2</span>
-        <span class="tag">category adjacent: 5/5</span>
-        <span class="tag">generated term relationships: 3/3</span>
-        <span class="tag">planner/custom taxonomy: 6/6</span>
-        <span class="tag">hygiene: 23/23</span>
-        <span class="tag">apply revalidation</span>
-        <span class="tag">target tamper fail-closed</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0393 focused: 1/1</span>
-        <span class="tag">generated term relationships: 3/3</span>
-        <span class="tag">graph adjacent: 6/6</span>
-        <span class="tag">hygiene: 23/23</span>
-        <span class="tag">ready and stale generated cases</span>
-        <span class="tag">stale object fail-closed</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0392 focused: 1/1</span>
-        <span class="tag">generated termmeta graph: 2/2</span>
-        <span class="tag">planner taxonomy: 3/3</span>
-        <span class="tag">fail-closed graph adjacent: 5/5</span>
-        <span class="tag">termmeta release adjacent: 4/4</span>
-        <span class="tag">hash-only release adjacent: 4/4</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0391 focused: 3/3</span>
-        <span class="tag">taxonomy adjacent: 8/8</span>
-        <span class="tag">verifier adjacent: 10/10</span>
-        <span class="tag">identity-map rewrite</span>
-        <span class="tag">fail-closed no map</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0390 focused: 3/3</span>
-        <span class="tag">post_tag adjacent: 7/7</span>
-        <span class="tag">unmapped graph docs: 10/10</span>
-        <span class="tag">fail-closed verifier</span>
-        <span class="tag">remaining surfaces documented</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0389 focused: 2/2</span>
-        <span class="tag">category adjacent: 5/5</span>
-        <span class="tag">local-production taxonomy: 4/4</span>
-        <span class="tag">planner/generated taxonomy: 4/4</span>
-        <span class="tag">apply revalidation</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0373 focused: 1/1</span>
-        <span class="tag">generated/nav adjacent: 3/3</span>
-        <span class="tag">object_id ready/stale</span>
-        <span class="tag">stale replay refused</span>
-        <span class="tag">hash-only redaction</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0364 focused: 2/2</span>
-        <span class="tag">postmeta graph adjacent: 3/3</span>
-        <span class="tag">post_id rewrite</span>
-        <span class="tag">stale target refusal</span>
-        <span class="tag">raw fixtures redacted</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0362 focused: 2/2</span>
-        <span class="tag">featured-image adjacent: 5/5</span>
-        <span class="tag">zero mutations</span>
-        <span class="tag">hash-only graph proof</span>
-        <span class="tag">raw fixtures redacted</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0287 focused: 2/2</span>
-        <span class="tag">stale owner-context adjacent: 6/6</span>
-        <span class="tag">release-verifier adjacent: 17/17</span>
-        <span class="tag">hash-only proof</span>
-        <span class="tag">fail-closed stale context</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0719 focused: 3/3</span>
-        <span class="tag">timeout adjacent: 1/1</span>
-        <span class="tag">large-site benchmark: ok</span>
-        <span class="tag">progress events: 40</span>
-        <span class="tag">max action gap: 8</span>
-        <span class="tag">max byte gap: 67108864</span>
-        <span class="tag">hash-only cursors</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0640 focused: 1/1</span>
-        <span class="tag">recovery repair: 5/5</span>
-        <span class="tag">durable recovery proof: 1/1</span>
-        <span class="tag">recovery journal full: 43/43</span>
-        <span class="tag">same release boundary</span>
-        <span class="tag">source URL bound</span>
-        <span class="tag">raw fixtures redacted</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0530 focused: 4/4</span>
-        <span class="tag">auth/session adjacent: 17/17</span>
-        <span class="tag">proof targeted: 3/3</span>
-        <span class="tag">release movement: 3/3</span>
-        <span class="tag">hash-only user identity</span>
-        <span class="tag">issued/readback hashes</span>
-        <span class="tag">single summary block</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0529 focused: 2/2</span>
-        <span class="tag">route/auth bundle: 147/147</span>
-        <span class="tag">apply-revalidation smoke: pass</span>
-        <span class="tag">RPP-0639 focused: 1/1</span>
-        <span class="tag">recovery adjacent: 7/7</span>
-        <span class="tag">recovery journal full: 43/43</span>
-        <span class="tag">RPP-0528 focused: 4/4</span>
-        <span class="tag">auth/session adjacent: 15/15</span>
-        <span class="tag">route smoke: pass</span>
-        <span class="tag">plan hash matched</span>
-        <span class="tag">same session hash</span>
-        <span class="tag">same identity/scope hash</span>
-        <span class="tag">pre-valid DB mutations: 0</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0718 focused: 1/1</span>
-        <span class="tag">guarded executor adjacent: 10/10</span>
-        <span class="tag">timeout before apply</span>
-        <span class="tag">receipt-only resume</span>
-        <span class="tag">duplicate mutation work: 0</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0487 focused: 6/6</span>
-        <span class="tag">wp_usermeta adjacent: 16/16</span>
-        <span class="tag">generated harness: 90/90</span>
-        <span class="tag">package scenarios: 9/9</span>
-        <span class="tag">package verifier guards: pass</span>
-        <span class="tag">support-only NO-GO</span>
-        <span class="tag">raw meta values redacted</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0638 focused: 1/1</span>
-        <span class="tag">recovery adjacent: 5/5</span>
-        <span class="tag">recovery journal full: 42/42</span>
-        <span class="tag">recovery repair: 5/5</span>
-        <span class="tag">file-journal smoke: pass</span>
-        <span class="tag">SIGKILL after 2 mutations</span>
-        <span class="tag">partial replay preserves remote-only changes</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0527 focused: 2/2</span>
-        <span class="tag">live loopback smoke: pass</span>
-        <span class="tag">negative auth cases: 4/4</span>
-        <span class="tag">target surface stable</span>
-        <span class="tag">journal rows unchanged: 0</span>
-        <span class="tag">route/snapshot coverage: 12/12</span>
-        <span class="tag">production route/auth: 28/28</span>
-        <span class="tag">auth client mutating: 4/4</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0717 focused: 7/7</span>
-        <span class="tag">large-site benchmark: pass</span>
-        <span class="tag">runtime: 5095.47 ms</span>
-        <span class="tag">heap: 10,352,448 bytes</span>
-        <span class="tag">max buffered: 65,536 bytes</span>
-        <span class="tag">stale rejects: 8/8</span>
-        <span class="tag">storage/perf adjacent: 36/36</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0637 focused: 1/1</span>
-        <span class="tag">recovery adjacent: 11/11</span>
-        <span class="tag">recovery journal full: 41/41</span>
-        <span class="tag">recovery repair: 5/5</span>
-        <span class="tag">SIGKILL before mutation</span>
-        <span class="tag">exactly-once repair replay</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0636 focused: 1/1</span>
-        <span class="tag">recovery adjacent: 10/10</span>
-        <span class="tag">recovery journal full: 40/40</span>
-        <span class="tag">file-journal smoke: pass</span>
-        <span class="tag">409 conflict / no fresh mutation</span>
-        <span class="tag">post-conflict mutation guard: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0716 focused: 5/5</span>
-        <span class="tag">large plugin benchmark: pass</span>
-        <span class="tag">runtime: 2878.78 ms</span>
-        <span class="tag">heap: 9,462,896 bytes</span>
-        <span class="tag">5 files / 6 receipts</span>
-        <span class="tag">all 10 gates pass</span>
-        <span class="tag">storage/perf adjacent: 18/18</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0497 focused: 4/4</span>
-        <span class="tag">dry-run hook adjacent: 4/4</span>
-        <span class="tag">release-verifier nearby: 21/21</span>
-        <span class="tag">unsupported hook: PLAN_NOT_READY</span>
-        <span class="tag">hash-only proof</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0523 focused: 6/6</span>
-        <span class="tag">live dry-run smoke: pass</span>
-        <span class="tag">unsigned rejection: 401</span>
-        <span class="tag">receipt hash: 64 chars</span>
-        <span class="tag">finalMatchesBase: true</span>
-        <span class="tag">route/auth/session: 173/173</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0635 focused: 1/1</span>
-        <span class="tag">recovery adjacent: 7/7</span>
-        <span class="tag">recovery journal full: 39/39</span>
-        <span class="tag">file-journal smoke: pass</span>
-        <span class="tag">durable release proof: 1/1</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0715 focused: 3/3</span>
-        <span class="tag">large media benchmark: pass</span>
-        <span class="tag">128 lane updates / 16 blocked</span>
-        <span class="tag">storage/batch adjacent: 27/27</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0496 focused: 2/2</span>
-        <span class="tag">delete-support adjacent: 24/24</span>
-        <span class="tag">release-verifier adjacent: 22/22</span>
-        <span class="tag">hash-only support proof</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0633 focused: 1/1</span>
-        <span class="tag">recovery classification adjacent: 7/7</span>
-        <span class="tag">recovery journal full: 38/38</span>
-        <span class="tag">file-journal smoke: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0522 focused: 7/7</span>
-        <span class="tag">live smoke: pass</span>
-        <span class="tag">auth/session/route: 163/163</span>
-        <span class="tag">journal unchanged / no route mutation</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0714 focused: 4/4</span>
-        <span class="tag">large-site benchmark: 7.07s</span>
-        <span class="tag">storage/batch adjacent: 17/17</span>
-        <span class="tag">10,000 mutations / 20 batches</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0632 focused: 1/1</span>
-        <span class="tag">recovery classification adjacent: 7/7</span>
-        <span class="tag">recovery journal full: 37/37</span>
-        <span class="tag">blocked-recovery durable rows</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0495 focused: 3/3</span>
-        <span class="tag">remote-removal adjacent: 17/17</span>
-        <span class="tag">release-verifier adjacent: 20/20</span>
-        <span class="tag">remote removal hash-only</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0631 focused: 1/1</span>
-        <span class="tag">recovery classification adjacent: 7/7</span>
-        <span class="tag">recovery journal full: 37/37</span>
-        <span class="tag">SQLite new-remote hash-derived</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0520 route focused: 3/3</span>
-        <span class="tag">RPP-0520 client focused: 1/1</span>
-        <span class="tag">route/auth adjacent: 160/160</span>
-        <span class="tag">production-shaped route smoke: pass</span>
-        <span class="tag">audit schema hash-only</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0494 focused: 3/3</span>
-        <span class="tag">owner-context adjacent: 22/22</span>
-        <span class="tag">release-verifier adjacent: 37/37</span>
-        <span class="tag">production-shaped verifier: 5/5</span>
-        <span class="tag">stale metadata hash-only</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0630 focused: 1/1</span>
-        <span class="tag">recovery classification adjacent: 6/6</span>
-        <span class="tag">recovery journal full: 36/36</span>
-        <span class="tag">old-remote hash-only</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0493 focused: 3/3</span>
-        <span class="tag">owner-context adjacent: 21/21</span>
-        <span class="tag">release-verifier adjacent: 34/34</span>
-        <span class="tag">owner context hash-only</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0492 focused: 4/4</span>
-        <span class="tag">active_plugins adjacent: 3/3</span>
-        <span class="tag">release-verifier adjacent: 29/29</span>
-        <span class="tag">direct active_plugins hash-only</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0713 focused: 3/3</span>
-        <span class="tag">apply-route adjacent: 10/10</span>
-        <span class="tag">PHP syntax: pass</span>
-        <span class="tag">batch evidence hash-only</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0629 focused: 1/1</span>
-        <span class="tag">restart-readable adjacent: 4/4</span>
-        <span class="tag">recovery journal full: 35/35</span>
-        <span class="tag">lease owner readback</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0491 focused: 2/2</span>
-        <span class="tag">uninstall/delete: 6/6</span>
-        <span class="tag">planner adjacent: 2/2</span>
-        <span class="tag">release-verifier adjacent: 35/35</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0712 focused: 5/5</span>
-        <span class="tag">batch CLI gates: 11/11</span>
-        <span class="tag">storage adjacent: 10/10</span>
-        <span class="tag">62 resources / 9 batches</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0628 focused: 1/1</span>
-        <span class="tag">restart-readable adjacent: 5/5</span>
-        <span class="tag">recovery journal full: 34/34</span>
-        <span class="tag">production wrapper retry</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0490 focused: 3/3</span>
-        <span class="tag">planner adjacent: 3/3</span>
-        <span class="tag">release-verifier adjacent: 24/24</span>
-        <span class="tag">hash-only update dependency</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0518 route focused: 3/3</span>
-        <span class="tag">RPP-0518 client focused: 1/1</span>
-        <span class="tag">session/auth adjacent: 8/8</span>
-        <span class="tag">full client suite: pass</span>
-        <span class="tag">production routes: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0711 focused: 9/9</span>
-        <span class="tag">production routes adjacent: 24/24</span>
-        <span class="tag">remote hash bench: pass</span>
-        <span class="tag">source/scope cursors</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0489 focused: 2/2</span>
-        <span class="tag">plugin dependency adjacent: 2/2</span>
-        <span class="tag">release-verifier adjacent: 21/21</span>
-        <span class="tag">hash-only dependency evidence</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0701 focused: 6/6</span>
-        <span class="tag">mysql CAS bench: pass</span>
-        <span class="tag">runtime capability: recorded</span>
-        <span class="tag">connection evidence: redacted</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0612 dedicated focused: 1/1</span>
-        <span class="tag">RPP-0612 journal focused: 1/1</span>
-        <span class="tag">restart/classification: 9/9</span>
-        <span class="tag">recovery journal/repair: 38/38</span>
-        <span class="tag">file-journal smoke: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0517 focused: 1/1</span>
-        <span class="tag">idempotency/replay: 28/28</span>
-        <span class="tag">production-shaped smoke: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0488 focused: 1/1</span>
-        <span class="tag">serialized option adjacent: 3/3</span>
-        <span class="tag">release-verifier adjacent: 17/17</span>
-        <span class="tag">production-shaped adjacent: 13/13</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0372 focused: 2/2</span>
-        <span class="tag">termmeta graph adjacent: 5/5</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0371 focused: 2/2</span>
-        <span class="tag">custom-taxonomy adjacent: 6/6</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0370 focused: 2/2</span>
-        <span class="tag">taxonomy/reference adjacent: 8/8</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0369 focused: 2/2</span>
-        <span class="tag">RPP-0309 adjacent: 3/3</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0368 focused: 3/3</span>
-        <span class="tag">RPP-0308 adjacent: 2/2</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0367 focused: 2/2</span>
-        <span class="tag">comment-user graph: 4/4</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0366 focused: 2/2</span>
-        <span class="tag">comment-parent planner: 4/4</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">npm test: pre-existing RPP-0615 fail</span>
-        <span class="tag">RPP-0365 focused: 2/2</span>
-        <span class="tag">comment-post verifier: 2/2</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0363 focused: 2/2</span>
-        <span class="tag">post-author verifier: 3/3</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0519 focused: 2/2</span>
-        <span class="tag">auth/route suite: 162/162</span>
-        <span class="tag">production-shaped smoke: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0627 focused: 1/1</span>
-        <span class="tag">restart-readable group: 4/4</span>
-        <span class="tag">recovery journal: 32/32</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0516 focused: 1/1</span>
-        <span class="tag">auth client suite: 132/132</span>
-        <span class="tag">live-local smoke: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0625 focused: 1/1</span>
-        <span class="tag">claim/stale/expiry: 9/9</span>
-        <span class="tag">recovery journal: 31/31</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0710 focused: 1/1</span>
-        <span class="tag">guarded executor: 9/9</span>
-        <span class="tag">benchmark: 66 hash jobs</span>
-        <span class="tag">rollout gates: 9 pass / 3 blocked</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0361 focused: 2/2</span>
-        <span class="tag">planner/apply suite: 147/147</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0621/RPP-0622 focused: 2/2</span>
-        <span class="tag">recovery journal: 30/30</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">guarded/perf tests: 18/18</span>
-        <span class="tag">replay-only guardedLarge: pass</span>
-        <span class="tag">full guardedLarge: 8 pass / 3 blocked</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0621 focused: 1/1</span>
-        <span class="tag">recovery journal: 29/29</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0620 focused: 2/2</span>
-        <span class="tag">release/recovery slice: 2/2</span>
-        <span class="tag">recovery repair: 5/5</span>
-        <span class="tag">production proof: 123/134 pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0617 hard kill: 1/1</span>
-        <span class="tag">recovery journal: 28/28</span>
-        <span class="tag">file-journal smoke: pass</span>
-        <span class="tag">PHP and Node syntax: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0616/proof/recovery: 163 tests</span>
-        <span class="tag">152 pass / 11 skipped</span>
-        <span class="tag">SQLite restart readback: pass</span>
-        <span class="tag">request-hash conflict proof: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0615/recovery verifier: 35/35</span>
-        <span class="tag">production proof subset: 3/3</span>
-        <span class="tag">production proof: 123/134 pass</span>
-        <span class="tag">apply revalidation smoke: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0611/RPP-0612 focused: 3/3</span>
-        <span class="tag">recovery/auth suite: 164/164</span>
-        <span class="tag">file-journal smoke: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0522 focused: 5/5</span>
-        <span class="tag">snapshot-hashes live smoke: pass</span>
-        <span class="tag">route/auth suite: 160/160</span>
-        <span class="tag">local-lab backed</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0611 focused: 2/2</span>
-        <span class="tag">recovery journal/repair: 35/35</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0510 salvage: 3/3</span>
-        <span class="tag">auth route/client suite: 151/151</span>
-        <span class="tag">PHP and Node syntax: pass</span>
-        <span class="tag">checklist/redaction/diff: pass</span>
-        <span class="tag">RPP-0388 focused: 3/3</span>
-        <span class="tag">RPP-0308/commentmeta: 5/5</span>
-        <span class="tag">generated commentmeta harness: 6/6</span>
-        <span class="tag">RPP-0387 focused: 2/2</span>
-        <span class="tag">RPP-0307 comment user: 2/2</span>
-        <span class="tag">planner/generated comment user: 2/2</span>
-        <span class="tag">hash-only support: 4/4</span>
-        <span class="tag">RPP-0386 focused: 4/4</span>
-        <span class="tag">comment-parent planner: 4/4</span>
-        <span class="tag">local production comment graph: 2/2</span>
-        <span class="tag">RPP-0385 focused: 2/2</span>
-        <span class="tag">comment-post release evidence: 5/5</span>
-        <span class="tag">unmapped graph surfaces: 7/7</span>
-        <span class="tag">RPP-0384 focused: 3/3</span>
-        <span class="tag">postmeta planner: 4/4</span>
-        <span class="tag">local production/postmeta verifier: 27/27</span>
-        <span class="tag">RPP-0383 focused: 3/3</span>
-        <span class="tag">RPP-0303 generated: 1/1</span>
-        <span class="tag">post-author planner: 1/1</span>
-        <span class="tag">generated harness: 85/85</span>
-        <span class="tag">RPP-0382 focused: 1/1</span>
-        <span class="tag">featured-image planner: 4/4</span>
-        <span class="tag">local production featured image: 3/3</span>
-        <span class="tag">postmeta/audit verifier: 6/6</span>
-        <span class="tag">RPP-0381 focused: 3/3</span>
-        <span class="tag">post_parent graph: 6/6</span>
-        <span class="tag">release evidence: 7/7</span>
-        <span class="tag">category/post_parent adjacent: 6/6</span>
-        <span class="tag">RPP-0380 focused: 2/2</span>
-        <span class="tag">importer/exporter graph: 3/3</span>
-        <span class="tag">graph inventory: 2/2</span>
-        <span class="tag">RPP-0379 focused: 2/2</span>
-        <span class="tag">same-plan planner graph: 4/4</span>
-        <span class="tag">explicit identity map: 3/3</span>
-        <span class="tag">local-production graph: 20/20</span>
-        <span class="tag">graph inventory: 2/2</span>
-        <span class="tag">RPP-0378 focused: 1/1</span>
-        <span class="tag">planner graph identity: 4/4</span>
-        <span class="tag">RPP-0377 focused: 1/1</span>
-        <span class="tag">RPP-0317 serialized block: 3/3</span>
-        <span class="tag">RPP-0376 focused: 2/2</span>
-        <span class="tag">RPP-0316/0376 wp_navigation: 5/5</span>
-        <span class="tag">RPP-0375 focused: 1/1</span>
-        <span class="tag">RPP-0315/0375 nav-menu: 2/2</span>
-        <span class="tag">graph inventory/nav-menu: 4/4</span>
-        <span class="tag">RPP-0374 focused: 2/2</span>
-        <span class="tag">taxonomy relationship adjacent: 13/13</span>
-        <span class="tag">RPP-0322 focused: 2/2</span>
-        <span class="tag">RPP-0302/0322 planner: 4/4</span>
-        <span class="tag">RPP-0342 generated: 1/1</span>
-        <span class="tag">local production featured image: 3/3</span>
-        <span class="tag">RPP-0286 focused: 3/3</span>
-        <span class="tag">RPP-0206/0226/0246/0286 remote metadata: 8/8</span>
-        <span class="tag">production-shaped proof/RPP-0484/0499/0286: 8/8</span>
-        <span class="tag">RPP-0281/0282/0283/0284/0286 compatibility: 12/12</span>
-        <span class="tag">RPP-0284 focused: 2/2</span>
-        <span class="tag">RPP-0204/0224 planner: 2/2</span>
-        <span class="tag">RPP-0244 generated: 1/1</span>
-        <span class="tag">release-verifier adjacency: 6/6</span>
-        <span class="tag">RPP-0281/0282/0283/0284 compatibility: 9/9</span>
-        <span class="tag">RPP-0283 focused: 2/2</span>
-        <span class="tag">RPP-0243 adjacent: 1/1</span>
-        <span class="tag">RPP-0203/0223/local deletion: 5/5</span>
-        <span class="tag">plugin-driver verifier adjacency: 12/12</span>
-        <span class="tag">RPP-0281/0282/0283 compatibility: 7/7</span>
-        <span class="tag">RPP-0282 focused: 2/2</span>
-        <span class="tag">RPP-0242 adjacent: 1/1</span>
-        <span class="tag">RPP-0281 focused: 3/3</span>
-        <span class="tag">RPP-0241/0281 adjacent: 5/5</span>
-        <span class="tag">RPP-0221/0281 generated: 4/4</span>
-        <span class="tag">RPP-0484/0498/0281 verifier: 7/7</span>
-        <span class="tag">production-shaped proof/RPP-0281: 5/5</span>
-        <span class="tag">RPP-0279 focused: 1/1</span>
-        <span class="tag">RPP-0219/0239/0259/0279 suite: 5/5</span>
-        <span class="tag">evidence-redaction unit suite: 7/7</span>
-        <span class="tag">RPP-0278 focused: 1/1</span>
-        <span class="tag">RPP-0218/0238/0258/0278 suite: 6/6</span>
-        <span class="tag">RPP-0277 focused: 1/1</span>
-        <span class="tag">RPP-0217/0237/0257/0277 suite: 5/5</span>
-        <span class="tag">RPP-0276 focused/generated: 2/2</span>
-        <span class="tag">RPP-0216/0236/0256/0276 suite: 8/8</span>
-        <span class="tag">RPP-0274 focused: 1/1</span>
-        <span class="tag">RPP-0214/0234/0254 adjacent: 4/4</span>
-        <span class="tag">RPP-0273 focused: 2/2</span>
-        <span class="tag">RPP-0213/0233/0253 adjacent: 5/5</span>
-        <span class="tag">RPP-0272 focused: 3/3</span>
-        <span class="tag">RPP-0212/0232/0252 adjacent: 10/10</span>
-        <span class="tag">forged-ready envelope: 16/16</span>
-        <span class="tag">RPP-0271 focused/generated: 2/2</span>
-        <span class="tag">RPP-0231/0211 adjacent: 4/4</span>
-        <span class="tag">RPP-0269 focused: 1/1</span>
-        <span class="tag">RPP-0249 adjacent: 1/1</span>
-        <span class="tag">RPP-0209/0229 slice: 2/2</span>
-        <span class="tag">RPP-0268 focused: 1/1</span>
-        <span class="tag">RPP-0248 adjacent: 1/1</span>
-        <span class="tag">RPP-0208/0228 slice: 3/3</span>
-        <span class="tag">RPP-0267/RPP-0247 focused: 4/4</span>
-        <span class="tag">RPP-0207/0227 slice: 2/2</span>
-        <span class="tag">owner-context suite: 17/17</span>
-        <span class="tag">RPP-0266 focused/generated: 2/2</span>
-        <span class="tag">RPP-0246 adjacent: 2/2</span>
-        <span class="tag">RPP-0206 slice: 1/1</span>
-        <span class="tag">RPP-0226 adjacent: 2/2</span>
-        <span class="tag">RPP-0264 focused: 1/1</span>
-        <span class="tag">RPP-0244 adjacent: 1/1</span>
-        <span class="tag">RPP-0204/0224 slice: 3/3</span>
-        <span class="tag">RPP-0263 focused: 1/1</span>
-        <span class="tag">RPP-0243 adjacent: 1/1</span>
-        <span class="tag">RPP-0203/0223 slice: 3/3</span>
-        <span class="tag">RPP-0262 focused: 1/1</span>
-        <span class="tag">RPP-0242 adjacent: 1/1</span>
-        <span class="tag">RPP-0202/0222 slice: 3/3</span>
-        <span class="tag">RPP-0261 focused/generated: 2/2</span>
-        <span class="tag">RPP-0241 adjacent: 2/2</span>
-        <span class="tag">RPP-0201/0221 slice: 3/3</span>
-        <span class="tag">RPP-0259 focused: 1/1</span>
-        <span class="tag">RPP-0219/0239 slice: 3/3</span>
-        <span class="tag">RPP-0258 focused: 1/1</span>
-        <span class="tag">RPP-0218/0238 slice: 3/3</span>
-        <span class="tag">RPP-0257 focused: 1/1</span>
-        <span class="tag">RPP-0217/0237 slice: 3/3</span>
-        <span class="tag">RPP-0256 focused/generated: 2/2</span>
-        <span class="tag">RPP-0236 adjacent: 2/2</span>
-        <span class="tag">blocked/atomic slice: 4/4</span>
-        <span class="tag">RPP-0254 focused: 1/1</span>
-        <span class="tag">already-in-sync slice: 6/6</span>
-        <span class="tag">same-content generated: 3/3</span>
-        <span class="tag">lint/redaction tests: 23/23</span>
-        <span class="tag">RPP-0253 focused: 1/1</span>
-        <span class="tag">RPP-0213 focused: 2/2</span>
-        <span class="tag">RPP-0233 planner: 1/1</span>
-        <span class="tag">RPP-0233 generated: 1/1</span>
-        <span class="tag">RPP-0252 focused: 3/3</span>
-        <span class="tag">RPP-0212 planner: 2/2</span>
-        <span class="tag">RPP-0232 focused: 3/3</span>
-        <span class="tag">RPP-0251 focused: 2/2</span>
-        <span class="tag">one-to-one slice: 4/4</span>
-        <span class="tag">RPP-0249 focused: 1/1</span>
-        <span class="tag">planner slice: 2/2</span>
-        <span class="tag">RPP-0237 generated: 1/1</span>
-        <span class="tag">RPP-0239 redaction: 1/1</span>
-        <span class="tag">RPP-0248 focused: 1/1</span>
-        <span class="tag">planner slice: 2/2</span>
-        <span class="tag">RPP-0143 generated: 1/1</span>
-        <span class="tag">redaction: 7/7</span>
-        <span class="tag">RPP-0178 focused: 1/1</span>
-        <span class="tag">same-content slice: 4/4</span>
-        <span class="tag">generated harness: 85/85</span>
-        <span class="tag">RPP-0247 focused: 2/2</span>
-        <span class="tag">push planner: 147/147</span>
-        <span class="tag">owner context: 17/17</span>
-        <span class="tag">npm test: 1107/1118 pass</span>
-        <span class="tag">RPP-0246 focused: 2/2</span>
-        <span class="tag">metadata slice: 4/4</span>
-        <span class="tag">RPP-0244 focused: 1/1</span>
-        <span class="tag">planner slice: 2/2</span>
-        <span class="tag">generated slice: 1/1</span>
-        <span class="tag">RPP-0243 focused: 1/1</span>
-        <span class="tag">planner slice: 3/3</span>
-        <span class="tag">RPP-0242 focused: 1/1</span>
-        <span class="tag">generated slice: 1/1</span>
-        <span class="tag">RPP-0241 focused: 2/2</span>
-        <span class="tag">RPP-0176 focused: 1/1</span>
-        <span class="tag">atomic variants: 4/4</span>
-        <span class="tag">620 cases</span>
-        <span class="tag">RPP-0524 focused: 5/5</span>
-        <span class="tag">apply smoke: ok</span>
-        <span class="tag">route/auth bundle: 145/145</span>
-        <span class="tag">loopback only</span>
-        <span class="tag">RPP-0498-0500 focused: 9/9</span>
-        <span class="tag">package suite: 24</span>
-        <span class="tag">targeted verifier: 7/7</span>
-        <span class="tag">package smoke: pass</span>
-        <span class="tag">RPP-0498/0499 focused: 4/4</span>
-        <span class="tag">audit slice: 7/7</span>
-        <span class="tag">boundary slice: 5/5</span>
-        <span class="tag">v5 verifier slices: 15</span>
-        <span class="tag">RPP-0498 focused: 2/2</span>
-        <span class="tag">apply-validation slice: 4/4</span>
-        <span class="tag">v5 verifier slices: 17</span>
-        <span class="tag">checklist/redaction: pass</span>
-        <span class="tag">RPP-0175 focused: 1/1</span>
-        <span class="tag">custom-table slice: 4/4</span>
-        <span class="tag">generated harness: 82/82</span>
-        <span class="tag">620 cases</span>
-        <span class="tag">RPP-0174 focused: 1/1</span>
-        <span class="tag">plugin-owned option slice: 3/3</span>
-        <span class="tag">generated harness: 81/81</span>
-        <span class="tag">RPP-0173 focused: 1/1</span>
-        <span class="tag">term-relationships slice: 3/3</span>
-        <span class="tag">generated-cover check: 2/2</span>
-        <span class="tag">generated harness: 80/80</span>
-        <span class="tag">RPP-0172 focused: 1/1</span>
-        <span class="tag">term-taxonomy slice: 3/3</span>
-        <span class="tag">generated harness: 79/79</span>
-        <span class="tag">RPP-0171 focused: 1/1</span>
-        <span class="tag">terms/termmeta slice: 3/3</span>
-        <span class="tag">family cross-check: 3/3</span>
-        <span class="tag">generated harness: 78/78</span>
-        <span class="tag">RPP-0170 focused: 1/1</span>
-        <span class="tag">comments/commentmeta slice: 3/3</span>
-        <span class="tag">generated harness: 77/77</span>
-        <span class="tag">RPP-0169 focused: 1/1</span>
-        <span class="tag">user/usermeta slice: 3/3</span>
-        <span class="tag">generated harness: 76/76</span>
-        <span class="tag">RPP-0168 focused: 1/1</span>
-        <span class="tag">postmeta slice: 3/3</span>
-        <span class="tag">generated harness: 75/75</span>
-        <span class="tag">RPP-0167 focused: 1/1</span>
-        <span class="tag">wp_posts slice: 3/3</span>
-        <span class="tag">generated harness: 74/74</span>
-        <span class="tag">RPP-0166 focused: 1/1</span>
-        <span class="tag">serialized-option slice: 4/4</span>
-        <span class="tag">generated harness: 73/73</span>
-        <span class="tag">RPP-0165 focused: 1/1</span>
-        <span class="tag">scalar-option slice: 4/4</span>
-        <span class="tag">generated harness: 72/72</span>
-        <span class="tag">RPP-0164 focused: 1/1</span>
-        <span class="tag">row-mix slice: 4/4</span>
-        <span class="tag">generated harness: 71/71</span>
-        <span class="tag">RPP-0163 focused: 1/1</span>
-        <span class="tag">file type-swap slice: 4/4</span>
-        <span class="tag">generated harness: 70/70</span>
-        <span class="tag">RPP-0162 focused: 1/1</span>
-        <span class="tag">directory slice: 3/3</span>
-        <span class="tag">generated harness: 69/69</span>
-        <span class="tag">RPP-0161 focused: 1/1</span>
-        <span class="tag">file-mix slice: 4/4</span>
-        <span class="tag">generated harness: 68/68</span>
-        <span class="tag">RPP-0160 focused: 1/1</span>
-        <span class="tag">large-plan slice: 3/3</span>
-        <span class="tag">generated harness: 67/67</span>
-        <span class="tag">RPP-0521 focused: 5/5</span>
-        <span class="tag">preflight live smoke: pass</span>
-        <span class="tag">auth/route suite: pass</span>
-        <span class="tag">local-lab backed</span>
-        <span class="tag">RPP-0486 focused: 4/4</span>
-        <span class="tag">wp_termmeta slice: 16/16</span>
-        <span class="tag">package scenarios: 9/9</span>
-        <span class="tag">verifier guards: pass</span>
-        <span class="tag">RPP-0514 focused: 3/3</span>
-        <span class="tag">receipt/replay slice: 68/68</span>
-        <span class="tag">auth client: pass</span>
-        <span class="tag">checklist/redaction: pass</span>
-        <span class="tag">RPP-0511 focused: 1/1</span>
-        <span class="tag">auth/session slice: 11/11</span>
-        <span class="tag">Application Password: pass</span>
-        <span class="tag">checklist/redaction: pass</span>
-        <span class="tag">RPP-0510 focused: 11/11</span>
-        <span class="tag">auth boundary: 2/2</span>
-        <span class="tag">PHP syntax: pass</span>
-        <span class="tag">checklist/redaction: pass</span>
-        <span class="tag">RPP-0485 focused: 4/4</span>
-        <span class="tag">wp_postmeta slice: 7/7</span>
-        <span class="tag">verifier slice: 13/13</span>
-        <span class="tag">package scenarios: 9/9</span>
-        <span class="tag">RPP-0484 focused: 2/2</span>
-        <span class="tag">wp_options slice: 4/4</span>
-        <span class="tag">verifier slice: 9/9</span>
-        <span class="tag">package scenarios: 9/9</span>
-        <span class="tag">RPP-0483 focused: 7/7</span>
-        <span class="tag">custom-table slice: 13/13</span>
-        <span class="tag">driver verifier: 12/12</span>
-        <span class="tag">package scenarios: 9/9</span>
-        <span class="tag">RPP-0159 focused: 1/1</span>
-        <span class="tag">remote-only slice: 3/3</span>
-        <span class="tag">RPP-0159 ready: 9</span>
-        <span class="tag">generated harness: 66/66</span>
-        <span class="tag">RPP-0482 focused: 3/3</span>
-        <span class="tag">owner slice: 4/4</span>
-        <span class="tag">owner boundary: 2/2</span>
-        <span class="tag">RPP-0481 focused: 2/2</span>
-        <span class="tag">registration slice: 8/8</span>
-        <span class="tag">RPP-0480 focused: 6/6</span>
-        <span class="tag">package slice: 13/13</span>
-        <span class="tag">package guard: 2/2</span>
-        <span class="tag">RPP-0158 focused: 1/1</span>
-        <span class="tag">same-content slice: 3/3</span>
-        <span class="tag">generated harness: 65/65</span>
-        <span class="tag">RPP-0479 focused: 2/2</span>
-        <span class="tag">audit slice: 6/6</span>
-        <span class="tag">RPP-0478 focused: 1/1</span>
-        <span class="tag">apply-validation slice: 15/15</span>
-        <span class="tag">RPP-0477 focused: 1/1</span>
-        <span class="tag">dry-run slice: 13/13</span>
-        <span class="tag">RPP-0476 focused: 3/3</span>
-        <span class="tag">delete support slice: 21/21</span>
-        <span class="tag">RPP-0157 focused: 1/1</span>
-        <span class="tag">RPP-0157 pattern: 2/2</span>
-        <span class="tag">stale dry-run slice: 3/3</span>
-        <span class="tag">RPP-0475 focused: 4/4</span>
-        <span class="tag">remote removal: 14/14</span>
-        <span class="tag">owner-context slice: 21/21</span>
-        <span class="tag">RPP-0474 focused: 2/2</span>
-        <span class="tag">metadata slice: 16/16</span>
-        <span class="tag">RPP-0473 focused: 2/2</span>
-        <span class="tag">owner-context slice: 20/20</span>
-        <span class="tag">RPP-0472 focused: 3/3</span>
-        <span class="tag">refusal slice: 15/15</span>
-        <span class="tag">production boundary: 3/3</span>
-        <span class="tag">generated harness: 63/63</span>
-        <span class="tag">RPP-0467 focused: 3/3</span>
-        <span class="tag">usermeta slice: 5/5</span>
-        <span class="tag">generated/usermeta: 7/7</span>
-        <span class="tag">RPP-0466 focused: 2/2</span>
-        <span class="tag">termmeta slice: 10/10</span>
-        <span class="tag">RPP-0155 focused: 1/1</span>
-        <span class="tag">RPP-0155 pattern: 2/2</span>
-        <span class="tag">custom-table adjacent: 3/3</span>
-        <span class="tag">generated harness: 63/63</span>
-        <span class="tag">generated cases: 620</span>
-        <span class="tag">RPP-0465 focused: 3/3</span>
-        <span class="tag">postmeta slice: 10/10</span>
-        <span class="tag">RPP-0441 focused: 1/1</span>
-        <span class="tag">registration slice: 5/5</span>
-        <span class="tag">RPP-0464 focused: 2/2</span>
-        <span class="tag">plugin-driver slice: 9/9</span>
-        <span class="tag">wp_options planner: 11/11</span>
-        <span class="tag">RPP-0463 focused: 6/6</span>
-        <span class="tag">custom-table planner: 8/8</span>
-        <span class="tag">allowlist boundary: 3/3</span>
-        <span class="tag">local production slice: 1/1</span>
-        <span class="tag">snapshot gate: 1/1</span>
-        <span class="tag">RPP-0462 focused: 1/1</span>
-        <span class="tag">plugin-driver slice: 9/9</span>
-        <span class="tag">RPP-0440 focused: 4/4</span>
-        <span class="tag">package scenarios: 9/9</span>
-        <span class="tag">production-shaped slice: 2/2</span>
-        <span class="tag">RPP-0154 focused: 1/1</span>
-        <span class="tag">RPP-0154 pattern: 2/2</span>
-        <span class="tag">generated harness: 62/62</span>
-        <span class="tag">generated cases: 620</span>
-        <span class="tag">RPP-0437 focused: 3/3</span>
-        <span class="tag">dry-run hook: 3/3</span>
-        <span class="tag">plugin dry-run slice: 16/16</span>
-        <span class="tag">RPP-0427 focused: 2/2</span>
-        <span class="tag">usermeta semantics: 5/5</span>
-        <span class="tag">generated/user slice: 10/10</span>
-        <span class="tag">meta-driver slice: 16/16</span>
-        <span class="tag">RPP-0153 focused: 1/1</span>
-        <span class="tag">RPP-0153 pattern: 2/2</span>
-        <span class="tag">generated harness: 61/61</span>
-        <span class="tag">generated cases: 620</span>
-        <span class="tag">RPP-0436 focused: 12/12</span>
-        <span class="tag">delete support: 3/3</span>
-        <span class="tag">plugin delete slice: 12/12</span>
-        <span class="tag">planner delete: 3/3</span>
-        <span class="tag">RPP-0239 focused: 1/1</span>
-        <span class="tag">RPP-0219/0239: 3/3</span>
-        <span class="tag">evidence redaction: 7/7</span>
-        <span class="tag">RPP-0435 focused: 2/2</span>
-        <span class="tag">remote removal: 4/4</span>
-        <span class="tag">plugin-driver slice: 29/29</span>
-        <span class="tag">RPP-0238 focused: 2/2</span>
-        <span class="tag">RPP-0218/0238: 4/4</span>
-        <span class="tag">RPP-0152 focused: 1/1</span>
-        <span class="tag">RPP-0152 pattern: 2/2</span>
-        <span class="tag">generated harness: 60/60</span>
-        <span class="tag">RPP-0236 focused: 2/2</span>
-        <span class="tag">RPP-0216/0236/0240: 6/6</span>
-        <span class="tag">RPP-0434 focused: 2/2</span>
-        <span class="tag">owner metadata/file/removal: 11/11</span>
-        <span class="tag">RPP-0235 focused: 1/1</span>
-        <span class="tag">RPP-0235 pattern: 3/3</span>
-        <span class="tag">planner pair: 148/148</span>
-        <span class="tag">RPP-0151 focused: 1/1</span>
-        <span class="tag">RPP-0151 pattern: 2/2</span>
-        <span class="tag">generated harness: 59/59</span>
-        <span class="tag">RPP-0234 focused: 1/1</span>
-        <span class="tag">RPP-0234 pattern: 2/2</span>
-        <span class="tag">planner pair: 148/148</span>
-        <span class="tag">RPP-0433 focused: 2/2</span>
-        <span class="tag">owner context: 9/9</span>
-        <span class="tag">audit redaction: 3/3</span>
-        <span class="tag">RPP-0426 focused: 5/5</span>
-        <span class="tag">termmeta regression: 5/5</span>
-        <span class="tag">RPP-0426 pattern: 10/10</span>
-        <span class="tag">RPP-0232 focused: 3/3</span>
-        <span class="tag">RPP-0212 regression: 2/2</span>
-        <span class="tag">localHash regression: 2/2</span>
-        <span class="tag">push planner: 147/147</span>
-        <span class="tag">RPP-0317 focused: 3/3</span>
-        <span class="tag">RPP-0317 planner: 147/147</span>
-        <span class="tag">RPP-0149 focused: 1/1</span>
-        <span class="tag">generated harness: 58/58</span>
-        <span class="tag">RPP-0231 focused: 3/3</span>
-        <span class="tag">RPP-0211 regression: 3/3</span>
-        <span class="tag">generated harness: 57/57</span>
-        <span class="tag">RPP-0425 postmeta: 4/4 focused</span>
-        <span class="tag">postmeta regression: 6/6 focused</span>
-        <span class="tag">RPP-0148 harness: 56/56</span>
-        <span class="tag">RPP-0226 focused: 3/3</span>
-        <span class="tag">RPP-0420 package: 9/9</span>
-        <span class="tag">RPP-0610 relevant suite: 279/290</span>
-        <span class="tag">RPP-0610 recovery smoke: exit 0</span>
-        <span class="tag">RPP-0407 usermeta: 5/5 focused</span>
-        <span class="tag">RPP-0407 harness: 2/2 focused</span>
-        <span class="tag">RPP-0602 recovery journal: 24/24</span>
-        <span class="tag">RPP-0303 graph: 1/1 focused</span>
-        <span class="tag">RPP-0206 invariant: 1/1 focused</span>
-        <span class="tag">RPP-0406 termmeta: 5/5 focused</span>
-        <span class="tag">RPP-0601 SQLite journal: 23/23</span>
-        <span class="tag">RPP-0601 recovery smoke: exit 0</span>
-        <span class="tag">RPP-0502 snapshot hashes: 4/4 focused</span>
-        <span class="tag">RPP-0502 auth matrix: 139/139</span>
-        <span class="tag">RPP-0405 postmeta: 6/6 focused</span>
-        <span class="tag">RPP-0136 harness: 1/1 focused</span>
-        <span class="tag">RPP-0203 invariant: 2/2 focused</span>
-        <span class="tag">RPP-0202 invariant: 2/2 focused</span>
-        <span class="tag">remote-only preservation: 1/1</span>
-        <span class="tag">failure reason carry-through: 2/2</span>
-        <span class="tag">status row carry-through: 37/37</span>
-        <span class="tag">progress timestamp carry-through: 35/35</span>
-        <span class="tag">tmux marker carry-through: 35/35</span>
-        <span class="tag">releaseMovement carry-through: 3/3</span>
-        <span class="tag">recovery inspect carry-through: 2/2</span>
-        <span class="tag">apply route carry-through: 3/3</span>
-        <span class="tag">journal route carry-through: 36/36</span>
-        <span class="tag">RPP-0401 registration: 3/3</span>
-        <span class="tag">RPP-0201 invariant: 3/3</span>
-        <span class="tag">atomic plugin stack v1: 38/38</span>
-        <span class="tag">custom-table harness: 37/37</span>
-        <span class="tag">preflight route carry-through: 39/39</span>
-        <span class="tag">same-source carry-through: 37/37</span>
-        <span class="tag">dry-run route carry-through: 35/35</span>
-        <span class="tag">manage_options carry-through: 41/41</span>
-        <span class="tag">app password binding: 39/39</span>
-        <span class="tag">missing secret carry-through: 38/38</span>
-        <span class="tag">auth readback carry-through: 38/38</span>
-        <span class="tag">wrong alias carry-through: 38/38</span>
-        <span class="tag">packaged fallback carry-through: 37/37</span>
-        <span class="tag">changed-remote carry-through: 36/36</span>
-        <span class="tag">local carry-through: 36/36</span>
-        <span class="tag">source carry-through: 36/36</span>
-        <span class="tag">verify marker: 35/35</span>
-        <span class="tag">status row matrix: 34/34</span>
-        <span class="tag">progress timestamp: 32/32</span>
-        <span class="tag">branch audit: 843/843 merged</span>
-        <span class="tag">auth source fallback: 5/5 focused</span>
-        <span class="tag">tmux marker regression: 1/1</span>
-        <span class="tag">manage_options matrix: 3/3</span>
-        <span class="tag">route/recovery regression: 4/4</span>
-        <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 507/1000</span>
-        <span class="tag">checklist lint: ok</span>
-        <span class="tag">artifact scan: ok</span>
-        <span class="tag">release gates: expected NO-GO</span>
+      <div class="notice">
+        <p><strong><code>storage-boundary-cas</code> is open.</strong> Release movement requires production-backed evidence that every final target write is guarded at the storage boundary, revalidated before mutation, and rejects stale-at-write attempts without later mutation. The DB guarded-write and file guarded-write smokes pass locally as support evidence only.</p>
       </div>
+    </section>
+
+    <section class="panel" aria-labelledby="gates-title">
+      <div class="panel-head">
+        <h2 id="gates-title">21-Gate Model</h2>
+        <span>3 passed / 18 blocking</span>
+      </div>
+      <div class="grid-two">
+        <table>
+          <thead>
+            <tr>
+              <th>Bucket</th>
+              <th>Passed</th>
+              <th>Blocking</th>
+            </tr>
+          </thead>
+          <tbody>
+              <tr>
+                <td>auth</td>
+                <td>0/4</td>
+                <td>4</td>
+              </tr>
+              <tr>
+                <td>boundary</td>
+                <td>1/1</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td>identity</td>
+                <td>0/1</td>
+                <td>1</td>
+              </tr>
+              <tr>
+                <td>operator-proof</td>
+                <td>0/4</td>
+                <td>4</td>
+              </tr>
+              <tr>
+                <td>recovery</td>
+                <td>0/2</td>
+                <td>2</td>
+              </tr>
+              <tr>
+                <td>route</td>
+                <td>0/3</td>
+                <td>3</td>
+              </tr>
+              <tr>
+                <td>storage</td>
+                <td>0/1</td>
+                <td>1</td>
+              </tr>
+              <tr>
+                <td>summary</td>
+                <td>1/1</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td>topology</td>
+                <td>1/4</td>
+                <td>3</td>
+              </tr>
+          </tbody>
+        </table>
+        <div>
+          <h3>Passed Non-Risk Gates</h3>
+          <ul>
+            <li><code>packaged-fallback</code> (RPP-0004)</li><li><code>remote-alias</code> (RPP-0005)</li><li><code>release-movement-summary</code> (RPP-0016)</li>
+          </ul>
+          <p>These passed gates do not close production risk. The release remains held until all blocking gates have final-release evidence.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="blockers-title">
+      <div class="panel-head">
+        <h2 id="blockers-title">Remaining Blockers</h2>
+        <span>All require production-scoped closure</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>RPP</th>
+            <th>Gate</th>
+            <th>Bucket</th>
+            <th>Code</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+              <tr>
+                <td>RPP-0001</td>
+                <td><code>source-url</code></td>
+                <td>topology</td>
+                <td><code>REPRINT_PUSH_LIVE_SOURCE_REQUIRED</code></td>
+                <td>REPRINT_PUSH_SOURCE_URL is required before release gates can run preflight, dry-run, apply, or recovery.</td>
+              </tr>
+              <tr>
+                <td>RPP-0002</td>
+                <td><code>local-url</code></td>
+                <td>topology</td>
+                <td><code>REPRINT_PUSH_LOCAL_URL_REQUIRED</code></td>
+                <td>REPRINT_PUSH_LOCAL_URL is required to prove the local edited site boundary.</td>
+              </tr>
+              <tr>
+                <td>RPP-0003</td>
+                <td><code>remote-changed-url</code></td>
+                <td>topology</td>
+                <td><code>REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED</code></td>
+                <td>REPRINT_PUSH_REMOTE_CHANGED_URL is required to prove stale remote replay fails before mutation.</td>
+              </tr>
+              <tr>
+                <td>RPP-0006</td>
+                <td><code>auth-source-readback</code></td>
+                <td>auth</td>
+                <td><code>PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED</code></td>
+                <td>Auth source command readback must prove the same live source URL used at issuance and readback.</td>
+              </tr>
+              <tr>
+                <td>RPP-0007</td>
+                <td><code>production-secret</code></td>
+                <td>auth</td>
+                <td><code>REPRINT_PUSH_SECRET_REQUIRED</code></td>
+                <td>Production credential evidence is required before release movement.</td>
+              </tr>
+              <tr>
+                <td>RPP-0008</td>
+                <td><code>application-password-binding</code></td>
+                <td>auth</td>
+                <td><code>APPLICATION_PASSWORD_BINDING_REQUIRED</code></td>
+                <td>Application Password credential binding must be proven against the checked source identity.</td>
+              </tr>
+              <tr>
+                <td>RPP-0009</td>
+                <td><code>manage-options-capability</code></td>
+                <td>auth</td>
+                <td><code>MANAGE_OPTIONS_CAPABILITY_REQUIRED</code></td>
+                <td>manage_options capability proof is required for the checked production user.</td>
+              </tr>
+              <tr>
+                <td>RPP-0010</td>
+                <td><code>same-source-identity</code></td>
+                <td>identity</td>
+                <td><code>SAME_SOURCE_IDENTITY_REQUIRED</code></td>
+                <td>Same source URL identity proof is required across preflight, dry-run, apply, journal, and recovery.</td>
+              </tr>
+              <tr>
+                <td>RPP-0011</td>
+                <td><code>preflight-route-identity</code></td>
+                <td>route</td>
+                <td><code>PREFLIGHT_ROUTE_IDENTITY_REQUIRED</code></td>
+                <td>Preflight route identity proof is required before release movement.</td>
+              </tr>
+              <tr>
+                <td>RPP-0012</td>
+                <td><code>dry-run-route-eligibility</code></td>
+                <td>route</td>
+                <td><code>DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED</code></td>
+                <td>Dry-run route eligibility proof is required before release movement.</td>
+              </tr>
+              <tr>
+                <td>RPP-0013</td>
+                <td><code>apply-route-pre-mutation</code></td>
+                <td>route</td>
+                <td><code>APPLY_ROUTE_PRE_MUTATION_REQUIRED</code></td>
+                <td>Apply route pre-mutation rejection proof is required before release movement.</td>
+              </tr>
+              <tr>
+                <td>RPP-0014</td>
+                <td><code>journal-route-read-only</code></td>
+                <td>recovery</td>
+                <td><code>JOURNAL_ROUTE_READ_ONLY_REQUIRED</code></td>
+                <td>Journal route read-only proof is required before release movement.</td>
+              </tr>
+              <tr>
+                <td>RPP-0015</td>
+                <td><code>recovery-inspect-read-only</code></td>
+                <td>recovery</td>
+                <td><code>RECOVERY_INSPECT_READ_ONLY_REQUIRED</code></td>
+                <td>Recovery inspect read-only proof is required before release movement.</td>
+              </tr>
+              <tr class="storage-row">
+                <td>RPP-0021</td>
+                <td><code>storage-boundary-cas</code></td>
+                <td>storage</td>
+                <td><code>STORAGE_BOUNDARY_CAS_REQUIRED</code></td>
+                <td>Storage-boundary CAS proof is required for every final target write before release movement.</td>
+              </tr>
+              <tr>
+                <td>RPP-0017</td>
+                <td><code>tmux-status-marker</code></td>
+                <td>operator-proof</td>
+                <td><code>TMUX_STATUS_MARKER_REQUIRED</code></td>
+                <td>A final bracketed stdout status marker is required for tmux-visible release gate proof.</td>
+              </tr>
+              <tr>
+                <td>RPP-0018</td>
+                <td><code>progress-release-timestamp</code></td>
+                <td>operator-proof</td>
+                <td><code>PROGRESS_RELEASE_TIMESTAMP_REQUIRED</code></td>
+                <td>A release timestamp tied to current evidence is required before release movement.</td>
+              </tr>
+              <tr>
+                <td>RPP-0019</td>
+                <td><code>agents-release-gates-row</code></td>
+                <td>operator-proof</td>
+                <td><code>AGENTS_RELEASE_GATES_ROW_REQUIRED</code></td>
+                <td>.agents/RELEASE_GATES.md status row evidence is required before release movement.</td>
+              </tr>
+              <tr>
+                <td>RPP-0020</td>
+                <td><code>verify-release-failure-reason</code></td>
+                <td>operator-proof</td>
+                <td><code>VERIFY_RELEASE_FAILURE_REASON_REQUIRED</code></td>
+                <td>verify:release must prove nonzero failures include a named reason before release movement.</td>
+              </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel" aria-labelledby="refresh-title">
+      <div class="panel-head">
+        <h2 id="refresh-title">Refresh Mechanism</h2>
+        <span>Local-only, no tunnels</span>
+      </div>
+      <p>One-shot refresh: <code>npm run refresh:progress-surface</code>. Active-work loop: <code>npm run refresh:progress-surface:watch</code>, which repeats every 600000 ms until Ctrl-C. Validation: <code>npm run check:progress-surface</code>. Publishing proof remains separate with <code>npm run publish:progress-page:dry-run</code>.</p>
     </section>
 
     <section class="panel" aria-labelledby="links-title">
       <div class="panel-head">
-        <h2 id="links-title">Where To Drill In</h2>
-        <span>Full detail lives off-page</span>
+        <h2 id="links-title">Drill-In Links</h2>
+        <span>Full evidence lives off-page</span>
       </div>
-      <ul class="links">
-        <li><a href="docs/reprint-push-completion-checklist.md">1000-item RPP checklist</a></li>
-        <li><a href="docs/generated-push-harness.md">Generated push harness coverage</a></li>
+      <ul class="plain-list">
         <li><a href="docs/evidence/ao-release-gates.md">Release gate evidence</a></li>
-        <li><a href="docs/evidence/ao-progress-report.md">Detailed progress evidence report</a></li>
-        <li><a href="docs/evidence/ao-required-release-checks.md">Required release checks</a></li>
-        <li><a href="docs/supervisor-feedback.md">Supervisor feedback log</a></li>
+        <li><a href="docs/release/go-no-go-release-decision-record.md">Go/No-Go release decision record</a></li>
+        <li><a href="docs/evidence/ao-progress-report.md">Detailed progress report</a></li>
+        <li><a href="docs/release/progress-surface-refresh.md">Progress refresh instructions</a></li>
+        <li><a href="docs/generated-push-harness.md">Generated push harness</a></li>
       </ul>
 
       <div class="proof-item" id="release-proof-timestamp" data-rpp="RPP-0038" data-proof-timestamp="2026-05-28T03:18:00.000Z" data-release-status="NO-GO" data-evidence-report="docs/evidence/ao-release-gates.md">
         <span class="status">Release timestamp proof</span>
-        <p>Evidence toward `RPP-0038` links `node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js` observed status `pass` to the generated proof timestamp <time datetime="2026-05-28T03:18:00.000Z">2026-05-28T03:18:00.000Z</time>; release remains held and `NO-GO`.</p>
+        <p>Evidence toward <code>RPP-0038</code> links `node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js` observed status `pass` to the generated proof timestamp <time datetime="2026-05-28T03:18:00.000Z">2026-05-28T03:18:00.000Z</time>; release remains held and `NO-GO`.</p>
       </div>
     </section>
   </main>

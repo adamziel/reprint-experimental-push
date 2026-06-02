@@ -14,8 +14,8 @@ const localUrl = 'https://local.example.test/push';
 const remoteChangedUrl = 'https://changed.example.test/push';
 const secretValue = 'RPP_0064_SHOULD_NOT_LEAK';
 const fallbackReason = 'Packaged production-plugin fallback is support evidence only and cannot move release gates.';
-const heldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED]';
-const readyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const heldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED]';
+const readyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
 
 const expectedFailedFallbackEvidence = Object.freeze({
   required: 'non-packaged REPRINT_PUSH_SOURCE_URL',
@@ -56,9 +56,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -186,9 +187,9 @@ test('packaged fallback regression rejects fallback evidence before mutation for
   assert.deepEqual(report.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: fallbackReason,
     missingEvidence: [
       {
@@ -235,7 +236,7 @@ test('non-packaged fallback path passes the gate while release remains NO-GO for
   assert.equal(report.primaryFailureBucket, 'provenance');
   assert.equal(report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(report.releaseMovement.allowed, true);
-  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.releaseMovement.finalGates, '21/21');
   assert.equal(report.statusMarker, readyMarker);
   assert.ok(result.stdout.includes(readyMarker), 'stdout JSON must expose the non-packaged final marker');
   assert.equal(report.mutationAttempted, false);

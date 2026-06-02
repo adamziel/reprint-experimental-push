@@ -328,12 +328,12 @@ test('RPP-0994 release verifier carry-through fails closed without release movem
     status: 'held',
     gateState: 'held',
     primaryFailureCode: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
-    statusMarker: '[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]',
+    statusMarker: '[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]',
     mutationAttempted: false,
     releaseMovementAllowed: false,
-    finalGates: '3/20',
-    candidateGates: '3/20',
-    remainingBlockingRiskCount: 17,
+    finalGates: '3/21',
+    candidateGates: '3/21',
+    remainingBlockingRiskCount: 18,
   });
 
   assert.equal(gateResult.exitCode, 1);
@@ -343,7 +343,7 @@ test('RPP-0994 release verifier carry-through fails closed without release movem
   assert.equal(gateResult.report.primaryFailureCode, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
   assert.equal(gateResult.report.mutationAttempted, false);
   assert.equal(gateResult.report.releaseMovement.allowed, false);
-  assert.equal(gateResult.report.releaseMovement.finalGates, '3/20');
+  assert.equal(gateResult.report.releaseMovement.finalGates, '3/21');
 
   assert.equal(report.unresolvedProductionBackedProofGapStatus, 'open-fail-closed');
   assert.ok(report.unresolvedProductionBackedProofGaps.length >= 8);

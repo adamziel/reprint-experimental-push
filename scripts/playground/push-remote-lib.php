@@ -316,6 +316,21 @@ function reprint_push_protocol_run_payload(
                     $pre_write_evidence['preconditionCheck'] = 'storage-boundary-cas';
                 }
             }
+            reprint_push_protocol_assert_storage_guard_result_matches_coverage(
+                $mutation,
+                $storage_guard_coverage,
+                $storage_guard,
+                ($apply_result['applied'] ?? true) === true,
+                $pre_write_evidence,
+                $journal_context + $plan_evidence + [
+                    'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+                    'startedCursor' => $started_entry['cursor'],
+                    'index' => (int) $index,
+                    'appliedCount' => $applied,
+                ],
+                $mutation_event_callback,
+                $recovery_entries
+            );
             if (($apply_result['applied'] ?? true) !== true) {
                 $post_failure_snapshot = reprint_push_export_snapshot();
                 $post_failure_hash = reprint_push_hash_resource($post_failure_snapshot, $mutation['resource']);
@@ -1311,6 +1326,173 @@ function reprint_push_protocol_storage_guard_coverage_for_mutation(array $mutati
         'operation' => $is_delete ? 'delete' : 'put',
         'reason' => 'resource-type-has-no-storage-guard',
     ]);
+}
+
+function reprint_push_protocol_assert_storage_guard_result_matches_coverage(
+    array $mutation,
+    array $coverage,
+    ?array $storage_guard,
+    bool $applied,
+    array $pre_write_evidence,
+    array $journal_context,
+    $mutation_event_callback,
+    array &$recovery_entries
+): void {
+    $issues = reprint_push_protocol_storage_guard_result_issues($mutation, $coverage, $storage_guard, $applied);
+    if (count($issues) === 0) {
+        return;
+    }
+
+    $mutation_id = (string) ($mutation['id'] ?? '');
+    $resource_key = (string) ($mutation['resourceKey'] ?? '');
+    $actual_hash = (string) ($pre_write_evidence['actualHash'] ?? ($pre_write_evidence['preWriteActualHash'] ?? ''));
+    $recovery_entries = reprint_push_protocol_mark_recovery_entry(
+        $recovery_entries,
+        $mutation_id,
+        'storage-guard-evidence-mismatch',
+        $actual_hash
+    );
+
+    $failure_evidence = $journal_context + [
+        'mutationId' => $mutation_id,
+        'resourceKey' => $resource_key,
+        'resourceType' => (string) ($mutation['resource']['type'] ?? ''),
+        'beforeHash' => (string) ($pre_write_evidence['preWriteExpectedHash'] ?? ''),
+        'plannedAfterHash' => (string) ($mutation['localHash'] ?? ''),
+        'observedHash' => $actual_hash,
+        'actualHash' => $actual_hash,
+        'phase' => 'storage-write-boundary',
+        'status' => 'rejected',
+        'preconditionCheck' => 'storage-guard-evidence',
+        'storageGuardCoverage' => $coverage,
+        'storageGuardIssues' => $issues,
+        'recoveryPlan' => $recovery_entries,
+    ] + $pre_write_evidence;
+    if ($storage_guard !== null) {
+        $failure_evidence['storageGuard'] = $storage_guard;
+    }
+
+    reprint_push_protocol_emit_mutation_event($mutation_event_callback, 'mutation-precondition-failed', $failure_evidence);
+    reprint_push_protocol_append_journal_event('mutation-precondition-failed', $failure_evidence);
+
+    reprint_push_protocol_fail([
+        'ok' => false,
+        'code' => 'STORAGE_GUARD_EVIDENCE_MISMATCH',
+        'message' => 'Storage-boundary guard evidence did not match the declared coverage for ' . $resource_key . '.',
+        'resourceKey' => $resource_key,
+        'mutationId' => $mutation_id,
+        'expectedHash' => (string) ($pre_write_evidence['preWriteExpectedHash'] ?? ''),
+        'actualHash' => $actual_hash,
+        'preWriteExpectedHash' => (string) ($pre_write_evidence['preWriteExpectedHash'] ?? ''),
+        'preWriteActualHash' => (string) ($pre_write_evidence['preWriteActualHash'] ?? ''),
+        'preconditionCheck' => 'storage-guard-evidence',
+        'storageGuardCoverage' => $coverage,
+        'storageGuardIssues' => $issues,
+        'storageGuard' => $storage_guard,
+    ]);
+}
+
+function reprint_push_protocol_storage_guard_result_issues(
+    array $mutation,
+    array $coverage,
+    ?array $storage_guard,
+    bool $applied
+): array {
+    if (($coverage['covered'] ?? false) !== true) {
+        return [];
+    }
+
+    $issues = [];
+    if ($storage_guard === null) {
+        return [[
+            'code' => 'missing-storage-guard-result',
+            'expectedBoundary' => (string) ($coverage['boundary'] ?? ''),
+            'expectedOperation' => (string) ($coverage['operation'] ?? ''),
+        ]];
+    }
+
+    foreach (['boundary', 'operation'] as $field) {
+        if (
+            array_key_exists($field, $coverage)
+            && (string) ($coverage[$field] ?? '') !== ''
+            && (string) ($storage_guard[$field] ?? '') !== (string) $coverage[$field]
+        ) {
+            $issues[] = [
+                'code' => 'storage-guard-' . $field . '-mismatch',
+                'expected' => (string) $coverage[$field],
+                'actual' => (string) ($storage_guard[$field] ?? ''),
+            ];
+        }
+    }
+
+    $resource = isset($mutation['resource']) && is_array($mutation['resource']) ? $mutation['resource'] : [];
+    if (!reprint_push_protocol_non_empty_string($storage_guard['driver'] ?? null)) {
+        $issues[] = [
+            'code' => 'storage-guard-driver-missing',
+            'expected' => (string) ($coverage['driver'] ?? 'storage-boundary-driver'),
+        ];
+    } elseif (($resource['type'] ?? null) !== 'row'
+        && reprint_push_protocol_non_empty_string($coverage['driver'] ?? null)
+        && (string) ($storage_guard['driver'] ?? '') !== (string) $coverage['driver']
+    ) {
+        $issues[] = [
+            'code' => 'storage-guard-driver-mismatch',
+            'expected' => (string) $coverage['driver'],
+            'actual' => (string) ($storage_guard['driver'] ?? ''),
+        ];
+    }
+
+    if (($resource['type'] ?? null) === 'row') {
+        $expected_table = (string) ($coverage['logicalTable'] ?? ($resource['table'] ?? ''));
+        if ($expected_table !== '' && (string) ($storage_guard['logicalTable'] ?? '') !== $expected_table) {
+            $issues[] = [
+                'code' => 'storage-guard-logical-table-mismatch',
+                'expected' => $expected_table,
+                'actual' => (string) ($storage_guard['logicalTable'] ?? ''),
+            ];
+        }
+    }
+
+    if (($resource['type'] ?? null) === 'file') {
+        $expected_path = (string) ($resource['path'] ?? '');
+        if ($expected_path !== '' && (string) ($storage_guard['logicalPath'] ?? '') !== $expected_path) {
+            $issues[] = [
+                'code' => 'storage-guard-logical-path-mismatch',
+                'expectedPathHash' => hash('sha256', $expected_path),
+                'actualPathHash' => hash('sha256', (string) ($storage_guard['logicalPath'] ?? '')),
+            ];
+        }
+    }
+
+    $expected_outcome = $applied ? 'applied' : 'stale-at-write';
+    if ((string) ($storage_guard['outcome'] ?? '') !== $expected_outcome) {
+        $issues[] = [
+            'code' => 'storage-guard-outcome-mismatch',
+            'expected' => $expected_outcome,
+            'actual' => (string) ($storage_guard['outcome'] ?? ''),
+        ];
+    }
+
+    foreach (['expectedResourceHash', 'expectedStorageHash'] as $hash_field) {
+        if (!reprint_push_protocol_is_sha256_hex((string) ($storage_guard[$hash_field] ?? ''))) {
+            $issues[] = [
+                'code' => 'storage-guard-' . $hash_field . '-invalid',
+                'field' => $hash_field,
+            ];
+        }
+    }
+
+    return $issues;
+}
+
+function reprint_push_protocol_is_sha256_hex(string $value): bool
+{
+    return preg_match('/^[a-f0-9]{64}$/', $value) === 1;
+}
+
+function reprint_push_protocol_non_empty_string($value): bool
+{
+    return is_string($value) && $value !== '';
 }
 
 function reprint_push_protocol_recovery_entries(array $mutations, array $preconditions): array

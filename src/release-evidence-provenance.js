@@ -98,6 +98,7 @@ const DEFAULT_RELEASE_GATE_PROVENANCE_CATEGORIES = Object.freeze([
   'identity',
   'route',
   'recovery',
+  'storage',
   'operator-proof',
 ]);
 

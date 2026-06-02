@@ -193,7 +193,7 @@ test('production-required provenance rejects subject hashes that do not match th
     reason: 'tmux stdout proof status marker is backed by final release evidence.',
     evidence: {
       required: 'final bracketed stdout status marker',
-      observed: '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=OK]',
+      observed: '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope: 'final-release',
       requiredScope: 'final-release',
     },
@@ -370,6 +370,12 @@ test('release gate provenance adapter selects release-boundary gates in stable R
       category: 'recovery',
     },
     {
+      id: 'storage-boundary-cas',
+      rpp: 'RPP-0021',
+      title: 'Storage-boundary CAS proof',
+      category: 'storage',
+    },
+    {
       id: 'release-movement-summary',
       rpp: 'RPP-0016',
       title: 'releaseMovement allowed/denied summary',
@@ -392,6 +398,7 @@ test('release gate provenance adapter selects release-boundary gates in stable R
     expectedReleaseGateRequirement(gatesById.get('journal-route-read-only')),
     expectedReleaseGateRequirement(gatesById.get('tmux-status-marker')),
     expectedReleaseGateRequirement(gatesById.get('progress-release-timestamp')),
+    expectedReleaseGateRequirement(gatesById.get('storage-boundary-cas')),
   ]);
 });
 

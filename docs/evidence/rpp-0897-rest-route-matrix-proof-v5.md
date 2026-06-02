@@ -337,12 +337,12 @@ Final release remains **NO-GO**.
     "productionReadyClaim": "none",
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "releaseGateTotals": {
-      "gates": 20,
+      "gates": 21,
       "passed": 0,
       "candidate": 5,
-      "missing": 15,
+      "missing": 16,
       "failed": 0,
-      "blocking": 20
+      "blocking": 21
     },
     "requiredCarryThrough": [
       "npm-run-verify-release-required-by-topology-command",
@@ -608,7 +608,7 @@ Final release remains **NO-GO**.
     "productionBackedProofRequiredForGo": true,
     "supportOnlyNoGo": true
   },
-  "scopeComparisonHash": "ab934657d015a64c3f430f22872a0153b4c8ae8dc87ef24a43865d7614063356",
+  "scopeComparisonHash": "7c41a47b82df611d74c31e7ee9aa98273e8c54949ad33bc45b0edfc1db35cbe8",
   "validation": {
     "commands": [
       {

@@ -17,8 +17,8 @@ const checkedUser = 'admin';
 const secretValue = 'RPP_0094_SHOULD_NOT_LEAK';
 const checkedJournalRoute = '/wp-json/reprint/v1/push/db-journal?limit=80';
 const verifierStatusMarker = '[verify-release:held exit=1 reason=JOURNAL_ROUTE_READ_ONLY_REQUIRED mutationAttempted=false]';
-const releaseGateHeldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=JOURNAL_ROUTE_READ_ONLY_REQUIRED]';
-const releaseGateReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const releaseGateHeldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=JOURNAL_ROUTE_READ_ONLY_REQUIRED]';
+const releaseGateReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
 const journalRouteReason = 'Journal route was not proven read-only.';
 const requiredJournalRouteEvidence = ['journal route read-only proof'];
 const checkedCommand = 'timeout 300s npm run verify:release';
@@ -199,6 +199,7 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: journalReadOnlyEvidence(),
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
       marker: releaseGateReadyMarker,
@@ -435,9 +436,9 @@ test('release verifier journal route read-only carry-through records negative an
   assert.deepEqual(negativeReport.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: journalRouteReason,
     missingEvidence: [
       {
@@ -478,7 +479,7 @@ test('release verifier journal route read-only carry-through records negative an
   assert.equal(positiveReport.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(positiveReport.statusMarker, releaseGateReadyMarker);
   assert.equal(positiveReport.releaseMovement.allowed, true);
-  assert.equal(positiveReport.releaseMovement.finalGates, '20/20');
+  assert.equal(positiveReport.releaseMovement.finalGates, '21/21');
   assert.equal(positiveReport.mutationAttempted, false);
   assert.deepEqual(positiveReport.mutationPolicy, expectedMutationPolicy);
   assert.deepEqual(positiveGate, {

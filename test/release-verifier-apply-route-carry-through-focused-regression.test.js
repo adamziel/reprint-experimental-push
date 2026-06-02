@@ -25,8 +25,8 @@ const checkedVerifyCommand = 'timeout 300s npm run verify:release';
 const focusedCommand = 'node --test test/release-verifier-apply-route-carry-through-focused-regression.test.js';
 const requiredApplyRouteEvidence = ['apply route rejects before mutation when preconditions fail'];
 const expectedFailureReason = 'Apply route pre-mutation proof failed or mutated before rejection.';
-const releaseGateReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
-const releaseGateHeldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=APPLY_ROUTE_PRE_MUTATION_REQUIRED]';
+const releaseGateReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const releaseGateHeldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=APPLY_ROUTE_PRE_MUTATION_REQUIRED]';
 const verifyReleaseHeldMarker = '[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]';
 
 const expectedMutationPolicy = Object.freeze({
@@ -175,6 +175,7 @@ function completeFinalEvidence(overrides = {}) {
       mutationAttempted: false,
       scope,
     },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
       marker: releaseGateReadyMarker,
@@ -417,7 +418,7 @@ test('release verifier carries apply route pre-mutation proof and observed statu
   assert.equal(releaseGateReport.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(releaseGateReport.statusMarker, releaseGateReadyMarker);
   assert.equal(releaseGateReport.releaseMovement.allowed, true);
-  assert.equal(releaseGateReport.releaseMovement.finalGates, '20/20');
+  assert.equal(releaseGateReport.releaseMovement.finalGates, '21/21');
   assert.equal(releaseGateReport.mutationAttempted, false);
   assert.deepEqual(releaseGateReport.mutationPolicy, expectedMutationPolicy);
   assert.deepEqual(applyGate, {
@@ -483,9 +484,9 @@ test('release verifier apply route carry-through fails closed on mutation-before
   assert.deepEqual(releaseGateReport.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: expectedFailureReason,
     missingEvidence: [
       {

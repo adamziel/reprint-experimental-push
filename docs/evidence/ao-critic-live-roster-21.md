@@ -2,7 +2,7 @@
 
 Base after fetch: `origin/lane/evidence-integration-20260527` at `1e42c5568`. `RPP-0439` is integrated lane truth.
 
-Release status remains `NO-GO`: checklist lint reports `119` checked / `881` open with `0` risky claims, while `check-release-gates` still reports `releaseMovement.allowed: false`, gates `3/20`, primary blocker `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, and `mutationAttempted: false`.
+Release status remains `NO-GO`: checklist lint reports `119` checked / `881` open with `0` risky claims, while `check-release-gates` still reports `releaseMovement.allowed: false`, gates `3/21`, primary blocker `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, and `mutationAttempted: false`.
 
 Focused audit results:
 - `RPP-0227` integration candidate `b1f58e9a5` is one commit ahead of lane and branch-local; it merges cleanly alone and with `RPP-0228`/`RPP-0229`, but conflicts with `RPP-0226` in `test/push-planner.test.js`.

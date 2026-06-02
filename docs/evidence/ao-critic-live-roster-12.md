@@ -9,7 +9,7 @@ Checklist snapshot: linter parses 109 checked / 891 open; checklist header still
 ## Evidence summary
 
 - `RPP-0040` is now in the integration lane; `origin/session/rpp-28-rpp-0040-integration-20260528` matches `3bd9dc676`.
-- Release check evidence remains fail-closed: `check-release-gates` exits `1`, reports primary code `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, records `mutationAttempted: false`, and shows 3/20 gates.
+- Release check evidence remains fail-closed: `check-release-gates` exits `1`, reports primary code `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, records `mutationAttempted: false`, and shows 3/21 gates.
 - `RPP-0041`, `RPP-0042`, and `RPP-0043` are stale against `docs/evidence/ao-release-gates.md` and conflict in merge-tree checks.
 - `RPP-0044`, `RPP-0323`, and `RPP-0425` are now pushed one-commit branches based on `3bd9dc676`; each is still focused support evidence.
 - `RPP-0218` and `RPP-0219` merge-tree cleanly but both touch `src/apply.js` and `test/push-planner.test.js`; they should be sequenced and redaction-scanned after merge.

@@ -64,7 +64,9 @@ Generated-stale object-reference fail-closed path:
 {
   "variant": "generated-stale",
   "class": "stale-wordpress-graph-identity",
-  "relationshipKeys": ["wp_term_relationships.object_id"],
+  "relationshipKeys": [
+    "wp_term_relationships.object_id"
+  ],
   "targetResourceKey": "row:[\"wp_posts\",\"ID:737303\"]",
   "targetLocalChange": "unchanged",
   "targetRemoteChange": "update",

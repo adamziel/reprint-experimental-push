@@ -262,9 +262,9 @@ gate status file, and keeps the release verdict held with final release at
     "expectedGateState": "candidate-for-review",
     "expectedCandidateMovementAllowed": true,
     "expectedReleaseMovementAllowed": false,
-    "expectedFinalGates": "0/20",
-    "expectedCandidateGates": "20/20",
-    "expectedStatusMarker": "[release-gates-ci:candidate-for-review final=0/20 candidate=20/20 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]",
+    "expectedFinalGates": "0/21",
+    "expectedCandidateGates": "21/21",
+    "expectedStatusMarker": "[release-gates-ci:candidate-for-review final=0/21 candidate=21/21 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]",
     "expectedFinalReleaseStatus": "NO-GO"
   },
   "failedRequiredProofEvaluator": {
@@ -274,13 +274,13 @@ gate status file, and keeps the release verdict held with final release at
     "expectedGateState": "held",
     "expectedCandidateMovementAllowed": false,
     "expectedReleaseMovementAllowed": false,
-    "expectedFinalGates": "19/20",
-    "expectedCandidateGates": "19/20",
-    "expectedStatusMarker": "[release-gates-ci:held final=19/20 candidate=19/20 reason=DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED]",
+    "expectedFinalGates": "20/21",
+    "expectedCandidateGates": "20/21",
+    "expectedStatusMarker": "[release-gates-ci:held final=20/21 candidate=20/21 reason=DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED]",
     "expectedFinalReleaseStatus": "NO-GO",
     "expectedTotals": {
-      "gates": 20,
-      "passed": 19,
+      "gates": 21,
+      "passed": 20,
       "candidate": 0,
       "missing": 0,
       "failed": 1,
@@ -297,14 +297,14 @@ gate status file, and keeps the release verdict held with final release at
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "primaryFailureBucket": "topology",
     "status": "held",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
     "releaseGateStatusMovementAllowed": false,
     "failureMode": "fails-closed",
-    "finalGates": "3/20",
-    "candidateGates": "3/20",
-    "missingRequiredProofCount": 17,
+    "finalGates": "3/21",
+    "candidateGates": "3/21",
+    "missingRequiredProofCount": 18,
     "failedRequiredProofCount": 0
   },
   "statusRowReadback": {
@@ -363,7 +363,7 @@ gate status file, and keeps the release verdict held with final release at
     {
       "command": "node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T03:09:00.000Z",
       "expectedExit": 1,
-      "observed": "held NO-GO with REPRINT_PUSH_LIVE_SOURCE_REQUIRED, final 3/20, candidate 3/20, mutationAttempted false"
+      "observed": "held NO-GO with REPRINT_PUSH_LIVE_SOURCE_REQUIRED, final 3/21, candidate 3/21, mutationAttempted false"
     },
     {
       "command": "node --check test/rpp-0952-ci-required-checks-list-v3.test.js",
@@ -421,7 +421,7 @@ Gate movement therefore remains held and final release remains **NO-GO**.
 | --- | --- | --- |
 | Audited commit | `git rev-parse HEAD` | `13eae74ae2ef57694c188e009e2d3623012683a6` before adding this evidence |
 | Gate status row readback | `node scripts/release/agents-release-gates-status-row.mjs .agents/RELEASE_GATES.md` | `releaseVerdict` `0/4`, release status `NO-GO`, all four gates `support_only` |
-| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T03:09:00.000Z` | exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, final `3/20`, no mutation |
+| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T03:09:00.000Z` | exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, final `3/21`, no mutation |
 | Focused syntax check | `node --check test/rpp-0952-ci-required-checks-list-v3.test.js` | JavaScript syntax accepted |
 | Focused RPP-0952 regression | `node --test --test-name-pattern RPP-0952 test/rpp-0952-ci-required-checks-list-v3.test.js` | support-only evidence cannot move final release and final release stays `NO-GO` |
 | Evidence redaction scan | `node scripts/release/artifact-redaction-scan.mjs docs/evidence/rpp-0952-ci-required-checks-list-v3.md` | evidence artifact scans cleanly |

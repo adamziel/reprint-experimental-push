@@ -64,7 +64,10 @@ Expected deterministic aggregate from the focused proof:
   "totalAppliedMutations": 0,
   "totalDurableJournalEvents": 0,
   "totalBeforeMutationCalls": 0,
-  "statuses": { "blocked": 2, "conflict": 8 },
+  "statuses": {
+    "blocked": 2,
+    "conflict": 8
+  },
   "perTier": {
     "0": 1,
     "1": 1,
@@ -77,7 +80,9 @@ Expected deterministic aggregate from the focused proof:
     "8": 1,
     "9": 1
   },
-  "sourceBlockerClasses": { "missing-plugin-dependency": 10 }
+  "sourceBlockerClasses": {
+    "missing-plugin-dependency": 10
+  }
 }
 ```
 

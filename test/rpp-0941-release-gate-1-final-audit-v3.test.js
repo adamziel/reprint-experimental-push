@@ -88,7 +88,7 @@ test('RPP-0941 audit v3 links exact commands used for evidence and validation', 
 
   assert.match(text, /`primaryFailureCode: REPRINT_PUSH_LIVE_SOURCE_REQUIRED`/);
   assert.ok(
-    text.includes('[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]'),
+    text.includes('[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]'),
   );
   assert.match(
     text,

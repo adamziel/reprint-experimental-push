@@ -16,7 +16,7 @@ function readyEvidence(overrides = {}) {
     releaseMovement: {
       allowed: true,
       state: 'release-ready',
-      gates: '20/20',
+      gates: '21/21',
       reason: 'all release gates are backed by final release evidence',
     },
     urls: {
@@ -38,7 +38,7 @@ function blockedEvidence(overrides = {}) {
     releaseMovement: {
       allowed: false,
       state: 'held',
-      gates: '0/20',
+      gates: '0/21',
       reason: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
     },
     verification: {
@@ -176,7 +176,7 @@ test('blocked evidence without a nonzero failure reason fails closed', () => {
     releaseMovement: {
       allowed: false,
       state: 'held',
-      gates: '0/20',
+      gates: '0/21',
       reason: undefined,
     },
     verification: {
@@ -200,7 +200,7 @@ test('inconsistent ready and blocked evidence fails closed', () => {
     releaseMovement: {
       allowed: false,
       state: 'held',
-      gates: '0/20',
+      gates: '0/21',
       reason: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
     },
   }));

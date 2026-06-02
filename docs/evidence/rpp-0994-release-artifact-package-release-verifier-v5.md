@@ -623,12 +623,12 @@ fail closed.
     "status": "held",
     "gateState": "held",
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20",
-    "remainingBlockingRiskCount": 17
+    "finalGates": "3/21",
+    "candidateGates": "3/21",
+    "remainingBlockingRiskCount": 18
   },
   "unresolvedProductionBackedProofGapStatus": "open-fail-closed",
   "unresolvedProductionBackedProofGaps": [
@@ -824,8 +824,8 @@ The final-scope release-gate evaluator also stayed held. The command
 `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T05:10:00.000Z`
 exited nonzero with `releaseStatus: NO-GO`,
 `primaryFailureCode: REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted:
-false`, `releaseMovement.allowed: false`, `finalGates: 3/20`, and
-`[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]`.
+false`, `releaseMovement.allowed: false`, `finalGates: 3/21`, and
+`[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]`.
 
 Those results are blockers, not release proof. They keep production-backed
 source, local edited site, remote changed source, auth/session, identity,

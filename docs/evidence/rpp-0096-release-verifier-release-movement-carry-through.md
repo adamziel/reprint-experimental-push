@@ -21,10 +21,10 @@ No progress.html, checklist, or shared release-verifier implementation files wer
   the same object under `topologyEvidence.releaseMovement`.
 - Release-gate carry-through for denied movement: the focused fixture feeds the
   verifier's same-source evidence into `check-release-gates`, which reports
-  `SAME_SOURCE_IDENTITY_REQUIRED`, `final=19/20`, `mutationAttempted=false`, and
+  `SAME_SOURCE_IDENTITY_REQUIRED`, `final=20/21`, `mutationAttempted=false`, and
   an identical denied object under `summary.releaseMovement`.
 - Release-gate carry-through for allowed movement: the complete final-release
-  fixture reports `releaseMovement.allowed=true`, `finalGates=20/20`, and a
+  fixture reports `releaseMovement.allowed=true`, `finalGates=21/21`, and a
   matching `summary.releaseMovement` while release status remains `NO-GO` until
   production evidence provenance is supplied.
 - Redaction checks assert that the sentinel credential value is absent from the

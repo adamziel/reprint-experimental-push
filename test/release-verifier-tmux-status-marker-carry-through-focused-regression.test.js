@@ -21,8 +21,8 @@ const checkedUser = 'admin';
 const secretValue = 'RPP_0097_SHOULD_NOT_LEAK';
 const verifierStatusMarker = '[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]';
 const malformedCarriedMarker = verifierStatusMarker.slice(1, -1);
-const releaseGateReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
-const releaseGateHeldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=TMUX_STATUS_MARKER_REQUIRED]';
+const releaseGateReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const releaseGateHeldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=TMUX_STATUS_MARKER_REQUIRED]';
 const focusedCommand = 'umask 0022 && node --test test/release-verifier-tmux-status-marker-carry-through-focused-regression.test.js test/release-gate-tmux-status-marker-focused-regression.test.js test/release-gate-tmux-status-marker-generated.test.js test/release-gate-cli.test.js test/release-gates.test.js';
 const expectedMutationPolicy = Object.freeze({
   readOnly: true,
@@ -87,6 +87,7 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: tmuxStatusMarkerEvidence(verifierStatusMarker),
     progressReleaseTimestamp: { iso: fixedNow, scope },
     agentsReleaseGateStatusRow: { ok: true, present: true, observed: 'release-gates-status-row-no-go', scope },
@@ -277,7 +278,7 @@ test('release verifier carries its final tmux-visible stdout marker into the rel
   assert.ok(releaseGateResult.stdout.includes(releaseGateReadyMarker));
   assert.ok(releaseGateResult.stdout.includes(verifierStatusMarker));
   assert.equal(releaseGateReport.releaseMovement.allowed, true);
-  assert.equal(releaseGateReport.releaseMovement.finalGates, '20/20');
+  assert.equal(releaseGateReport.releaseMovement.finalGates, '21/21');
   assert.equal(releaseGateReport.mutationAttempted, false);
   assert.deepEqual(releaseGateReport.mutationPolicy, expectedMutationPolicy);
   assert.deepEqual(tmuxGate, {
@@ -314,7 +315,7 @@ test('release verifier tmux marker carry-through fails closed when the carried m
   assert.equal(releaseGateReport.statusMarker, releaseGateHeldMarker);
   assert.ok(releaseGateResult.stdout.includes(releaseGateHeldMarker));
   assert.equal(releaseGateReport.releaseMovement.allowed, false);
-  assert.equal(releaseGateReport.releaseMovement.finalGates, '19/20');
+  assert.equal(releaseGateReport.releaseMovement.finalGates, '20/21');
   assert.equal(releaseGateReport.mutationAttempted, false);
   assert.deepEqual(releaseGateReport.mutationPolicy, expectedMutationPolicy);
   assert.deepEqual(tmuxGate, {
@@ -331,9 +332,9 @@ test('release verifier tmux marker carry-through fails closed when the carried m
   assert.deepEqual(releaseGateReport.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: 'The tmux stdout status marker is missing or not bracketed.',
     missingEvidence: [
       {

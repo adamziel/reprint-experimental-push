@@ -2,7 +2,7 @@
 
 Base after fetch: `origin/lane/evidence-integration-20260527` at `e99d5f17b`. Fetch proved a newer lane than the refill premise, and `RPP-0227` is now integrated lane truth.
 
-Release status remains `NO-GO`: checklist lint reports `120` checked / `880` open with `0` risky claims, while `check-release-gates` still reports `releaseMovement.allowed: false`, gates `3/20`, primary blocker `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, and `mutationAttempted: false`.
+Release status remains `NO-GO`: checklist lint reports `120` checked / `880` open with `0` risky claims, while `check-release-gates` still reports `releaseMovement.allowed: false`, gates `3/21`, primary blocker `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, and `mutationAttempted: false`.
 
 Focused audit results:
 - `RPP-0056` merges cleanly alone but conflicts with `RPP-0055`, `RPP-0054`, and `RPP-0053` in `docs/evidence/ao-release-gates.md`; older `RPP-0053` and `RPP-0052` still conflict with current lane.

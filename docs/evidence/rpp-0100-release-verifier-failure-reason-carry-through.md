@@ -18,8 +18,8 @@ No progress.html, checklist, or shared release-verifier implementation files wer
 
 - The tmux-visible verifier run exits `1`, does not start a live verifier server, and prints the final bracketed status marker as the last stdout line.
 - The release-gate fixture carries `exitCode: 1`, `reason: REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `checkedCommand: timeout 300s npm run verify:release`, `mutationAttempted: false`, and the same status marker into the `verify-release-failure-reason` gate.
-- The positive carry-through path reaches `20/20` release-gate evidence while the release still reports `NO-GO` until production evidence provenance is supplied.
-- The negative carry-through path removes the reason while keeping the nonzero exit and marker, and `check-release-gates` fails closed with `VERIFY_RELEASE_FAILURE_REASON_REQUIRED` at `19/20`.
+- The positive carry-through path reaches `21/21` release-gate evidence while the release still reports `NO-GO` until production evidence provenance is supplied.
+- The negative carry-through path removes the reason while keeping the nonzero exit and marker, and `check-release-gates` fails closed with `VERIFY_RELEASE_FAILURE_REASON_REQUIRED` at `20/21`.
 - The focused assertion confirms the sentinel credential string is absent from verifier and release-gate stdout/stderr.
 
 Focused checks are local evidence for this slice. Checklist item remains unchecked for the integrator.

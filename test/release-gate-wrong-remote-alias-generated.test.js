@@ -34,9 +34,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -101,7 +102,7 @@ test('generated wrong REPRINT_PUSH_REMOTE_URL alias fixture fails closed before 
   const report = parseReport(result);
   const topologyBucket = report.missingProductionEvidenceBuckets.find((bucket) => bucket.bucket === 'topology');
   const remoteAliasGate = report.evaluation.gates.find((gate) => gate.id === 'remote-alias');
-  const expectedMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_SOURCE_URL_MISMATCH]';
+  const expectedMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=REPRINT_PUSH_SOURCE_URL_MISMATCH]';
 
   assert.equal(fixture.env.REPRINT_PUSH_REMOTE_URL, wrongRemoteAliasUrl);
   assert.equal(result.status, 1, result.stdout);
@@ -120,9 +121,9 @@ test('generated wrong REPRINT_PUSH_REMOTE_URL alias fixture fails closed before 
   assert.deepEqual(report.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: 'REPRINT_PUSH_REMOTE_URL must match REPRINT_PUSH_SOURCE_URL on the checked release path.',
     missingEvidence: [
       {

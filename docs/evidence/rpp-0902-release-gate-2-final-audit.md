@@ -76,11 +76,11 @@ final release remains `NO-GO`.
     "observedReleaseStatus": "NO-GO",
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "primaryFailureBucket": "topology",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20",
+    "finalGates": "3/21",
+    "candidateGates": "3/21",
     "missingRecoveryEvidenceCodes": [
       "JOURNAL_ROUTE_READ_ONLY_REQUIRED",
       "RECOVERY_INSPECT_READ_ONLY_REQUIRED"
@@ -120,7 +120,7 @@ final release remains `NO-GO`.
 | --- | --- | --- |
 | Audited commit | `git rev-parse HEAD` | `959e89d8354463cab70116195c92374e826bf839` before adding this evidence |
 | Gate status row readback | `node scripts/release/agents-release-gates-status-row.mjs .agents/RELEASE_GATES.md` | `GATE-2` status `support_only`, `releaseVerdict` `0/4`, release status `NO-GO` |
-| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T01:26:00.000Z` | exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, final `3/20` |
+| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T01:26:00.000Z` | exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, final `3/21` |
 | Focused RPP-0902 regression | `node --test --test-name-pattern RPP-0902 test/rpp-0902-release-gate-2-final-audit.test.js` | focused audit passes while preserving `support_only` and `NO-GO` |
 | Canonical release verifier | `timeout 300s npm run verify:release` | exit `1`, held by missing live source before mutation |
 

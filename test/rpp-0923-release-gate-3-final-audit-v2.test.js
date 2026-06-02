@@ -24,7 +24,7 @@ const sourceUrl = 'https://source.example.test/push';
 const invalidLocalUrl = 'not-a-release-url';
 const remoteChangedUrl = 'https://changed.example.test/push';
 const failedRequiredCheckId = 'release-gates-evaluator';
-const heldLocalMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_LOCAL_URL_INVALID]';
+const heldLocalMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=REPRINT_PUSH_LOCAL_URL_INVALID]';
 const mutationPolicy = {
   readOnly: true,
   reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
@@ -56,6 +56,7 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'recovery-inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: { ok: true, marker: heldLocalMarker, scope },
     progressReleaseTimestamp: { iso: fixedNow, scope },
     agentsReleaseGateStatusRow: readAgentsReleaseGatesStatusRow({
@@ -225,8 +226,8 @@ test('RPP-0923 release gate 3 final audit v2 blocks release when a required loca
   assert.equal(report.primaryFailureBucket, 'topology');
   assert.equal(report.primaryFailureCode, 'REPRINT_PUSH_LOCAL_URL_INVALID');
   assert.equal(report.releaseMovement.allowed, false);
-  assert.equal(report.releaseMovement.finalGates, '19/20');
-  assert.equal(report.releaseMovement.candidateGates, '19/20');
+  assert.equal(report.releaseMovement.finalGates, '20/21');
+  assert.equal(report.releaseMovement.candidateGates, '20/21');
   assert.equal(report.statusMarker, heldLocalMarker);
   assert.ok(result.stdout.includes(heldLocalMarker), 'stdout JSON must expose the held CI marker');
   assert.equal(report.mutationAttempted, false);

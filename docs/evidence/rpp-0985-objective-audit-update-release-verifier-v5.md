@@ -34,7 +34,7 @@ does not modify progress or completion files, and keeps final release at
     "sourceRppId": "RPP-0965",
     "sourceProofId": "rpp-0965-objective-audit-update-v4",
     "sourceVariant": 4,
-    "finalReleaseRiskCount": 17,
+    "finalReleaseRiskCount": 18,
     "objectiveRequirementRiskCount": 16,
     "closedRiskCount": 0,
     "productionBackedClosureProofAdded": false,
@@ -45,11 +45,11 @@ does not modify progress or completion files, and keeps final release at
     "reason": "Production-backed closure proof is absent for every remaining blocking final-release risk.",
     "productionBackedEvidenceObserved": false,
     "riskRegisterComplete": true,
-    "remainingRiskCount": 17,
-    "remainingFinalReleaseRiskCount": 17,
+    "remainingRiskCount": 18,
+    "remainingFinalReleaseRiskCount": 18,
     "remainingObjectiveRequirementRiskCount": 16,
     "closedRiskCount": 0,
-    "namedOrClosedRiskCount": 17,
+    "namedOrClosedRiskCount": 18,
     "dispositionRule": "Each current final-release risk is represented as an open risk unless production-backed closure proof closes it; R1-R16 objective requirements remain open because this support-only update adds no production-backed closure proof."
   },
   "releaseGateSnapshot": {
@@ -62,16 +62,16 @@ does not modify progress or completion files, and keeps final release at
     "gateState": "held",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "finalGates": "3/21",
+    "candidateGates": "3/21",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "totals": {
-      "gates": 20,
+      "gates": 21,
       "passed": 3,
       "candidate": 0,
-      "missing": 17,
+      "missing": 18,
       "failed": 0,
-      "blocking": 17
+      "blocking": 18
     }
   },
   "missingProductionEvidenceBuckets": [
@@ -116,6 +116,13 @@ does not modify progress or completion files, and keeps final release at
       "gateIds": [
         "journal-route-read-only",
         "recovery-inspect-read-only"
+      ]
+    },
+    {
+      "bucket": "storage",
+      "gateCount": 1,
+      "gateIds": [
+        "storage-boundary-cas"
       ]
     },
     {
@@ -285,6 +292,18 @@ does not modify progress or completion files, and keeps final release at
       "productionBackedClosureObserved": false,
       "namedRisk": "Recovery inspect read-only proof is required before release movement.",
       "closureRequired": "Production-backed recovery inspect read-only evidence supplied to the final release evaluator."
+    },
+    {
+      "id": "storage-boundary-cas",
+      "rpp": "RPP-0021",
+      "category": "storage",
+      "title": "Storage-boundary CAS proof",
+      "code": "STORAGE_BOUNDARY_CAS_REQUIRED",
+      "disposition": "open",
+      "releaseBlocker": true,
+      "productionBackedClosureObserved": false,
+      "namedRisk": "Storage-boundary CAS proof is required for every final target write before release movement.",
+      "closureRequired": "Production-backed evidence that every final target write is guarded at the storage boundary, revalidated before mutation, and rejects stale-at-write attempts."
     },
     {
       "id": "tmux-status-marker",

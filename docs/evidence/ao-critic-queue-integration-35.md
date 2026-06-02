@@ -4,7 +4,7 @@ Queue/integration critique 35 audited the queue after `RPP-0067` landed.
 
 Current verified truth: `origin/lane/evidence-integration-20260527` is
 `9140a7645`; checklist lint is `128 checked / 872 open`; release remains
-`NO-GO` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` and `3/20` final gates.
+`NO-GO` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` and `3/21` final gates.
 
 Findings:
 

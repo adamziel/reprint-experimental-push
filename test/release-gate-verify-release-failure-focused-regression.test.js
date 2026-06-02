@@ -18,8 +18,8 @@ const remoteChangedUrl = 'https://changed.example.test/push';
 const focusedCommand = 'node --test test/release-gate-verify-release-failure-focused-regression.test.js test/verify-release-failure-reason.test.js test/release-gate-verify-release-failure-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js';
 const verifyReleaseStatusMarker = '[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]';
 const invalidVerifyFailureMarker = '[verify-release:held exit=0 reason=missing-nonzero-failure mutationAttempted=false]';
-const releaseGateStatusMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
-const invalidReleaseGateMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=VERIFY_RELEASE_FAILURE_REASON_REQUIRED]';
+const releaseGateStatusMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const invalidReleaseGateMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=VERIFY_RELEASE_FAILURE_REASON_REQUIRED]';
 const requiredVerifyFailureEvidence = 'nonzero verify:release exit with named reason';
 
 function runVerifyReleaseMissingSource() {
@@ -66,6 +66,7 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: { ok: true, marker: releaseGateStatusMarker, scope },
     progressReleaseTimestamp: { iso: fixedNow, scope },
     agentsReleaseGateStatusRow: { ok: true, present: true, observed: 'release-gates-status-row-no-go', scope },
@@ -273,7 +274,7 @@ test('focused verify:release regression preserves nonzero evidence and rejects z
   assert.equal(validReport.statusMarker, releaseGateStatusMarker);
   assert.ok(validResult.stdout.includes(releaseGateStatusMarker), 'stdout JSON must expose the final release-gate marker');
   assert.equal(validReport.releaseMovement.allowed, true);
-  assert.equal(validReport.releaseMovement.finalGates, '20/20');
+  assert.equal(validReport.releaseMovement.finalGates, '21/21');
   assert.equal(validReport.mutationAttempted, false);
   assert.deepEqual(validGate.evidence, {
     ...verifyReleaseFailureEvidence(),
@@ -297,7 +298,7 @@ test('focused verify:release regression preserves nonzero evidence and rejects z
   assert.equal(invalidReport.statusMarker, invalidReleaseGateMarker);
   assert.ok(invalidResult.stdout.includes(invalidReleaseGateMarker), 'stdout JSON must expose the held release-gate marker');
   assert.equal(invalidReport.releaseMovement.allowed, false);
-  assert.equal(invalidReport.releaseMovement.finalGates, '19/20');
+  assert.equal(invalidReport.releaseMovement.finalGates, '20/21');
   assert.equal(invalidReport.mutationAttempted, false);
   assert.deepEqual(invalidGate.evidence, {
     ...invalidZeroExitEvidence(),

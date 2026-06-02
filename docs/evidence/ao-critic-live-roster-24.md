@@ -4,7 +4,7 @@ Date: 2026-05-28
 Lane audited: `origin/lane/evidence-integration-20260527` at `5057ee38a`
 Release status: **NO-GO**
 
-Final fetch proved `RPP-0230` landed after the initial roster-24 snapshot. Current integrated lane truth is 122 / 878, while `check-release-gates` remains held at `3/20` with primary failure `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`.
+Final fetch proved `RPP-0230` landed after the initial roster-24 snapshot. Current integrated lane truth is 122 / 878, while `check-release-gates` remains held at `3/21` with primary failure `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`.
 
 Branch-local evidence reviewed:
 

@@ -131,12 +131,12 @@ test('RPP-0952 support-only observations cannot move final release', () => {
   assert.equal(marker, report.supportOnlyEvaluator.expectedStatusMarker);
   assert.equal(finalReleaseStatus, report.supportOnlyEvaluator.expectedFinalReleaseStatus);
   assert.deepEqual(evaluation.totals, {
-    gates: 20,
+    gates: 21,
     passed: 0,
-    candidate: 20,
+    candidate: 21,
     missing: 0,
     failed: 0,
-    blocking: 20,
+    blocking: 21,
   });
   assert.ok(
     evaluation.releaseMovement.missingEvidence.every((gate) => gate.status === 'candidate'),
@@ -287,9 +287,10 @@ function completeEvidence(scope) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'recovery-inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates-ci:held final=0/20 candidate=20/20 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]',
+      marker: '[release-gates-ci:held final=0/21 candidate=21/21 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNowIso, scope },

@@ -33,8 +33,14 @@ A focused fixture with one local `wp_posts` row edit and one independent remote 
     "atomicGroups": 0
   },
   "successMutationEvents": [
-    ["target-planned", "row:[\"wp_posts\",\"ID:262\"]"],
-    ["mutation-observed", "row:[\"wp_posts\",\"ID:262\"]"]
+    [
+      "target-planned",
+      "row:[\"wp_posts\",\"ID:262\"]"
+    ],
+    [
+      "mutation-observed",
+      "row:[\"wp_posts\",\"ID:262\"]"
+    ]
   ],
   "forged": {
     "code": "PLAN_INVARIANT_VIOLATION",

@@ -18,7 +18,7 @@ const remoteChangedUrl = 'https://changed.example.test/push';
 const secretValue = 'RPP_0081_SHOULD_NOT_LEAK';
 const focusedCommand = 'node --test test/release-verifier-missing-source-url-carry-through-focused-regression.test.js test/release-gate-missing-source-url-regression.test.js test/release-gate-source-url-generated.test.js test/release-gate-verify-release-failure-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js';
 const statusMarker = '[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]';
-const releaseGateStatusMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]';
+const releaseGateStatusMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]';
 const sourceReason = 'REPRINT_PUSH_SOURCE_URL is required before the release verifier can run preflight, dry-run, apply, or recovery.';
 const expectedMissingSourceEvidence = {
   required: 'REPRINT_PUSH_SOURCE_URL',
@@ -72,9 +72,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]',
+      marker: '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -356,9 +357,9 @@ test('release verifier carries missing REPRINT_PUSH_SOURCE_URL through before mu
   assert.deepEqual(releaseGateReport.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: 'REPRINT_PUSH_SOURCE_URL is required before release gates can run preflight, dry-run, apply, or recovery.',
     missingEvidence: [
       {

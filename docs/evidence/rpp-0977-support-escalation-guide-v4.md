@@ -328,7 +328,7 @@ production-backed evidence.
     "expectedReleaseGateStatusMovement": "none",
     "expectedSupportOnlyObservationsCanMoveFinalRelease": false,
     "expectedSupportOnlyObservationsCanMoveFinalReleaseReadiness": false,
-    "expectedStatusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]"
+    "expectedStatusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]"
   },
   "openProductionProofGaps": [
     {
@@ -432,6 +432,14 @@ production-backed evidence.
       "rpp": "RPP-0015",
       "status": "missing",
       "code": "RECOVERY_INSPECT_READ_ONLY_REQUIRED",
+      "productionBacked": false,
+      "movementBlocked": true
+    },
+    {
+      "id": "storage-boundary-cas",
+      "rpp": "RPP-0021",
+      "status": "missing",
+      "code": "STORAGE_BOUNDARY_CAS_REQUIRED",
       "productionBacked": false,
       "movementBlocked": true
     },

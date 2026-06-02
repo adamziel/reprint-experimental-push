@@ -297,19 +297,19 @@ production durability proof, and no release-gate status movement.
     "primaryFailureBucket": "topology",
     "status": "held",
     "gateState": "held",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20",
-    "blockingRiskCount": 17,
+    "finalGates": "3/21",
+    "candidateGates": "3/21",
+    "blockingRiskCount": 18,
     "totals": {
-      "gates": 20,
+      "gates": 21,
       "passed": 3,
       "candidate": 0,
-      "missing": 17,
+      "missing": 18,
       "failed": 0,
-      "blocking": 17
+      "blocking": 18
     }
   },
   "statusRowReadback": {
@@ -759,7 +759,7 @@ node scripts/release/agents-release-gates-status-row.mjs .agents/RELEASE_GATES.m
 ```
 
 The final-release evaluator returned exit `1`, final release `NO-GO`, primary
-failure `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `3/20` final gates, `17` blocking
+failure `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `3/21` final gates, `17` blocking
 missing production-backed evidence items, no mutation attempted, and release
 movement denied. The status-row readback remained `0/4`, with all four release
 gates at `support_only`.

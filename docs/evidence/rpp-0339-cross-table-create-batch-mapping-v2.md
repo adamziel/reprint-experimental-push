@@ -61,7 +61,10 @@ proof hash, and release caveats:
       "row:[\"wp_posts\",\"ID:71701\"]",
       "row:[\"wp_postmeta\",\"post_id:71701:meta_key:reprint_push_postmeta_post_fixture\"]"
     ],
-    "tables": ["wp_postmeta", "wp_posts"],
+    "tables": [
+      "wp_postmeta",
+      "wp_posts"
+    ],
     "createMutationCount": 2
   },
   "referenceEdges": [

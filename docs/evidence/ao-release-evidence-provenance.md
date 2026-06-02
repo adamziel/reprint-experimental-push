@@ -66,13 +66,17 @@ This path is deliberately narrower than a full `src/release-gates.js` merge: it 
 {
   "ok": false,
   "releaseReady": false,
-  "acceptedEvidenceIds": ["RPP-0017:tmux-status-marker"],
+  "acceptedEvidenceIds": [
+    "RPP-0017:tmux-status-marker"
+  ],
   "rejectedEvidence": [
     {
       "evidenceId": "RPP-0018:progress-timestamp-stale",
       "rppId": "RPP-0018",
       "productionRequired": true,
-      "reasonCodes": ["OBSERVED_AT_STALE"]
+      "reasonCodes": [
+        "OBSERVED_AT_STALE"
+      ]
     }
   ],
   "productionRequired": {

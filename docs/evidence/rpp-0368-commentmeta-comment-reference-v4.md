@@ -69,7 +69,10 @@ Ready proof shape:
 {
   "relationshipKey": "wp_commentmeta.comment_id",
   "relationshipType": "commentmeta-comment",
-  "readyMutations": ["wp_comments", "wp_commentmeta"],
+  "readyMutations": [
+    "wp_comments",
+    "wp_commentmeta"
+  ],
   "targetIdentityCarriedThroughPlan": true,
   "targetIdentityCarriedThroughApply": true,
   "preconditions": "live-remote",

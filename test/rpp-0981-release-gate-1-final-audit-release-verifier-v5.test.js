@@ -139,7 +139,7 @@ test('RPP-0981 verifier audit v5 links exact audit and validation commands', () 
 
   assert.match(text, /`primaryFailureCode: REPRINT_PUSH_LIVE_SOURCE_REQUIRED`/);
   assert.ok(
-    text.includes('[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]'),
+    text.includes('[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]'),
   );
   assert.match(
     text,
@@ -148,7 +148,7 @@ test('RPP-0981 verifier audit v5 links exact audit and validation commands', () 
   assert.match(text, /`mutationAttempted: false`/);
   assert.match(text, /`releaseMovement\.allowed: false`/);
   assert.match(text, /`gates: 0\/4`/);
-  assert.match(text, /`finalGates: 3\/20`/);
+  assert.match(text, /`finalGates: 3\/21`/);
 });
 
 test('RPP-0981 verifier audit v5 links exact support commits and lane context commits', () => {

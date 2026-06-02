@@ -13,7 +13,7 @@ const sourceUrl = 'https://source.example.test/push';
 const localUrl = 'https://local.example.test/push';
 const remoteChangedUrl = 'https://changed.example.test/push';
 const command = 'node scripts/playground/production-shaped-apply-revalidation-smoke.mjs';
-const releaseReadyMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+const releaseReadyMarker = '[release-gates-ci:release-ready final=21/21 candidate=21/21 reason=all-release-gates-are-backed-by-final-release-evidence]';
 
 const expectedMutationPolicy = Object.freeze({
   readOnly: true,
@@ -40,9 +40,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: applyPreMutationEvidence(),
     journalRouteReadOnly: journalReadOnlyEvidence(),
     recoveryInspectReadOnly: recoveryInspectReadOnlyEvidence(),
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -194,7 +195,7 @@ test('apply route pre-mutation focused regression links command and observed sta
   assert.equal(positive.result.status, 1);
   assert.equal(positive.report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(positive.report.releaseMovement.allowed, true);
-  assert.equal(positive.report.releaseMovement.finalGates, '20/20');
+  assert.equal(positive.report.releaseMovement.finalGates, '21/21');
   assert.equal(positiveGate.status, 'passed');
   assert.equal(positiveGate.evidence.command, command);
   assert.equal(positiveGate.evidence.observedStatus, 412);
@@ -204,10 +205,10 @@ test('apply route pre-mutation focused regression links command and observed sta
   assert.equal(negative.result.status, 1);
   assert.equal(negative.report.primaryFailureCode, 'APPLY_ROUTE_PRE_MUTATION_REQUIRED');
   assert.equal(negative.report.primaryFailureBucket, 'route');
-  assert.equal(negative.report.statusMarker, '[release-gates-ci:held final=19/20 candidate=19/20 reason=APPLY_ROUTE_PRE_MUTATION_REQUIRED]');
+  assert.equal(negative.report.statusMarker, '[release-gates-ci:held final=20/21 candidate=20/21 reason=APPLY_ROUTE_PRE_MUTATION_REQUIRED]');
   assert.ok(negative.result.stdout.includes(negative.report.statusMarker));
   assert.equal(negative.report.releaseMovement.allowed, false);
-  assert.equal(negative.report.releaseMovement.finalGates, '19/20');
+  assert.equal(negative.report.releaseMovement.finalGates, '20/21');
   assert.equal(negativeGate.status, 'failed');
   assert.equal(negativeGate.evidence.command, command);
   assert.equal(negativeGate.evidence.observedStatus, 200);
@@ -309,7 +310,7 @@ test('recovery inspect read-only focused regression prints final bracketed marke
         recoveryRowsAfter: 3,
         recoveryStateAfter: 'mutated-recovery',
       }),
-      marker: '[release-gates-ci:held final=19/20 candidate=19/20 reason=RECOVERY_INSPECT_READ_ONLY_REQUIRED]',
+      marker: '[release-gates-ci:held final=20/21 candidate=20/21 reason=RECOVERY_INSPECT_READ_ONLY_REQUIRED]',
       expectedCode: 'RECOVERY_INSPECT_READ_ONLY_REQUIRED',
       expectedAllowed: false,
       expectedStatus: 'failed',
@@ -357,7 +358,7 @@ test('releaseMovement summary focused regression reports named codes and no muta
   assert.equal(denied.result.status, 1);
   assert.equal(denied.report.primaryFailureCode, 'SAME_SOURCE_IDENTITY_REQUIRED');
   assert.equal(denied.report.releaseMovement.allowed, false);
-  assert.equal(denied.report.releaseMovement.finalGates, '19/20');
+  assert.equal(denied.report.releaseMovement.finalGates, '20/21');
   assert.equal(denied.report.summary.releaseMovement.allowed, false);
   assert.equal(denied.report.summary.missingEvidence[0].code, 'SAME_SOURCE_IDENTITY_REQUIRED');
   assertReadOnlyChecker(denied.report);
@@ -365,7 +366,7 @@ test('releaseMovement summary focused regression reports named codes and no muta
   assert.equal(allowed.result.status, 1);
   assert.equal(allowed.report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
   assert.equal(allowed.report.releaseMovement.allowed, true);
-  assert.equal(allowed.report.releaseMovement.finalGates, '20/20');
+  assert.equal(allowed.report.releaseMovement.finalGates, '21/21');
   assert.equal(allowed.report.summary.releaseMovement.allowed, true);
   assert.deepEqual(allowed.report.summary.missingEvidence, []);
   assertReadOnlyChecker(allowed.report);

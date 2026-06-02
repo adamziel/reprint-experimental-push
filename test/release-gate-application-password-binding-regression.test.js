@@ -17,7 +17,7 @@ const checkedUser = 'admin';
 const credentialUser = 'editor';
 const secretValue = 'RPP_0068_SHOULD_NOT_LEAK';
 const bindingReason = 'Application Password credential binding drifted from the checked source identity.';
-const heldMarker = '[release-gates-ci:held final=19/20 candidate=19/20 reason=APPLICATION_PASSWORD_BINDING_REQUIRED]';
+const heldMarker = '[release-gates-ci:held final=20/21 candidate=20/21 reason=APPLICATION_PASSWORD_BINDING_REQUIRED]';
 
 const expectedBindingEvidence = Object.freeze({
   ok: false,
@@ -59,9 +59,10 @@ function completeFinalEvidence(overrides = {}) {
     applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
     journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
     recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    storageBoundaryCas: { ok: true, casBound: true, allFinalWritesGuarded: true, storageBoundaryRevalidated: true, staleAtWriteRejected: true, observed: 'all-final-target-writes-storage-boundary-cas-guarded', scope },
     tmuxStatusMarker: {
       ok: true,
-      marker: '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]',
+      marker: '[release-gates:release-ready final=21/21 candidate=21/21 reason=OK]',
       scope,
     },
     progressReleaseTimestamp: { iso: fixedNow, scope },
@@ -199,9 +200,9 @@ test('Application Password binding drift regression fails closed before mutation
   assert.deepEqual(report.releaseMovement, {
     allowed: false,
     state: 'held',
-    gates: '19/20',
-    finalGates: '19/20',
-    candidateGates: '19/20',
+    gates: '20/21',
+    finalGates: '20/21',
+    candidateGates: '20/21',
     reason: bindingReason,
     missingEvidence: [
       {
@@ -254,7 +255,7 @@ test('Application Password binding evidence remains NO-GO and redacted for RPP-0
   assert.equal(report.releaseEvidenceProvenance.ready, true);
   assert.deepEqual(report.releaseEvidenceProvenance.requiredEvidenceIds, []);
   assert.equal(report.releaseMovement.allowed, false);
-  assert.equal(report.releaseMovement.finalGates, '19/20');
+  assert.equal(report.releaseMovement.finalGates, '20/21');
   assert.equal(report.mutationAttempted, false);
   assertSecretRedacted(result, report);
   assert.deepEqual(report.releaseMovement.missingEvidence.map((entry) => entry.id), ['application-password-binding']);

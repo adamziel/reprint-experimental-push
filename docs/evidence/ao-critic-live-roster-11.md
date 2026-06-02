@@ -10,7 +10,7 @@ Release remains **NO-GO**. The lane advanced during the critic pass and now incl
 
 Key evidence:
 
-- `check-release-gates` exits nonzero with `releaseStatus: "NO-GO"`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, and `3/20` final gates.
+- `check-release-gates` exits nonzero with `releaseStatus: "NO-GO"`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, and `3/21` final gates.
 - `required-release-checks-report` exits nonzero with 10 missing required observations.
 - `checklist-completion-lint` parses 108 checked IDs and 892 open IDs with no risky claims.
 - `artifact-redaction-scan` reports 0 rejected files over `docs/evidence`, `audits`, and `progress.html`.

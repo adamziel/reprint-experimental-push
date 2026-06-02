@@ -322,7 +322,7 @@ production-backed evidence.
     "expectedReleaseGateStatusMovement": "none",
     "expectedSupportOnlyObservationsCanMoveFinalRelease": false,
     "expectedSupportOnlyObservationsCanMoveFinalReleaseReadiness": false,
-    "expectedStatusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]"
+    "expectedStatusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]"
   },
   "evidenceLimits": {
     "mode": "support-only-escalation-guide-v3",

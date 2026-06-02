@@ -150,9 +150,9 @@ held.
     "expectedGateState": "candidate-for-review",
     "expectedCandidateMovementAllowed": true,
     "expectedReleaseMovementAllowed": false,
-    "expectedFinalGates": "0/20",
-    "expectedCandidateGates": "20/20",
-    "expectedStatusMarker": "[release-gates-ci:candidate-for-review final=0/20 candidate=20/20 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]",
+    "expectedFinalGates": "0/21",
+    "expectedCandidateGates": "21/21",
+    "expectedStatusMarker": "[release-gates-ci:candidate-for-review final=0/21 candidate=21/21 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]",
     "expectedFinalReleaseStatus": "NO-GO"
   },
   "finalReleaseEvaluator": {
@@ -162,11 +162,11 @@ held.
     "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
     "primaryFailureBucket": "topology",
     "status": "held",
-    "statusMarker": "[release-gates-ci:held final=3/20 candidate=3/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
+    "statusMarker": "[release-gates-ci:held final=3/21 candidate=3/21 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED]",
     "mutationAttempted": false,
     "releaseMovementAllowed": false,
-    "finalGates": "3/20",
-    "candidateGates": "3/20"
+    "finalGates": "3/21",
+    "candidateGates": "3/21"
   },
   "statusRowReadback": {
     "path": ".agents/RELEASE_GATES.md",
@@ -200,7 +200,7 @@ held.
   },
   "unresolvedFinalReleaseRiskPolicy": {
     "finalReleaseRisksRemainOpen": true,
-    "unresolvedRiskCount": 17,
+    "unresolvedRiskCount": 18,
     "closedByThisEvidence": 0,
     "releaseGateStatusMovement": "none",
     "requiredToClose": "fresh production-backed final-release evidence"
@@ -350,6 +350,17 @@ held.
       "gateMovementAllowed": false
     },
     {
+      "id": "storage-boundary-cas",
+      "rpp": "RPP-0021",
+      "bucket": "storage",
+      "code": "STORAGE_BOUNDARY_CAS_REQUIRED",
+      "status": "open",
+      "requiredProductionBackedEvidence": true,
+      "productionBacked": false,
+      "releaseGateSatisfied": false,
+      "gateMovementAllowed": false
+    },
+    {
       "id": "tmux-status-marker",
       "rpp": "RPP-0017",
       "bucket": "operator-proof",
@@ -425,7 +436,7 @@ release remains **NO-GO** with the verdict held.
 | --- | --- | --- |
 | Audited commit | `git rev-parse HEAD` | `40eed2fe9c7cac72313ff0f7cd5a24a90f82d1e5` before adding this evidence |
 | Gate status row readback | `node scripts/release/agents-release-gates-status-row.mjs .agents/RELEASE_GATES.md` | `releaseVerdict` `0/4`, release status `NO-GO`, all four gates `support_only` |
-| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T03:00:00.000Z` | exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, final `3/20`, verdict `held` |
+| Final-scope release-gate evaluator | `node scripts/release/check-release-gates.mjs --scope final-release --now 2026-06-01T03:00:00.000Z` | exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `mutationAttempted: false`, final `3/21`, verdict `held` |
 | Focused syntax check | `node --check test/rpp-0947-security-review-checklist-v3.test.js` | JavaScript syntax accepted |
 | Focused RPP-0947 regression | `node --test --test-name-pattern RPP-0947 test/rpp-0947-security-review-checklist-v3.test.js` | support evidence cannot move final release, unresolved final-release risks stay open, and final release stays `NO-GO` |
 | Evidence redaction scan | `node scripts/release/artifact-redaction-scan.mjs docs/evidence/rpp-0947-security-review-checklist-v3.md` | evidence artifact scans cleanly |
