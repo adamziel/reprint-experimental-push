@@ -238,10 +238,11 @@ try {
       type: 'file',
       path: 'wp-content/uploads/reprint-push/chunk-finalizer.bin',
     };
-    const chunkBodies = [
-      Buffer.from('abcde', 'utf8'),
-      Buffer.from('fghij', 'utf8'),
+    const chunkRawSentinels = [
+      'raw-payload-one!',
+      'raw-payload-two!',
     ];
+    const chunkBodies = chunkRawSentinels.map((sentinel) => Buffer.from(sentinel, 'utf8'));
     const assembledChunkBody = Buffer.concat(chunkBodies);
     const chunkSizeBytes = chunkBodies[0].byteLength;
     const localResourceHash = `sha256:${sha256Bytes(assembledChunkBody)}`;
@@ -317,8 +318,9 @@ try {
     const serializedFinalizedManifest = JSON.stringify(chunkManifestResponse.body);
     assert.equal(serializedFinalizedManifest.includes('production-shaped-chunk-finalizer-receipt'), false);
     assert.equal(serializedFinalizedManifest.includes('production-shaped-chunk-upload-0'), false);
-    assert.equal(serializedFinalizedManifest.includes('abcde'), false);
-    assert.equal(serializedFinalizedManifest.includes('fghij'), false);
+    for (const sentinel of chunkRawSentinels) {
+      assert.equal(serializedFinalizedManifest.includes(sentinel), false);
+    }
     assert.doesNotMatch(serializedFinalizedManifest, /\/tmp\/|\/wordpress\/|\/home\/claude\//);
     await assertCurrentSurface(client, snapshots.base, 'chunk manifest finalization must not write canonical file');
 
@@ -353,8 +355,9 @@ try {
     assert.equal(missingReceipt.body.journal.event, 'chunk-manifest-rejected');
     const serializedRejectedManifest = JSON.stringify(missingReceipt.body);
     assert.equal(serializedRejectedManifest.includes('production-shaped-chunk-upload-missing-receipt'), false);
-    assert.equal(serializedRejectedManifest.includes('abcde'), false);
-    assert.equal(serializedRejectedManifest.includes('fghij'), false);
+    for (const sentinel of chunkRawSentinels) {
+      assert.equal(serializedRejectedManifest.includes(sentinel), false);
+    }
 
     const missingReceiptReplay = await client.signedPost('/chunk-manifest', {
       manifest: missingReceiptManifest,
@@ -375,7 +378,7 @@ try {
       session,
       idempotencyKey,
     });
-    assert.equal(apply.status, 200);
+    assert.equal(apply.status, 200, JSON.stringify(apply.body, null, 2));
     assert.equal(apply.body.ok, true);
     assert.equal(apply.body.mode, 'apply');
     assert.equal(apply.body.applied, readyPlan.mutations.length);

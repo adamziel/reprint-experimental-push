@@ -93,8 +93,9 @@ apply still must prove that the live source matches the receipt's preconditions.
 | Area | What exists today |
 | --- | --- |
 | Planning | Three-way diff over base, local, and remote snapshots with `ready`, `blocked`, and `conflict` outcomes. |
-| Apply | Batch apply guarded by expected hashes, stale-plan rejection, idempotency keys, and revalidation before writes. |
+| Apply | Batch apply guarded by expected hashes, stale-plan rejection, idempotency keys, live revalidation before writes, and selected storage-boundary guards. |
 | Resources | File resources, WordPress row resources, plugin resources, selected metadata rows, and fixture-scoped plugin-owned tables. |
+| Storage guards | Fixture upload files, guarded WordPress row updates, and fixture-scoped `wp_posts` creates through primary-key insert CAS evidence. |
 | Remote preservation | Remote-only changes and unplanned remote drift are preserved unless a planned change explicitly owns that resource. |
 | Conflict handling | Overlapping local and remote edits refuse before mutation. Non-ready entries suppress overlapping writes. |
 | Plugin-owned data | Owner context, merge-driver evidence, validation checks, and allowlist boundaries for plugin-owned mutations. |
@@ -322,11 +323,15 @@ Known remaining integration work includes:
 - Full large file streaming integration: production-shaped routes now expose
   signed chunk manifest validation, bounded raw chunk staging, durable
   receipt-backed manifest finalization, staged-byte verification, and terminal
-  rejected-row replay. Apply consumption of finalized chunks and true streaming
-  request bodies remain release work.
+  rejected-row replay. Apply can now consume hash-only finalized chunk
+  references through a guarded materializer that verifies private staged bytes
+  against durable finalization evidence before the file write. True streaming
+  request bodies and streaming final target writes remain release work.
 - MySQL and SQLite transaction-boundary proof for all durable write surfaces.
-- Production storage-level compare-and-swap or locking around final target
-  writes.
+- Broader production storage-level compare-and-swap or locking around every
+  final target write; selected fixture upload files, guarded WordPress row
+  updates, and `wp_posts` creates already have route-tested storage-boundary
+  evidence.
 - Production plugin activation/update flows with dependency and recovery checks.
 - Object-cache, cron, generated-file, and maintenance-mode interactions.
 - Generic plugin validator and merge-driver contracts beyond the current

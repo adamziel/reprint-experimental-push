@@ -9,6 +9,8 @@ const routeSourcePath = path.join(repoRoot, 'scripts/playground/push-remote-rest
 const routeSource = readFileSync(routeSourcePath, 'utf8');
 const protocolSourcePath = path.join(repoRoot, 'scripts/playground/push-remote-lib.php');
 const protocolSource = readFileSync(protocolSourcePath, 'utf8');
+const snapshotSourcePath = path.join(repoRoot, 'scripts/playground/snapshot-lib.php');
+const snapshotSource = readFileSync(snapshotSourcePath, 'utf8');
 const dbJournalLibSourcePath = path.join(repoRoot, 'scripts/playground/push-db-journal-lib.php');
 const dbJournalLibSource = readFileSync(dbJournalLibSourcePath, 'utf8');
 const liveSmokeSourcePath = path.join(repoRoot, 'scripts/playground/production-apply-route-live-smoke.mjs');
@@ -290,6 +292,9 @@ test('production apply refuses uncovered storage write boundaries before mutatio
   const runPayload = protocolFunctionBody('reprint_push_protocol_run_payload');
   const coverageAssert = protocolFunctionBody('reprint_push_protocol_assert_storage_guard_coverage');
   const coverageClassifier = protocolFunctionBody('reprint_push_protocol_storage_guard_coverage_for_mutation');
+  const guardedPostPut = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_put_post_row');
+  const guardedPostCreate = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_create_post_row');
+  const guardedApply = functionBodyFromSource(snapshotSource, 'reprint_push_apply_resource_with_storage_guard');
   const dbJournalMutationEvidence = functionBodyFromSource(
     dbJournalLibSource,
     'reprint_push_lab_db_journal_mutation_evidence',
@@ -339,9 +344,22 @@ test('production apply refuses uncovered storage write boundaries before mutatio
   }
   assert.match(coverageClassifier, /'resolutionPolicy'\s*=>\s*'preserve-remote-state-and-stop'/);
   assert.match(coverageClassifier, /'mutationAttempted'\s*=>\s*false/);
+  assert.match(coverageClassifier, /\$covered_post_insert\s*=\s*!\$is_delete[\s\S]*\$table === 'wp_posts'/);
+  assert.match(coverageClassifier, /\$covered_update \|\| \$covered_post_insert \|\| \$covered_blogmeta_put/);
+  assert.match(coverageClassifier, /'wpdb-primary-key-insert-cas'/);
   assert.match(coverageClassifier, /'row-write-has-no-storage-guard'/);
   assert.match(coverageClassifier, /'resource-type-has-no-storage-guard'/);
   assert.doesNotMatch(coverageClassifier, /reprint_push_apply_resource|reprint_push_apply_resource_with_storage_guard|wp_update_post|update_option|\$wpdb->query/);
+
+  assert.match(guardedApply, /if \(\$table === 'wp_posts'\) \{\s*return reprint_push_guarded_put_post_row\(/);
+  assert.match(guardedPostPut, /reprint_push_guarded_update_existing_post_row/);
+  assert.match(guardedPostPut, /reprint_push_guarded_create_post_row/);
+  assert.match(guardedPostCreate, /SELECT absent wp_posts\.ID; INSERT wp_posts by primary key; add fixture marker/);
+  assert.match(guardedPostCreate, /\$wpdb->insert\(\s*\$wpdb->posts,/);
+  assert.match(guardedPostCreate, /'wpdb-primary-key-insert-cas'/);
+  assert.match(guardedPostCreate, /add_post_meta\(\$post_id,\s*'reprint_push_fixture'/);
+  assert.match(guardedPostCreate, /reprint_push_storage_guard_result\('wp-post',\s*'wp_posts',\s*\$wpdb->posts,\s*'insert'/);
+  assert.doesNotMatch(guardedPostCreate, /wp_insert_post|wp_update_post/);
 
   assert.match(dbJournalMutationEvidence, /\$evidence\['storageGuardCoverage'\]\s*=\s*\$mutation\['storageGuardCoverage'\]/);
   assert.match(compactDbJournalResult, /'storageGuardCoverage'/);

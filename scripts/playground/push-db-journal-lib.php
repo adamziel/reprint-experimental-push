@@ -422,6 +422,26 @@ function reprint_push_lab_db_journal_rows_for_key(string $idempotency_key_hash):
     ) ?: [];
 }
 
+function reprint_push_lab_db_journal_latest_rows_for_event(string $event, int $limit = 1000): array
+{
+    global $wpdb;
+
+    reprint_push_lab_db_journal_ensure_table();
+
+    $bounded_limit = max(1, min(1000, $limit));
+    $quoted_table = reprint_push_lab_db_journal_quoted_table_name();
+    $rows = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT * FROM {$quoted_table} WHERE event = %s ORDER BY id DESC LIMIT %d",
+            $event,
+            $bounded_limit
+        ),
+        ARRAY_A
+    ) ?: [];
+
+    return array_map('reprint_push_lab_db_journal_public_row', $rows);
+}
+
 function reprint_push_lab_db_journal_target_planned_rows_for_started_entry(array $started_entry): array
 {
     $idempotency_key_hash = (string) ($started_entry['idempotencyKeyHash'] ?? '');

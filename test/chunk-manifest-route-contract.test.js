@@ -12,6 +12,8 @@ import { digest } from '../src/stable-json.js';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const restSourcePath = path.join(repoRoot, 'scripts/playground/push-remote-rest-plugin.php');
 const restSource = readFileSync(restSourcePath, 'utf8');
+const protocolSourcePath = path.join(repoRoot, 'scripts/playground/push-remote-lib.php');
+const protocolSource = readFileSync(protocolSourcePath, 'utf8');
 const sha256EvidencePattern = /^sha256:[a-f0-9]{64}$/;
 
 function sha256Hex(value) {
@@ -269,6 +271,256 @@ test('REST plugin exposes signed receipt-backed chunk manifest finalization with
   assert.match(uploadResponse, /'freshStagingWork'\s*=>\s*true/);
   assert.doesNotMatch(uploadResponse, /reprint_push_lab_rest_json_payload|reprint_push_lab_rest_apply_with_db_journal|reprint_push_protocol_run_payload|reprint_push_apply_mutation/);
   assert.match(restSource, /snapshot hashes, chunk manifest, chunk upload, apply/);
+});
+
+test('apply consumes finalized chunk refs through a separate hash-only materializer', () => {
+  const protocolApply = functionBody(protocolSource, 'reprint_push_protocol_run_payload');
+  const materializePayload = functionBody(protocolSource, 'reprint_push_protocol_materialize_mutation_payload');
+  const chunkRefForMutation = functionBody(protocolSource, 'reprint_push_protocol_chunk_ref_for_mutation');
+  const runDbJournalApply = functionBody(restSource, 'reprint_push_lab_rest_run_db_journal_apply');
+  const materializerFactory = functionBody(restSource, 'reprint_push_lab_rest_apply_chunk_materializer');
+  const materializer = functionBody(restSource, 'reprint_push_lab_rest_materialize_chunk_backed_file_mutation');
+  const findFinalized = functionBody(restSource, 'reprint_push_lab_rest_find_finalized_chunk_manifest_for_apply');
+  const statusForResult = functionBody(restSource, 'reprint_push_lab_rest_status_for_result');
+
+  assert.match(protocolApply, /reprint_push_protocol_materialize_mutation_payload\(\$mutation, \$options\)/);
+  assert.match(protocolApply, /\$mutation_payload = \$materialized_payload\['payload'\]/);
+  assert.match(protocolApply, /\$pre_write_evidence\['chunkApply'\]\s*=\s*\$materialized_payload\['evidence'\]/);
+  assert.match(protocolApply, /reprint_push_apply_resource_with_storage_guard\(\s*\$mutation\['resource'\],\s*\$mutation_payload,/s);
+  assert.match(protocolApply, /unset\(\$result\['afterSnapshot'\]\)/);
+  assert.match(protocolApply, /'rawValuesIncluded'\s*=>\s*false/);
+  assert.match(materializePayload, /'CHUNK_APPLY_SOURCE_REQUIRED'/);
+  assert.match(materializePayload, /'CHUNK_APPLY_SOURCE_INVALID'/);
+  assert.match(chunkRefForMutation, /'finalized-chunk-manifest'/);
+  assert.match(runDbJournalApply, /'chunkMaterializer'\]\s*=\s*reprint_push_lab_rest_apply_chunk_materializer\(\$plan\)/);
+  assert.match(materializerFactory, /use \(\$plan_id\)/);
+  assert.match(materializer, /reprint_push_lab_rest_find_finalized_chunk_manifest_for_apply/);
+  assert.match(materializer, /reprint_push_lab_rest_chunk_upload_staging_descriptor/);
+  assert.match(materializer, /hash_update_file\(\$assembled_context, \$path\)/);
+  assert.match(materializer, /file_get_contents\(\$path\)/);
+  assert.match(materializer, /reprint_push_stable_json\(\[\s*'type'\s*=>\s*'file',\s*'content'\s*=>\s*\$contents,/s);
+  assert.match(materializer, /'source'\s*=>\s*'finalized-chunk-manifest'/);
+  assert.match(materializer, /'rawValuesIncluded'\s*=>\s*false/);
+  assert.match(materializer, /'canonicalVisibleBeforeApply'\s*=>\s*false/);
+  assert.match(materializer, /'storageVisibility'\s*=>\s*'private-plan-staging'/);
+  assert.match(findFinalized, /reprint_push_lab_db_journal_latest_rows_for_event\('chunk-manifest-finalized', 1000\)/);
+  assert.match(findFinalized, /'chunkManifestFinalization'/);
+  assert.match(statusForResult, /case 'CHUNK_APPLY_SOURCE_REQUIRED':\s*case 'CHUNK_APPLY_SOURCE_INVALID':\s*case 'INVALID_CHUNK_APPLY_SOURCE':\s*case 'RECOVERY_BLOCKED':/s);
+});
+
+test('chunk apply materializer verifies staged finalized bytes without exposing raw evidence', () => {
+  const report = runPhp(`
+    $root = sys_get_temp_dir() . '/reprint-chunk-apply-' . bin2hex(random_bytes(4));
+    define('ABSPATH', $root . '/');
+    define('WP_CONTENT_DIR', $root . '/wp-content');
+    define('ARRAY_A', 'ARRAY_A');
+    mkdir(WP_CONTENT_DIR . '/uploads/reprint-push', 0777, true);
+
+    class WP_REST_Request {}
+    class WP_REST_Response {}
+    class WP_REST_Server {
+        public const CREATABLE = 'POST';
+        public const READABLE = 'GET';
+    }
+    function add_filter(...$args) {}
+    function add_action(...$args) {}
+    function apply_filters($hook_name, $value) { return $value; }
+    function wp_json_encode($value, $flags = 0) { return json_encode($value, $flags); }
+    function wp_mkdir_p($path) { return is_dir($path) || mkdir($path, 0777, true); }
+    function wp_upload_dir($time = null, $create_dir = true) {
+        return ['basedir' => WP_CONTENT_DIR . '/uploads', 'error' => false];
+    }
+    function get_temp_dir() { return sys_get_temp_dir(); }
+
+    class RPP_Chunk_Apply_WPDB {
+        public string $prefix = 'wp_';
+        public array $eventRows = [];
+        public function get_charset_collate() { return ''; }
+        public function suppress_errors($suppress = null) { return false; }
+        public function query($query) { return true; }
+        public function prepare($query, ...$args) {
+            foreach ($args as $arg) {
+                $replacement = is_int($arg) ? (string) $arg : "'" . addslashes((string) $arg) . "'";
+                $query = preg_replace('/%[sd]/', $replacement, $query, 1);
+            }
+            return $query;
+        }
+        public function get_var($query) {
+            if (str_contains((string) $query, 'SHOW TABLES')) {
+                return $this->prefix . 'reprint_push_lab_push_journal';
+            }
+            return 0;
+        }
+        public function get_results($query, $format = null) {
+            $query = (string) $query;
+            if (str_contains($query, 'SHOW COLUMNS')) {
+                return [['Field' => 'claim_key_hash']];
+            }
+            if (str_contains($query, 'SHOW INDEX')) {
+                return [['Key_name' => 'claim_key_hash']];
+            }
+            if (str_contains($query, "WHERE event = 'chunk-manifest-finalized'")) {
+                return $this->eventRows;
+            }
+            return [];
+        }
+    }
+    $GLOBALS['wpdb'] = new RPP_Chunk_Apply_WPDB();
+
+    require 'scripts/playground/push-remote-rest-plugin.php';
+
+    $plan_id = 'plan-chunk-apply-materializer';
+    $resource_key = 'file:wp-content/uploads/reprint-push/chunk-apply.bin';
+    $resource = ['type' => 'file', 'path' => 'wp-content/uploads/reprint-push/chunk-apply.bin'];
+    $chunks = ['chunk-', 'backed', '-apply'];
+    $body = implode('', $chunks);
+    $local_resource_hash = 'sha256:' . hash('sha256', $body);
+    $assembled_hash = 'sha256:' . hash('sha256', $body);
+    $chunk_size = strlen($chunks[0]);
+    $entries = [];
+    $staged_path_hashes = [];
+    $offset = 0;
+    foreach ($chunks as $index => $chunk_body) {
+        $chunk_digest = 'sha256:' . hash('sha256', $chunk_body);
+        $entries[] = [
+            'chunkIndex' => $index,
+            'offsetBytes' => $offset,
+            'sizeBytes' => strlen($chunk_body),
+            'chunkDigest' => $chunk_digest,
+        ];
+        $staging = reprint_push_lab_rest_chunk_upload_staging_descriptor([
+            'planId' => $plan_id,
+            'resourceKey' => $resource_key,
+            'localResourceHash' => $local_resource_hash,
+            'chunkIndex' => $index,
+            'chunkDigest' => $chunk_digest,
+        ]);
+        wp_mkdir_p($staging['stagingRoot']);
+        file_put_contents($staging['path'], $chunk_body);
+        $staged_path_hashes[] = $staging['pathHash'];
+        $offset += strlen($chunk_body);
+    }
+
+    $manifest_hash = 'sha256:' . hash('sha256', reprint_push_stable_json([
+        'planId' => $plan_id,
+        'resourceKey' => $resource_key,
+        'entries' => $entries,
+    ]));
+    $finalization = [
+        'schemaVersion' => 1,
+        'type' => 'chunk-manifest-finalization',
+        'status' => 'finalized',
+        'mode' => 'chunk-manifest',
+        'manifestHash' => $manifest_hash,
+        'manifestEvidenceHash' => 'sha256:' . str_repeat('a', 64),
+        'planIdHash' => hash('sha256', $plan_id),
+        'resourceKey' => $resource_key,
+        'resourceKeyHash' => hash('sha256', $resource_key),
+        'localResourceHash' => $local_resource_hash,
+        'assembledHash' => $assembled_hash,
+        'chunkCount' => count($entries),
+        'receiptCount' => count($entries),
+        'coveredBytes' => strlen($body),
+        'expectedBytes' => strlen($body),
+        'receiptDigest' => 'sha256:' . str_repeat('b', 64),
+        'stagedPathDigest' => 'sha256:' . hash('sha256', reprint_push_stable_json($staged_path_hashes)),
+        'durableRecordType' => 'chunk-manifest-finalized',
+        'canonicalVisible' => false,
+        'rawValuesIncluded' => false,
+        'mutationAttempted' => false,
+    ];
+    $finalization['finalizationHash'] = 'sha256:' . hash('sha256', reprint_push_stable_json($finalization));
+    $GLOBALS['wpdb']->eventRows = [[
+        'id' => 7,
+        'event' => 'chunk-manifest-finalized',
+        'idempotency_key_hash' => hash('sha256', 'manifest-finalizer-key'),
+        'request_hash' => hash('sha256', 'manifest-finalizer-request'),
+        'plan_hash' => hash('sha256', $plan_id),
+        'receipt_hash' => substr($finalization['finalizationHash'], 7),
+        'plan_fingerprint' => hash('sha256', 'manifest-finalizer-fingerprint'),
+        'mutation_count' => 0,
+        'applied_count' => 0,
+        'result_hash' => hash('sha256', reprint_push_stable_json(['chunkManifestFinalization' => $finalization])),
+        'result_json' => json_encode(['chunkManifestFinalization' => $finalization], JSON_THROW_ON_ERROR),
+        'resource_hash_evidence_json' => json_encode([
+            'manifestHash' => $manifest_hash,
+            'resourceKey' => $resource_key,
+            'resourceKeyHash' => hash('sha256', $resource_key),
+            'localResourceHash' => $local_resource_hash,
+            'assembledHash' => $assembled_hash,
+            'receiptDigest' => $finalization['receiptDigest'],
+            'stagedPathDigest' => $finalization['stagedPathDigest'],
+            'chunkCount' => count($entries),
+            'coveredBytes' => strlen($body),
+            'canonicalVisible' => false,
+            'rawValuesIncluded' => false,
+        ], JSON_THROW_ON_ERROR),
+        'error_code' => '',
+        'claim_key_hash' => '',
+        'lab_scope' => 'local-playground-fixture',
+        'created_at' => '2026-06-02 00:00:00',
+        'updated_at' => '2026-06-02 00:00:00',
+    ]];
+
+    $planned_resource_hash = hash('sha256', reprint_push_stable_json([
+        'type' => 'file',
+        'content' => $body,
+    ]));
+    $chunk_ref = [
+        'type' => 'finalized-chunk-manifest',
+        'planId' => $plan_id,
+        'resourceKey' => $resource_key,
+        'manifestHash' => $manifest_hash,
+        'finalizationHash' => $finalization['finalizationHash'],
+        'localResourceHash' => $local_resource_hash,
+        'assembledHash' => $assembled_hash,
+        'fileBytes' => strlen($body),
+        'chunkSizeBytes' => $chunk_size,
+        'entries' => $entries,
+    ];
+    $mutation = [
+        'id' => 'mut-chunk-apply',
+        'resource' => $resource,
+        'resourceKey' => $resource_key,
+        'localHash' => $planned_resource_hash,
+        'value' => ['chunkRef' => $chunk_ref],
+    ];
+    $materialized = reprint_push_lab_rest_materialize_chunk_backed_file_mutation($mutation, $chunk_ref, $plan_id);
+
+    $bad_ref = $chunk_ref;
+    $bad_ref['entries'][0]['idempotencyKey'] = 'raw-secret-idempotency-key';
+    try {
+        reprint_push_lab_rest_materialize_chunk_backed_file_mutation($mutation, $bad_ref, $plan_id);
+        $rejected = ['ok' => true];
+    } catch (Reprint_Push_Protocol_Error $error) {
+        $rejected = $error->result;
+    }
+
+    echo json_encode([
+        'contentMatches' => $materialized['payload']['value']['content'] === $body,
+        'plannedResourceHash' => $planned_resource_hash,
+        'materializedResourceHash' => hash('sha256', reprint_push_stable_json($materialized['payload']['value'])),
+        'evidence' => $materialized['evidence'],
+        'evidenceLeaksRawBody' => str_contains(json_encode($materialized['evidence']), $body),
+        'rejected' => $rejected,
+    ], JSON_THROW_ON_ERROR);
+  `);
+
+  assert.equal(report.contentMatches, true);
+  assert.equal(report.materializedResourceHash, report.plannedResourceHash);
+  assert.equal(report.evidence.status, 'materialized');
+  assert.equal(report.evidence.source, 'finalized-chunk-manifest');
+  assert.equal(report.evidence.rawValuesIncluded, false);
+  assert.equal(report.evidence.canonicalVisibleBeforeApply, false);
+  assert.equal(report.evidence.storageVisibility, 'private-plan-staging');
+  assert.match(report.evidence.manifestHash, sha256EvidencePattern);
+  assert.match(report.evidence.finalizationHash, sha256EvidencePattern);
+  assert.match(report.evidence.assembledHash, sha256EvidencePattern);
+  assert.match(report.evidence.evidenceHash, sha256EvidencePattern);
+  assert.equal(report.evidenceLeaksRawBody, false);
+  assert.equal(report.rejected.ok, false);
+  assert.equal(report.rejected.code, 'INVALID_CHUNK_APPLY_SOURCE');
+  assert.equal(report.rejected.mutationAttempted, false);
 });
 
 test('chunk upload metadata hash binds signed server-side headers', () => {

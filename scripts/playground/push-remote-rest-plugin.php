@@ -1742,6 +1742,305 @@ function reprint_push_lab_rest_write_chunk_staging_guards(string $directory): vo
     }
 }
 
+function reprint_push_lab_rest_apply_chunk_materializer(array $plan): callable
+{
+    $plan_id = (string) ($plan['id'] ?? '');
+    return static function (array $mutation, array $chunk_ref) use ($plan_id): array {
+        return reprint_push_lab_rest_materialize_chunk_backed_file_mutation($mutation, $chunk_ref, $plan_id);
+    };
+}
+
+function reprint_push_lab_rest_materialize_chunk_backed_file_mutation(
+    array $mutation,
+    array $chunk_ref,
+    string $plan_id
+): array {
+    $resource = isset($mutation['resource']) && is_array($mutation['resource']) ? $mutation['resource'] : [];
+    if (($resource['type'] ?? null) !== 'file') {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source is only valid for file mutations.');
+    }
+    reprint_push_lab_rest_chunk_apply_assert_no_raw_values($chunk_ref, '$.chunkRef');
+
+    $resource_key = (string) ($mutation['resourceKey'] ?? '');
+    $manifest_hash = reprint_push_lab_rest_chunk_apply_sha256($chunk_ref['manifestHash'] ?? '', 'manifestHash', $mutation);
+    $finalization_hash = reprint_push_lab_rest_chunk_apply_sha256($chunk_ref['finalizationHash'] ?? '', 'finalizationHash', $mutation);
+    $local_resource_hash = reprint_push_lab_rest_chunk_apply_sha256($chunk_ref['localResourceHash'] ?? '', 'localResourceHash', $mutation);
+    $assembled_hash = reprint_push_lab_rest_chunk_apply_sha256($chunk_ref['assembledHash'] ?? '', 'assembledHash', $mutation);
+    $ref_plan_id = (string) ($chunk_ref['planId'] ?? '');
+    if ($plan_id === '' || $ref_plan_id !== $plan_id) {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source planId does not match the apply plan.');
+    }
+    if ((string) ($chunk_ref['resourceKey'] ?? '') !== $resource_key || reprint_push_resource_object_key($resource) !== $resource_key) {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source resourceKey does not match the file mutation.');
+    }
+
+    $entries = reprint_push_lab_rest_chunk_apply_entries($chunk_ref, $mutation);
+    $finalized = reprint_push_lab_rest_find_finalized_chunk_manifest_for_apply(
+        $chunk_ref,
+        $mutation,
+        $plan_id,
+        $manifest_hash,
+        $finalization_hash,
+        $local_resource_hash,
+        $assembled_hash
+    );
+    if ($finalized === null) {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source is missing matching durable finalization evidence.');
+    }
+
+    $assembled_context = hash_init('sha256');
+    $staged_path_hashes = [];
+    $covered_bytes = 0;
+    $contents = '';
+    foreach ($entries as $entry) {
+        $staging = reprint_push_lab_rest_chunk_upload_staging_descriptor([
+            'planId' => $plan_id,
+            'resourceKey' => $resource_key,
+            'localResourceHash' => $local_resource_hash,
+            'chunkIndex' => (int) $entry['chunkIndex'],
+            'chunkDigest' => (string) $entry['chunkDigest'],
+        ]);
+        $path = (string) $staging['path'];
+        if (!is_file($path)) {
+            reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source is missing staged chunk bytes.');
+        }
+        $actual_size = filesize($path);
+        if ($actual_size !== (int) $entry['sizeBytes']) {
+            reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source staged chunk size does not match its reference.');
+        }
+        $actual_digest = 'sha256:' . hash_file('sha256', $path);
+        if (!hash_equals((string) $entry['chunkDigest'], $actual_digest)) {
+            reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source staged chunk digest does not match its reference.');
+        }
+        if (!hash_update_file($assembled_context, $path)) {
+            reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source could not read staged chunk bytes.');
+        }
+        $chunk_body = file_get_contents($path);
+        if (!is_string($chunk_body)) {
+            reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source could not materialize staged chunk bytes.');
+        }
+        $contents .= $chunk_body;
+        $staged_path_hashes[] = (string) $staging['pathHash'];
+        $covered_bytes += (int) $entry['sizeBytes'];
+    }
+
+    $actual_assembled_hash = 'sha256:' . hash_final($assembled_context);
+    if (!hash_equals($assembled_hash, $actual_assembled_hash)) {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source assembled hash does not match staged bytes.');
+    }
+    $expected_bytes = (int) ($chunk_ref['fileBytes'] ?? 0);
+    if ($expected_bytes < 1 || $covered_bytes !== $expected_bytes) {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source byte coverage does not match fileBytes.');
+    }
+    $staged_path_digest = 'sha256:' . hash('sha256', reprint_push_stable_json($staged_path_hashes));
+    $finalization = $finalized['finalization'];
+    if (!hash_equals((string) ($finalization['stagedPathDigest'] ?? ''), $staged_path_digest)) {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source staged path digest does not match finalization evidence.');
+    }
+
+    $planned_resource_hash = hash('sha256', reprint_push_stable_json([
+        'type' => 'file',
+        'content' => $contents,
+    ]));
+    $mutation_local_hash = reprint_push_lab_rest_chunk_apply_bare_hash((string) ($mutation['localHash'] ?? ''));
+    if ($mutation_local_hash === '' || !hash_equals($mutation_local_hash, $planned_resource_hash)) {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source materialized resource hash does not match mutation.localHash.');
+    }
+
+    $evidence = [
+        'schemaVersion' => 1,
+        'status' => 'materialized',
+        'source' => 'finalized-chunk-manifest',
+        'mutationId' => (string) ($mutation['id'] ?? ''),
+        'resourceKey' => $resource_key,
+        'manifestHash' => $manifest_hash,
+        'finalizationHash' => $finalization_hash,
+        'assembledHash' => $actual_assembled_hash,
+        'plannedResourceHash' => $planned_resource_hash,
+        'chunkCount' => count($entries),
+        'coveredBytes' => $covered_bytes,
+        'stagedPathDigest' => $staged_path_digest,
+        'finalizedSequence' => (int) ($finalized['row']['sequence'] ?? 0),
+        'storageVisibility' => 'private-plan-staging',
+        'canonicalVisibleBeforeApply' => false,
+        'rawValuesIncluded' => false,
+        'entryDigest' => 'sha256:' . hash('sha256', reprint_push_stable_json(array_map(
+            static fn (array $entry): array => [
+                'chunkIndex' => (int) $entry['chunkIndex'],
+                'offsetBytes' => (int) $entry['offsetBytes'],
+                'sizeBytes' => (int) $entry['sizeBytes'],
+                'chunkDigest' => (string) $entry['chunkDigest'],
+            ],
+            $entries
+        ))),
+    ];
+    $evidence['evidenceHash'] = 'sha256:' . hash('sha256', reprint_push_stable_json($evidence));
+
+    return [
+        'payload' => [
+            'value' => [
+                'type' => 'file',
+                'content' => $contents,
+            ],
+        ],
+        'evidence' => $evidence,
+    ];
+}
+
+function reprint_push_lab_rest_find_finalized_chunk_manifest_for_apply(
+    array $chunk_ref,
+    array $mutation,
+    string $plan_id,
+    string $manifest_hash,
+    string $finalization_hash,
+    string $local_resource_hash,
+    string $assembled_hash
+): ?array {
+    $resource_key = (string) ($mutation['resourceKey'] ?? '');
+    $plan_id_hash = hash('sha256', $plan_id);
+    foreach (reprint_push_lab_db_journal_latest_rows_for_event('chunk-manifest-finalized', 1000) as $row) {
+        $result = isset($row['result']) && is_array($row['result']) ? $row['result'] : [];
+        $finalization = isset($result['chunkManifestFinalization']) && is_array($result['chunkManifestFinalization'])
+            ? $result['chunkManifestFinalization']
+            : [];
+        $evidence = isset($row['resourceHashEvidence']) && is_array($row['resourceHashEvidence'])
+            ? $row['resourceHashEvidence']
+            : [];
+        if ((string) ($finalization['manifestHash'] ?? '') !== $manifest_hash
+            || (string) ($finalization['finalizationHash'] ?? '') !== $finalization_hash
+            || (string) ($finalization['planIdHash'] ?? '') !== $plan_id_hash
+            || (string) ($finalization['resourceKey'] ?? '') !== $resource_key
+            || (string) ($finalization['localResourceHash'] ?? '') !== $local_resource_hash
+            || (string) ($finalization['assembledHash'] ?? '') !== $assembled_hash
+            || (string) ($finalization['durableRecordType'] ?? '') !== 'chunk-manifest-finalized'
+            || ($finalization['canonicalVisible'] ?? null) !== false
+            || ($finalization['rawValuesIncluded'] ?? null) !== false
+            || (string) ($evidence['manifestHash'] ?? '') !== $manifest_hash
+            || (string) ($evidence['resourceKey'] ?? '') !== $resource_key
+            || (string) ($evidence['localResourceHash'] ?? '') !== $local_resource_hash
+            || (string) ($evidence['assembledHash'] ?? '') !== $assembled_hash
+            || ($evidence['canonicalVisible'] ?? null) !== false
+            || ($evidence['rawValuesIncluded'] ?? null) !== false
+        ) {
+            continue;
+        }
+
+        return [
+            'row' => $row,
+            'finalization' => $finalization,
+            'evidence' => $evidence,
+        ];
+    }
+
+    return null;
+}
+
+function reprint_push_lab_rest_chunk_apply_entries(array $chunk_ref, array $mutation): array
+{
+    if (!isset($chunk_ref['entries']) || !is_array($chunk_ref['entries'])) {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source entries must be a non-empty array.');
+    }
+    $entries = array_values($chunk_ref['entries']);
+    if (count($entries) === 0 || count($entries) > REPRINT_PUSH_CHUNK_MANIFEST_MAX_ENTRIES) {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source entries must be a non-empty bounded array.');
+    }
+    $file_bytes = (int) ($chunk_ref['fileBytes'] ?? 0);
+    $chunk_size = (int) ($chunk_ref['chunkSizeBytes'] ?? 0);
+    if ($file_bytes < 1 || $chunk_size < 1 || $chunk_size > $file_bytes) {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source fileBytes and chunkSizeBytes must be positive bounded integers.');
+    }
+    $expected_count = (int) ceil($file_bytes / $chunk_size);
+    if (count($entries) !== $expected_count) {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source entry count does not match file and chunk sizes.');
+    }
+
+    $expected_offset = 0;
+    foreach ($entries as $index => $entry) {
+        if (!is_array($entry)) {
+            reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source entry must be an object.');
+        }
+        foreach (['receiptKey', 'idempotencyKey', 'body', 'bytes', 'content', 'payload', 'value', 'rawValue', 'chunkBody'] as $secret_key) {
+            if (array_key_exists($secret_key, $entry)) {
+                reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source entries must not include raw or secret chunk fields.');
+            }
+        }
+        foreach (['chunkIndex', 'offsetBytes', 'sizeBytes', 'chunkDigest'] as $key) {
+            if (!array_key_exists($key, $entry)) {
+                reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source entry is missing ' . $key . '.');
+            }
+            if ($key !== 'chunkDigest' && (!is_int($entry[$key]) || $entry[$key] < 0)) {
+                reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source entry ' . $key . ' must be a non-negative integer.');
+            }
+        }
+        if ((int) $entry['chunkIndex'] !== $index || (int) $entry['offsetBytes'] !== $expected_offset) {
+            reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source entries must be contiguous and ordered.');
+        }
+        $size = (int) $entry['sizeBytes'];
+        $remaining = $file_bytes - $expected_offset;
+        if ($size < 1 || $size > $chunk_size || $size > $remaining) {
+            reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source entry size exceeds its declared range.');
+        }
+        reprint_push_lab_rest_chunk_apply_sha256($entry['chunkDigest'], 'entry.chunkDigest', $mutation);
+        $expected_offset += $size;
+    }
+    if ($expected_offset !== $file_bytes) {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source byte ranges must cover the full file.');
+    }
+    return $entries;
+}
+
+function reprint_push_lab_rest_chunk_apply_sha256($value, string $field, array $mutation): string
+{
+    if (!is_string($value) || !preg_match('/^sha256:[a-f0-9]{64}$/', $value)) {
+        reprint_push_lab_rest_chunk_apply_fail($mutation, 'Chunk apply source ' . $field . ' must be sha256 evidence.');
+    }
+    return $value;
+}
+
+function reprint_push_lab_rest_chunk_apply_bare_hash(string $value): string
+{
+    if (preg_match('/^sha256:([a-f0-9]{64})$/', $value, $matches)) {
+        return (string) $matches[1];
+    }
+    return preg_match('/^[a-f0-9]{64}$/', $value) ? $value : '';
+}
+
+function reprint_push_lab_rest_chunk_apply_assert_no_raw_values($value, string $path): void
+{
+    if (!is_array($value)) {
+        return;
+    }
+    foreach ($value as $key => $inner_value) {
+        $key_string = (string) $key;
+        $next_path = is_int($key) ? $path . '[' . $key_string . ']' : $path . '.' . $key_string;
+        if (in_array($key_string, ['body', 'bytes', 'content', 'payload', 'value', 'rawValue', 'chunkBody', 'receiptKey', 'idempotencyKey'], true)) {
+            reprint_push_protocol_fail([
+                'ok' => false,
+                'code' => 'INVALID_CHUNK_APPLY_SOURCE',
+                'message' => 'Chunk apply source must not include raw chunk payloads or secret keys at ' . $next_path . '.',
+                'mode' => 'apply',
+                'mutationAttempted' => false,
+            ]);
+        }
+        if (is_array($inner_value)) {
+            reprint_push_lab_rest_chunk_apply_assert_no_raw_values($inner_value, $next_path);
+        }
+    }
+}
+
+function reprint_push_lab_rest_chunk_apply_fail(array $mutation, string $message): void
+{
+    reprint_push_protocol_fail([
+        'ok' => false,
+        'code' => 'INVALID_CHUNK_APPLY_SOURCE',
+        'message' => $message,
+        'mode' => 'apply',
+        'mutationId' => (string) ($mutation['id'] ?? ''),
+        'resourceKey' => (string) ($mutation['resourceKey'] ?? ''),
+        'mutationAttempted' => false,
+    ]);
+}
+
 function reprint_push_lab_rest_authenticated_apply(WP_REST_Request $request): WP_REST_Response
 {
     $signature_error = reprint_push_lab_rest_require_signed_request($request, 'apply');
@@ -3529,6 +3828,7 @@ function reprint_push_lab_rest_run_db_journal_apply(
         );
 
         $options = reprint_push_lab_rest_lab_options($payload);
+        $options['chunkMaterializer'] = reprint_push_lab_rest_apply_chunk_materializer($plan);
         $options['mutationEventCallback'] = reprint_push_lab_rest_compose_mutation_callbacks([
             reprint_push_lab_rest_db_journal_mutation_callback($context, $started_entry),
             reprint_push_lab_rest_lab_drift_after_prepared_callback($options),
@@ -7127,6 +7427,9 @@ function reprint_push_lab_rest_status_for_result(array $result): int
         case 'IDEMPOTENCY_KEY_CONFLICT':
         case 'IDEMPOTENCY_KEY_IN_PROGRESS':
         case 'CHUNK_MANIFEST_FINALIZE_FAILED':
+        case 'CHUNK_APPLY_SOURCE_REQUIRED':
+        case 'CHUNK_APPLY_SOURCE_INVALID':
+        case 'INVALID_CHUNK_APPLY_SOURCE':
         case 'RECOVERY_BLOCKED':
         case 'RECOVERY_MUTATE_INSPECT_BLOCKED':
             return 409;

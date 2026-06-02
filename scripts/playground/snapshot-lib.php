@@ -1769,14 +1769,6 @@ function reprint_push_apply_resource_with_storage_guard(array $resource, array $
         ];
     }
 
-    if (($expected_resource_value['exists'] ?? false) !== true || !is_array($expected_resource_value['value'] ?? null)) {
-        reprint_push_apply_resource($resource, $payload);
-        return [
-            'applied' => true,
-            'storageGuard' => null,
-        ];
-    }
-
     $table = (string) ($resource['table'] ?? '');
     $id = (string) ($resource['id'] ?? '');
     $value = $payload['value'] ?? null;
@@ -1788,13 +1780,22 @@ function reprint_push_apply_resource_with_storage_guard(array $resource, array $
         ];
     }
 
+    if ($table === 'wp_posts') {
+        return reprint_push_guarded_put_post_row($id, $expected_resource_value, $value, $expected_storage_value);
+    }
+
+    if (($expected_resource_value['exists'] ?? false) !== true || !is_array($expected_resource_value['value'] ?? null)) {
+        reprint_push_apply_resource($resource, $payload);
+        return [
+            'applied' => true,
+            'storageGuard' => null,
+        ];
+    }
+
     if ($table === 'wp_blogmeta') {
         return reprint_push_guarded_put_blogmeta_row($id, $expected_resource_value, $value, $expected_storage_value);
     }
 
-    if ($table === 'wp_posts') {
-        return reprint_push_guarded_update_existing_post_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
-    }
     if ($table === 'wp_options') {
         return reprint_push_guarded_update_existing_option_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
     }
@@ -1813,6 +1814,15 @@ function reprint_push_apply_resource_with_storage_guard(array $resource, array $
         'applied' => true,
         'storageGuard' => null,
     ];
+}
+
+function reprint_push_guarded_put_post_row(string $id, array $expected_resource_value, array $value, ?array $expected_storage_value = null): array
+{
+    if (($expected_resource_value['exists'] ?? false) === true && is_array($expected_resource_value['value'] ?? null)) {
+        return reprint_push_guarded_update_existing_post_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
+    }
+
+    return reprint_push_guarded_create_post_row($id, $value, $expected_storage_value);
 }
 
 function reprint_push_guarded_update_existing_post_row(string $id, array $expected, array $value, ?array $expected_storage_value = null): array
@@ -1861,6 +1871,88 @@ function reprint_push_guarded_update_existing_post_row(string $id, array $expect
     }
 
     return reprint_push_storage_guard_result('wp-post', 'wp_posts', $wpdb->posts, 'update', array_merge($columns, ['fixture_marker']), $expected, $expected_storage_value['value'] ?? $expected, $rows, $shape);
+}
+
+function reprint_push_guarded_create_post_row(string $id, array $value, ?array $expected_storage_value = null): array
+{
+    global $wpdb;
+
+    $post_id = reprint_push_numeric_id($id, 'ID');
+    $columns = ['ID', 'post_title', 'post_name', 'post_content', 'post_status', 'post_type', 'post_parent', 'post_author'];
+    foreach ($columns as $column) {
+        if (!array_key_exists($column, $value)) {
+            throw new RuntimeException('Post row payload must include guarded insert column: ' . $column);
+        }
+    }
+    if ((int) $value['ID'] !== $post_id) {
+        throw new RuntimeException('Post row payload ID does not match row id: ' . $id);
+    }
+
+    $expected_storage = [
+        'ID' => $post_id,
+        'exists' => false,
+    ];
+    if (($expected_storage_value['exists'] ?? false) === true) {
+        return reprint_push_storage_guard_result('wp-post', 'wp_posts', $wpdb->posts, 'insert', array_merge($columns, ['absent']), ['exists' => false], $expected_storage, 0, 'SELECT absent wp_posts.ID; INSERT wp_posts by primary key; add fixture marker', 'wpdb-primary-key-insert-cas');
+    }
+
+    $table = reprint_push_quote_identifier($wpdb->posts);
+    $shape = 'SELECT absent wp_posts.ID; INSERT wp_posts by primary key; add fixture marker';
+    $now = current_time('mysql');
+    $now_gmt = get_gmt_from_date($now);
+    $existing = $wpdb->get_var($wpdb->prepare("SELECT ID FROM {$table} WHERE ID = %d", $post_id));
+    if ($existing !== null) {
+        $rows = 0;
+    } else {
+        $inserted = $wpdb->insert(
+            $wpdb->posts,
+            [
+                'ID' => $post_id,
+                'post_author' => (int) $value['post_author'],
+                'post_date' => $now,
+                'post_date_gmt' => $now_gmt,
+                'post_content' => (string) $value['post_content'],
+                'post_title' => (string) $value['post_title'],
+                'post_excerpt' => '',
+                'post_status' => (string) $value['post_status'],
+                'comment_status' => 'closed',
+                'ping_status' => 'closed',
+                'post_password' => '',
+                'post_name' => (string) $value['post_name'],
+                'to_ping' => '',
+                'pinged' => '',
+                'post_modified' => $now,
+                'post_modified_gmt' => $now_gmt,
+                'post_content_filtered' => '',
+                'post_parent' => (int) $value['post_parent'],
+                'guid' => '',
+                'menu_order' => 0,
+                'post_type' => (string) $value['post_type'],
+                'post_mime_type' => '',
+                'comment_count' => 0,
+            ],
+            ['%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s', '%s', '%d']
+        );
+        if ($inserted === false) {
+            $existing_after_failed_insert = $wpdb->get_var($wpdb->prepare("SELECT ID FROM {$table} WHERE ID = %d", $post_id));
+            if ($existing_after_failed_insert === null) {
+                throw new RuntimeException('Could not apply guarded post row insert: ' . $wpdb->last_error);
+            }
+            $rows = 0;
+        } else {
+            $rows = (int) $inserted;
+        }
+    }
+    if ((int) $rows === 1) {
+        $fixture = reprint_push_fixture_marker_for_post_value($value);
+        if (add_post_meta($post_id, 'reprint_push_fixture', $fixture, true) === false) {
+            throw new RuntimeException('Could not add guarded post fixture marker: ' . $id);
+        }
+        clean_post_cache($post_id);
+        reprint_push_flush_deferred_postmeta_for_post($post_id);
+    }
+
+    return reprint_push_storage_guard_result('wp-post', 'wp_posts', $wpdb->posts, 'insert', array_merge($columns, ['absent']), ['exists' => false], $expected_storage, $rows, $shape, 'wpdb-primary-key-insert-cas');
 }
 
 function reprint_push_guarded_update_existing_option_row(string $id, array $expected, array $value, ?array $expected_storage_value = null): array
@@ -2996,9 +3088,14 @@ function reprint_push_apply_post_row(string $id, bool $is_delete, $value): void
         throw new RuntimeException('Could not create post at fixture ID: ' . $id);
     }
 
-    $fixture = $post_data['post_name'] === 'local-only-draft' ? 'local-only' : 'shared';
+    $fixture = reprint_push_fixture_marker_for_post_value($post_data);
     update_post_meta($post_id, 'reprint_push_fixture', $fixture);
     reprint_push_flush_deferred_postmeta_for_post($post_id);
+}
+
+function reprint_push_fixture_marker_for_post_value(array $value): string
+{
+    return (string) ($value['post_name'] ?? '') === 'local-only-draft' ? 'local-only' : 'shared';
 }
 
 function reprint_push_apply_option_row(string $id, bool $is_delete, $value): void

@@ -177,6 +177,7 @@ function reprint_push_protocol_run_payload(
         $apply_batch_size_configured
     );
     $mutation_event_callback = reprint_push_protocol_mutation_event_callback($options);
+    $chunk_apply_evidence = [];
     $recovery_entries = reprint_push_protocol_recovery_entries($mutations, $preconditions);
     $started_entry = reprint_push_protocol_append_journal_event('apply-started', $journal_context + $plan_evidence + [
         'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
@@ -274,6 +275,13 @@ function reprint_push_protocol_run_payload(
             );
             $pre_write_evidence['storageGuardCoverage'] = $storage_guard_coverage;
 
+            $materialized_payload = reprint_push_protocol_materialize_mutation_payload($mutation, $options);
+            $mutation_payload = $materialized_payload['payload'];
+            if (isset($materialized_payload['evidence']) && is_array($materialized_payload['evidence'])) {
+                $pre_write_evidence['chunkApply'] = $materialized_payload['evidence'];
+                $chunk_apply_evidence[] = $materialized_payload['evidence'];
+            }
+
             reprint_push_protocol_emit_mutation_event($mutation_event_callback, 'mutation-storage-write-ready', $journal_context + $plan_evidence + [
                 'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
                 'startedCursor' => $started_entry['cursor'],
@@ -291,7 +299,7 @@ function reprint_push_protocol_run_payload(
 
             $apply_result = reprint_push_apply_resource_with_storage_guard(
                 $mutation['resource'],
-                $mutation['value'],
+                $mutation_payload,
                 isset($pre_write_check['resourceValue']) && is_array($pre_write_check['resourceValue'])
                     ? $pre_write_check['resourceValue']
                     : ['exists' => false, 'value' => null],
@@ -461,7 +469,7 @@ function reprint_push_protocol_run_payload(
         'applyBatchSizing' => $apply_batch_sizing,
     ]);
 
-    return [
+    $result = [
         'ok' => true,
         'mode' => 'apply',
         'applied' => count($mutations),
@@ -472,6 +480,108 @@ function reprint_push_protocol_run_payload(
         'journal' => reprint_push_protocol_journal_evidence($committed_entry),
         'afterSnapshot' => $after,
     ];
+    if (count($chunk_apply_evidence) > 0) {
+        $result['chunkApply'] = [
+            'schemaVersion' => 1,
+            'status' => 'applied',
+            'materializedCount' => count($chunk_apply_evidence),
+            'evidenceHash' => hash('sha256', reprint_push_stable_json($chunk_apply_evidence)),
+            'entries' => $chunk_apply_evidence,
+            'rawValuesIncluded' => false,
+        ];
+        $result['afterSnapshotHash'] = hash('sha256', reprint_push_stable_json($after));
+        unset($result['afterSnapshot']);
+    }
+
+    return $result;
+}
+
+function reprint_push_protocol_materialize_mutation_payload(array $mutation, array $options): array
+{
+    $payload = isset($mutation['value']) && is_array($mutation['value']) ? $mutation['value'] : [];
+    $chunk_ref = reprint_push_protocol_chunk_ref_for_mutation($mutation, $payload);
+    if ($chunk_ref === null) {
+        return ['payload' => $payload];
+    }
+
+    $materializer = $options['chunkMaterializer'] ?? null;
+    if (!is_callable($materializer)) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'CHUNK_APPLY_SOURCE_REQUIRED',
+            'message' => 'Chunk-backed file mutation requires a finalized chunk materializer before apply.',
+            'mode' => 'apply',
+            'mutationId' => (string) ($mutation['id'] ?? ''),
+            'resourceKey' => (string) ($mutation['resourceKey'] ?? ''),
+            'mutationAttempted' => false,
+        ]);
+    }
+
+    $materialized = $materializer($mutation, $chunk_ref);
+    if (!is_array($materialized)) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'CHUNK_APPLY_SOURCE_INVALID',
+            'message' => 'Chunk materializer did not return a materialized payload.',
+            'mode' => 'apply',
+            'mutationId' => (string) ($mutation['id'] ?? ''),
+            'resourceKey' => (string) ($mutation['resourceKey'] ?? ''),
+            'mutationAttempted' => false,
+        ]);
+    }
+
+    $materialized_payload = isset($materialized['payload']) && is_array($materialized['payload'])
+        ? $materialized['payload']
+        : ['value' => $materialized['value'] ?? null];
+    if (!array_key_exists('value', $materialized_payload) || !is_array($materialized_payload['value'])) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'CHUNK_APPLY_SOURCE_INVALID',
+            'message' => 'Chunk materializer payload must provide a file value object.',
+            'mode' => 'apply',
+            'mutationId' => (string) ($mutation['id'] ?? ''),
+            'resourceKey' => (string) ($mutation['resourceKey'] ?? ''),
+            'mutationAttempted' => false,
+        ]);
+    }
+
+    return [
+        'payload' => $materialized_payload,
+        'evidence' => isset($materialized['evidence']) && is_array($materialized['evidence'])
+            ? $materialized['evidence']
+            : [],
+    ];
+}
+
+function reprint_push_protocol_chunk_ref_for_mutation(array $mutation, array $payload): ?array
+{
+    if (($mutation['resource']['type'] ?? null) !== 'file' || !empty($payload['absent'])) {
+        return null;
+    }
+
+    $chunk_ref = null;
+    if (isset($payload['chunkRef']) && is_array($payload['chunkRef'])) {
+        $chunk_ref = $payload['chunkRef'];
+    } elseif (isset($payload['value']) && is_array($payload['value']) && isset($payload['value']['chunkRef']) && is_array($payload['value']['chunkRef'])) {
+        $chunk_ref = $payload['value']['chunkRef'];
+    }
+    if ($chunk_ref === null) {
+        return null;
+    }
+
+    if (($chunk_ref['type'] ?? null) !== 'finalized-chunk-manifest') {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_CHUNK_APPLY_SOURCE',
+            'message' => 'Chunk-backed file mutation must use a finalized-chunk-manifest reference.',
+            'mode' => 'apply',
+            'mutationId' => (string) ($mutation['id'] ?? ''),
+            'resourceKey' => (string) ($mutation['resourceKey'] ?? ''),
+            'mutationAttempted' => false,
+        ]);
+    }
+
+    return $chunk_ref;
 }
 
 function reprint_push_protocol_record_apply_failure(
@@ -1123,13 +1233,19 @@ function reprint_push_protocol_storage_guard_coverage_for_mutation(array $mutati
             && is_array($value)
             && $expected_resource_exists
             && in_array($table, $guarded_update_tables, true);
+        $covered_post_insert = !$is_delete
+            && is_array($value)
+            && !$expected_resource_exists
+            && $table === 'wp_posts';
         $covered_blogmeta_put = !$is_delete && is_array($value) && $table === 'wp_blogmeta';
-        $covered = $covered_update || $covered_blogmeta_put;
+        $covered = $covered_update || $covered_post_insert || $covered_blogmeta_put;
         return array_merge($base, [
             'covered' => $covered,
-            'boundary' => $table === 'wp_blogmeta' && !$expected_resource_exists
-                ? 'wpdb-named-lock-cas'
-                : 'wpdb-single-statement-cas',
+            'boundary' => $covered_post_insert
+                ? 'wpdb-primary-key-insert-cas'
+                : ($table === 'wp_blogmeta' && !$expected_resource_exists
+                    ? 'wpdb-named-lock-cas'
+                    : 'wpdb-single-statement-cas'),
             'driver' => $covered ? 'wordpress-row-storage-guard' : 'unsupported-row-storage-guard',
             'logicalTable' => $table,
             'operation' => $is_delete ? 'delete' : ($expected_resource_exists ? 'update' : 'insert'),
