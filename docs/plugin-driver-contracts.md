@@ -105,6 +105,10 @@ that declares an explicit contract becomes strict:
 - accepted contract evidence does not by itself authorize a mutation: the
   mutation envelope must still carry the same `pluginOwner`, `driver`, resource,
   table, `supportsDelete`, and merge-policy binding at apply time
+- registered plugin-owned row-driver tables remain plugin-owned even when a
+  mutation or current snapshot omits `__pluginOwner`; metadata-stripped
+  registered-table mutations must still carry exact contract-bound
+  `pluginOwnedResource` evidence or they refuse before mutation
 
 This lets production integrations ratchet from allowlist-shaped support toward
 stable, reviewable plugin contracts without breaking older lab fixtures.
@@ -172,6 +176,12 @@ into the mutation envelope and apply recomputes the accepted contract hash and
 requires the mutation-side policy to match it exactly. A forged ready plan that
 changes or drops the merge policy refuses before mutation with
 `PLUGIN_DRIVER_CONTRACT_BOUND_MERGE_POLICY_MISMATCH`.
+
+If a registered plugin-owned row-driver table appears in a mutation, the PHP
+registration/apply guard uses the registered table to keep the mutation inside
+the plugin-owned contract boundary even when planned/current row metadata has
+been stripped. The table registration never authorizes mutation by itself; it
+only forces the exact contract-bound evidence requirement to run.
 
 For direct local/remote conflicts on a plugin-owned row whose accepted contract
 declares `mergePolicy: "refuse-on-conflict"`, planner keeps the plan in

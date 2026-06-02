@@ -330,8 +330,8 @@ Known remaining integration work includes:
 - Production plugin activation/update flows with dependency and recovery checks.
 - Object-cache, cron, generated-file, and maintenance-mode interactions.
 - Generic plugin validator and merge-driver contracts beyond the current
-  explicit row-driver schemas, scalar hash constraints, and fixture-scoped
-  allowlists.
+  explicit row-driver schemas, root-closed row envelopes, scalar hash
+  constraints, and fixture-scoped allowlists.
 - General WordPress graph identity mapping and reference rewriting beyond the
   current stable fixtures.
 - Production database-backed journal and kill-process recovery around every

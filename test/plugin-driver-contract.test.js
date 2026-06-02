@@ -115,6 +115,22 @@ function schemaBoundCustomTableContract(extra = {}) {
   });
 }
 
+function rootClosedSchemaBoundCustomTableContract(extra = {}) {
+  return explicitCustomTableContract({
+    rowSchema: {
+      additionalProperties: false,
+      required: ['entry_id', 'payload', 'updated_marker', '__pluginOwner'],
+      fields: {
+        entry_id: 'integer',
+        payload: 'object',
+        updated_marker: 'string',
+        __pluginOwner: 'string',
+      },
+    },
+    ...extra,
+  });
+}
+
 function nestedSchemaBoundCustomTableContract(extra = {}) {
   return explicitCustomTableContract({
     rowSchema: {
@@ -213,6 +229,17 @@ function optionalReferenceBoundCustomTableContract(extra = {}) {
 
 const normalizedCustomTableRowSchema = Object.freeze({
   schemaVersion: 1,
+  fields: [
+    { field: '__pluginOwner', type: 'string', required: true },
+    { field: 'entry_id', type: 'integer', required: true },
+    { field: 'payload', type: 'object', required: true },
+    { field: 'updated_marker', type: 'string', required: true },
+  ],
+});
+
+const normalizedRootClosedCustomTableRowSchema = Object.freeze({
+  schemaVersion: 1,
+  additionalProperties: false,
   fields: [
     { field: '__pluginOwner', type: 'string', required: true },
     { field: 'entry_id', type: 'integer', required: true },
@@ -332,6 +359,49 @@ test('legacy object row schema normalization and contract hash remain stable', (
   );
   assert.equal(JSON.stringify(normalizedCustomTableRowSchema).includes('properties'), false);
   assert.equal(JSON.stringify(normalizedCustomTableRowSchema).includes('additionalProperties'), false);
+});
+
+test('root-closed row schema normalization is stable across object and normalized forms', () => {
+  const objectSchemaContract = rootClosedSchemaBoundCustomTableContract();
+  const normalizedSchemaContract = rootClosedSchemaBoundCustomTableContract({
+    rowSchema: normalizedRootClosedCustomTableRowSchema,
+  });
+  const reorderedSchemaContract = rootClosedSchemaBoundCustomTableContract({
+    rowSchema: {
+      additionalProperties: false,
+      required: ['updated_marker', 'payload', '__pluginOwner', 'entry_id', 'payload'],
+      fields: {
+        updated_marker: 'string',
+        payload: 'object',
+        __pluginOwner: 'string',
+        entry_id: 'integer',
+      },
+    },
+  });
+
+  assert.deepEqual(
+    normalizePluginOwnedRowDriverRowSchema(objectSchemaContract.rowSchema).normalized,
+    normalizedRootClosedCustomTableRowSchema,
+  );
+  assert.deepEqual(
+    normalizePluginOwnedRowDriverRowSchema(normalizedRootClosedCustomTableRowSchema).normalized,
+    normalizedRootClosedCustomTableRowSchema,
+  );
+  assert.equal(
+    pluginOwnedRowDriverContractHash(objectSchemaContract),
+    pluginOwnedRowDriverContractHash(normalizedSchemaContract),
+  );
+  assert.equal(
+    pluginOwnedRowDriverContractHash(objectSchemaContract),
+    pluginOwnedRowDriverContractHash(reorderedSchemaContract),
+  );
+  assert.equal(
+    normalizePluginOwnedRowDriverRowSchema({
+      ...objectSchemaContract.rowSchema,
+      additionalProperties: true,
+    }).valid,
+    false,
+  );
 });
 
 test('nested row schema normalization is stable across object form, normalized form, and field order', () => {
@@ -1934,6 +2004,105 @@ test('schema-bound custom row driver blocks payloads with wrong field types', ()
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
+test('root-closed schema-bound custom row driver blocks undeclared top-level row fields', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-root-closed-schema', secret: 'base-root-closed-schema-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-root-closed-schema';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.db.wp_forms_contract_rows['entry_id:7'].private_note = 'local-root-closed-private-note';
+  local.db.wp_forms_contract_rows['entry_id:7'].auth_token = 'local-root-closed-auth-token';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(rootClosedSchemaBoundCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const evidence = blocker.driverPayloadValidationEvidence;
+  const unexpected = evidence.schemaValidation.fields.find(
+    (field) => field.field === 'row' && field.state === 'unexpected',
+  );
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'invalid-plugin-driver-payload');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_UNEXPECTED_FIELD');
+  assert.deepEqual(evidence.schemaValidation, {
+    schemaHash: digest(normalizedRootClosedCustomTableRowSchema),
+    status: 'mismatch',
+    fields: [
+      {
+        field: '__pluginOwner',
+        expectedType: 'string',
+        required: true,
+        state: 'present',
+        observedType: 'string',
+        matched: true,
+      },
+      {
+        field: 'entry_id',
+        expectedType: 'integer',
+        required: true,
+        state: 'present',
+        observedType: 'integer',
+        matched: true,
+      },
+      {
+        field: 'payload',
+        expectedType: 'object',
+        required: true,
+        state: 'present',
+        observedType: 'object',
+        matched: true,
+      },
+      {
+        field: 'updated_marker',
+        expectedType: 'string',
+        required: true,
+        state: 'present',
+        observedType: 'string',
+        matched: true,
+      },
+      {
+        field: 'row',
+        expectedType: 'object',
+        required: true,
+        state: 'unexpected',
+        observedType: 'object',
+        observedExtraPropertyCount: 2,
+        matched: false,
+      },
+    ],
+  });
+  assert.deepEqual(unexpected, {
+    field: 'row',
+    expectedType: 'object',
+    required: true,
+    state: 'unexpected',
+    observedType: 'object',
+    observedExtraPropertyCount: 2,
+    matched: false,
+  });
+  assert.equal(JSON.stringify(blocker).includes('base-root-closed-schema-secret'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-root-closed-private-note'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-root-closed-auth-token'), false);
+  assert.equal(JSON.stringify(blocker).includes('private_note'), false);
+  assert.equal(JSON.stringify(blocker).includes('auth_token'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
 test('nested schema-bound custom row driver validates plugin payload object shape', () => {
   const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
   const base = baseSite();
@@ -2731,6 +2900,63 @@ test('apply refuses forged schema-bound custom row driver payloads before mutati
   );
   assert.equal(JSON.stringify(error.details).includes('base-contract-apply-schema-secret'), false);
   assert.equal(JSON.stringify(error.details).includes('local-contract-apply-schema-secret'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('apply refuses forged root-closed schema row fields before mutation', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-contract-apply-root-closed', secret: 'base-contract-apply-root-closed-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-contract-apply-root-closed';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(rootClosedSchemaBoundCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const forgedPlan = cloneJson(plan);
+  const mutation = mutationFor(forgedPlan, resourceKey);
+  const forgedValue = mutation.value.value;
+  forgedValue.private_note = 'forged-root-closed-schema-secret';
+  mutation.localHash = digest(forgedValue);
+  mutation.pluginOwnedResource.driverPayloadValidationEvidence.value.hash = digest(forgedValue);
+
+  let error;
+  try {
+    applyPlan(remote, forgedPlan);
+  } catch (caught) {
+    error = caught;
+  }
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(error?.code, 'INVALID_PLUGIN_DRIVER_PAYLOAD');
+  assert.equal(error.details.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_UNEXPECTED_FIELD');
+  assert.deepEqual(
+    error.details.applyValidationEvidence.driverPayloadValidationEvidence.schemaValidation.fields.find(
+      (field) => field.field === 'row' && field.state === 'unexpected',
+    ),
+    {
+      field: 'row',
+      expectedType: 'object',
+      required: true,
+      state: 'unexpected',
+      observedType: 'object',
+      observedExtraPropertyCount: 1,
+      matched: false,
+    },
+  );
+  assert.equal(JSON.stringify(error.details).includes('base-contract-apply-root-closed-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('forged-root-closed-schema-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('private_note'), false);
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 

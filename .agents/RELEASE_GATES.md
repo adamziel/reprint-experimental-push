@@ -6,7 +6,7 @@ Status values: `unproven`, `support_only`, `partially_proven`, `proven`, `blocke
 
 `release_verdict`: `0/4`
 
-Last refreshed: 2026-06-02 17:15 CEST on `main`.
+Last refreshed: 2026-06-02 17:20 CEST on `main`.
 
 ## GATE-1: Production Executor/Auth Boundary
 
@@ -118,6 +118,19 @@ Local candidate evidence, 2026-05-28:
   plugin-owned driver mutation proof on a production-owned, non-lab-backed
   source boundary and broader plugin-driver semantics beyond this release-state
   row.
+
+Support evidence, 2026-06-02:
+
+- Explicit plugin-owned row-driver `rowSchema` contracts can now close the
+  top-level row envelope with `additionalProperties: false`.
+- Planner, apply, and the PHP registration/snapshot path preserve the
+  root-closed schema in the contract hash and refuse undeclared top-level row
+  fields before mutation with hash-only `row`/count evidence.
+- The PHP registered-driver apply guard now refuses metadata-stripped
+  registered-table mutations that omit exact contract-bound
+  `pluginOwnedResource` evidence.
+- Focused JS/PHP plugin-driver tests passed 64/64. This hardens GATE-4 support
+  evidence but does not move the gate without production-backed source proof.
 
 ## Gate Movement Rule
 

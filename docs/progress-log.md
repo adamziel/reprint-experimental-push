@@ -4,6 +4,36 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Root-Closed Plugin Row Schema and Registered-Table Guards
+
+- Last update: 2026-06-02 17:20 CEST +02:00.
+- Plugin-owned row driver `rowSchema` contracts can now declare
+  `additionalProperties: false` at the top-level row envelope, not only inside
+  nested object fields.
+- The normalized root-closed schema is part of the row-driver contract hash and
+  canonical contract evidence, preserving JS/PHP parity for snapshot export,
+  registration API validation, planner payload validation, and apply-time
+  revalidation.
+- Planner and apply now refuse undeclared top-level row fields with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_UNEXPECTED_FIELD` before mutation.
+  Evidence reports the synthetic `row` field and
+  `observedExtraPropertyCount`, without copying raw extra field names or
+  values.
+- The PHP registered-driver apply guard now treats registered driver tables as
+  plugin-owned even when the mutation, planned row, and current snapshot have
+  had owner metadata stripped. Registered-table mutations without exact
+  `pluginOwnedResource` contract evidence refuse before mutation instead of
+  falling through as ordinary row writes.
+- Verification: JS and PHP syntax checks passed, and
+  `node --test test/plugin-driver-contract.test.js test/plugin-driver-registration-api.test.js`
+  passed with 64 subtests and 0 failures. The focused registration/RPP-0481
+  release-verifier probes passed 9/9, and
+  `npm run test:playground:production-plugin-driver-verifier-guards` passed the
+  driver guard bundle.
+- Caveat: this hardens explicit custom row-driver schemas. It does not add a
+  full generic plugin merge driver, plugin-owned file contracts, or
+  activation/update side-effect recovery.
+
 ## 2026-06-02 - Plugin Reference Field Identity-Map Rewrites
 
 - Last update: 2026-06-02 16:05 CEST +02:00.

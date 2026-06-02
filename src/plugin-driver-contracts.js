@@ -553,9 +553,23 @@ export function normalizePluginOwnedRowDriverRowSchema(rowSchema) {
       observed: typeof rowSchema,
     };
   }
+  const rootAdditionalProperties = normalizePluginOwnedRowDriverRowSchemaRootAdditionalProperties(rowSchema);
+  if (!rootAdditionalProperties.valid) {
+    return rootAdditionalProperties;
+  }
   const fieldsSource = rowSchema.fields;
   if (Array.isArray(fieldsSource)) {
-    return normalizePluginOwnedRowDriverRowSchemaFields(fieldsSource);
+    const fieldsResult = normalizePluginOwnedRowDriverRowSchemaFields(fieldsSource);
+    if (!fieldsResult.valid) {
+      return fieldsResult;
+    }
+    return {
+      valid: true,
+      normalized: {
+        ...fieldsResult.normalized,
+        ...rootAdditionalProperties.normalized,
+      },
+    };
   }
   if (!fieldsSource || typeof fieldsSource !== 'object') {
     return {
@@ -648,10 +662,32 @@ export function normalizePluginOwnedRowDriverRowSchema(rowSchema) {
     valid: true,
     normalized: {
       schemaVersion: 1,
+      ...rootAdditionalProperties.normalized,
       fields: fields.map((field) => ({
         ...field,
         required: field.required === true,
       })),
+    },
+  };
+}
+
+function normalizePluginOwnedRowDriverRowSchemaRootAdditionalProperties(rowSchema) {
+  if (!hasOwn(rowSchema, 'additionalProperties')) {
+    return { valid: true, normalized: {} };
+  }
+  if (rowSchema.additionalProperties !== false) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: 'rowSchema.additionalProperties false when declared',
+      observed: rowSchema.additionalProperties,
+    };
+  }
+  return {
+    valid: true,
+    normalized: {
+      additionalProperties: false,
     },
   };
 }

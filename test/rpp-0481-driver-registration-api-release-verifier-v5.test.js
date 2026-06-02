@@ -341,6 +341,8 @@ $validation_snapshot = [
         ],
     ],
 ];
+$ownerless_validation_snapshot = $validation_snapshot;
+unset($ownerless_validation_snapshot['db'][$driver_table]['entry_id:1']['__pluginOwner']);
 $valid_mutation = [
     'resourceKey' => $resource_key,
     'resource' => ['type' => 'row', 'table' => $driver_table, 'id' => 'entry_id:1'],
@@ -363,6 +365,9 @@ $valid_mutation['pluginOwnedResource'] = rpp_0481_contract_bound_policy(
     'put',
     $valid_mutation['value']['value']
 );
+$stripped_registered_table_mutation = $valid_mutation;
+unset($stripped_registered_table_mutation['value']['value']['__pluginOwner']);
+unset($stripped_registered_table_mutation['pluginOwnedResource']);
 $delete_mutation = $valid_mutation;
 $delete_mutation['action'] = 'delete';
 $delete_mutation['value'] = ['absent' => true];
@@ -385,6 +390,10 @@ $validation = [
     }),
     'unsupportedDelete' => rpp_0481_capture(static function () use ($delete_mutation, $validation_snapshot): bool {
         reprint_push_assert_supported_plugin_owned_mutation($delete_mutation, $validation_snapshot);
+        return true;
+    }),
+    'strippedRegisteredTable' => rpp_0481_capture(static function () use ($stripped_registered_table_mutation, $ownerless_validation_snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($stripped_registered_table_mutation, $ownerless_validation_snapshot);
         return true;
     }),
     'forgedCanonicalResourceKey' => rpp_0481_capture(static function () use ($forged_key_mutation, $validation_snapshot): bool {
@@ -587,6 +596,12 @@ test('RPP-0481 release verifier driver registration API proves exact accepted an
   assert.equal(
     report.validation.unsupportedDelete.error.message,
     `Unsupported plugin-owned mutation delete for ${arbitraryPluginFixturePackageBoundary.resourceKey}`,
+  );
+  assert.equal(report.validation.strippedRegisteredTable.ok, false);
+  assert.equal(report.validation.strippedRegisteredTable.error.class, 'RuntimeException');
+  assert.equal(
+    report.validation.strippedRegisteredTable.error.message,
+    `Unsupported plugin-owned mutation contract for ${arbitraryPluginFixturePackageBoundary.resourceKey}`,
   );
   const forgedResourceKey = `row:${JSON.stringify([arbitraryPluginFixturePackageBoundary.table, 'entry_id:2'])}`;
   assert.equal(report.validation.forgedCanonicalResourceKey.ok, false);

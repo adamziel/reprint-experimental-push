@@ -3071,6 +3071,29 @@ branch.
 Untracked AO scratch directories observed in some worker trees remain excluded
 from evidence and must not be committed.
 
+## 2026-06-02 - Plugin Row Schema Root Boundary Addendum
+
+- Root-closed plugin-owned row schemas are now supported for explicit
+  row-driver contracts through `rowSchema.additionalProperties: false`.
+- The root closure is normalized into the contract hash and canonical evidence
+  in JS and PHP, so exporter, planner, and apply paths agree on the same
+  row-envelope contract.
+- Planner and apply refuse undeclared top-level row fields before mutation with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_UNEXPECTED_FIELD`; evidence carries
+  the synthetic `row` field and extra-property count only.
+- The PHP registered-driver guard also keeps registered driver tables inside
+  the plugin-owned contract boundary when row owner metadata is stripped. A
+  registered-table mutation without exact contract-bound `pluginOwnedResource`
+  evidence now refuses before mutation.
+- Checked command:
+  `node --test test/plugin-driver-contract.test.js test/plugin-driver-registration-api.test.js`
+  passed 64/64 after JS/PHP syntax checks.
+- The package driver-guard smoke command
+  `npm run test:playground:production-plugin-driver-verifier-guards` also
+  passed.
+- Release posture remains **NO-GO**. This is stronger support evidence for
+  plugin-driver contracts, not production-backed GATE-4 movement.
+
 ## Current Missing Gates
 
 Final release remains held for the following missing production-backed gates:

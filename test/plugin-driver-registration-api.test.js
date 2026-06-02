@@ -702,6 +702,8 @@ $missing_owner_marker['pluginOwnedResource']['driverPayloadValidationEvidence'][
 );
 $ownerless_snapshot = $snapshot;
 unset($ownerless_snapshot['db']['wp_fixture_contract_bound_rows']['id:7']['__pluginOwner']);
+$stripped_registered_table = $missing_owner_marker;
+unset($stripped_registered_table['pluginOwnedResource']);
 $forged_resource_key = $base_mutation;
 $forged_resource_key['resourceKey'] = 'row:["wp_fixture_contract_bound_rows","id:8"]';
 $forged_resource_key['pluginOwnedResource'] = rpp_contract_bound_policy(
@@ -751,6 +753,10 @@ echo json_encode([
         reprint_push_assert_supported_plugin_owned_mutation($missing_owner_marker, $ownerless_snapshot);
         return true;
     }),
+    'strippedRegisteredTable' => rpp_driver_api_capture(static function () use ($stripped_registered_table, $ownerless_snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($stripped_registered_table, $ownerless_snapshot);
+        return true;
+    }),
     'forgedResourceKey' => rpp_driver_api_capture(static function () use ($forged_resource_key, $snapshot): bool {
         reprint_push_assert_supported_plugin_owned_mutation($forged_resource_key, $snapshot);
         return true;
@@ -775,6 +781,8 @@ echo json_encode([
   assert.equal(report.unboundReferenceTargetEvidence.error.message, 'Unsupported plugin-owned mutation reference target evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
   assert.equal(report.missingOwnerMarker.ok, false);
   assert.equal(report.missingOwnerMarker.error.message, 'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
+  assert.equal(report.strippedRegisteredTable.ok, false);
+  assert.equal(report.strippedRegisteredTable.error.message, 'Unsupported plugin-owned mutation contract for row:["wp_fixture_contract_bound_rows","id:7"]');
   assert.equal(report.forgedResourceKey.ok, false);
   assert.equal(report.forgedResourceKey.error.message, 'Unsupported plugin-owned mutation contract for row:["wp_fixture_contract_bound_rows","id:8"]');
   assert.equal(JSON.stringify(report).includes('contract-bound-private-payload'), false);
@@ -884,6 +892,7 @@ reprint_push_register_plugin_owned_row_driver([
 ]);
 $resource_key = 'row:["wp_fixture_schema_bound_rows","id:7"]';
 $row_schema = [
+    'additionalProperties' => false,
     'required' => ['id', 'payload', '__pluginOwner'],
     'fields' => [
         'id' => 'integer',
@@ -964,6 +973,18 @@ $forged_schema_payload['value']['value']['payload']['private_note'] = 'schema-bo
 	    $forged_constraint_payload['value']['value'],
 	    $row_schema
 	);
+	$forged_root_payload = $base_mutation;
+	$forged_root_payload['value']['value']['private_note'] = 'schema-bound-root-private-payload';
+	$forged_root_payload['pluginOwnedResource'] = rpp_schema_bound_policy(
+	    $resource_key,
+	    'wp_fixture_schema_bound_rows',
+	    'fixture-schema-bound-plugin',
+	    'fixture-schema-bound-driver',
+	    false,
+	    'put',
+	    $forged_root_payload['value']['value'],
+	    $row_schema
+	);
 
 	echo json_encode([
 	    'accepted' => rpp_driver_api_capture(static function () use ($base_mutation, $snapshot): bool {
@@ -978,8 +999,13 @@ $forged_schema_payload['value']['value']['payload']['private_note'] = 'schema-bo
 	        reprint_push_assert_supported_plugin_owned_mutation($forged_constraint_payload, $snapshot);
 	        return true;
 	    }),
+	    'forgedRootPayload' => rpp_driver_api_capture(static function () use ($forged_root_payload, $snapshot): bool {
+	        reprint_push_assert_supported_plugin_owned_mutation($forged_root_payload, $snapshot);
+	        return true;
+	    }),
 	    'schemaValidation' => $forged_schema_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['schemaValidation'],
 	    'constraintValidation' => $forged_constraint_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['schemaValidation'],
+	    'rootSchemaValidation' => $forged_root_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['schemaValidation'],
 	    'normalizedSchema' => $base_mutation['pluginOwnedResource']['contractValidationEvidence']['rowSchema'],
 	]);
 `);
@@ -987,6 +1013,7 @@ $forged_schema_payload['value']['value']['payload']['private_note'] = 'schema-bo
   assert.deepEqual(report.accepted, { ok: true, value: true });
 	  assert.equal(report.forgedSchemaPayload.ok, false);
 	  assert.equal(report.forgedConstraintPayload.ok, false);
+	  assert.equal(report.forgedRootPayload.ok, false);
   assert.equal(
     report.forgedSchemaPayload.error.message,
     'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_schema_bound_rows","id:7"]',
@@ -1006,6 +1033,20 @@ $forged_schema_payload['value']['value']['payload']['private_note'] = 'schema-bo
     },
   );
   assert.equal(JSON.stringify(report.schemaValidation).includes('private_note'), false);
+  assert.equal(report.normalizedSchema.additionalProperties, false);
+  assert.deepEqual(
+    report.rootSchemaValidation.fields.find((field) => field.field === 'row' && field.state === 'unexpected'),
+    {
+      field: 'row',
+      expectedType: 'object',
+      required: true,
+      state: 'unexpected',
+      observedType: 'object',
+      observedExtraPropertyCount: 1,
+      matched: false,
+    },
+  );
+  assert.equal(JSON.stringify(report.rootSchemaValidation).includes('private_note'), false);
 	  assert.deepEqual(
 	    report.normalizedSchema.fields.find((field) => field.field === 'payload'),
 	    {
@@ -1054,6 +1095,7 @@ $forged_schema_payload['value']['value']['payload']['private_note'] = 'schema-bo
 	  assert.equal(JSON.stringify(report).includes('schema-bound-private-alt-mode'), false);
 	  assert.equal(JSON.stringify(report).includes('schema-bound-private-forged-mode'), false);
 	  assert.equal(JSON.stringify(report).includes('schema-bound-private-payload'), false);
+	  assert.equal(JSON.stringify(report).includes('schema-bound-root-private-payload'), false);
 	});
 
 test('registered plugin-owned row driver PHP validation accepts reference-bound evidence only when references match', () => {

@@ -832,7 +832,10 @@ function reprint_push_normalize_plugin_owned_row_driver_row_schema($row_schema):
     }
     $fields_source = $row_schema['fields'] ?? null;
     if (is_array($fields_source) && array_is_list($fields_source)) {
-        return reprint_push_normalize_plugin_owned_row_driver_row_schema_fields($fields_source);
+        return reprint_push_normalize_plugin_owned_row_driver_row_schema_root(
+            $row_schema,
+            reprint_push_normalize_plugin_owned_row_driver_row_schema_fields($fields_source)
+        );
     }
     if (!is_array($fields_source)) {
         throw new RuntimeException('Plugin-owned row driver rowSchema.fields must be an object.');
@@ -893,10 +896,29 @@ function reprint_push_normalize_plugin_owned_row_driver_row_schema($row_schema):
         }
     }
 
-    return [
-        'schemaVersion' => 1,
-        'fields' => $fields,
+    return reprint_push_normalize_plugin_owned_row_driver_row_schema_root(
+        $row_schema,
+        [
+            'schemaVersion' => 1,
+            'fields' => $fields,
+        ]
+    );
+}
+
+function reprint_push_normalize_plugin_owned_row_driver_row_schema_root(array $row_schema, array $normalized): array
+{
+    if (!array_key_exists('additionalProperties', $row_schema)) {
+        return $normalized;
+    }
+    if ($row_schema['additionalProperties'] !== false) {
+        throw new RuntimeException('Plugin-owned row driver rowSchema additionalProperties must be false when declared.');
+    }
+    $with_root_boundary = [
+        'schemaVersion' => $normalized['schemaVersion'],
+        'additionalProperties' => false,
+        'fields' => $normalized['fields'],
     ];
+    return $with_root_boundary;
 }
 
 function reprint_push_normalize_plugin_owned_row_driver_row_schema_fields(array $fields_source): array
@@ -4251,6 +4273,7 @@ function reprint_push_assert_supported_plugin_owned_mutation(array $mutation, ar
     $policy = is_array($mutation['pluginOwnedResource'] ?? null)
         ? $mutation['pluginOwnedResource']
         : null;
+    $registered_driver_for_table = reprint_push_plugin_owned_row_driver_for_table((string) ($resource['table'] ?? ''));
     $owner = null;
     if (($planned['exists'] ?? false) === true && is_array($planned['value'] ?? null)) {
         $owner = $planned['value']['__pluginOwner'] ?? null;
@@ -4267,11 +4290,17 @@ function reprint_push_assert_supported_plugin_owned_mutation(array $mutation, ar
             $owner = $policy['contractValidationEvidence']['pluginOwner'] ?? null;
         }
     }
+    if ($owner === null && is_array($registered_driver_for_table)) {
+        $owner = $registered_driver_for_table['pluginOwner'] ?? null;
+    }
     if ($owner === null) {
         return;
     }
 
     $driver = is_array($policy) ? (string) ($policy['driver'] ?? '') : '';
+    if ($driver === '' && is_array($registered_driver_for_table)) {
+        $driver = (string) ($registered_driver_for_table['driver'] ?? '');
+    }
     if ($driver === 'fixture-forms-lab-table'
         && (string) $owner === 'forms'
         && (string) ($resource['table'] ?? '') === 'wp_reprint_push_forms_lab'
@@ -5127,6 +5156,29 @@ function reprint_push_plugin_driver_payload_row_schema_evidence(
         $normalized_schema['fields'],
         $value
     );
+    if (($normalized_schema['additionalProperties'] ?? null) === false && is_array($value) && !array_is_list($value)) {
+        $allowed = [];
+        foreach ($normalized_schema['fields'] as $field) {
+            $allowed[(string) $field['field']] = true;
+        }
+        $extra_count = 0;
+        foreach (array_keys($value) as $observed_key) {
+            if (!isset($allowed[(string) $observed_key])) {
+                $extra_count++;
+            }
+        }
+        if ($extra_count > 0) {
+            $fields[] = [
+                'field' => 'row',
+                'expectedType' => 'object',
+                'required' => true,
+                'state' => 'unexpected',
+                'observedType' => reprint_push_plugin_driver_payload_row_schema_value_type($value),
+                'observedExtraPropertyCount' => $extra_count,
+                'matched' => false,
+            ];
+        }
+    }
 
     $matched = true;
     foreach ($fields as $field) {

@@ -432,6 +432,21 @@ function contractBoundRowSchemaValidationEvidence(rowSchema, value, action) {
     schemaFields: normalized.fields,
     value,
   });
+  if (normalized.additionalProperties === false && value && typeof value === 'object' && !Array.isArray(value)) {
+    const allowed = new Set(normalized.fields.map((field) => field.field));
+    const extraFields = Object.keys(value).filter((extraField) => !allowed.has(extraField));
+    if (extraFields.length > 0) {
+      fields.push({
+        field: 'row',
+        expectedType: 'object',
+        required: true,
+        state: 'unexpected',
+        observedType: contractBoundRowSchemaValueType(value),
+        observedExtraPropertyCount: extraFields.length,
+        matched: false,
+      });
+    }
+  }
   return {
     schemaHash,
     status: fields.every((field) => field.matched) ? 'matched' : 'mismatch',

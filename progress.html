@@ -294,8 +294,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, Docker-local, and release-gate proof, but Docker-local artifacts are candidate evidence only and final release still lacks production-bound provenance.</p>
-        <time class="update-stamp" datetime="2026-06-02T17:15:00+02:00">Last updated: June 2, 2026, 17:15 CEST</time>
+        <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, Docker-local, and release-gate proof, including root-closed plugin row schemas and registered-table refusal guards, but final release still lacks production-bound provenance.</p>
+        <time class="update-stamp" datetime="2026-06-02T17:20:00+02:00">Last updated: June 2, 2026, 17:20 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -352,7 +352,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
-            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through and variant-3 local apply proof, exact custom-table allowlist proof with release-verifier carry-through, wp_postmeta, wp_termmeta, and wp_usermeta release-verifier carry-through, plugin activation dependency release-verifier carry-through and variant-3 generated-style proof, plugin update dependency release-verifier carry-through, plugin uninstall/delete release-verifier carry-through and variant-3 local proof, direct active_plugins mutation refusal release-verifier carry-through and variant-3 local proof, owner-context stale plugin-file release-verifier carry-through and variant-3 local proof, owner-context stale metadata release-verifier carry-through and variant-3 local proof, remote plugin removal refusal release-verifier carry-through and variant-3 local proof, driver delete-support, dry-run-validation, apply-validation, and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence and variant-3 local proof, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, generated wp_options, wp_postmeta, wp_termmeta, and wp_usermeta driver semantics variant-3 coverage, generated driver apply-validation variant-3 coverage, generated driver audit redaction variant-3 coverage, supported/unsupported wp_usermeta, dry-run validation hook, owner identity binding variant-3 and variant-4 coverage, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
+            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through and variant-3 local apply proof, exact custom-table allowlist proof with release-verifier carry-through, root-closed plugin row schema contracts, registered-table metadata-stripping refusal, wp_postmeta, wp_termmeta, and wp_usermeta release-verifier carry-through, plugin activation dependency release-verifier carry-through and variant-3 generated-style proof, plugin update dependency release-verifier carry-through, plugin uninstall/delete release-verifier carry-through and variant-3 local proof, direct active_plugins mutation refusal release-verifier carry-through and variant-3 local proof, owner-context stale plugin-file release-verifier carry-through and variant-3 local proof, owner-context stale metadata release-verifier carry-through and variant-3 local proof, remote plugin removal refusal release-verifier carry-through and variant-3 local proof, driver delete-support, dry-run-validation, apply-validation, and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence and variant-3 local proof, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, generated wp_options, wp_postmeta, wp_termmeta, and wp_usermeta driver semantics variant-3 coverage, generated driver apply-validation variant-3 coverage, generated driver audit redaction variant-3 coverage, supported/unsupported wp_usermeta, dry-run validation hook, owner identity binding variant-3 and variant-4 coverage, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Local production candidate checked">
@@ -410,20 +410,22 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>Docker-local provenance</span>
+        <span>Plugin row schema and registered-table guards</span>
       </div>
-      <p>The latest refresh makes Docker-local production artifacts fail closed for final provenance. Passed Docker-local runs stay local-candidate support evidence, `production-run` no longer satisfies production-required provenance, forged Docker-local provenance rows normalize back to local-candidate, and release gates require operator-production or live-production evidence before final movement. Counts remain 1000/0; final release remains NO-GO.</p>
+      <p>The latest refresh lets explicit plugin-owned row-driver schemas close the top-level row envelope with `additionalProperties: false`, and keeps registered plugin-driver tables inside the contract boundary when row owner metadata is stripped. Planner, apply, and the PHP registration/snapshot path now refuse undeclared top-level row fields or metadata-stripped registered-table mutations before mutation. Counts remain 1000/0; final release remains NO-GO.</p>
       <div class="tag-row" aria-label="Latest validation">
-        <span class="tag">Docker harness slice: 230/230</span>
-        <span class="tag">provenance + CLI: 39/39</span>
-        <span class="tag">local-candidate only</span>
-        <span class="tag">production-run rejected</span>
-        <span class="tag">operator/live production required</span>
+        <span class="tag">plugin-driver JS/PHP: 64/64</span>
+        <span class="tag">registration/RPP-0481: 9/9</span>
+        <span class="tag">driver smoke: pass</span>
+        <span class="tag">root additionalProperties false</span>
+        <span class="tag">registered table guard</span>
+        <span class="tag">contract hash-bound</span>
+        <span class="tag">apply revalidation</span>
+        <span class="tag">raw extra keys hidden</span>
         <span class="tag">NO-GO retained</span>
-        <span class="tag">packaged fallback refused</span>
-        <span class="tag">redaction/diff: pass</span>
-        <span class="tag">Docker topology v1-v5</span>
-        <span class="tag">cron topology v2-v5</span>
+        <span class="tag">support evidence only</span>
+        <span class="tag">PHP parity</span>
+        <span class="tag">syntax checks pass</span>
         <span class="tag">RPP-0732 focused: 2/2</span>
         <span class="tag">RPP-0712 adjacent: 5/5</span>
         <span class="tag">batch gates</span>
