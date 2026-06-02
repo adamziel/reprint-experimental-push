@@ -465,6 +465,15 @@ echo json_encode([
                 'targetResourceKey' => 'row:["wp_posts","ID:3001"]',
             ],
         ]),
+        'contractHashMismatch' => rpp_graph_identity_capture([
+            [
+                'contractVersion' => 1,
+                'contractKind' => 'wordpress-graph-identity-map',
+                'sourceResourceKey' => 'row:["wp_posts","ID:2001"]',
+                'targetResourceKey' => 'row:["wp_posts","ID:3001"]',
+                'contractHash' => str_repeat('0', 64),
+            ],
+        ]),
     ],
 ]);
 `,
@@ -618,12 +627,17 @@ test('snapshot library exports only explicit WordPress graph identity-map contra
       selfMap: false,
       crossSurface: false,
       malformedResource: false,
+      contractHashMismatch: false,
     },
   );
   for (const failure of Object.values(report.failures)) {
     assert.equal(failure.error.class, 'RuntimeException');
     assert.equal(failure.snapshotMeta, null);
   }
+  assert.equal(
+    report.failures.contractHashMismatch.error.message,
+    'WordPress graph identity map contract hash mismatch.',
+  );
 
   const serialized = JSON.stringify(report);
   assert.doesNotMatch(serialized, /Private|example\.test|Brewcommerce|fixture-private/);

@@ -389,11 +389,25 @@ export function normalizeWordPressGraphIdentityMapContract(entry, {
       observed: targetResource.key,
     });
   }
-
-  const accepted = issues.length === 0;
-  const contractHash = accepted
+  const expectedContractHash = sourceResource && targetResource
     ? wordpressGraphIdentityMapContractHash({ sourceResource, targetResource })
     : null;
+  const suppliedContractHash = entry.contractHash ?? nestedContract?.contractHash ?? null;
+  if (
+    suppliedContractHash !== null
+    && expectedContractHash !== null
+    && suppliedContractHash !== expectedContractHash
+  ) {
+    issues.push({
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_HASH_MISMATCH',
+      field: 'contractHash',
+      required: expectedContractHash,
+      observed: suppliedContractHash,
+    });
+  }
+
+  const accepted = issues.length === 0;
+  const contractHash = accepted ? expectedContractHash : null;
   return {
     explicit: true,
     valid: accepted,

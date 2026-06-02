@@ -759,16 +759,22 @@ function reprint_push_normalize_wordpress_graph_identity_map_row($entry): array
         || !in_array($source_suffix, reprint_push_wordpress_graph_identity_map_table_suffixes(), true)) {
         throw new RuntimeException('Unsupported WordPress graph identity map table surface.');
     }
+    $expected_contract_hash = reprint_push_wordpress_graph_identity_map_contract_hash(
+        $source_resource_key,
+        $target_resource_key
+    );
+    $nested_contract = is_array($entry['contract'] ?? null) ? $entry['contract'] : [];
+    $supplied_contract_hash = $entry['contractHash'] ?? $nested_contract['contractHash'] ?? null;
+    if ($supplied_contract_hash !== null && (string) $supplied_contract_hash !== $expected_contract_hash) {
+        throw new RuntimeException('WordPress graph identity map contract hash mismatch.');
+    }
 
     return [
         'contractVersion' => REPRINT_PUSH_WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
         'contractKind' => REPRINT_PUSH_WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
         'sourceResourceKey' => $source_resource_key,
         'targetResourceKey' => $target_resource_key,
-        'contractHash' => reprint_push_wordpress_graph_identity_map_contract_hash(
-            $source_resource_key,
-            $target_resource_key
-        ),
+        'contractHash' => $expected_contract_hash,
         'rawValuesIncluded' => false,
     ];
 }

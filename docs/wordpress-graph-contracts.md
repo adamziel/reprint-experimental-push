@@ -147,7 +147,10 @@ normalized to:
 The exporter does not infer maps from slugs, GUIDs, or row contents. If no
 explicit map is supplied, no identity map is exported. Malformed contract rows,
 raw-value rows, self-maps, unsupported versions/kinds, and cross-surface maps
-fail closed before snapshot export. Planner/apply still perform the stronger
+fail closed before snapshot export. If a row supplies `contractHash`, it must
+match the normalized source/target identity-map contract; mismatches fail closed
+with `WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_HASH_MISMATCH` in JS planning and
+with a snapshot export refusal in PHP. Planner/apply still perform the stronger
 equivalence, staleness, relationship contract, and pre-mutation checks.
 
 Future graph support should extend the contract first, add refusal tests for

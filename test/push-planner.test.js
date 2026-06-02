@@ -6820,6 +6820,20 @@ test('malformed explicit WordPress graph identity-map contract rows fail closed 
       privateTitle: 'graph-contract-self-map-private-title',
     },
     {
+      name: 'mismatched contract hash',
+      row: {
+        contractVersion: 1,
+        contractKind: 'wordpress-graph-identity-map',
+        sourceResourceKey: changedPostResourceKey,
+        targetResourceKey: remoteTargetResourceKey,
+        contractHash: '0'.repeat(64),
+      },
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_HASH_MISMATCH',
+      expectedSourceResourceKey: changedPostResourceKey,
+      expectedTargetResourceKey: remoteTargetResourceKey,
+      privateTitle: 'graph-contract-hash-mismatch-private-title',
+    },
+    {
       name: 'missing kind',
       row: {
         contractVersion: 1,

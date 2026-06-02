@@ -10,6 +10,11 @@ import {
   summarizeGraphIdentityReleaseVerifierProofs,
   summarizeProductionImporterExporterIdentityMapReleaseVerifierProof,
 } from '../scripts/playground/production-shaped-release-verify.mjs';
+import {
+  WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+  WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+  wordpressGraphIdentityMapContractHash,
+} from '../src/wordpress-graph-contracts.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const verifierPath = path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs');
@@ -33,8 +38,34 @@ function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function checkedProductionSnapshots() {
+function strictIdentityMapRow(boundary) {
+  return {
+    contractVersion: WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+    contractKind: WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+    sourceResourceKey: boundary.sourceResourceKey,
+    targetResourceKey: boundary.targetResourceKey,
+    contractHash: wordpressGraphIdentityMapContractHash({
+      sourceResourceKey: boundary.sourceResourceKey,
+      targetResourceKey: boundary.targetResourceKey,
+    }),
+    rawValuesIncluded: false,
+  };
+}
+
+function checkedProductionSnapshots({ legacyMap = false } = {}) {
   const boundary = productionImporterExporterIdentityMapReleaseVerifierBoundary;
+  const provenance = {
+    exporter: {
+      artifactHash: '3'.repeat(64),
+      rowCount: 1,
+      observedAt: '2026-05-30T16:03:00.000Z',
+    },
+    importer: {
+      packageHash: '4'.repeat(64),
+      persistedAt: '2026-05-30T16:03:30.000Z',
+      immutableBase: true,
+    },
+  };
   const remoteBaseSnapshot = {
     files: {},
     plugins: {},
@@ -54,26 +85,25 @@ function checkedProductionSnapshots() {
       wp_postmeta: {},
     },
     meta: {
-      pushIdentityMap: {
-        provenance: {
-          exporter: {
-            artifactHash: '3'.repeat(64),
-            rowCount: 1,
-            observedAt: '2026-05-30T16:03:00.000Z',
+      ...(legacyMap
+        ? {
+          pushIdentityMap: {
+            provenance,
+            resources: [
+              {
+                sourceResourceKey: boundary.sourceResourceKey,
+                targetResourceKey: boundary.targetResourceKey,
+              },
+            ],
           },
-          importer: {
-            packageHash: '4'.repeat(64),
-            persistedAt: '2026-05-30T16:03:30.000Z',
-            immutableBase: true,
+        }
+        : {
+          wordpressGraphIdentityMap: {
+            provenance,
+            rows: [strictIdentityMapRow(boundary)],
+            rawValuesIncluded: false,
           },
-        },
-        resources: [
-          {
-            sourceResourceKey: boundary.sourceResourceKey,
-            targetResourceKey: boundary.targetResourceKey,
-          },
-        ],
-      },
+        }),
     },
   };
   const localEditedSnapshot = {
@@ -247,6 +277,11 @@ test('RPP-0400 release verifier upgrades checked live snapshots to production-ba
   assert.equal(proof.releaseGateEvidence.status, 'GO');
   assert.equal(proof.releaseGateEvidence.productionBacked, true);
   assert.equal(proof.releaseGateEvidence.acceptedForReleaseGate, true);
+  assert.equal(proof.mapEvidence.mapAlias, 'wordpressGraphIdentityMap');
+  assert.equal(proof.mapEvidence.mapSource, 'base-snapshot.meta.identityMap[0].rows[0]');
+  assert.equal(proof.mapEvidence.strictContractEvidenceAccepted, true);
+  assert.equal(proof.productionStrictIdentityMap.accepted, true);
+  assert.equal(proof.productionStrictIdentityMap.contractValidation.reasonCode, 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_ACCEPTED');
   assert.equal(proof.plan.status, 'ready');
   assert.equal(proof.plan.summary.mutations, 2);
   assert.equal(proof.plan.summary.decisions, 2);
@@ -263,7 +298,7 @@ test('RPP-0400 release verifier upgrades checked live snapshots to production-ba
   assert.match(proof.checkedSnapshotEvidence.localEditedHash, sha256EvidencePattern);
   assert.match(proof.checkedSnapshotEvidence.importedRemoteProjectionHash, sha256EvidencePattern);
   assert.match(proof.checkedSnapshotEvidence.staleRemoteProjectionHash, sha256EvidencePattern);
-  assert.equal(proof.mapEvidence.sourceDecision.identityMapSource, 'base-snapshot.meta.identityMap[2].resources[0]');
+  assert.equal(proof.mapEvidence.sourceDecision.identityMapSource, 'base-snapshot.meta.identityMap[0].rows[0]');
   assert.equal(proof.mapEvidence.sourceDecision.targetResourceKey, boundary.targetResourceKey);
   assert.deepEqual(rewriteTypes(proof).sort(), ['post-parent', 'postmeta-post']);
   assert.equal(proof.appliedEvidence.sourceAbsentAfterApply, true);
@@ -304,12 +339,38 @@ test('RPP-0400 checked snapshots without production evidence stay support-only',
   assert.equal(proof.releaseGate, 'NO-GO');
   assert.equal(proof.releaseGateEvidence.status, 'NO-GO');
   assert.equal(proof.releaseGateEvidence.acceptedForReleaseGate, false);
+  assert.equal(proof.mapEvidence.strictContractEvidenceAccepted, true);
+  assert.equal(proof.productionStrictIdentityMap.accepted, true);
   assert.equal(proof.plan.status, 'ready');
   assert.equal(proof.plan.summary.mutations, 2);
   assert.equal(proof.counts.checkedRemoteBase.targetPosts, 1);
   assert.equal(proof.checkedSnapshotEvidence.format, 'hash-only');
   assert.doesNotThrow(() =>
     assertEvidenceHasNoRawValues(proof, { label: 'RPP-0400 checked support-only proof' }));
+});
+
+test('RPP-0400 checked production evidence with legacy identity maps stays support-only', () => {
+  const snapshots = checkedProductionSnapshots({ legacyMap: true });
+  const proof = summarizeProductionImporterExporterIdentityMapReleaseVerifierProof({
+    ...snapshots,
+    checkedProductionEvidence: true,
+    now: new Date('2026-05-30T16:05:00.000Z'),
+  });
+
+  assert.equal(proof.status, 'support_only');
+  assert.equal(proof.verdict, 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_CARRIED_THROUGH');
+  assert.equal(proof.evidenceScope, 'production-backed');
+  assert.equal(proof.checkedProductionEvidence, true);
+  assert.equal(proof.productionBacked, false);
+  assert.equal(proof.releaseEligible, false);
+  assert.equal(proof.releaseGate, 'NO-GO');
+  assert.equal(proof.mapEvidence.mapAlias, 'pushIdentityMap');
+  assert.equal(proof.mapEvidence.strictContractEvidenceAccepted, false);
+  assert.equal(proof.productionStrictIdentityMap.accepted, false);
+  assert.equal(proof.plan.status, 'ready');
+  assert.equal(proof.plan.summary.mutations, 2);
+  assert.doesNotThrow(() =>
+    assertEvidenceHasNoRawValues(proof, { label: 'RPP-0400 legacy checked production proof' }));
 });
 
 test('RPP-0400 checked production evidence fails closed when checked snapshots are incomplete', () => {

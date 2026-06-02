@@ -4,6 +4,22 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Strict Graph Identity Map Contract Hashes
+
+- Last update: 2026-06-02 06:23 CEST +02:00.
+- Explicit WordPress graph identity-map rows now fail closed when a supplied
+  `contractHash` does not match the normalized source/target contract. JS
+  planning records `WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_HASH_MISMATCH`;
+  the PHP snapshot exporter refuses mismatched rows before export.
+- RPP-0400 production-backed importer/exporter proof now requires strict
+  `meta.wordpressGraphIdentityMap.rows` with accepted contract validation.
+  Legacy `pushIdentityMap.resources` still exercises support-only carry-through
+  coverage, but it no longer satisfies production-backed release eligibility.
+- Caveat: this hardens explicit graph identity-map contract binding and the
+  RPP-0400 production proof boundary. Broader production graph support still
+  needs general identity mapping and reference rewriting beyond the current
+  stable WordPress fixtures.
+
 ## 2026-06-02 - Contract-Bound Plugin Payload Owner Markers
 
 - Last update: 2026-06-02 06:18 CEST +02:00.

@@ -80,6 +80,9 @@ import {
   openProductionRecoveryJournal,
 } from '../../src/recovery-journal.js';
 import {
+  normalizeWordPressGraphIdentityMapContract,
+} from '../../src/wordpress-graph-contracts.js';
+import {
   pluginOwnedRowDriverContractValidationEvidenceHash,
   pluginOwnedRowDriverContractHash,
 } from '../../src/plugin-driver-contracts.js';
@@ -9472,7 +9475,7 @@ function buildProductionImporterExporterIdentityMapReleaseVerifierProof({
       productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.importedRemote).targetPosts === 1,
     readyPlanReady: readyPlan.status === 'ready',
     identityDecisionUsesImporterMap: sourceDecision?.decision === 'map-local-identity-to-remote'
-      && sourceDecision?.identityMapSource === boundary.mapSource
+      && sourceDecision?.identityMapSource === mapEvidence.mapSource
       && sourceDecision?.targetResourceKey === boundary.targetResourceKey,
     sourceIdentityNotMutated: !readyPlan.mutations.some((mutation) =>
       mutation.resourceKey === boundary.sourceResourceKey)
@@ -9508,7 +9511,8 @@ function buildProductionImporterExporterIdentityMapReleaseVerifierProof({
   const productionBacked = ok
     && checkedProductionEvidence === true
     && checkedSnapshotsRequested
-    && productionScopeClaimed;
+    && productionScopeClaimed
+    && mapEvidence.strictContractEvidenceAccepted === true;
   const releaseGateEvidence = productionImporterExporterIdentityMapReleaseGate({
     checked: ok,
     checkedProductionEvidence,
@@ -9533,6 +9537,12 @@ function buildProductionImporterExporterIdentityMapReleaseVerifierProof({
     checkedProductionEvidence: checkedProductionEvidence === true,
     sourceKind,
     productionScopeClaimed,
+    productionStrictIdentityMap: {
+      requiredForProductionBacked: true,
+      accepted: mapEvidence.strictContractEvidenceAccepted === true,
+      mapAlias: mapEvidence.mapAlias,
+      contractValidation: mapEvidence.contractValidation,
+    },
     releaseEligible: productionBacked,
     releaseGate: productionBacked ? 'GO' : 'NO-GO',
     releaseGateEvidence,
@@ -9872,10 +9882,11 @@ function productionImporterExporterIdentityMapReleaseVerifierCounts(snapshot) {
   const boundary = productionImporterExporterIdentityMapReleaseVerifierBoundary;
   const posts = snapshot?.db?.wp_posts || {};
   const postmeta = snapshot?.db?.wp_postmeta || {};
+  const identityMapSource = productionImporterExporterIdentityMapReleaseVerifierIdentityMapSource(snapshot);
   return {
-    mapEntries: Array.isArray(snapshot?.meta?.pushIdentityMap?.resources)
-      ? snapshot.meta.pushIdentityMap.resources.length
-      : 0,
+    mapEntries: identityMapSource.rows.length,
+    strictMapEntries: identityMapSource.strict ? identityMapSource.rows.length : 0,
+    legacyMapEntries: identityMapSource.strict ? 0 : identityMapSource.rows.length,
     sourcePosts: Object.hasOwn(posts, `ID:${boundary.sourcePostId}`) ? 1 : 0,
     childPosts: Object.hasOwn(posts, `ID:${boundary.childPostId}`) ? 1 : 0,
     targetPosts: Object.hasOwn(posts, `ID:${boundary.targetPostId}`) ? 1 : 0,
@@ -9898,11 +9909,37 @@ function productionImporterExporterIdentityMapReleaseVerifierMapEvidence({
   postmetaMutation,
 }) {
   const boundary = productionImporterExporterIdentityMapReleaseVerifierBoundary;
-  const identityMap = sourceSnapshot?.meta?.pushIdentityMap || {};
-  const mapRows = Array.isArray(identityMap.resources) ? identityMap.resources : [];
+  const identityMap = productionImporterExporterIdentityMapReleaseVerifierIdentityMapSource(sourceSnapshot);
+  const mapRows = identityMap.rows;
+  const sourceResource = productionImporterExporterIdentityMapReleaseVerifierResource(
+    'wp_posts',
+    `ID:${boundary.sourcePostId}`,
+  );
+  const targetResource = productionImporterExporterIdentityMapReleaseVerifierResource(
+    'wp_posts',
+    `ID:${boundary.targetPostId}`,
+  );
+  const contract = identityMap.strict && mapRows[0]
+    ? normalizeWordPressGraphIdentityMapContract(mapRows[0], {
+      source: identityMap.mapSource,
+      sourceResource,
+      targetResource,
+    })
+    : null;
+  const contractValidation = contract?.evidence ? {
+    outcome: contract.evidence.outcome || null,
+    reasonCode: contract.evidence.reasonCode || null,
+    contractHash: contract.evidence.contractHash || null,
+    sourceResourceKey: contract.evidence.sourceResourceKey || null,
+    targetResourceKey: contract.evidence.targetResourceKey || null,
+    rawValuesIncluded: contract.evidence.rawValuesIncluded === true,
+  } : null;
   return {
-    mapAlias: boundary.mapAlias,
-    mapSource: boundary.mapSource,
+    mapAlias: identityMap.mapAlias,
+    mapSource: identityMap.mapSource,
+    strictContractEvidenceAccepted: contract?.valid === true
+      && contract?.evidence?.reasonCode === 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_ACCEPTED',
+    contractValidation,
     mapRowsHash: sha256Evidence(mapRows),
     exporterProvenanceHash: sha256Evidence(identityMap.provenance?.exporter || null),
     importerProvenanceHash: sha256Evidence(identityMap.provenance?.importer || null),
@@ -9915,6 +9952,27 @@ function productionImporterExporterIdentityMapReleaseVerifierMapEvidence({
     dependentRewrites: [childMutation, postmetaMutation]
       .filter(Boolean)
       .map(productionImporterExporterIdentityMapReleaseVerifierMutationRewriteEvidence),
+  };
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierIdentityMapSource(snapshot) {
+  const strict = snapshot?.meta?.wordpressGraphIdentityMap;
+  if (strict && Array.isArray(strict.rows)) {
+    return {
+      mapAlias: 'wordpressGraphIdentityMap',
+      mapSource: 'base-snapshot.meta.identityMap[0].rows[0]',
+      strict: true,
+      rows: strict.rows,
+      provenance: strict.provenance || {},
+    };
+  }
+  const legacy = snapshot?.meta?.pushIdentityMap || {};
+  return {
+    mapAlias: 'pushIdentityMap',
+    mapSource: productionImporterExporterIdentityMapReleaseVerifierBoundary.mapSource,
+    strict: false,
+    rows: Array.isArray(legacy.resources) ? legacy.resources : [],
+    provenance: legacy.provenance || {},
   };
 }
 
