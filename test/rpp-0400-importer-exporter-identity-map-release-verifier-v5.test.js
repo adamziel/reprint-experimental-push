@@ -19,6 +19,7 @@ import {
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const verifierPath = path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs');
 const sha256EvidencePattern = /^sha256:[a-f0-9]{64}$/;
+const rawHashPattern = /^[a-f0-9]{64}$/;
 const rawFixtures = Object.freeze([
   'rpp-0400-private-importer-exporter-source-title',
   'rpp-0400-private-importer-exporter-source-body',
@@ -202,6 +203,8 @@ test('RPP-0400 release verifier carries production importer/exporter identity-ma
   assert.equal(proof.mapEvidence.targetDecision.decision, 'keep-remote');
   assert.equal(proof.mapEvidence.targetDecision.resourceKey, boundary.targetResourceKey);
   assert.deepEqual(rewriteTypes(proof).sort(), ['post-parent', 'postmeta-post']);
+  assert.equal(proof.mapEvidence.dependentRewrites.every((entry) =>
+    entry.rewrites.every((rewrite) => rawHashPattern.test(rewrite.sourceTargetRemoteHash))), true);
   assert.ok(proof.mapEvidence.dependentRewrites.some((entry) =>
     entry.resourceKey === boundary.childResourceKey
     && entry.rewrites.some((rewrite) =>

@@ -3177,6 +3177,39 @@ function wordpressGraphRewriteEnvelopeIssues(mutation, decisions = [], remote = 
         observedHash: hashEvidenceForDetails(rewrite.targetRemoteHash),
       });
     }
+    if (
+      identityMapDecision
+      && rewrite.sourceTargetLocalHash !== identityMapDecision.localHash
+    ) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_SOURCE_LOCAL_HASH_MISMATCH',
+        expectedHash: hashEvidenceForDetails(identityMapDecision.localHash),
+        observedHash: hashEvidenceForDetails(rewrite.sourceTargetLocalHash),
+      });
+    }
+    if (
+      identityMapDecision
+      && rewrite.sourceTargetRemoteHash !== identityMapDecision.remoteHash
+    ) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_SOURCE_REMOTE_HASH_MISMATCH',
+        expectedHash: hashEvidenceForDetails(identityMapDecision.remoteHash),
+        observedHash: hashEvidenceForDetails(rewrite.sourceTargetRemoteHash),
+      });
+    }
+    if (
+      identityMapDecision
+      && rewrite.identityMapSource !== (identityMapDecision.identityMapSource || null)
+    ) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_SOURCE_MISMATCH',
+        expectedIdentityMapSource: identityMapDecision.identityMapSource || null,
+        observedIdentityMapSource: rewrite.identityMapSource || null,
+      });
+    }
 
     const targetResource = parseWordPressGraphRowResourceKey(rewrite.targetResourceKey);
     if (!targetResource) {

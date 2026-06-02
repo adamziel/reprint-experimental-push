@@ -149,9 +149,11 @@ Accepted explicit identity-map contracts are also mandatory rewrite evidence.
 When a ready plan carries a `map-local-identity-to-remote` decision with
 accepted contract validation evidence, each dependent graph rewrite must carry
 the matching `identityMapContractHash` and
-`identityMapContractValidationHash`, and its `targetResourceKey` must match the
-decision target. Apply rejects stripped or mismatched rewrite-side contract
-evidence before mutation.
+`identityMapContractValidationHash`, and its `targetResourceKey`,
+`targetRemoteHash`, `sourceTargetLocalHash`, `sourceTargetRemoteHash`, and
+`identityMapSource` must match the decision. Apply rejects stripped or
+mismatched rewrite-side contract and source/target hash evidence before
+mutation.
 
 Otherwise the mutation is blocked before apply with
 `stale-wordpress-graph-identity` and

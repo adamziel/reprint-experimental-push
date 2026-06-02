@@ -2917,6 +2917,7 @@ function rewriteWordPressGraphMutation({ resource, localValue, identityMap }) {
         }
         : {}),
       sourceTargetLocalHash: mapping.sourceLocalHash,
+      sourceTargetRemoteHash: mapping.sourceRemoteHash,
       targetRemoteHash: mapping.targetRemoteHash,
     });
   }
@@ -3635,6 +3636,7 @@ function wordpressGraphReferenceEvidence(
         targetResourceKey: identityRewrite.targetResourceKey,
         identityMapSource: identityRewrite.identityMapSource,
         sourceTargetLocalHash: identityRewrite.sourceTargetLocalHash,
+        sourceTargetRemoteHash: identityRewrite.sourceTargetRemoteHash,
         targetRemoteHash: identityRewrite.targetRemoteHash,
       },
     } : {}),

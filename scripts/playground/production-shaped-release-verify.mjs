@@ -10054,6 +10054,7 @@ function productionImporterExporterIdentityMapReleaseVerifierMutationRewriteEvid
       targetResourceKey: rewrite.targetResourceKey || null,
       identityMapSource: rewrite.identityMapSource || null,
       sourceTargetLocalHash: rewrite.sourceTargetLocalHash || null,
+      sourceTargetRemoteHash: rewrite.sourceTargetRemoteHash || null,
       targetRemoteHash: rewrite.targetRemoteHash || null,
       rewriteHash: sha256Evidence({
         relationshipKey: rewrite.relationshipKey || null,
@@ -10064,6 +10065,7 @@ function productionImporterExporterIdentityMapReleaseVerifierMutationRewriteEvid
         targetResourceKey: rewrite.targetResourceKey || null,
         identityMapSource: rewrite.identityMapSource || null,
         sourceTargetLocalHash: rewrite.sourceTargetLocalHash || null,
+        sourceTargetRemoteHash: rewrite.sourceTargetRemoteHash || null,
         targetRemoteHash: rewrite.targetRemoteHash || null,
       }),
     })),

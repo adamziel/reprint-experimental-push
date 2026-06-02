@@ -386,6 +386,52 @@ test('apply refuses option page rewrites without a carried identity-map decision
   assert.equal(forgedRemote.db.wp_options['option_name:page_on_front'], undefined);
 });
 
+test('apply refuses option page rewrites with forged identity-map source evidence', () => {
+  const { base, local, remote } = mappedOptionSite('page_on_front');
+  const plan = planFor(base, local, remote);
+
+  for (const variant of [
+    {
+      issueCode: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_SOURCE_LOCAL_HASH_MISMATCH',
+      mutate(rewrite) {
+        rewrite.sourceTargetLocalHash = digest({ forged: 'option-page-source-local-hash' });
+      },
+    },
+    {
+      issueCode: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_SOURCE_REMOTE_HASH_MISMATCH',
+      mutate(rewrite) {
+        rewrite.sourceTargetRemoteHash = digest({ forged: 'option-page-source-remote-hash' });
+      },
+    },
+    {
+      issueCode: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_SOURCE_MISMATCH',
+      mutate(rewrite) {
+        rewrite.identityMapSource = 'forged-option-page-identity-map-source';
+      },
+    },
+  ]) {
+    const forgedPlan = cloneJson(plan);
+    const forgedRemote = cloneJson(remote);
+    const remoteBeforeHash = digest(forgedRemote);
+    const mutation = mutationFor(forgedPlan, pageOnFrontResourceKey);
+    const rewrite = mutation.wordpressGraphIdentity.rewrites.find((entry) =>
+      entry.relationshipType === 'option-page-on-front-post');
+    variant.mutate(rewrite);
+
+    const error = captureError(() => applyPlan(forgedRemote, forgedPlan));
+    const issue = error.details.issues.find((entry) =>
+      entry.code === variant.issueCode
+      && entry.relationshipType === 'option-page-on-front-post');
+
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PLAN_INVARIANT_VIOLATION');
+    assert.ok(issue, `missing ${variant.issueCode}`);
+    assert.equal(issue.resourceKey, pageOnFrontResourceKey);
+    assert.equal(digest(forgedRemote), remoteBeforeHash);
+    assert.equal(forgedRemote.db.wp_options['option_name:page_on_front'], undefined);
+  }
+});
+
 test('apply refuses option page rewrites when carried target hash no longer matches the identity decision', () => {
   const { base, local, remote } = mappedOptionSite('page_on_front');
   const plan = planFor(base, local, remote);

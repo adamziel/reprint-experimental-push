@@ -236,6 +236,7 @@ test('RPP-0380 rewrites production pushIdentityMap dependents to the imported re
   assert.equal(childRewrite.targetResourceKey, importedTargetResourceKey);
   assert.equal(childRewrite.identityMapSource, pushIdentityMapSource);
   assert.match(childRewrite.sourceTargetLocalHash, hashPattern);
+  assert.match(childRewrite.sourceTargetRemoteHash, hashPattern);
   assert.match(childRewrite.targetRemoteHash, hashPattern);
 
   assert.equal(plannedPostmeta.post_id, importedTargetId);
@@ -248,6 +249,7 @@ test('RPP-0380 rewrites production pushIdentityMap dependents to the imported re
   assert.equal(postmetaRewrite.targetResourceKey, importedTargetResourceKey);
   assert.equal(postmetaRewrite.identityMapSource, pushIdentityMapSource);
   assert.match(postmetaRewrite.sourceTargetLocalHash, hashPattern);
+  assert.match(postmetaRewrite.sourceTargetRemoteHash, hashPattern);
   assert.match(postmetaRewrite.targetRemoteHash, hashPattern);
   assertLiveRemotePreconditions(plan);
 

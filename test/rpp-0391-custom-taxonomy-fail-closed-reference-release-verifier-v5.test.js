@@ -258,6 +258,7 @@ function rewriteEvidence(rewrite) {
     targetResourceKey: rewrite.targetResourceKey || null,
     identityMapSource: rewrite.identityMapSource || null,
     sourceTargetLocalHash: rewrite.sourceTargetLocalHash || null,
+    sourceTargetRemoteHash: rewrite.sourceTargetRemoteHash || null,
     targetRemoteHash: rewrite.targetRemoteHash || null,
   } : null;
 }
@@ -546,6 +547,7 @@ test('RPP-0391 release verifier carries custom taxonomy identity-map rewrite thr
   assert.equal(evidence.rewrite.targetResourceKey, targetTaxonomyResourceKey);
   assert.equal(evidence.rewrite.rewrittenResourceKey, rewrittenRelationshipResourceKey);
   assert.match(evidence.rewrite.sourceTargetLocalHash, hashPattern);
+  assert.match(evidence.rewrite.sourceTargetRemoteHash, hashPattern);
   assert.match(evidence.rewrite.targetRemoteHash, hashPattern);
   assert.equal(evidence.mutation.resourceKey, rewrittenRelationshipResourceKey);
   assert.equal(evidence.mutation.action, 'put');

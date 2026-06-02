@@ -316,6 +316,7 @@ function rewriteEvidence(rewrite) {
     targetResourceKey: rewrite.targetResourceKey || null,
     identityMapSource: rewrite.identityMapSource || null,
     sourceTargetLocalHash: rewrite.sourceTargetLocalHash || null,
+    sourceTargetRemoteHash: rewrite.sourceTargetRemoteHash || null,
     targetRemoteHash: rewrite.targetRemoteHash || null,
   } : null;
 }
@@ -650,6 +651,7 @@ test('RPP-0396 release verifier carries wp_navigation identity-map postmeta rewr
   assert.equal(proof.rewrite.targetResourceKey, targetNavigationResourceKey);
   assert.equal(proof.rewrite.rewrittenResourceKey, rewrittenNavigationMetaResourceKey);
   assert.match(proof.rewrite.sourceTargetLocalHash, hashPattern);
+  assert.match(proof.rewrite.sourceTargetRemoteHash, hashPattern);
   assert.match(proof.rewrite.targetRemoteHash, hashPattern);
   assert.equal(proof.mutation.resourceKey, rewrittenNavigationMetaResourceKey);
   assert.equal(proof.mutation.action, 'put');

@@ -1477,6 +1477,7 @@ function hashOnlyImporterExporterMapEvidence({
         targetResourceKey: rewrite.targetResourceKey || null,
         identityMapSource: rewrite.identityMapSource || null,
         sourceTargetLocalHash: rewrite.sourceTargetLocalHash || null,
+        sourceTargetRemoteHash: rewrite.sourceTargetRemoteHash || null,
         targetRemoteHash: rewrite.targetRemoteHash || null,
       })),
     }));

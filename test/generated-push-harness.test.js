@@ -13873,6 +13873,7 @@ function postParentPageHierarchyVariant3ReadyMutationEvidence({ testCase, plan, 
   assert.equal(rewrite.sourceTargetResourceKey, shape.sourceParentResourceKey);
   assert.equal(rewrite.targetResourceKey, shape.targetParentResourceKey);
   assert.match(rewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(rewrite.sourceTargetRemoteHash, /^[a-f0-9]{64}$/);
   assert.match(rewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
   assert.equal(childPrecondition.mutationId, childMutation.id);
   assert.equal(childPrecondition.expectedHash, childMutation.remoteBeforeHash);
@@ -13903,6 +13904,7 @@ function postParentPageHierarchyVariant3ReadyMutationEvidence({ testCase, plan, 
       targetResourceKey: rewrite.targetResourceKey,
       identityMapSource: rewrite.identityMapSource,
       sourceTargetLocalHash: rewrite.sourceTargetLocalHash,
+      sourceTargetRemoteHash: rewrite.sourceTargetRemoteHash,
       targetRemoteHash: rewrite.targetRemoteHash,
       rewriteHash: `sha256:${digest(rewrite)}`,
     },
@@ -14652,6 +14654,7 @@ function postAuthorGraphVariant3ReadyMutationEvidence({ testCase, plan, applied,
   assert.equal(rewrite.sourceTargetResourceKey, shape.sourceAuthorResourceKey);
   assert.equal(rewrite.targetResourceKey, shape.targetAuthorResourceKey);
   assert.match(rewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(rewrite.sourceTargetRemoteHash, /^[a-f0-9]{64}$/);
   assert.match(rewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
   assert.equal(postPrecondition.mutationId, postMutation.id);
   assert.equal(postPrecondition.expectedHash, postMutation.remoteBeforeHash);
@@ -14683,6 +14686,7 @@ function postAuthorGraphVariant3ReadyMutationEvidence({ testCase, plan, applied,
       targetResourceKey: rewrite.targetResourceKey,
       identityMapSource: rewrite.identityMapSource,
       sourceTargetLocalHash: rewrite.sourceTargetLocalHash,
+      sourceTargetRemoteHash: rewrite.sourceTargetRemoteHash,
       targetRemoteHash: rewrite.targetRemoteHash,
       rewriteHash: `sha256:${digest(rewrite)}`,
     },
@@ -15186,6 +15190,7 @@ function postmetaPostIdReferenceVariant3ReadyMutationEvidence({ testCase, plan, 
   assert.equal(rewrite.sourceTargetResourceKey, shape.sourcePostResourceKey);
   assert.equal(rewrite.targetResourceKey, shape.targetPostResourceKey);
   assert.match(rewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(rewrite.sourceTargetRemoteHash, /^[a-f0-9]{64}$/);
   assert.match(rewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
   assert.equal(postmetaPrecondition.mutationId, postmetaMutation.id);
   assert.equal(postmetaPrecondition.expectedHash, postmetaMutation.remoteBeforeHash);
@@ -15219,6 +15224,7 @@ function postmetaPostIdReferenceVariant3ReadyMutationEvidence({ testCase, plan, 
       targetResourceKey: rewrite.targetResourceKey,
       identityMapSource: rewrite.identityMapSource,
       sourceTargetLocalHash: rewrite.sourceTargetLocalHash,
+      sourceTargetRemoteHash: rewrite.sourceTargetRemoteHash,
       targetRemoteHash: rewrite.targetRemoteHash,
       rewriteHash: `sha256:${digest(rewrite)}`,
     },
@@ -16912,6 +16918,7 @@ function commentPostReferenceVariant3ReadyMutationEvidence({ testCase, plan, app
   assert.equal(rewrite.sourceTargetResourceKey, shape.sourcePostResourceKey);
   assert.equal(rewrite.targetResourceKey, shape.targetPostResourceKey);
   assert.match(rewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(rewrite.sourceTargetRemoteHash, /^[a-f0-9]{64}$/);
   assert.match(rewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
   assert.equal(commentPrecondition.mutationId, commentMutation.id);
   assert.equal(commentPrecondition.expectedHash, commentMutation.remoteBeforeHash);
@@ -16943,6 +16950,7 @@ function commentPostReferenceVariant3ReadyMutationEvidence({ testCase, plan, app
       targetResourceKey: rewrite.targetResourceKey,
       identityMapSource: rewrite.identityMapSource,
       sourceTargetLocalHash: rewrite.sourceTargetLocalHash,
+      sourceTargetRemoteHash: rewrite.sourceTargetRemoteHash,
       targetRemoteHash: rewrite.targetRemoteHash,
       rewriteHash: `sha256:${digest(rewrite)}`,
     },
@@ -17516,6 +17524,7 @@ function commentParentThreadReferenceVariant3MappedMutationEvidence({ testCase, 
   assert.equal(rewrite.sourceTargetResourceKey, shape.sourceParentResourceKey);
   assert.equal(rewrite.targetResourceKey, shape.targetParentResourceKey);
   assert.match(rewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(rewrite.sourceTargetRemoteHash, /^[a-f0-9]{64}$/);
   assert.match(rewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
   assert.equal(childPrecondition.mutationId, childMutation.id);
   assert.equal(childPrecondition.expectedHash, childMutation.remoteBeforeHash);
@@ -17547,6 +17556,7 @@ function commentParentThreadReferenceVariant3MappedMutationEvidence({ testCase, 
       targetResourceKey: rewrite.targetResourceKey,
       identityMapSource: rewrite.identityMapSource,
       sourceTargetLocalHash: rewrite.sourceTargetLocalHash,
+      sourceTargetRemoteHash: rewrite.sourceTargetRemoteHash,
       targetRemoteHash: rewrite.targetRemoteHash,
       rewriteHash: `sha256:${digest(rewrite)}`,
     },
@@ -18122,6 +18132,7 @@ function commentmetaCommentReferenceVariant3MappedMutationEvidence({ testCase, p
   assert.equal(rewrite.sourceTargetResourceKey, shape.sourceCommentResourceKey);
   assert.equal(rewrite.targetResourceKey, shape.targetCommentResourceKey);
   assert.match(rewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(rewrite.sourceTargetRemoteHash, /^[a-f0-9]{64}$/);
   assert.match(rewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
   assert.equal(commentmetaPrecondition.mutationId, commentmetaMutation.id);
   assert.equal(commentmetaPrecondition.expectedHash, commentmetaMutation.remoteBeforeHash);
@@ -18154,6 +18165,7 @@ function commentmetaCommentReferenceVariant3MappedMutationEvidence({ testCase, p
       targetResourceKey: rewrite.targetResourceKey,
       identityMapSource: rewrite.identityMapSource,
       sourceTargetLocalHash: rewrite.sourceTargetLocalHash,
+      sourceTargetRemoteHash: rewrite.sourceTargetRemoteHash,
       targetRemoteHash: rewrite.targetRemoteHash,
       rewriteHash: `sha256:${digest(rewrite)}`,
     },
@@ -18804,6 +18816,7 @@ function customTaxonomyIdentityMapVariant3ReadyMutationEvidence({ testCase, plan
       identityMapContractHash: rewrite.identityMapContractHash,
       identityMapContractValidationHash: rewrite.identityMapContractValidationHash,
       sourceTargetLocalHash: rewrite.sourceTargetLocalHash,
+      sourceTargetRemoteHash: rewrite.sourceTargetRemoteHash,
       targetRemoteHash: rewrite.targetRemoteHash,
       rewriteHash: `sha256:${digest(rewrite)}`,
     },

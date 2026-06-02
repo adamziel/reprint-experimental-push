@@ -6581,6 +6581,7 @@ test('explicit WordPress graph identity-map contract carries accepted proof thro
   const forgedPayloadPlan = cloneJson(plan);
   const forgedPayloadRemote = cloneJson(remote);
   const forgedPayloadRemoteBefore = JSON.stringify(forgedPayloadRemote);
+  const remoteBeforeSuccessfulApply = cloneJson(remote);
   const result = applyPlan(remote, plan);
   const sourceDecision = decisionFor(plan, sourcePostResourceKey);
   const childMutation = mutationFor(plan, childPostResourceKey);
@@ -6610,6 +6611,9 @@ test('explicit WordPress graph identity-map contract carries accepted proof thro
   assert.match(contractEvidence.contractHash, /^[a-f0-9]{64}$/);
   assert.equal(rewrite.identityMapContractHash, contractEvidence.contractHash);
   assert.equal(rewrite.identityMapContractValidationHash, digest(contractEvidence));
+  assert.equal(rewrite.identityMapSource, sourceDecision.identityMapSource);
+  assert.equal(rewrite.sourceTargetLocalHash, sourceDecision.localHash);
+  assert.equal(rewrite.sourceTargetRemoteHash, sourceDecision.remoteHash);
   assert.equal(deserializeMutationValue(childMutation).post_parent, 3201);
   assert.equal(result.site.db.wp_posts['ID:2202'].post_parent, 3201);
   assert.equal(evidenceJson.includes('graph-contract-private-title'), false);
@@ -6657,6 +6661,25 @@ test('explicit WordPress graph identity-map contract carries accepted proof thro
   assert.equal(forgedMissingIdentityIssue.sourceTargetResourceKey, sourcePostResourceKey);
   assert.equal(forgedMissingIdentityIssue.targetResourceKey, targetPostResourceKey);
   assert.equal(JSON.stringify(forgedMissingIdentityRemote), forgedMissingIdentityRemoteBefore);
+
+  assertForgedGraphRewriteIssue(
+    'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_SOURCE_LOCAL_HASH_MISMATCH',
+    (forgedRewrite) => {
+      forgedRewrite.sourceTargetLocalHash = digest({ forged: 'wordpress-graph-source-local-hash' });
+    },
+  );
+  assertForgedGraphRewriteIssue(
+    'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_SOURCE_REMOTE_HASH_MISMATCH',
+    (forgedRewrite) => {
+      forgedRewrite.sourceTargetRemoteHash = digest({ forged: 'wordpress-graph-source-remote-hash' });
+    },
+  );
+  assertForgedGraphRewriteIssue(
+    'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_SOURCE_MISMATCH',
+    (forgedRewrite) => {
+      forgedRewrite.identityMapSource = 'forged-wordpress-graph-identity-map-source';
+    },
+  );
 
   const forgedMissingSourceRewrite = mutationFor(forgedMissingSourcePlan, childPostResourceKey)
     .wordpressGraphIdentity.rewrites[0];
@@ -6708,6 +6731,24 @@ test('explicit WordPress graph identity-map contract carries accepted proof thro
   assert.match(forgedPayloadIssue.expectedTargetIdHash, /^[a-f0-9]{64}$/);
   assert.match(forgedPayloadIssue.actualTargetValueHash, /^[a-f0-9]{64}$/);
   assert.equal(JSON.stringify(forgedPayloadRemote), forgedPayloadRemoteBefore);
+
+  function assertForgedGraphRewriteIssue(issueCode, mutateRewrite) {
+    const forgedSourcePlan = cloneJson(plan);
+    const forgedSourceRemote = cloneJson(remoteBeforeSuccessfulApply);
+    const forgedSourceRemoteBefore = JSON.stringify(forgedSourceRemote);
+    const forgedSourceRewrite = mutationFor(forgedSourcePlan, childPostResourceKey)
+      .wordpressGraphIdentity.rewrites[0];
+    mutateRewrite(forgedSourceRewrite);
+    const forgedSourceError = captureError(() => applyPlan(forgedSourceRemote, forgedSourcePlan));
+    const forgedSourceIssue = forgedSourceError.details.issues.find((issue) =>
+      issue.code === issueCode);
+
+    assert.ok(forgedSourceError instanceof PushPlanError);
+    assert.equal(forgedSourceError.code, 'PLAN_INVARIANT_VIOLATION');
+    assert.equal(forgedSourceIssue.resourceKey, childPostResourceKey);
+    assert.equal(forgedSourceIssue.relationshipType, 'post-parent');
+    assert.equal(JSON.stringify(forgedSourceRemote), forgedSourceRemoteBefore);
+  }
 });
 
 test('unsupported explicit WordPress graph identity-map contract version fails closed before rewrite', () => {

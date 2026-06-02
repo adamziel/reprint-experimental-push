@@ -427,6 +427,8 @@ test('complex-site graph proof keeps production importer exporter identity maps 
   assert.equal(proof.mapEvidence.sourceDecision.identityMapSource, 'base-snapshot.meta.identityMap[2].resources[0]');
   assert.equal(proof.mapEvidence.sourceDecision.targetResourceKey, 'row:["wp_posts","ID:77401"]');
   assert.equal(proof.mapEvidence.dependentRewrites.length, 2);
+  assert.equal(proof.mapEvidence.dependentRewrites.every((entry) =>
+    entry.rewrites.every((rewrite) => /^[a-f0-9]{64}$/.test(rewrite.sourceTargetRemoteHash))), true);
   assert.equal(proof.mapEvidence.dependentRewrites.some((entry) =>
     entry.rewrites.some((rewrite) => rewrite.relationshipType === 'post-parent')), true);
   assert.equal(proof.mapEvidence.dependentRewrites.some((entry) =>
