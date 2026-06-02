@@ -215,7 +215,7 @@ test('RPP-0802 pass contract is verify:release on Docker DNS without packaged fa
   assert.equal(probe.ok, true);
   assert.equal(artifact.status, 'passed');
   assert.equal(artifact.ok, true);
-  assert.equal(artifact.acceptedForReleaseGate, true);
+  assert.equal(artifact.acceptedForReleaseGate, false);
   assert.equal(artifact.failClosed, false);
   assert.equal(artifact.packagedFallback, false);
   assert.equal(artifact.evidence.verifyReleaseFailure, undefined);
@@ -231,7 +231,8 @@ test('RPP-0802 pass contract is verify:release on Docker DNS without packaged fa
   assert.equal(artifact.evidence.sourceUrl.url, 'http://wp-source');
   assert.equal(artifact.evidence.localUrl.url, 'http://wp-local-edited');
   assert.equal(artifact.evidence.remoteChangedUrl.url, 'http://wp-remote-changed');
-  assert.equal(artifact.rppEvidence.dockerWordPressReleaseReady, true);
+  assert.equal(artifact.rppEvidence.dockerWordPressReleaseReady, false);
+  assert.equal(artifact.rppEvidence.dockerWordPressLocalCandidateReady, true);
   assert.equal(artifact.rppEvidence.dockerWordPressBlockedUntilPrerequisitesPass, false);
   assert.equal(validateReleaseGateArtifact(artifact).ok, true);
 });

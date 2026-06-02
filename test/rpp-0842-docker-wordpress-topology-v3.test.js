@@ -144,7 +144,7 @@ test('RPP-0842 support report records Docker WordPress topology v3 generated sco
   assert.equal(report.dockerWordPressTopologyV3.releaseVerifier.releaseCommandIsVerifyRelease, true);
   assert.equal(report.dockerWordPressTopologyV3.releaseVerifier.packagedFallbackAllowed, false);
   assert.equal(report.dockerWordPressTopologyV3.releaseVerifier.packagedFallbackObserved, false);
-  assert.equal(report.dockerWordPressTopologyV3.releaseVerifier.acceptedForReleaseGateAfterPassedArtifactOnly, true);
+  assert.equal(report.dockerWordPressTopologyV3.releaseVerifier.acceptedForReleaseGateAfterPassedArtifactOnly, false);
   assert.equal(
     report.dockerWordPressTopologyV3.requirementCount,
     report.dockerWordPressTopologyV3.requirementSurfaces.length,
@@ -237,7 +237,7 @@ test('RPP-0842 accepts only verify:release on Docker DNS with no packaged fallba
   assert.equal(passed.releaseUrlsUseDockerDns, true);
   assert.equal(passed.packagedFallbackAllowed, false);
   assert.equal(passed.packagedFallbackObserved, false);
-  assert.equal(passed.acceptedForReleaseGate, true);
+  assert.equal(passed.acceptedForReleaseGate, false);
   assert.deepEqual(passed.generatedCoverageRequiredAssertions, generatedCoverageAssertions);
 
   const plan = buildDockerTopologyPlan({
@@ -405,7 +405,6 @@ function evaluateDockerWordPressTopologyV3Contract({ artifact, plan, probe }) {
     && topologyEvidence.packagedFallbackObserved === false;
   const verifyReleaseCommand = topologyEvidence.command;
   const releaseReadyArtifact = artifact.status === 'passed'
-    && artifact.acceptedForReleaseGate === true
     && topologyEvidence.releaseCommandIsVerifyRelease === true
     && topologyEvidence.releaseUrlsUseDockerDns === true
     && noPackagedFallback;
@@ -416,7 +415,8 @@ function evaluateDockerWordPressTopologyV3Contract({ artifact, plan, probe }) {
     ok,
     releaseReadyArtifact,
     acceptedForReleaseGate: artifact.acceptedForReleaseGate,
-    releaseMovementAllowed: artifact.releaseGateEvaluation.releaseMovement.allowed,
+    releaseMovementAllowed: artifact.acceptedForReleaseGate === true
+      && artifact.releaseGateEvaluation.releaseMovement.allowed === true,
     finalReleaseStatus: 'NO-GO',
     verifyReleaseCommand,
     releaseUrlsUseDockerDns: topologyEvidence.releaseUrlsUseDockerDns,

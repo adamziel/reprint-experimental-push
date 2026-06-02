@@ -59,7 +59,6 @@ export const RELEASE_EVIDENCE_PROVENANCE_CONTRACT = deepFreeze({
   productionSourceKinds: [
     RELEASE_EVIDENCE_PROVENANCE_SOURCE_KINDS.operatorProduction,
     RELEASE_EVIDENCE_PROVENANCE_SOURCE_KINDS.liveProduction,
-    RELEASE_EVIDENCE_PROVENANCE_SOURCE_KINDS.productionRun,
   ],
   productionOperatorScopes: [
     'final-release',

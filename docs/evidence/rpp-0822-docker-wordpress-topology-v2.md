@@ -40,7 +40,7 @@ backing, site startup, route receipts, mutation behavior, or release movement.
     "dockerTopologyVariant": "RPP-0802-variant-1",
     "runtime": "docker-local-wordpress",
     "gate": "GATE-3",
-    "artifactHash": "b7be30c75f07867488b6d23cd162bd623bcd9a7c0ab22c243a6ada335b0090ad"
+    "artifactHash": "e6467967ae3ac4fde80129a4c863b7609f7fd127a7150e2e01ca27f7e5169e2b"
   },
   "successContract": {
     "criterion": "verify-release-passes-without-packaged-fallback-or-exact-unavailable-capability",
@@ -131,11 +131,11 @@ backing, site startup, route receipts, mutation behavior, or release movement.
       "private-docker-network-service-dns",
       "topology-runner-invokes-verify-release",
       "packaged-fallback-disabled-and-unobserved",
-      "release-gate-accepted-only-after-passing-docker-artifact"
+      "production-provenance-required-for-release-gate-acceptance"
     ],
-    "scopeHash": "sha256:2c8227bc7c8db074daa02586c421fce17600a2ab25c483f91410223be9f53663",
+    "scopeHash": "sha256:7ca2caea305d4eaaaad7bdc23d53c47e77384ef5ddde742114366865239cbec6",
     "serviceSurfaceDigest": "sha256:62ac55140ec23fcb8e557c098fdf49179d972e55a924566a7039651fd185828b",
-    "requirementDigest": "sha256:f2641969537e8476fb9b498528960197c61ce1cb4dab1403a9beb6b6a355d1b0"
+    "requirementDigest": "sha256:7b2d78edbe938098da9d19315e610ef5e4aee38558d9d0cbb36aef3e3231af1d"
   },
   "releaseGate": {
     "acceptedForReleaseGate": false,
@@ -174,7 +174,7 @@ backing, site startup, route receipts, mutation behavior, or release movement.
     "hashCountSurfaceOnly": true,
     "supportOnlyNoGo": true
   },
-  "supportReportHash": "sha256:718d84b26010534e1ff894c9ec1fd5ff56709e5f8fee93d97eed1b377c8a297b"
+  "supportReportHash": "sha256:0dc0ead479c8e67dc5975d6e24e206075cbf4b92ed2bff7e29bfd00dde0f2866"
 }
 ```
 

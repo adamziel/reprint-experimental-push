@@ -50,13 +50,13 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
     "dockerTopologyVariant": "RPP-0802-variant-1",
     "runtime": "docker-local-wordpress",
     "gate": "GATE-3",
-    "blockedArtifactHash": "b7be30c75f07867488b6d23cd162bd623bcd9a7c0ab22c243a6ada335b0090ad"
+    "blockedArtifactHash": "e6467967ae3ac4fde80129a4c863b7609f7fd127a7150e2e01ca27f7e5169e2b"
   },
   "successContract": {
     "criterion": "verify-release-passes-without-packaged-fallback-on-docker-wordpress-topology-or-exact-unavailable-capability",
     "verifyReleasePassedWithoutPackagedFallback": false,
     "exactUnavailableCapabilityRecorded": true,
-    "passedArtifactWouldBeAccepted": true,
+    "passedArtifactWouldBeAccepted": false,
     "packagedFallbackMaySatisfySuccess": false,
     "finalReleaseMayMove": false
   },
@@ -72,12 +72,12 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
       "bind-release-env-to-private-docker-dns-hosts",
       "publish-only-loopback-8080-inspection-ingress",
       "invoke-npm-run-verify-release-inside-runner",
-      "accept-release-gate-artifact-only-after-passed-docker-run",
+      "keep-passed-docker-artifact-as-local-candidate-evidence",
       "reject-packaged-fallback-env-and-runner-flags",
       "record-fail-closed-capability-matrix-when-docker-unavailable",
       "preserve-support-only-no-go"
     ],
-    "assertionDigest": "sha256:661f4dea16fc002f0c9249d0b638470fbbde626457d50d23a1875bdcd6a6dafd"
+    "assertionDigest": "sha256:68ead2727b2a5c9bae306745176a7f6f40720338482f8968a0e65078a5c973be"
   },
   "topologyCommand": {
     "command": "npm run verify:release:docker-local-production",
@@ -187,7 +187,7 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
       "releaseCommandIsVerifyRelease": true,
       "packagedFallbackAllowed": false,
       "packagedFallbackObserved": false,
-      "acceptedForReleaseGateAfterPassedArtifactOnly": true,
+      "acceptedForReleaseGateAfterPassedArtifactOnly": false,
       "blockedArtifactAcceptedForReleaseGate": false,
       "passArtifactRequiresVerifierEvidence": true
     },
@@ -216,7 +216,7 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
     ],
     "releaseAcceptance": {
       "blockedArtifactAccepted": false,
-      "passedArtifactAccepted": true,
+      "passedArtifactAccepted": false,
       "passedArtifactStatus": "passed",
       "passedArtifactReleaseCommand": "npm run verify:release",
       "passedArtifactPackagedFallbackObserved": false,
@@ -232,15 +232,15 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
       "loopback-8080-only-inspection-ingress",
       "runner-invokes-npm-run-verify-release",
       "release-env-binds-to-docker-service-hosts",
-      "passed-artifact-required-before-release-gate-acceptance",
+      "production-provenance-required-for-release-gate-acceptance",
       "packaged-fallback-disabled-and-unobserved",
       "variant-4-support-only-no-go"
     ],
     "releaseEnvBindingDigest": "sha256:d0ec3f39463b65413c6249468d4b698a5adef55035a118120cfcc5fa44fa72b6",
     "blockerMatrixDigest": "sha256:938247c4442236af4ad40024cf5bbef03d35f5bb9245f7311bb1847bbc1e3eca",
     "serviceSurfaceDigest": "sha256:62ac55140ec23fcb8e557c098fdf49179d972e55a924566a7039651fd185828b",
-    "requirementDigest": "sha256:eb1c700c60ad35128c8aa0ed07e80bc1cc96eddc0a30b91ce324d390e58a69ea",
-    "scopeHash": "sha256:9302d654437e8948a45f2b628795f1b1585e13281151b915f778bb0e3d016a4c"
+    "requirementDigest": "sha256:19be7ee539c4dc52179f1e2004bc66959837e099ee7725ec4941dd22fae42af9",
+    "scopeHash": "sha256:ee217a604e3290bfad49f485ab23bb9d9373683db140b936554389703264a11e"
   },
   "releaseGate": {
     "acceptedForReleaseGate": false,
@@ -283,7 +283,7 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
     "noProductionBackedProofClaim": true,
     "supportOnlyNoGo": true
   },
-  "supportReportHash": "sha256:c0db47227952b162e37eed4004a8e9786e63d472c12055517e968541019bb595"
+  "supportReportHash": "sha256:25856999b162fcff273ae166925be094ac12648d7846e9836bf5d66a390918bc"
 }
 ```
 
@@ -295,8 +295,8 @@ artifact. Final release status and integration recommendation remain **NO-GO**.
 - release env host bindings for source, source alias, changed remote, local
   edited, and apply-revalidation source;
 - the release verifier command is `npm run verify:release`;
-- the passed-artifact acceptance path requires Docker DNS and no packaged
-  fallback;
+- the passed local Docker artifact remains local-candidate evidence unless
+  separate production provenance is present;
 - blocked artifacts stay unaccepted and preserve final release **NO-GO**;
 - Docker CLI, Compose, and daemon blockers all map to fail-closed exact
   unavailable capability records;

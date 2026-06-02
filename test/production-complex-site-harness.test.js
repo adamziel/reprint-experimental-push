@@ -442,7 +442,7 @@ test('Passed Docker release artifact records verify:release topology without pac
   });
 
   assert.equal(artifact.status, 'passed');
-  assert.equal(artifact.acceptedForReleaseGate, true);
+  assert.equal(artifact.acceptedForReleaseGate, false);
   assert.equal(artifact.packagedFallback, false);
   assert.equal(artifact.evidence.packagedFallback.observed, false);
   assert.equal(artifact.evidence.verifyReleaseFailure.reason, 'DOCKER_LOCAL_PRODUCTION_FINAL_RELEASE_EVIDENCE');
@@ -459,7 +459,17 @@ test('Passed Docker release artifact records verify:release topology without pac
   assert.equal(artifact.releaseGateEvaluation.totals.passed, 20);
   assert.equal(artifact.releaseEvidenceProvenance.requiredProductionEvidence.length, 20);
   assert.equal(artifact.releaseEvidenceProvenance.evidenceRows.length, 20);
+  assert.equal(
+    artifact.releaseEvidenceProvenance.evidenceRows.every((row) => row.sourceKind === 'local-candidate'),
+    true,
+  );
+  assert.equal(
+    artifact.releaseEvidenceProvenance.evidenceRows.every((row) => row.operatorScope === 'local-candidate'),
+    true,
+  );
   assert.equal(artifact.rppEvidence.dockerWordPressVerifyReleaseContract.packagedFallbackAllowed, false);
+  assert.equal(artifact.rppEvidence.dockerWordPressReleaseReady, false);
+  assert.equal(artifact.rppEvidence.dockerWordPressLocalCandidateReady, true);
   assert.equal(validateReleaseGateArtifact(artifact).ok, true);
 
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-docker-passed-gate-artifact-'));
@@ -481,17 +491,82 @@ test('Passed Docker release artifact records verify:release topology without pac
     now: new Date('2026-05-28T00:20:00.000Z'),
   });
 
-  assert.equal(gateResult.exitCode, 0);
-  assert.equal(gateResult.report.ok, true);
-  assert.equal(gateResult.report.releaseStatus, 'GO');
+  assert.equal(gateResult.exitCode, 1);
+  assert.equal(gateResult.report.ok, false);
+  assert.equal(gateResult.report.releaseStatus, 'NO-GO');
   assert.equal(gateResult.report.releaseMovement.allowed, true);
+  assert.equal(gateResult.report.primaryFailureBucket, 'provenance');
+  assert.equal(gateResult.report.primaryFailureCode, 'PRODUCTION_SOURCE_REQUIRED');
   assert.equal(gateResult.report.releaseEvidenceProvenance.required, true);
-  assert.equal(gateResult.report.releaseEvidenceProvenance.ready, true);
+  assert.equal(gateResult.report.releaseEvidenceProvenance.ready, false);
   assert.deepEqual(gateResult.report.releaseEvidenceProvenance.summary.productionRequired, {
     total: 20,
-    accepted: 20,
-    rejected: 0,
+    accepted: 0,
+    rejected: 20,
   });
+});
+
+test('Docker local release provenance cannot be upgraded to production by caller-supplied rows', () => {
+  const plan = buildDockerTopologyPlan({
+    cwd: '/repo/reprint-push',
+    workDir: '/tmp/reprint-docker-local-production-test',
+    evidenceDir: '/tmp/reprint-docker-local-production-evidence-test',
+    env: graphEnv,
+  });
+  const probe = probeDockerPrerequisites({
+    runCommand: (command, args) => {
+      if (command !== 'docker') throw new Error(`Unexpected command: ${command}`);
+      if (args[0] === '--version') return { status: 0, stdout: 'Docker version 26.1.0', stderr: '' };
+      if (args[0] === 'compose') return { status: 0, stdout: '2.27.0', stderr: '' };
+      if (args[0] === 'info') return { status: 0, stdout: '"26.1.0"', stderr: '' };
+      throw new Error(`Unexpected args: ${args.join(' ')}`);
+    },
+  });
+  const releaseEvidence = {
+    ok: true,
+    verifier: {
+      authSessionBoundary: { manageOptions: true },
+      gate2DurableRecoveryJournal: { ok: true },
+      boundary: { verdict: 'LIVE_RELEASE_BOUNDARY_OK' },
+    },
+    invariants: {
+      receiptHashPresent: true,
+      applyRevalidationCoveredEveryMutation: true,
+      durableJournalGateOk: true,
+    },
+  };
+  const forgedProductionProvenance = buildDockerLocalProductionReleaseEvidenceProvenance({
+    generatedAt: '2026-05-28T00:00:00.000Z',
+  });
+  forgedProductionProvenance.evidenceRows = forgedProductionProvenance.evidenceRows.map((row) => ({
+    ...row,
+    sourceKind: 'operator-production',
+    operatorScope: 'final-release',
+  }));
+
+  const artifact = buildPrerequisiteGateArtifact({
+    probe,
+    plan,
+    status: 'passed',
+    releaseEvidence,
+    verify: { status: 0, signal: null },
+    generatedAt: '2026-05-28T00:00:00.000Z',
+    scope: 'final-release',
+    releaseEvidenceProvenance: forgedProductionProvenance,
+  });
+
+  assert.equal(artifact.status, 'passed');
+  assert.equal(artifact.acceptedForReleaseGate, false);
+  assert.equal(artifact.rppEvidence.dockerWordPressReleaseReady, false);
+  assert.equal(artifact.rppEvidence.dockerWordPressLocalCandidateReady, true);
+  assert.equal(
+    artifact.releaseEvidenceProvenance.evidenceRows.every((row) => row.sourceKind === 'local-candidate'),
+    true,
+  );
+  assert.equal(
+    artifact.releaseEvidenceProvenance.evidenceRows.every((row) => row.operatorScope === 'local-candidate'),
+    true,
+  );
 });
 
 test('Release gate artifact is stable across run-local paths and can be consumed directly by the gate checker', () => {

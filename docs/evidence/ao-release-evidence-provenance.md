@@ -23,7 +23,7 @@ Each evidence row is expected to carry:
 | --- | --- |
 | `evidenceId` | Stable row/artifact identity used in deterministic summaries. |
 | `rppId` | Checklist item the evidence supports, such as `RPP-0017`. |
-| `sourceKind` | Provenance class. Production-required rows must use `operator-production`, `live-production`, or `production-run`. |
+| `sourceKind` | Provenance class. Production-required rows must use `operator-production` or `live-production`. `production-run` remains a label for run artifacts, but it is not accepted as final production provenance. |
 | `artifactPath` | Repository-relative artifact reference. Raw URLs and secret-looking values are rejected and not echoed in summaries. |
 | `observedAt` | ISO timestamp for when the operator observed the evidence. |
 | `command` | Checked command that produced or verified the artifact. |

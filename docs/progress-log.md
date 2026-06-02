@@ -35,6 +35,30 @@ linked implementation artifacts.
   or validate plugin-owned files, cron side effects, activation/update flows, or
   general custom graph semantics.
 
+## 2026-06-02 - Docker Local Provenance Fail-Closed Refresh
+
+- Last update: 2026-06-02 17:15 CEST +02:00.
+- Tightened release evidence provenance so `production-run` is no longer an
+  accepted production source kind for production-required release gates.
+  Production-required rows must come from `operator-production` or
+  `live-production`.
+- Updated the Docker local production harness so passed Docker-local artifacts
+  stay `local-candidate` support evidence. They now keep
+  `acceptedForReleaseGate: false`, `dockerWordPressReleaseReady: false`, and
+  record `dockerWordPressLocalCandidateReady: true`.
+- Added regression coverage proving caller-supplied Docker-local provenance
+  rows cannot be upgraded to `operator-production`/`final-release`, and that the
+  release gate CLI rejects `production-run` provenance with
+  `PRODUCTION_SOURCE_REQUIRED`.
+- Refreshed deterministic Docker topology and cron evidence hashes for
+  RPP-0822, RPP-0832, RPP-0842, RPP-0852, RPP-0862, RPP-0872, RPP-0882, and
+  RPP-0892, and clarified the BrewCommerce v5 requirement wording so release
+  acceptance depends on production-backed same-artifact evidence.
+- Verification: focused provenance/CLI/harness tests passed 39/39, focused
+  Docker topology and cron proofs passed, and every test importing the Docker
+  production harness passed with 230 subtests and 0 failures. Final release
+  remains **NO-GO** until production-bound provenance exists.
+
 ## 2026-06-02 - Generated Custom Taxonomy Identity-Map Coverage
 
 - Last update: 2026-06-02 15:37 CEST +02:00.

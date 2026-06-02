@@ -5,7 +5,7 @@ Lane: `local-production-proof-artifact-refresh`
 
 ## What changed
 
-This lane maintains `scripts/docker/production-complex-site-harness.mjs`, a local-only Docker proof wrapper for treating a complex disposable WordPress topology as production-shaped evidence when Docker is available. The harness is intentionally fail-closed when Docker is unavailable or when the generated topology violates the local-only policy.
+This lane maintains `scripts/docker/production-complex-site-harness.mjs`, a local-only Docker proof wrapper for exercising a complex disposable WordPress topology as candidate/support evidence. Docker-local artifacts are intentionally not production provenance. The harness is fail-closed when Docker is unavailable, when the generated topology violates the local-only policy, or when callers try to promote Docker-local evidence into final release provenance.
 
 The refresh adds a deterministic `release-gate-input.json` surface that can be passed directly to `scripts/release/check-release-gates.mjs` without external accounts. The artifact includes a canonical SHA-256 over the release-gate-relevant fields, a redacted/empty `env`, scoped `evidence`, and the release gate evaluator summary. A blocked Docker prerequisite remains a release **NO-GO**.
 
@@ -16,6 +16,13 @@ treats the BrewCommerce Blueprint as a real site only because the operator
 asserted that assumption. It does not silently use Playground or packaged
 fallback evidence. The current harness keeps that assumption support-only and
 fail-closed; it cannot move the Docker release gate without a real Docker run.
+
+The 2026-06-02 provenance refresh keeps a successful Docker-local run as
+`local-candidate` evidence, not final release evidence. The release evidence
+provenance contract now accepts only `operator-production` or `live-production`
+rows for production-required gates. `production-run` remains an artifact label
+only, and Docker-local rows are normalized to `sourceKind: local-candidate` and
+`operatorScope: local-candidate` even if caller-supplied rows claim otherwise.
 
 ## Harness contract
 
@@ -158,7 +165,8 @@ node --check scripts/docker/production-complex-site-harness.mjs
 npm run test:docker:production-complex-site-harness
 ```
 
-Observed result: 12/12 focused assertions completed successfully.
+Observed result after the 2026-06-02 provenance refresh: 18/18 focused
+assertions completed successfully.
 
 Covered assertions:
 
@@ -171,6 +179,13 @@ Covered assertions:
 - validation rejects public/non-8080 ports and tunnel-shaped images
 - site seed PHP includes complex production fixtures and graph fixtures
 - fail-closed release gate input artifact records blocked Docker readiness
+- passed Docker-local artifacts record `dockerWordPressLocalCandidateReady`
+  while keeping `dockerWordPressReleaseReady: false`
+- Docker-local provenance rows are normalized to `local-candidate`
+- caller-supplied `operator-production`/`final-release` rows cannot upgrade a
+  Docker-local artifact into production provenance
+- `check-release-gates` rejects passed Docker-local artifacts with
+  `PRODUCTION_SOURCE_REQUIRED`
 - release gate input has a stable canonical digest across run-local paths
 - the RPP-0802 variant-1 contract pins the runner to `npm run verify:release`, explicit Docker service DNS URLs, and `packagedFallback: false`
 - validation rejects packaged-fallback environment flags such as `REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-guard-only` on the topology runner
@@ -264,7 +279,10 @@ record for the operator assumption.
 - RPP-0820: no-tunnel policy is encoded and regression-tested against generated commands/images.
 - RPP-0903: release gate input artifact fails closed when the required Docker proof cannot run.
 
-A real Docker pass remains required for a `dockerExecuted: true` artifact. The
+A real Docker pass remains required for a `dockerExecuted: true` local-candidate
+artifact. That artifact can support review and diagnostics, but it still cannot
+move final release by itself. Final release requires separate production-bound
+provenance rows from an operator-production or live-production source. The
 explicit BrewCommerce assumption path can document the assumption and topology
 intent without packaged fallback, but it remains release `NO-GO` while
-`dockerExecuted` is `false`.
+production provenance is missing.

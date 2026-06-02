@@ -266,7 +266,7 @@ test('RPP-0884 support report records release-verifier BrewCommerce import scope
   assert.deepEqual(report.contractRequirements.releaseVerifierCarryThrough, {
     command: releaseVerifierCommand,
     required: true,
-    acceptedForReleaseGateAfterPassedArtifactOnly: true,
+    acceptedForReleaseGateAfterProductionBackedArtifactOnly: true,
     packagedFallbackAllowed: false,
     sameArtifactBindingHashRequired: true,
     releaseMovementAllowedFromSupportEvidence: false,

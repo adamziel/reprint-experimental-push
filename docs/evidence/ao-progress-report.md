@@ -8,6 +8,24 @@ comment release-verifier proof ending at `0052684e`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
+## 2026-06-02 Addendum - Docker Local Provenance
+
+- Docker-local production artifacts are now explicitly local-candidate/support
+  evidence. A passed Docker-local run records
+  `dockerWordPressLocalCandidateReady: true` and keeps
+  `dockerWordPressReleaseReady: false` and `acceptedForReleaseGate: false`.
+- Production-required release provenance accepts `operator-production` and
+  `live-production` only. `production-run` remains a label for run artifacts,
+  not a final-release provenance source.
+- Caller-supplied Docker-local provenance rows are normalized back to
+  `sourceKind: local-candidate` and `operatorScope: local-candidate`, so a
+  Docker/local artifact cannot be promoted into final release evidence by
+  editing the artifact.
+- Verification: focused provenance, release gate CLI, Docker harness, Docker
+  topology, cron topology, and BrewCommerce wording checks passed; the full
+  production-harness dependent slice passed 230/230. Final release remains
+  **NO-GO** without production provenance.
+
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000

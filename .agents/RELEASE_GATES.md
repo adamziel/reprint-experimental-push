@@ -6,8 +6,7 @@ Status values: `unproven`, `support_only`, `partially_proven`, `proven`, `blocke
 
 `release_verdict`: `0/4`
 
-Last refreshed: 2026-05-28 02:24 CEST on
-`lane/evidence-integration-20260527`.
+Last refreshed: 2026-06-02 17:15 CEST on `main`.
 
 ## GATE-1: Production Executor/Auth Boundary
 
@@ -51,6 +50,21 @@ Local candidate evidence, 2026-05-28:
 - This supports candidate review and local safety work only. It does not change
   `release_verdict` because the release objective still requires a
   production-owned, non-lab-backed source boundary.
+
+Docker-local provenance refresh, 2026-06-02:
+
+- A passed Docker-local artifact is now accepted only as `local-candidate`
+  support evidence. It sets `dockerWordPressLocalCandidateReady: true` and keeps
+  `dockerWordPressReleaseReady: false`.
+- `production-run` is an artifact label only. Production-required provenance
+  rows must come from `operator-production` or `live-production`.
+- Caller-supplied Docker-local provenance rows are normalized back to
+  `sourceKind: local-candidate` and `operatorScope: local-candidate`.
+- Focused provenance, release gate CLI, Docker harness, and all
+  production-harness dependent tests passed; the full harness slice covered 230
+  tests with 0 failures.
+- GATE-3 remains `support_only`; final release movement is blocked on real
+  production provenance, not merely a Docker-local pass.
 
 Final audit evidence, 2026-05-29:
 

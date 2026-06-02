@@ -77,7 +77,7 @@ const generatedCoverageAssertions = Object.freeze([
   'bind-release-env-to-private-docker-dns-hosts',
   'publish-only-loopback-8080-inspection-ingress',
   'invoke-npm-run-verify-release-inside-runner',
-  'accept-release-gate-artifact-only-after-passed-docker-run',
+  'keep-passed-docker-artifact-as-local-candidate-evidence',
   'reject-packaged-fallback-env-and-runner-flags',
   'record-fail-closed-capability-matrix-when-docker-unavailable',
   'preserve-support-only-no-go',
@@ -142,7 +142,7 @@ test('RPP-0862 support report records Docker WordPress topology v4 release contr
   );
   assert.equal(report.successContract.verifyReleasePassedWithoutPackagedFallback, false);
   assert.equal(report.successContract.exactUnavailableCapabilityRecorded, true);
-  assert.equal(report.successContract.passedArtifactWouldBeAccepted, true);
+  assert.equal(report.successContract.passedArtifactWouldBeAccepted, false);
   assert.equal(report.successContract.packagedFallbackMaySatisfySuccess, false);
   assert.equal(report.successContract.finalReleaseMayMove, false);
 
@@ -206,7 +206,7 @@ test('RPP-0862 support report records Docker WordPress topology v4 release contr
   assert.equal(report.dockerWordPressTopologyV4.releaseVerifier.releaseCommandIsVerifyRelease, true);
   assert.equal(report.dockerWordPressTopologyV4.releaseVerifier.packagedFallbackAllowed, false);
   assert.equal(report.dockerWordPressTopologyV4.releaseVerifier.packagedFallbackObserved, false);
-  assert.equal(report.dockerWordPressTopologyV4.releaseVerifier.acceptedForReleaseGateAfterPassedArtifactOnly, true);
+  assert.equal(report.dockerWordPressTopologyV4.releaseVerifier.acceptedForReleaseGateAfterPassedArtifactOnly, false);
   assert.equal(report.dockerWordPressTopologyV4.releaseVerifier.blockedArtifactAcceptedForReleaseGate, false);
   assert.equal(report.dockerWordPressTopologyV4.releaseVerifier.commandArgsDigest, `sha256:${digest(dockerReleaseCommand)}`);
   assert.deepEqual(report.dockerWordPressTopologyV4.prerequisiteBlockerMatrix, requiredBlockerMatrix);
@@ -217,7 +217,7 @@ test('RPP-0862 support report records Docker WordPress topology v4 release contr
 
   assert.deepEqual(report.dockerWordPressTopologyV4.releaseAcceptance, {
     blockedArtifactAccepted: false,
-    passedArtifactAccepted: true,
+    passedArtifactAccepted: false,
     passedArtifactStatus: 'passed',
     passedArtifactReleaseCommand: 'npm run verify:release',
     passedArtifactPackagedFallbackObserved: false,
@@ -264,7 +264,7 @@ test('RPP-0862 release acceptance requires passed verify:release on Docker DNS w
   assert.equal(passed.ok, true);
   assert.equal(passed.releaseReadyArtifact, true);
   assert.equal(passed.exactUnavailableCapability, null);
-  assert.equal(passed.acceptedForReleaseGate, true);
+  assert.equal(passed.acceptedForReleaseGate, false);
   assert.equal(passed.verifyReleaseCommand, 'npm run verify:release');
   assert.deepEqual(passed.verifyReleaseCommandArgs, dockerReleaseCommand);
   assert.equal(passed.releaseUrlsUseDockerDns, true);
@@ -484,7 +484,6 @@ function evaluateDockerWordPressTopologyV4Acceptance({ artifact, plan, probe }) 
     && topologyEvidence.packagedFallbackObserved === false
     && artifact.evidence.packagedFallback?.observed === false;
   const releaseReadyArtifact = artifact.status === 'passed'
-    && artifact.acceptedForReleaseGate === true
     && artifact.evidence.verifyReleaseFailure === undefined
     && topologyEvidence.ok === true
     && topologyEvidence.releaseCommandIsVerifyRelease === true
@@ -497,9 +496,12 @@ function evaluateDockerWordPressTopologyV4Acceptance({ artifact, plan, probe }) 
     ok,
     releaseReadyArtifact,
     acceptedForReleaseGate: artifact.acceptedForReleaseGate,
-    releaseMovementAllowed: artifact.releaseGateEvaluation.releaseMovement.allowed,
-    finalReleaseMovementAllowedFromSupportEvidence: artifact.releaseGateEvaluation.releaseMovement.allowed,
-    finalReleaseFailureCode: artifact.releaseGateEvaluation.primaryFailureCode,
+    releaseMovementAllowed: artifact.acceptedForReleaseGate === true
+      && artifact.releaseGateEvaluation.releaseMovement.allowed === true,
+    finalReleaseMovementAllowedFromSupportEvidence: false,
+    finalReleaseFailureCode: artifact.status === 'passed' && artifact.acceptedForReleaseGate !== true
+      ? 'LOCAL_CANDIDATE_EVIDENCE_ONLY'
+      : artifact.releaseGateEvaluation.primaryFailureCode,
     verifyReleaseCommand: topologyEvidence.command,
     verifyReleaseCommandArgs: topologyEvidence.commandArgs,
     releaseUrlsUseDockerDns: topologyEvidence.releaseUrlsUseDockerDns,
@@ -592,7 +594,7 @@ function validateDockerWordPressTopologyV4Report(report) {
     && report.successContract?.exactUnavailableCapabilityRecorded !== true) {
     failures.push({ code: 'DOCKER_WORDPRESS_TOPOLOGY_V4_SUCCESS_CONTRACT_UNMET' });
   }
-  if (report.successContract?.passedArtifactWouldBeAccepted !== true
+  if (report.successContract?.passedArtifactWouldBeAccepted !== false
     || report.successContract?.packagedFallbackMaySatisfySuccess !== false) {
     failures.push({ code: 'DOCKER_WORDPRESS_TOPOLOGY_V4_ACCEPTANCE_CONTRACT_FAILED' });
   }
@@ -633,7 +635,7 @@ function validateDockerWordPressTopologyV4Report(report) {
     failures.push({ code: 'DOCKER_WORDPRESS_TOPOLOGY_V4_PACKAGED_FALLBACK_REJECTED' });
   }
   if (report.dockerWordPressTopologyV4?.releaseAcceptance?.blockedArtifactAccepted !== false
-    || report.dockerWordPressTopologyV4?.releaseAcceptance?.passedArtifactAccepted !== true
+    || report.dockerWordPressTopologyV4?.releaseAcceptance?.passedArtifactAccepted !== false
     || report.dockerWordPressTopologyV4?.releaseAcceptance?.passedArtifactReleaseCommand !== dockerReleaseCommand.join(' ')
     || report.dockerWordPressTopologyV4?.releaseAcceptance?.passedArtifactPackagedFallbackObserved !== false
     || report.dockerWordPressTopologyV4?.releaseAcceptance?.passedArtifactUsesDockerDns !== true

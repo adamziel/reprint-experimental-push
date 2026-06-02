@@ -311,6 +311,37 @@ test('release gate CLI keeps stale or local-only production-required provenance 
   });
 });
 
+test('release gate CLI rejects production-run provenance for final production evidence', () => {
+  const evidenceFile = writeEvidence({
+    scope: 'final-release',
+    evidence: completeEvidence('final-release'),
+    releaseEvidenceProvenance: {
+      maxEvidenceAgeHours: 24,
+      evidenceRows: releaseBoundaryProvenanceRows().map((row) => ({
+        ...row,
+        sourceKind: 'production-run',
+        operatorScope: 'final-release',
+      })),
+    },
+  });
+  const result = runGate(['--evidence-file', evidenceFile], releaseEnv());
+  const report = parseReport(result);
+
+  assert.equal(result.status, 1, result.stdout);
+  assert.equal(report.ok, false);
+  assert.equal(report.releaseStatus, 'NO-GO');
+  assert.equal(report.releaseMovement.allowed, true);
+  assert.equal(report.primaryFailureBucket, 'provenance');
+  assert.equal(report.primaryFailureCode, 'PRODUCTION_SOURCE_REQUIRED');
+  assert.equal(report.releaseEvidenceProvenance.required, true);
+  assert.equal(report.releaseEvidenceProvenance.ready, false);
+  assert.deepEqual(report.releaseEvidenceProvenance.summary.productionRequired, {
+    total: 19,
+    accepted: 0,
+    rejected: 19,
+  });
+});
+
 test('release gate CLI rejects arbitrary provenance subject hashes even when final evidence passes', () => {
   const evidenceFile = writeEvidence({
     scope: 'final-release',

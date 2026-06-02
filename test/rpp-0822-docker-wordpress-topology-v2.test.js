@@ -198,7 +198,7 @@ test('RPP-0822 accepts only verify:release on Docker DNS with no packaged fallba
   assert.equal(passed.releaseUrlsUseDockerDns, true);
   assert.equal(passed.packagedFallbackAllowed, false);
   assert.equal(passed.packagedFallbackObserved, false);
-  assert.equal(passed.acceptedForReleaseGate, true);
+  assert.equal(passed.acceptedForReleaseGate, false);
 
   const plan = buildDockerTopologyPlan({
     cwd: '/repo/reprint-push',
@@ -355,7 +355,6 @@ function evaluateDockerWordPressTopologyV2Contract({ artifact, plan, probe }) {
     && topologyEvidence.packagedFallbackObserved === false;
   const verifyReleaseCommand = topologyEvidence.command;
   const releaseReadyArtifact = artifact.status === 'passed'
-    && artifact.acceptedForReleaseGate === true
     && topologyEvidence.releaseCommandIsVerifyRelease === true
     && topologyEvidence.releaseUrlsUseDockerDns === true
     && noPackagedFallback;
@@ -366,7 +365,8 @@ function evaluateDockerWordPressTopologyV2Contract({ artifact, plan, probe }) {
     ok,
     releaseReadyArtifact,
     acceptedForReleaseGate: artifact.acceptedForReleaseGate,
-    releaseMovementAllowed: artifact.releaseGateEvaluation.releaseMovement.allowed,
+    releaseMovementAllowed: artifact.acceptedForReleaseGate === true
+      && artifact.releaseGateEvaluation.releaseMovement.allowed === true,
     finalReleaseStatus: 'NO-GO',
     verifyReleaseCommand,
     releaseUrlsUseDockerDns: topologyEvidence.releaseUrlsUseDockerDns,

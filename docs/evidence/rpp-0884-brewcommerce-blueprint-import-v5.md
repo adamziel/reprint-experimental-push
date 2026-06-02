@@ -304,7 +304,7 @@ The proof boundary remains strict:
     "releaseVerifierCarryThrough": {
       "command": "npm run verify:release",
       "required": true,
-      "acceptedForReleaseGateAfterPassedArtifactOnly": true,
+      "acceptedForReleaseGateAfterProductionBackedArtifactOnly": true,
       "packagedFallbackAllowed": false,
       "sameArtifactBindingHashRequired": true,
       "releaseMovementAllowedFromSupportEvidence": false
@@ -346,7 +346,7 @@ The proof boundary remains strict:
       "integrationRecommendation"
     ]
   },
-  "scopeHash": "13bdf2c795d6db716cdfb2d0dcbce061381674d24a02b7ecf6cd3f36e43723a6",
+  "scopeHash": "3117e91a57fb4d52dfb67782576f1873fa8fe5975a82b9655a14e461f74077de",
   "validation": {
     "commands": [
       {

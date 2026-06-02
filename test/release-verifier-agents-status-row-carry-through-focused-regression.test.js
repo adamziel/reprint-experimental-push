@@ -52,7 +52,7 @@ const expectedStatusRow = {
     { gate: 'GATE-4', title: 'Plugin-Driver Ownership Boundary', status: 'support_only' },
   ],
   statusCounts: { support_only: 4 },
-  lastRefreshed: '2026-05-28 02:24 CEST on lane/evidence-integration-20260527',
+  lastRefreshed: '2026-06-02 17:15 CEST on `main`.',
   errors: [],
   scope: 'final-release',
 };

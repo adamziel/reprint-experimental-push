@@ -47,7 +47,7 @@ backing, site startup, route receipts, mutation behavior, or release movement.
     "dockerTopologyVariant": "RPP-0802-variant-1",
     "runtime": "docker-local-wordpress",
     "gate": "GATE-3",
-    "artifactHash": "b7be30c75f07867488b6d23cd162bd623bcd9a7c0ab22c243a6ada335b0090ad"
+    "artifactHash": "e6467967ae3ac4fde80129a4c863b7609f7fd127a7150e2e01ca27f7e5169e2b"
   },
   "successContract": {
     "criterion": "verify-release-passes-without-packaged-fallback-or-exact-unavailable-capability",
@@ -151,7 +151,7 @@ backing, site startup, route receipts, mutation behavior, or release movement.
       "releaseCommandIsVerifyRelease": true,
       "packagedFallbackAllowed": false,
       "packagedFallbackObserved": false,
-      "acceptedForReleaseGateAfterPassedArtifactOnly": true
+      "acceptedForReleaseGateAfterPassedArtifactOnly": false
     },
     "requirementCount": 7,
     "requirementSurfaces": [
@@ -160,12 +160,12 @@ backing, site startup, route receipts, mutation behavior, or release movement.
       "private-docker-network-service-dns",
       "topology-runner-invokes-verify-release",
       "packaged-fallback-disabled-and-unobserved",
-      "release-gate-accepted-only-after-passing-docker-artifact",
+      "production-provenance-required-for-release-gate-acceptance",
       "generated-coverage-variant-3-support-only-no-go"
     ],
-    "scopeHash": "sha256:30cd3c15f44492a680809fe139298b7dbaaef86ac27f718f79dd198710b029db",
+    "scopeHash": "sha256:70acbae8c816566028fa7d47d606d04605d284aa7e09a6ff12322c1c74725db9",
     "serviceSurfaceDigest": "sha256:62ac55140ec23fcb8e557c098fdf49179d972e55a924566a7039651fd185828b",
-    "requirementDigest": "sha256:88e422c9ee45260d9ad7a06d8c12786a138d911adc92075feeb32f1b9ce43c4e"
+    "requirementDigest": "sha256:62f679a32b8ad9f0df972441f79d8b1cf67bd4b2743dbb13eeffbe866c18fb66"
   },
   "releaseGate": {
     "acceptedForReleaseGate": false,
@@ -206,7 +206,7 @@ backing, site startup, route receipts, mutation behavior, or release movement.
     "noProductionBackedProofClaim": true,
     "supportOnlyNoGo": true
   },
-  "supportReportHash": "sha256:f38007c471c2d46b02b8791b4ce28dfb5d5e00fd3ceacde4476e2edc7b6ffd39"
+  "supportReportHash": "sha256:ec60a77eef8213fabf151a1585ca6f9dd9c710d2a5199b3a6dca5ffe8001ecc1"
 }
 ```
 

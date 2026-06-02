@@ -140,6 +140,48 @@ test('complete fresh operator production evidence is release ready', () => {
   });
 });
 
+test('production-run rows are labels only and do not satisfy production-required provenance', () => {
+  assert.equal(
+    RELEASE_EVIDENCE_PROVENANCE_CONTRACT.productionSourceKinds.includes('production-run'),
+    false,
+  );
+
+  const summary = validateReleaseEvidenceProvenance({
+    referenceNow: fixture.referenceNow,
+    maxEvidenceAgeHours: fixture.maxEvidenceAgeHours,
+    evidenceRows: [
+      {
+        evidenceId: 'RPP-0020:verify-release-failure-reason',
+        rppId: 'RPP-0020',
+        sourceKind: 'production-run',
+        artifactPath: 'docs/evidence/release/verify-release-failure-reason.json',
+        observedAt: '2026-05-28T11:30:00.000Z',
+        command: 'npm run verify:release',
+        status: 'checked-failed',
+        subjectHash: 'sha256:3333333333333333333333333333333333333333333333333333333333333333',
+        operatorScope: 'final-release',
+        productionRequired: true,
+      },
+    ],
+  });
+
+  assert.equal(summary.ok, false);
+  assert.equal(summary.releaseReady, false);
+  assert.deepEqual(summary.rejectedEvidence, [
+    {
+      evidenceId: 'RPP-0020:verify-release-failure-reason',
+      rppId: 'RPP-0020',
+      productionRequired: true,
+      reasonCodes: [RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.productionSourceRequired],
+    },
+  ]);
+  assert.deepEqual(summary.productionRequired, {
+    total: 1,
+    accepted: 0,
+    rejected: 1,
+  });
+});
+
 test('production-required provenance rejects subject hashes that do not match the required gate subject', () => {
   const gate = {
     id: 'tmux-status-marker',

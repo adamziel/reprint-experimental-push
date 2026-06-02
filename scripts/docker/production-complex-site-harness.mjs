@@ -461,7 +461,7 @@ export function buildPrerequisiteGateArtifact({
     runtime: dockerHarnessRuntime,
     status,
     ok: status === 'passed',
-    acceptedForReleaseGate: status === 'passed',
+    acceptedForReleaseGate: false,
     failClosed: status !== 'passed',
     reason: assumption?.reason
       || blocker?.reason
@@ -495,7 +495,8 @@ export function buildPrerequisiteGateArtifact({
         'RPP-0820 no tunnel policy proof harness contract',
         'RPP-0903 release gate 3 blocks when a required proof fails',
       ],
-      dockerWordPressReleaseReady: status === 'passed',
+      dockerWordPressReleaseReady: false,
+      dockerWordPressLocalCandidateReady: status === 'passed',
       dockerWordPressBlockedUntilPrerequisitesPass: status !== 'passed',
       dockerWordPressVerifyReleaseContract: {
         topologyVariant: dockerTopologyVariant,
@@ -1085,12 +1086,21 @@ export function buildDockerLocalProductionReleaseEvidenceProvenance({
   artifactPath = 'docs/evidence/ao-docker-local-production.md',
   command = 'npm run verify:release:docker-local-production',
 } = {}) {
-  return buildDockerReleaseEvidenceProvenance({
+  const provenance = buildDockerReleaseEvidenceProvenance({
     generatedAt,
     artifactPath,
     command,
-    mode: 'docker-local-production-final-release',
+    mode: 'docker-local-production-support-only',
   });
+  return {
+    ...provenance,
+    evidenceRows: provenance.evidenceRows.map((row) => ({
+      ...row,
+      sourceKind: RELEASE_EVIDENCE_PROVENANCE_SOURCE_KINDS.localCandidate,
+      operatorScope: 'local-candidate',
+      status: row.status === 'checked-failed' ? 'checked-failed' : 'checked-passed',
+    })),
+  };
 }
 
 function buildDockerReleaseEvidenceProvenance({
@@ -1149,7 +1159,7 @@ function normalizeDockerReleaseEvidenceProvenance(provenance, releaseGateEvaluat
   const firstRow = Array.isArray(provenance?.evidenceRows)
     ? provenance.evidenceRows.find((row) => row && typeof row === 'object') || {}
     : {};
-  const operatorScope = scope || provenance?.operatorScope || firstRow.operatorScope || 'final-release';
+  const operatorScope = 'local-candidate';
   return {
     ...provenance,
     maxEvidenceAgeHours: provenance?.maxEvidenceAgeHours || 24,
@@ -1160,7 +1170,9 @@ function normalizeDockerReleaseEvidenceProvenance(provenance, releaseGateEvaluat
         ...row,
         evidenceId: requirement.evidenceId,
         rppId: requirement.rppId,
-        sourceKind: row.sourceKind || RELEASE_EVIDENCE_PROVENANCE_SOURCE_KINDS.productionRun,
+        sourceKind: row.sourceKind === 'support-only-assumption'
+          ? row.sourceKind
+          : RELEASE_EVIDENCE_PROVENANCE_SOURCE_KINDS.localCandidate,
         artifactPath: row.artifactPath || firstRow.artifactPath || 'docs/evidence/ao-docker-local-production.md',
         observedAt: row.observedAt || observedAt,
         command: row.command || firstRow.command || 'npm run verify:release:docker-local-production',

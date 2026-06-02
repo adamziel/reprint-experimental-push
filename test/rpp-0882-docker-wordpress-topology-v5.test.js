@@ -79,7 +79,7 @@ const generatedCoverageAssertions = Object.freeze([
   'record-verify-release-failure-reason-when-docker-unavailable',
   'require-private-docker-dns-release-env-hosts',
   'reject-packaged-fallback-env-and-runner-flags',
-  'require-passed-artifact-before-release-gate-acceptance',
+  'keep-passed-docker-artifact-as-local-candidate-evidence',
   'preserve-loopback-8080-only-inspection-ingress',
   'record-fail-closed-capability-matrix-when-docker-unavailable',
   'preserve-support-only-no-go',
@@ -87,7 +87,7 @@ const generatedCoverageAssertions = Object.freeze([
 const releaseVerifierCarryThroughRequirements = Object.freeze([
   'topology-command-invokes-npm-run-verify-release',
   'verify-release-failure-reason-carried-when-topology-blocked',
-  'verify-release-success-required-before-release-gate-acceptance',
+  'verify-release-success-remains-local-candidate-without-production-provenance',
   'no-packaged-fallback-env-or-runner-flags',
   'docker-service-dns-release-urls-required',
 ]);
@@ -154,7 +154,7 @@ test('RPP-0882 support report records Docker WordPress topology v5 release verif
   assert.equal(report.successContract.verifyReleasePassedWithoutPackagedFallback, false);
   assert.equal(report.successContract.exactUnavailableCapabilityRecorded, true);
   assert.equal(report.successContract.releaseVerifierCarriedThrough, true);
-  assert.equal(report.successContract.passedArtifactWouldBeAccepted, true);
+  assert.equal(report.successContract.passedArtifactWouldBeAccepted, false);
   assert.equal(report.successContract.packagedFallbackMaySatisfySuccess, false);
   assert.equal(report.successContract.finalReleaseMayMove, false);
 
@@ -221,7 +221,7 @@ test('RPP-0882 support report records Docker WordPress topology v5 release verif
   assert.equal(report.dockerWordPressTopologyV5.releaseVerifier.noPackagedFallback, true);
   assert.equal(report.dockerWordPressTopologyV5.releaseVerifier.packagedFallbackAllowed, false);
   assert.equal(report.dockerWordPressTopologyV5.releaseVerifier.packagedFallbackObserved, false);
-  assert.equal(report.dockerWordPressTopologyV5.releaseVerifier.acceptedForReleaseGateAfterPassedArtifactOnly, true);
+  assert.equal(report.dockerWordPressTopologyV5.releaseVerifier.acceptedForReleaseGateAfterPassedArtifactOnly, false);
   assert.equal(report.dockerWordPressTopologyV5.releaseVerifier.blockedArtifactAcceptedForReleaseGate, false);
   assert.equal(report.dockerWordPressTopologyV5.releaseVerifier.commandArgsDigest, `sha256:${digest(dockerReleaseCommand)}`);
   assert.deepEqual(report.dockerWordPressTopologyV5.prerequisiteBlockerMatrix, requiredBlockerMatrix);
@@ -254,7 +254,7 @@ test('RPP-0882 support report records Docker WordPress topology v5 release verif
 
   assert.deepEqual(report.dockerWordPressTopologyV5.releaseAcceptance, {
     blockedArtifactAccepted: false,
-    passedArtifactAccepted: true,
+    passedArtifactAccepted: false,
     passedArtifactStatus: 'passed',
     passedArtifactReleaseCommand: releaseVerifierCommand,
     passedArtifactPackagedFallbackObserved: false,
@@ -309,7 +309,7 @@ test('RPP-0882 release verifier carry-through requires passed verify:release wit
   assert.equal(passed.exactUnavailableCapability, null);
   assert.equal(passed.carriedThroughByTopologyCommand, true);
   assert.equal(passed.verifyReleaseFailure, null);
-  assert.equal(passed.acceptedForReleaseGate, true);
+  assert.equal(passed.acceptedForReleaseGate, false);
   assert.equal(passed.verifyReleaseCommand, releaseVerifierCommand);
   assert.deepEqual(passed.verifyReleaseCommandArgs, dockerReleaseCommand);
   assert.equal(passed.releaseUrlsUseDockerDns, true);
@@ -551,7 +551,6 @@ function evaluateDockerWordPressTopologyV5CarryThrough({ artifact, plan, probe }
   const carriedThroughByTopologyCommand = topologyEvidence.command === releaseVerifierCommand
     && topologyEvidence.releaseCommandIsVerifyRelease === true;
   const releaseReadyArtifact = artifact.status === 'passed'
-    && artifact.acceptedForReleaseGate === true
     && verifyReleaseFailure === null
     && topologyEvidence.ok === true
     && topologyEvidence.releaseUrlsUseDockerDns === true
@@ -564,9 +563,12 @@ function evaluateDockerWordPressTopologyV5CarryThrough({ artifact, plan, probe }
     ok,
     releaseReadyArtifact,
     acceptedForReleaseGate: artifact.acceptedForReleaseGate,
-    releaseMovementAllowed: artifact.releaseGateEvaluation.releaseMovement.allowed,
-    finalReleaseMovementAllowedFromSupportEvidence: artifact.releaseGateEvaluation.releaseMovement.allowed,
-    finalReleaseFailureCode: artifact.releaseGateEvaluation.primaryFailureCode,
+    releaseMovementAllowed: artifact.acceptedForReleaseGate === true
+      && artifact.releaseGateEvaluation.releaseMovement.allowed === true,
+    finalReleaseMovementAllowedFromSupportEvidence: false,
+    finalReleaseFailureCode: artifact.status === 'passed' && artifact.acceptedForReleaseGate !== true
+      ? 'LOCAL_CANDIDATE_EVIDENCE_ONLY'
+      : artifact.releaseGateEvaluation.primaryFailureCode,
     carriedThroughByTopologyCommand,
     verifyReleaseFailure: verifyReleaseFailure ? {
       exitCode: verifyReleaseFailure.exitCode,
@@ -681,7 +683,7 @@ function validateDockerWordPressTopologyV5Report(report) {
     || carryThrough.topologyCommand !== topologyCommand) {
     failures.push({ code: 'DOCKER_WORDPRESS_TOPOLOGY_V5_RELEASE_VERIFIER_NOT_CARRIED' });
   }
-  if (report.successContract?.passedArtifactWouldBeAccepted !== true
+  if (report.successContract?.passedArtifactWouldBeAccepted !== false
     || report.successContract?.packagedFallbackMaySatisfySuccess !== false) {
     failures.push({ code: 'DOCKER_WORDPRESS_TOPOLOGY_V5_ACCEPTANCE_CONTRACT_FAILED' });
   }
@@ -735,7 +737,7 @@ function validateDockerWordPressTopologyV5Report(report) {
     failures.push({ code: 'DOCKER_WORDPRESS_TOPOLOGY_V5_CARRY_THROUGH_REQUIREMENTS_MISMATCH' });
   }
   if (topology.releaseAcceptance?.blockedArtifactAccepted !== false
-    || topology.releaseAcceptance?.passedArtifactAccepted !== true
+    || topology.releaseAcceptance?.passedArtifactAccepted !== false
     || topology.releaseAcceptance?.passedArtifactReleaseCommand !== releaseVerifierCommand
     || topology.releaseAcceptance?.passedArtifactPackagedFallbackObserved !== false
     || topology.releaseAcceptance?.passedArtifactUsesDockerDns !== true
