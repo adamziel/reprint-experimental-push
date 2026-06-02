@@ -4710,6 +4710,27 @@ function reprint_push_plugin_driver_reference_target_evidence_accepted(
     if (!is_array($evidence['fields'] ?? null)) {
         return false;
     }
+    if (!reprint_push_array_has_exact_keys($evidence, [
+        'schemaVersion',
+        'operation',
+        'validator',
+        'reasonCode',
+        'outcome',
+        'format',
+        'rawValuesIncluded',
+        'resourceKey',
+        'pluginOwner',
+        'driver',
+        'table',
+        'contractHash',
+        'contractValidationHash',
+        'payloadValidationHash',
+        'referenceValidationHash',
+        'referenceFieldCount',
+        'fields',
+    ])) {
+        return false;
+    }
 
     $expected_fields = reprint_push_plugin_driver_reference_target_expected_fields($reference_validation);
     if (count($evidence['fields']) !== count($expected_fields)
@@ -4818,11 +4839,47 @@ function reprint_push_plugin_driver_reference_target_field_evidence_accepted(
 
     $target_resource_key = $expected['targetResourceKey'] ?? null;
     if ($target_resource_key === null) {
+        if (!reprint_push_array_has_exact_keys($field, [
+            'path',
+            'targetTable',
+            'targetIdField',
+            'scalarType',
+            'required',
+            'state',
+            'observedType',
+            'observedHash',
+            'targetResourceKey',
+            'targetStable',
+            'reasonCode',
+        ])) {
+            return false;
+        }
         return ($field['targetStable'] ?? null) === true
             && ($field['required'] ?? null) !== true
             && ($field['reasonCode'] ?? null) === 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_NOT_REQUIRED';
     }
     if (!is_string($target_resource_key) || $target_resource_key === '') {
+        return false;
+    }
+    if (!reprint_push_array_has_exact_keys($field, [
+        'path',
+        'targetTable',
+        'targetIdField',
+        'scalarType',
+        'required',
+        'state',
+        'observedType',
+        'observedHash',
+        'targetResourceKey',
+        'targetResource',
+        'targetBaseHash',
+        'targetLocalHash',
+        'targetRemoteHash',
+        'targetRemotePresent',
+        'targetStable',
+        'reasonCode',
+        'targetChange',
+    ])) {
         return false;
     }
     if (($field['targetStable'] ?? null) !== true
@@ -4858,7 +4915,37 @@ function reprint_push_plugin_driver_reference_target_field_evidence_accepted(
         return false;
     }
     $current_hash = reprint_push_hash_resource($snapshot, $target_resource);
-    return ($field['targetRemoteHash'] ?? null) === $current_hash;
+    return ($field['targetRemoteHash'] ?? null) === $current_hash
+        && reprint_push_plugin_driver_reference_target_change_evidence_accepted(
+            $field['targetChange'] ?? null,
+            $current_hash
+        );
+}
+
+function reprint_push_plugin_driver_reference_target_change_evidence_accepted(
+    $evidence,
+    string $current_remote_hash
+): bool {
+    if (!is_array($evidence)
+        || !reprint_push_array_has_exact_keys($evidence, ['localChange', 'remoteChange', 'base', 'local', 'remote'])) {
+        return false;
+    }
+    if (!is_string($evidence['localChange'] ?? null)
+        || !is_string($evidence['remoteChange'] ?? null)) {
+        return false;
+    }
+    foreach (['base', 'local', 'remote'] as $key) {
+        $value = is_array($evidence[$key] ?? null) ? $evidence[$key] : null;
+        if (!is_array($value)
+            || !reprint_push_array_has_exact_keys($value, ['state', 'hash'])
+            || !in_array($value['state'] ?? null, ['present', 'absent'], true)
+            || !is_string($value['hash'] ?? null)
+            || !preg_match('/^[a-f0-9]{64}$/', (string) $value['hash'])) {
+            return false;
+        }
+    }
+    return ($evidence['remote']['state'] ?? null) === 'present'
+        && ($evidence['remote']['hash'] ?? null) === $current_remote_hash;
 }
 
 function reprint_push_plugin_driver_payload_row_identity_tokens(string $resource_id): array

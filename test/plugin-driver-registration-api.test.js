@@ -1274,6 +1274,12 @@ $missing_reference_target_validation = $base_mutation;
 unset($missing_reference_target_validation['pluginOwnedResource']['referenceTargetValidationEvidence']);
 $forged_reference_target_validation = $base_mutation;
 $forged_reference_target_validation['pluginOwnedResource']['referenceTargetValidationEvidence']['fields'][0]['targetRemoteHash'] = hash('sha256', reprint_push_stable_json(['forged' => true]));
+$surplus_reference_target_validation = $base_mutation;
+$surplus_reference_target_validation['pluginOwnedResource']['referenceTargetValidationEvidence']['unexpectedRawPayload'] = 'reference-bound-private-payload';
+$surplus_reference_target_field = $base_mutation;
+$surplus_reference_target_field['pluginOwnedResource']['referenceTargetValidationEvidence']['fields'][0]['unexpectedRawPayload'] = 'reference-bound-private-payload';
+$surplus_reference_target_change = $base_mutation;
+$surplus_reference_target_change['pluginOwnedResource']['referenceTargetValidationEvidence']['fields'][0]['targetChange']['remote']['unexpectedRawPayload'] = 'reference-bound-private-payload';
 $drifted_reference_target_snapshot = $snapshot;
 $drifted_reference_target_snapshot['db']['wp_posts']['ID:2']['post_title'] = 'reference target changed after dry run';
 $missing_reference_validation = $base_mutation;
@@ -1307,6 +1313,18 @@ echo json_encode([
         reprint_push_assert_supported_plugin_owned_mutation($forged_reference_target_validation, $snapshot);
         return true;
     }),
+    'surplusReferenceTargetValidation' => rpp_driver_api_capture(static function () use ($surplus_reference_target_validation, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($surplus_reference_target_validation, $snapshot);
+        return true;
+    }),
+    'surplusReferenceTargetField' => rpp_driver_api_capture(static function () use ($surplus_reference_target_field, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($surplus_reference_target_field, $snapshot);
+        return true;
+    }),
+    'surplusReferenceTargetChange' => rpp_driver_api_capture(static function () use ($surplus_reference_target_change, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($surplus_reference_target_change, $snapshot);
+        return true;
+    }),
     'driftedReferenceTargetValidation' => rpp_driver_api_capture(static function () use ($base_mutation, $drifted_reference_target_snapshot): bool {
         reprint_push_assert_supported_plugin_owned_mutation($base_mutation, $drifted_reference_target_snapshot);
         return true;
@@ -1333,6 +1351,9 @@ echo json_encode([
   assert.deepEqual(report.accepted, { ok: true, value: true });
   assert.equal(report.missingReferenceTargetValidation.ok, false);
   assert.equal(report.forgedReferenceTargetValidation.ok, false);
+  assert.equal(report.surplusReferenceTargetValidation.ok, false);
+  assert.equal(report.surplusReferenceTargetField.ok, false);
+  assert.equal(report.surplusReferenceTargetChange.ok, false);
   assert.equal(report.driftedReferenceTargetValidation.ok, false);
   assert.equal(report.missingReferenceValidation.ok, false);
   assert.equal(report.forgedReferenceValidation.ok, false);
@@ -1343,6 +1364,18 @@ echo json_encode([
   );
   assert.equal(
     report.forgedReferenceTargetValidation.error.message,
+    'Unsupported plugin-owned mutation reference target evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
+  );
+  assert.equal(
+    report.surplusReferenceTargetValidation.error.message,
+    'Unsupported plugin-owned mutation reference target evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
+  );
+  assert.equal(
+    report.surplusReferenceTargetField.error.message,
+    'Unsupported plugin-owned mutation reference target evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
+  );
+  assert.equal(
+    report.surplusReferenceTargetChange.error.message,
     'Unsupported plugin-owned mutation reference target evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
   );
   assert.equal(
