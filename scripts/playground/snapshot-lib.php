@@ -591,11 +591,12 @@ function reprint_push_normalize_plugin_owned_row_driver_row_schema($row_schema):
         if (!is_string($type) || !in_array($type, $supported_types, true)) {
             throw new RuntimeException('Unsupported plugin-owned row driver rowSchema field type.');
         }
-        $fields[] = [
+        $fields[] = reprint_push_normalize_plugin_owned_row_driver_row_schema_field([
             'field' => $field,
             'type' => $type,
             'required' => isset($required[$field]) || $field_required,
-        ];
+            'definition' => $definition,
+        ]);
     }
     if (count($fields) === 0) {
         throw new RuntimeException('Plugin-owned row driver rowSchema must declare at least one field.');
@@ -637,11 +638,12 @@ function reprint_push_normalize_plugin_owned_row_driver_row_schema_fields(array 
         if (!is_string($type) || !in_array($type, $supported_types, true)) {
             throw new RuntimeException('Unsupported plugin-owned row driver rowSchema field type.');
         }
-        $fields[] = [
+        $fields[] = reprint_push_normalize_plugin_owned_row_driver_row_schema_field([
             'field' => $field,
             'type' => $type,
             'required' => !empty($definition['required']),
-        ];
+            'definition' => $definition,
+        ]);
     }
     if (count($fields) === 0) {
         throw new RuntimeException('Plugin-owned row driver rowSchema must declare at least one field.');
@@ -653,6 +655,39 @@ function reprint_push_normalize_plugin_owned_row_driver_row_schema_fields(array 
         'schemaVersion' => 1,
         'fields' => $fields,
     ];
+}
+
+function reprint_push_normalize_plugin_owned_row_driver_row_schema_field(array $args): array
+{
+    $definition = is_array($args['definition'] ?? null) ? $args['definition'] : [];
+    $normalized = [
+        'field' => (string) $args['field'],
+        'type' => (string) $args['type'],
+        'required' => !empty($args['required']),
+    ];
+    if (array_key_exists('additionalProperties', $definition)) {
+        if ((string) $args['type'] !== 'object') {
+            throw new RuntimeException('Plugin-owned row driver rowSchema additionalProperties is only supported for object fields.');
+        }
+        if (!array_key_exists('properties', $definition)) {
+            throw new RuntimeException('Plugin-owned row driver rowSchema additionalProperties requires object properties.');
+        }
+        if ($definition['additionalProperties'] !== false) {
+            throw new RuntimeException('Plugin-owned row driver rowSchema additionalProperties must be false when declared.');
+        }
+        $normalized['additionalProperties'] = false;
+    }
+    if (array_key_exists('properties', $definition)) {
+        if ((string) $args['type'] !== 'object') {
+            throw new RuntimeException('Plugin-owned row driver rowSchema properties are only supported for object fields.');
+        }
+        $nested = reprint_push_normalize_plugin_owned_row_driver_row_schema([
+            'fields' => $definition['properties'],
+            'required' => is_array($definition['required'] ?? null) ? $definition['required'] : [],
+        ]);
+        $normalized['properties'] = $nested['fields'];
+    }
+    return $normalized;
 }
 
 function reprint_push_add_wordpress_graph_contracts(array &$snapshot): void
@@ -3926,24 +3961,10 @@ function reprint_push_plugin_driver_payload_row_schema_evidence(
     }
 
     $value = is_array($planned['value'] ?? null) ? $planned['value'] : [];
-    $fields = [];
-    foreach ($normalized_schema['fields'] as $field) {
-        $field_name = (string) $field['field'];
-        $observed_exists = array_key_exists($field_name, $value);
-        $observed = $observed_exists ? $value[$field_name] : null;
-        $observed_type = $observed_exists ? reprint_push_plugin_driver_payload_row_schema_value_type($observed) : null;
-        $matched = $observed_exists
-            ? $observed_type === (string) $field['type']
-            : empty($field['required']);
-        $fields[] = [
-            'field' => $field_name,
-            'expectedType' => (string) $field['type'],
-            'required' => !empty($field['required']),
-            'state' => $observed_exists ? 'present' : 'missing',
-            'observedType' => $observed_type,
-            'matched' => $matched,
-        ];
-    }
+    $fields = reprint_push_plugin_driver_payload_row_schema_field_evidence(
+        $normalized_schema['fields'],
+        $value
+    );
 
     $matched = true;
     foreach ($fields as $field) {
@@ -3958,6 +3979,73 @@ function reprint_push_plugin_driver_payload_row_schema_evidence(
         'status' => $matched ? 'matched' : 'mismatch',
         'fields' => $fields,
     ];
+}
+
+function reprint_push_plugin_driver_payload_row_schema_field_evidence(
+    array $schema_fields,
+    $value,
+    string $path_prefix = ''
+): array {
+    $value_is_object = is_array($value) && !array_is_list($value);
+    $fields = [];
+    foreach ($schema_fields as $field) {
+        $field_name = (string) $field['field'];
+        $path = $path_prefix === '' ? $field_name : $path_prefix . '.' . $field_name;
+        $observed_exists = $value_is_object && array_key_exists($field_name, $value);
+        $observed = $observed_exists ? $value[$field_name] : null;
+        $observed_type = $observed_exists ? reprint_push_plugin_driver_payload_row_schema_value_type($observed) : null;
+        $matched = $observed_exists
+            ? $observed_type === (string) $field['type']
+            : empty($field['required']);
+        $evidence = [
+            'field' => $field_name,
+            'expectedType' => (string) $field['type'],
+            'required' => !empty($field['required']),
+            'state' => $observed_exists ? 'present' : 'missing',
+            'observedType' => $observed_type,
+            'matched' => $matched,
+        ];
+        if ($path_prefix !== '') {
+            $evidence['path'] = $path;
+        }
+        $fields[] = $evidence;
+        if ($matched && (string) $field['type'] === 'object' && is_array($field['properties'] ?? null)) {
+            array_push(
+                $fields,
+                ...reprint_push_plugin_driver_payload_row_schema_field_evidence(
+                    $field['properties'],
+                    $observed,
+                    $path
+                )
+            );
+            if (array_key_exists('additionalProperties', $field) && $field['additionalProperties'] === false && is_array($observed) && !array_is_list($observed)) {
+                $allowed = [];
+                foreach ($field['properties'] as $property) {
+                    $allowed[(string) $property['field']] = true;
+                }
+                $observed_keys = array_keys($observed);
+                $extra_count = 0;
+                foreach ($observed_keys as $observed_key) {
+                    if (!isset($allowed[(string) $observed_key])) {
+                        $extra_count++;
+                    }
+                }
+                if ($extra_count > 0) {
+                    $fields[] = [
+                        'field' => $field_name,
+                        'path' => $path,
+                        'expectedType' => 'object',
+                        'required' => !empty($field['required']),
+                        'state' => 'unexpected',
+                        'observedType' => reprint_push_plugin_driver_payload_row_schema_value_type($observed),
+                        'observedExtraPropertyCount' => $extra_count,
+                        'matched' => false,
+                    ];
+                }
+            }
+        }
+    }
+    return $fields;
 }
 
 function reprint_push_plugin_driver_payload_row_schema_value_type($value): string
@@ -3994,15 +4082,22 @@ function reprint_push_plugin_driver_payload_row_schema_evidence_matches(
         return false;
     }
     foreach ($evidence['fields'] as $field) {
+        $expected_keys = [
+            'field',
+            'expectedType',
+            'required',
+            'state',
+            'observedType',
+            'matched',
+        ];
+        if (array_key_exists('path', $field)) {
+            $expected_keys[] = 'path';
+        }
+        if (array_key_exists('observedExtraPropertyCount', $field)) {
+            $expected_keys[] = 'observedExtraPropertyCount';
+        }
         if (!is_array($field)
-            || !reprint_push_array_has_exact_keys($field, [
-                'field',
-                'expectedType',
-                'required',
-                'state',
-                'observedType',
-                'matched',
-            ])) {
+            || !reprint_push_array_has_exact_keys($field, $expected_keys)) {
             return false;
         }
     }

@@ -11599,6 +11599,34 @@ export function summarizeProductionPluginDriverBoundaryProof({
   const contractRowSchema = contractValidationEvidence?.rowSchema
     ? normalizePluginOwnedRowDriverRowSchema(contractValidationEvidence.rowSchema).normalized
     : null;
+  const contractRowSchemaHash = contractRowSchema ? digest(contractRowSchema) : null;
+  const allowlistRowSchemaResult = allowlistEntry?.rowSchema
+    ? normalizePluginOwnedRowDriverRowSchema(allowlistEntry.rowSchema)
+    : { valid: true, normalized: null };
+  const allowlistRowSchema = allowlistRowSchemaResult.valid ? allowlistRowSchemaResult.normalized : null;
+  const allowlistRowSchemaHash = allowlistRowSchema ? digest(allowlistRowSchema) : null;
+  const allowlistExpectedContractHash = allowlistEntry && allowlistRowSchemaResult.valid
+    ? pluginOwnedRowDriverContractHash(allowlistEntry)
+    : null;
+  const allowlistContractHashMatchesExpected =
+    Boolean(allowlistEntry?.contractHash)
+    && Boolean(allowlistExpectedContractHash)
+    && allowlistEntry.contractHash === allowlistExpectedContractHash;
+  const allowlistContractHashMatchesMutation =
+    Boolean(allowlistEntry?.contractHash)
+    && Boolean(contractHash)
+    && allowlistEntry.contractHash === contractHash;
+  const allowlistRowSchemaMatchesMutation =
+    (!allowlistRowSchema && !contractRowSchema)
+    || (
+      Boolean(allowlistRowSchema)
+      && Boolean(contractRowSchema)
+      && allowlistRowSchemaHash === contractRowSchemaHash
+    );
+  const allowlistContractBound =
+    allowlistContractHashMatchesExpected
+    && allowlistContractHashMatchesMutation
+    && allowlistRowSchemaMatchesMutation;
   const plannedMutationValue = mutation
     ? deserializeResourceValue(mutation.value)
     : null;
@@ -11648,7 +11676,14 @@ export function summarizeProductionPluginDriverBoundaryProof({
       action: mutation.action,
     })
     : null;
-  const contractEvidenceAccepted = contractValidationEvidence?.schemaVersion === 1
+  const contractEvidenceExactShape =
+    pluginDriverContractValidationEvidenceExactShape(contractValidationEvidence);
+  const payloadEvidenceExactShape =
+    pluginDriverPayloadValidationEvidenceExactShape(driverPayloadValidationEvidence, {
+      schemaRequired: Boolean(contractRowSchema),
+    });
+  const contractEvidenceAccepted = contractEvidenceExactShape
+    && contractValidationEvidence?.schemaVersion === 1
     && contractValidationEvidence?.operation === 'plugin-driver-contract-validation'
     && contractValidationEvidence?.contractKind === 'plugin-owned-row-driver'
     && contractValidationEvidence?.contractVersion === 1
@@ -11694,6 +11729,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
       && ['matched', 'not-required'].includes(driverPayloadSchemaValidationEvidence.status)
     );
   const driverPayloadEvidenceAccepted = contractEvidenceAccepted
+    && payloadEvidenceExactShape
     && driverPayloadValidationEvidence?.schemaVersion === 1
     && driverPayloadValidationEvidence?.operation === 'plugin-driver-payload-validation'
     && driverPayloadValidationEvidence?.validator === 'contract-bound-row-driver'
@@ -11718,7 +11754,10 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && driverPayloadContractValidationHashMatchesExpected
     && driverPayloadValueStateMatchesExpected
     && driverPayloadValueHashMatchesExpected;
-  const contractBoundDriverMutation = contractEvidenceAccepted && driverPayloadEvidenceAccepted;
+  const contractBoundDriverMutation =
+    contractEvidenceAccepted
+    && driverPayloadEvidenceAccepted
+    && allowlistContractBound;
   const noActivePluginsDirectMutation = plannedMutations.every((entry) =>
     !(entry?.resource?.type === 'row'
       && entry.resource.table === 'wp_options'
@@ -11777,6 +11816,8 @@ export function summarizeProductionPluginDriverBoundaryProof({
           ?? allowlistEntry.driverContractVersion
           ?? null,
         contractHash: allowlistEntry.contractHash || null,
+        expectedContractHash: allowlistExpectedContractHash,
+        rowSchemaHash: allowlistRowSchemaHash,
       } : null,
     },
     sourcePluginStateEvidence: sourceState,
@@ -11796,6 +11837,14 @@ export function summarizeProductionPluginDriverBoundaryProof({
       contractBound: contractBoundDriverMutation,
       contractEvidenceAccepted,
       driverPayloadEvidenceAccepted,
+      contractEvidenceExactShape,
+      payloadEvidenceExactShape,
+      allowlistContractBound,
+      allowlistExpectedContractHash,
+      allowlistContractHashMatchesExpected,
+      allowlistContractHashMatchesMutation,
+      allowlistRowSchemaHash,
+      allowlistRowSchemaMatchesMutation,
       contractHash,
       expectedContractHash,
       contractHashMatchesExpected: Boolean(contractHash)
@@ -11824,7 +11873,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
         driver: contractValidationEvidence.driver || null,
         table: contractValidationEvidence.table || null,
         supportsDelete: contractValidationEvidence.supportsDelete === true,
-        rowSchemaHash: contractRowSchema ? digest(contractRowSchema) : null,
+        rowSchemaHash: contractRowSchemaHash,
         contractHash: contractValidationEvidence.contractHash || null,
         rawValuesIncluded: contractValidationEvidence.rawValuesIncluded === true,
       } : null,
@@ -11859,10 +11908,14 @@ export function summarizeProductionPluginDriverBoundaryProof({
           fields: Array.isArray(driverPayloadSchemaValidationEvidence.fields)
             ? driverPayloadSchemaValidationEvidence.fields.map((field) => ({
               field: field?.field || null,
+              ...(field?.path ? { path: field.path } : {}),
               expectedType: field?.expectedType || null,
               required: field?.required === true,
               state: field?.state || null,
               observedType: field?.observedType || null,
+              ...(Number.isInteger(field?.observedExtraPropertyCount)
+                ? { observedExtraPropertyCount: field.observedExtraPropertyCount }
+                : {}),
               matched: field?.matched === true,
             }))
             : [],
@@ -12048,28 +12101,66 @@ function contractBoundRowSchemaValidationEvidence({
       fields: [],
     };
   }
-  const valueIsObject = value && typeof value === 'object' && !Array.isArray(value);
-  const fields = normalized.fields.map((field) => {
-    const observedExists = valueIsObject && Object.prototype.hasOwnProperty.call(value, field.field);
-    const observed = observedExists ? value[field.field] : undefined;
-    const observedType = observedExists ? contractBoundRowSchemaValueType(observed) : null;
-    const matched = observedExists
-      ? observedType === field.type
-      : field.required !== true;
-    return {
-      field: field.field,
-      expectedType: field.type,
-      required: field.required === true,
-      state: observedExists ? 'present' : 'missing',
-      observedType,
-      matched,
-    };
+  const fields = contractBoundRowSchemaFieldEvidence({
+    schemaFields: normalized.fields,
+    value,
   });
   return {
     schemaHash,
     status: fields.every((field) => field.matched) ? 'matched' : 'mismatch',
     fields,
   };
+}
+
+function contractBoundRowSchemaFieldEvidence({
+  schemaFields,
+  value,
+  pathPrefix = '',
+} = {}) {
+  const valueIsObject = value && typeof value === 'object' && !Array.isArray(value);
+  const fields = [];
+  for (const field of schemaFields) {
+    const path = pathPrefix ? `${pathPrefix}.${field.field}` : field.field;
+    const observedExists = valueIsObject && Object.prototype.hasOwnProperty.call(value, field.field);
+    const observed = observedExists ? value[field.field] : undefined;
+    const observedType = observedExists ? contractBoundRowSchemaValueType(observed) : null;
+    const matched = observedExists
+      ? observedType === field.type
+      : field.required !== true;
+    fields.push({
+      field: field.field,
+      ...(pathPrefix ? { path } : {}),
+      expectedType: field.type,
+      required: field.required === true,
+      state: observedExists ? 'present' : 'missing',
+      observedType,
+      matched,
+    });
+    if (matched && field.type === 'object' && Array.isArray(field.properties)) {
+      fields.push(...contractBoundRowSchemaFieldEvidence({
+        schemaFields: field.properties,
+        value: observed,
+        pathPrefix: path,
+      }));
+      if (field.additionalProperties === false && observed && typeof observed === 'object' && !Array.isArray(observed)) {
+        const allowed = new Set(field.properties.map((property) => property.field));
+        const extraFields = Object.keys(observed).filter((extraField) => !allowed.has(extraField));
+        if (extraFields.length > 0) {
+          fields.push({
+            field: field.field,
+            path,
+            expectedType: 'object',
+            required: field.required === true,
+            state: 'unexpected',
+            observedType: contractBoundRowSchemaValueType(observed),
+            observedExtraPropertyCount: extraFields.length,
+            matched: false,
+          });
+        }
+      }
+    }
+  }
+  return fields;
 }
 
 function contractBoundRowSchemaValueType(value) {
@@ -12095,6 +12186,133 @@ function contractBoundRowSchemaValueType(value) {
     return 'object';
   }
   return typeof value;
+}
+
+function pluginDriverContractValidationEvidenceExactShape(evidence) {
+  if (!isPlainObject(evidence)) {
+    return false;
+  }
+  const expectedKeys = [
+    'schemaVersion',
+    'operation',
+    'contractKind',
+    'contractVersion',
+    'outcome',
+    'reasonCode',
+    'issueCodes',
+    'issues',
+    'source',
+    'evidenceScope',
+    'rawValuesIncluded',
+    'resourceKey',
+    'pluginOwner',
+    'driver',
+    'table',
+    'supportsDelete',
+    'contractHash',
+  ];
+  if (hasOwn(evidence, 'rowSchema')) {
+    expectedKeys.push('rowSchema');
+  }
+  return hasExactObjectKeys(evidence, expectedKeys)
+    && Array.isArray(evidence.issueCodes)
+    && Array.isArray(evidence.issues);
+}
+
+function pluginDriverPayloadValidationEvidenceExactShape(evidence, {
+  schemaRequired = false,
+} = {}) {
+  if (!isPlainObject(evidence)) {
+    return false;
+  }
+  const expectedKeys = [
+    'schemaVersion',
+    'operation',
+    'validator',
+    'reasonCode',
+    'outcome',
+    'issueCodes',
+    'issues',
+    'format',
+    'rawValuesIncluded',
+    'resourceKey',
+    'pluginOwner',
+    'driver',
+    'table',
+    'action',
+    'supportsDelete',
+    'contractSupportsDelete',
+    'contractHash',
+    'rowIdentity',
+    'value',
+    'contractValidationHash',
+  ];
+  if (hasOwn(evidence, 'schemaValidation')) {
+    expectedKeys.push('schemaValidation');
+  }
+  if (schemaRequired && !hasOwn(evidence, 'schemaValidation')) {
+    return false;
+  }
+  return hasExactObjectKeys(evidence, expectedKeys)
+    && Array.isArray(evidence.issueCodes)
+    && Array.isArray(evidence.issues)
+    && pluginDriverRowIdentityEvidenceExactShape(evidence.rowIdentity)
+    && pluginDriverPayloadValueEvidenceExactShape(evidence.value)
+    && (!hasOwn(evidence, 'schemaValidation')
+      || pluginDriverSchemaValidationEvidenceExactShape(evidence.schemaValidation));
+}
+
+function pluginDriverPayloadValueEvidenceExactShape(evidence) {
+  return hasExactObjectKeys(evidence, ['state', 'hash']);
+}
+
+function pluginDriverRowIdentityEvidenceExactShape(evidence) {
+  return hasExactObjectKeys(evidence, ['resourceId', 'status', 'fields'])
+    && Array.isArray(evidence.fields)
+    && evidence.fields.every((field) =>
+      hasExactObjectKeys(field, ['field', 'expected', 'observedHash', 'matched']));
+}
+
+function pluginDriverSchemaValidationEvidenceExactShape(evidence) {
+  return hasExactObjectKeys(evidence, ['schemaHash', 'status', 'fields'])
+    && Array.isArray(evidence.fields)
+    && evidence.fields.every((field) => {
+      const expectedKeys = [
+        'field',
+        'expectedType',
+        'required',
+        'state',
+        'observedType',
+        'matched',
+      ];
+      if (hasOwn(field, 'path')) {
+        expectedKeys.push('path');
+      }
+      if (hasOwn(field, 'observedExtraPropertyCount')) {
+        expectedKeys.push('observedExtraPropertyCount');
+      }
+      return hasExactObjectKeys(field, expectedKeys)
+        && (!hasOwn(field, 'observedExtraPropertyCount')
+          || Number.isInteger(field.observedExtraPropertyCount));
+    });
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function hasOwn(value, key) {
+  return Boolean(value) && Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function hasExactObjectKeys(value, expectedKeys) {
+  if (!isPlainObject(value)) {
+    return false;
+  }
+  const actual = Object.keys(value).sort();
+  const expected = [...expectedKeys].sort();
+  return actual.length === expected.length
+    && actual.every((key, index) => key === expected[index]);
 }
 
 export function summarizeArbitraryPluginFixturePackageReleaseVerifierEvidence({

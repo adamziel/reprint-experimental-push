@@ -318,11 +318,16 @@ export function normalizePluginOwnedRowDriverRowSchema(rowSchema) {
         observed: type ?? null,
       };
     }
-    fields.push({
+    const normalizedField = normalizePluginOwnedRowDriverRowSchemaField({
       field,
       type,
       required: required.includes(field) || definition?.required === true,
+      definition,
     });
+    if (!normalizedField.valid) {
+      return normalizedField;
+    }
+    fields.push(normalizedField.normalized);
   }
   if (fields.length === 0) {
     return {
@@ -400,11 +405,16 @@ function normalizePluginOwnedRowDriverRowSchemaFields(fieldsSource) {
         observed: type ?? null,
       };
     }
-    fields.push({
+    const normalizedField = normalizePluginOwnedRowDriverRowSchemaField({
       field,
       type,
       required: definition.required === true,
+      definition,
     });
+    if (!normalizedField.valid) {
+      return normalizedField;
+    }
+    fields.push(normalizedField.normalized);
   }
   if (fields.length === 0) {
     return {
@@ -430,6 +440,82 @@ function normalizePluginOwnedRowDriverRowSchemaFields(fieldsSource) {
       schemaVersion: 1,
       fields,
     },
+  };
+}
+
+function normalizePluginOwnedRowDriverRowSchemaField({
+  field,
+  type,
+  required,
+  definition,
+}) {
+  const normalized = {
+    field,
+    type,
+    required: required === true,
+  };
+  if (
+    definition
+    && typeof definition === 'object'
+    && !Array.isArray(definition)
+    && Object.prototype.hasOwnProperty.call(definition, 'additionalProperties')
+  ) {
+    if (type !== 'object') {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+        required: 'additionalProperties only on object fields',
+        observed: type ?? null,
+      };
+    }
+    if (!Object.prototype.hasOwnProperty.call(definition, 'properties')) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+        required: 'additionalProperties false requires object properties',
+        observed: 'missing properties',
+      };
+    }
+    if (definition.additionalProperties !== false) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+        required: 'additionalProperties false when declared',
+        observed: definition.additionalProperties,
+      };
+    }
+    normalized.additionalProperties = false;
+  }
+  if (
+    definition
+    && typeof definition === 'object'
+    && !Array.isArray(definition)
+    && Object.prototype.hasOwnProperty.call(definition, 'properties')
+  ) {
+    if (type !== 'object') {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+        required: 'properties only on object fields',
+        observed: type ?? null,
+      };
+    }
+    const nested = normalizePluginOwnedRowDriverRowSchema({
+      fields: definition.properties,
+      required: Array.isArray(definition.required) ? definition.required : [],
+    });
+    if (!nested.valid) {
+      return nested;
+    }
+    normalized.properties = nested.normalized.fields;
+  }
+  return {
+    valid: true,
+    normalized,
   };
 }
 

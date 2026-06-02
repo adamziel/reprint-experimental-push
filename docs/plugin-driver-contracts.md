@@ -35,8 +35,10 @@ Optional fields:
 - `supportsDelete`: boolean delete capability. Missing or `false` means delete
   mutations refuse before apply.
 - `rowSchema`: optional contract metadata for schema-bound custom row drivers.
-  Version 1 supports required top-level row fields and field types:
-  `string`, `integer`, `number`, `boolean`, `object`, `array`, and `null`.
+  Version 1 supports required row fields, nested object `properties`,
+  `additionalProperties: false` for declared object properties, and field
+  types: `string`, `integer`, `number`, `boolean`, `object`, `array`, and
+  `null`.
 - `contractHash`: stable hash of the declared resource key, owner, driver,
   table, delete support, contract kind, contract version, and optional
   normalized row schema.
@@ -113,7 +115,9 @@ shape. For custom row drivers outside the built-in driver set, apply requires:
 - present row payloads that satisfy the optional schema-bound row contract.
   Missing required fields refuse with
   `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_FIELD_MISSING`; wrong field types
-  refuse with `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_TYPE_MISMATCH`,
+  refuse with `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_TYPE_MISMATCH`; extra
+  object properties under `additionalProperties: false` refuse with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_UNEXPECTED_FIELD`,
 - accepted `contract-bound-row-driver` payload validation evidence,
 - hash-only value and contract evidence, with `rawValuesIncluded: false`,
 - carried payload evidence that matches apply's recomputed mutation action,
@@ -157,16 +161,28 @@ Schema-bound contracts also emit a hash-only `schemaValidation` object when
       "state": "present",
       "observedType": "object",
       "matched": true
+    },
+    {
+      "field": "mode",
+      "path": "payload.mode",
+      "expectedType": "string",
+      "required": true,
+      "state": "present",
+      "observedType": "string",
+      "matched": true
     }
   ]
 }
 ```
 
 The validation evidence reports field names, expected types, observed type
-classes, and match booleans. It does not copy raw plugin row values. The
-production-shaped RPP-0483 verifier now includes
-`payloadSchemaValidationMatchesExpected` and refuses proofs whose value hashes
-match but whose row body no longer satisfies the declared schema.
+classes, optional declared schema paths, and match booleans. It does not copy
+raw plugin row values. For undeclared object properties it reports the declared
+object path and an `observedExtraPropertyCount`, not the raw extra key names.
+The production-shaped RPP-0483 verifier now includes
+`payloadSchemaValidationMatchesExpected`, exact payload evidence shape checks,
+and allowlist row-schema/contract-hash binding; it refuses proofs whose value
+hashes match but whose row body no longer satisfies the declared schema.
 
 Legacy fixture allowlists still work for focused tests, but generic production
 custom row drivers need the explicit contract path before the executor will
@@ -177,6 +193,8 @@ apply them.
 The row-driver contract is the first step toward a broader plugin API. Future
 contracts should cover:
 
+- richer schema constraints such as enum/const rules
+- merge-driver conflict policies for plugin-owned payloads
 - plugin-owned files
 - plugin activation and update side effects
 - plugin-provided graph identities

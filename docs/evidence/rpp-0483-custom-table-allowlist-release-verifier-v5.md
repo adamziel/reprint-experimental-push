@@ -25,6 +25,13 @@ live production-owned external evidence.
   payload evidence binds the mutation action, planned value hash, expected
   value state, contract `supportsDelete` flag, contract hash, and
   `contractValidationHash`;
+- the verifier binds the allowlist row schema and contract hash to the
+  mutation contract, and rejects allowlist row-schema mismatches even when the
+  owner/driver/table tuple is exact;
+- nested schema-bound payload evidence rejects undeclared payload properties
+  with redacted count-only evidence rather than raw extra key names;
+- forged payload evidence with surplus raw sidecars is not release-verifier
+  eligible because the verifier requires exact hash-only evidence shape;
 - explicit final-state mismatch evidence fails the release-verifier
   plugin-driver boundary even when the allowlist and mutation tuple are exact;
 - wrong owner, wrong driver, wrong table, forged contract fingerprints, forged
@@ -36,37 +43,25 @@ live production-owned external evidence.
 ## Focused verification observed locally
 
 ```sh
+node --check src/plugin-driver-contracts.js
+node --check src/plugin-driver-validators.js
 node --check scripts/playground/production-shaped-release-verify.mjs
 node --check test/rpp-0483-custom-table-allowlist-release-verifier-v5.test.js
+php -l scripts/playground/snapshot-lib.php
 node --test test/rpp-0483-custom-table-allowlist-release-verifier-v5.test.js
-node --test test/plugin-driver-contract.test.js test/rpp-0483-custom-table-allowlist-release-verifier-v5.test.js
-node --test --test-name-pattern 'production plugin-driver boundary|RPP-0483|custom-table allowlist' test/production-shaped-proof.test.js test/rpp-0483-custom-table-allowlist-release-verifier-v5.test.js
-node --test --test-name-pattern 'RPP-0463|RPP-0443|fixture forms lab table|allows plugin-owned custom table rows|custom row driver|driver table policy' test/push-planner.test.js test/plugin-driver-contract.test.js
-node --test test/production-shaped-proof.test.js
-npm run verify:release:local-production:complex-site:plugin-driver
-node scripts/release/checklist-completion-lint.mjs
+node --test test/plugin-driver-contract.test.js test/plugin-driver-registration-api.test.js test/rpp-0483-custom-table-allowlist-release-verifier-v5.test.js
+node --test test/rpp-0441-driver-registration-api-v3.test.js test/rpp-0481-driver-registration-api-release-verifier-v5.test.js
+node --test --test-name-pattern 'production plugin-driver boundary' test/production-shaped-proof.test.js
 node scripts/release/artifact-redaction-scan.mjs docs/evidence/rpp-0483-custom-table-allowlist-release-verifier-v5.md docs/progress-log.md docs/reprint-push-completion-checklist.md
-rg -n 'RPP_0483_BASE_RELEASE_STATE_PRIVATE|RPP_0483_LOCAL_RELEASE_STATE_PRIVATE|RPP_0483_REMOTE_CHANGED_RELEASE_STATE_PRIVATE' docs README.md progress.html audits scripts src --glob '!scripts/playground/production-shaped-release-verify.mjs'
 git diff --check
-git diff --cached --check
 ```
 
-Observed result: the focused RPP-0483 test exited 0 with 11 subtests ok, the
-combined plugin-driver contract and RPP-0483 run exited 0 with 26 subtests ok,
-the production-shaped plugin-driver subset exited 0 with 22 subtests ok, the
-adjacent planner and contract subset exited 0 with 16 subtests ok, and the full
-production-shaped proof exited 0 with 134 tests total, 123 passed, 11 skipped,
-and 0 failed. The local production release verifier command reached the apply
-leg and carried the
-`wp_reprint_push_release_state` custom-table mutation through apply:
-`apply.status` was `200`, `apply.applied` was `22`, `applyCarryThrough.accepted`
-was `true`, `applyCarryThrough.dbJournalMutationApplied` was `22`, and the
-plugin-driver resource key was included in before-first-mutation revalidation.
-That command then exited 1 at the separate preserved-remote retry gate
-(`PRESERVED_REMOTE_RETRY_REQUIRED`), so it is proof of local apply
-carry-through only, not full release movement. Checklist lint, the scoped
-redaction scan, whitespace checks, and the private-marker leak scan exited
-cleanly.
+Observed result: the focused RPP-0483 test exited 0 with 23 subtests ok, the
+combined plugin-driver contract, PHP registration API, and RPP-0483 run exited
+0 with 59 tests ok, and the adjacent RPP-0441/RPP-0481 driver-registration
+release-verifier run exited 0 with 3 tests ok. The shared production-shaped
+plugin-driver boundary subset exited 0 with 11 tests ok. JS syntax checks, PHP
+lint, scoped redaction scan, and whitespace checks exited cleanly.
 
 ## Release posture
 

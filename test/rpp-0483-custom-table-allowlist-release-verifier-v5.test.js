@@ -17,7 +17,18 @@ const releaseStateRowSchema = Object.freeze({
   required: ['state_id', 'payload', 'updated_marker', '__pluginOwner'],
   fields: {
     state_id: 'integer',
-    payload: 'object',
+    payload: {
+      type: 'object',
+      required: ['owner', 'mode', 'version', 'private_note', 'releaseBoundaryProof'],
+      additionalProperties: false,
+      properties: {
+        owner: 'string',
+        mode: 'string',
+        version: 'integer',
+        private_note: 'string',
+        releaseBoundaryProof: 'string',
+      },
+    },
     updated_marker: 'string',
     __pluginOwner: 'string',
   },
@@ -26,7 +37,19 @@ const normalizedReleaseStateRowSchema = Object.freeze({
   schemaVersion: 1,
   fields: [
     { field: '__pluginOwner', type: 'string', required: true },
-    { field: 'payload', type: 'object', required: true },
+    {
+      field: 'payload',
+      type: 'object',
+      required: true,
+      additionalProperties: false,
+      properties: [
+        { field: 'mode', type: 'string', required: true },
+        { field: 'owner', type: 'string', required: true },
+        { field: 'private_note', type: 'string', required: true },
+        { field: 'releaseBoundaryProof', type: 'string', required: true },
+        { field: 'version', type: 'integer', required: true },
+      ],
+    },
     { field: 'state_id', type: 'integer', required: true },
     { field: 'updated_marker', type: 'string', required: true },
   ],
@@ -118,6 +141,109 @@ function releaseStatePlan({ remoteBaseSnapshot, localEditedSnapshot }) {
     remote: remoteBaseSnapshot,
     now: fixedNow,
   });
+}
+
+function matchedReleaseStateSchemaValidation() {
+  return {
+    schemaHash: digest(normalizedReleaseStateRowSchema),
+    status: 'matched',
+    fields: [
+      {
+        field: '__pluginOwner',
+        expectedType: 'string',
+        required: true,
+        state: 'present',
+        observedType: 'string',
+        matched: true,
+      },
+      {
+        field: 'payload',
+        expectedType: 'object',
+        required: true,
+        state: 'present',
+        observedType: 'object',
+        matched: true,
+      },
+      {
+        field: 'mode',
+        path: 'payload.mode',
+        expectedType: 'string',
+        required: true,
+        state: 'present',
+        observedType: 'string',
+        matched: true,
+      },
+      {
+        field: 'owner',
+        path: 'payload.owner',
+        expectedType: 'string',
+        required: true,
+        state: 'present',
+        observedType: 'string',
+        matched: true,
+      },
+      {
+        field: 'private_note',
+        path: 'payload.private_note',
+        expectedType: 'string',
+        required: true,
+        state: 'present',
+        observedType: 'string',
+        matched: true,
+      },
+      {
+        field: 'releaseBoundaryProof',
+        path: 'payload.releaseBoundaryProof',
+        expectedType: 'string',
+        required: true,
+        state: 'present',
+        observedType: 'string',
+        matched: true,
+      },
+      {
+        field: 'version',
+        path: 'payload.version',
+        expectedType: 'integer',
+        required: true,
+        state: 'present',
+        observedType: 'integer',
+        matched: true,
+      },
+      {
+        field: 'state_id',
+        expectedType: 'integer',
+        required: true,
+        state: 'present',
+        observedType: 'integer',
+        matched: true,
+      },
+      {
+        field: 'updated_marker',
+        expectedType: 'string',
+        required: true,
+        state: 'present',
+        observedType: 'string',
+        matched: true,
+      },
+    ],
+  };
+}
+
+function unexpectedReleaseStateSchemaValidation(extraPropertyCount = 1) {
+  const evidence = matchedReleaseStateSchemaValidation();
+  evidence.status = 'mismatch';
+  const stateIdIndex = evidence.fields.findIndex((field) => field.field === 'state_id');
+  evidence.fields.splice(stateIdIndex, 0, {
+    field: 'payload',
+    path: 'payload',
+    expectedType: 'object',
+    required: true,
+    state: 'unexpected',
+    observedType: 'object',
+    observedExtraPropertyCount: extraPropertyCount,
+    matched: false,
+  });
+  return evidence;
 }
 
 function releaseVerifierProof(plan, {
@@ -256,44 +382,10 @@ test('RPP-0483 release verifier carries exact custom-table allowlist through app
     ],
   });
   assert.deepEqual(mutation.pluginOwnedResource.contractValidationEvidence.rowSchema, normalizedReleaseStateRowSchema);
-  assert.deepEqual(mutation.pluginOwnedResource.driverPayloadValidationEvidence.schemaValidation, {
-    schemaHash: digest(normalizedReleaseStateRowSchema),
-    status: 'matched',
-    fields: [
-      {
-        field: '__pluginOwner',
-        expectedType: 'string',
-        required: true,
-        state: 'present',
-        observedType: 'string',
-        matched: true,
-      },
-      {
-        field: 'payload',
-        expectedType: 'object',
-        required: true,
-        state: 'present',
-        observedType: 'object',
-        matched: true,
-      },
-      {
-        field: 'state_id',
-        expectedType: 'integer',
-        required: true,
-        state: 'present',
-        observedType: 'integer',
-        matched: true,
-      },
-      {
-        field: 'updated_marker',
-        expectedType: 'string',
-        required: true,
-        state: 'present',
-        observedType: 'string',
-        matched: true,
-      },
-    ],
-  });
+  assert.deepEqual(
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.schemaValidation,
+    matchedReleaseStateSchemaValidation(),
+  );
   assert.equal(precondition.checkedAgainst, 'live-remote');
   assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
 
@@ -307,9 +399,17 @@ test('RPP-0483 release verifier carries exact custom-table allowlist through app
   assert.equal(summary.allowlist.entry.contractKind, 'plugin-owned-row-driver');
   assert.equal(summary.allowlist.entry.contractVersion, 1);
   assert.equal(summary.allowlist.entry.contractHash, summary.driverContractBoundary.contractHash);
+  assert.equal(summary.allowlist.entry.expectedContractHash, summary.driverContractBoundary.contractHash);
+  assert.equal(summary.allowlist.entry.rowSchemaHash, digest(normalizedReleaseStateRowSchema));
   assert.equal(summary.driverContractBoundary.contractBound, true);
   assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
   assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, true);
+  assert.equal(summary.driverContractBoundary.contractEvidenceExactShape, true);
+  assert.equal(summary.driverContractBoundary.payloadEvidenceExactShape, true);
+  assert.equal(summary.driverContractBoundary.allowlistContractBound, true);
+  assert.equal(summary.driverContractBoundary.allowlistContractHashMatchesExpected, true);
+  assert.equal(summary.driverContractBoundary.allowlistContractHashMatchesMutation, true);
+  assert.equal(summary.driverContractBoundary.allowlistRowSchemaMatchesMutation, true);
   assert.equal(summary.driverContractBoundary.contractHashMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.contractHashMatchesPayload, true);
   assert.equal(summary.driverContractBoundary.contractValidationHashMatchesExpected, true);
@@ -353,44 +453,10 @@ test('RPP-0483 release verifier carries exact custom-table allowlist through app
       },
     ],
   });
-  assert.deepEqual(summary.driverContractBoundary.driverPayloadValidation.schemaValidation, {
-    schemaHash: digest(normalizedReleaseStateRowSchema),
-    status: 'matched',
-    fields: [
-      {
-        field: '__pluginOwner',
-        expectedType: 'string',
-        required: true,
-        state: 'present',
-        observedType: 'string',
-        matched: true,
-      },
-      {
-        field: 'payload',
-        expectedType: 'object',
-        required: true,
-        state: 'present',
-        observedType: 'object',
-        matched: true,
-      },
-      {
-        field: 'state_id',
-        expectedType: 'integer',
-        required: true,
-        state: 'present',
-        observedType: 'integer',
-        matched: true,
-      },
-      {
-        field: 'updated_marker',
-        expectedType: 'string',
-        required: true,
-        state: 'present',
-        observedType: 'string',
-        matched: true,
-      },
-    ],
-  });
+  assert.deepEqual(
+    summary.driverContractBoundary.driverPayloadValidation.schemaValidation,
+    matchedReleaseStateSchemaValidation(),
+  );
   assert.equal(summary.driverContractBoundary.driverPayloadValidation.value.state, 'present');
   assert.equal(summary.driverContractBoundary.driverPayloadValidation.value.hash, mutation.localHash);
   assert.equal(summary.ownershipBoundary.exactAllowlistOwnerDriver, true);
@@ -514,7 +580,13 @@ test('RPP-0483 release verifier blocks custom-table allowlist and apply carry-th
       assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
       assert.equal(summary.ownershipBoundary.exactAllowlistOwnerDriver, false);
       assert.equal(summary.ownershipBoundary.exactMutationOwnerDriver, true);
-      assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, true);
+      assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
+      assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
+      assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, true);
+      assert.equal(summary.driverContractBoundary.allowlistContractBound, false);
+      assert.equal(summary.driverContractBoundary.allowlistContractHashMatchesExpected, true);
+      assert.equal(summary.driverContractBoundary.allowlistContractHashMatchesMutation, false);
+      assert.equal(summary.driverContractBoundary.allowlistRowSchemaMatchesMutation, true);
       assert.equal(summary.applyCarryThrough.accepted, true);
       assertNoRawSentinels(summary, nearMiss.label);
     });
@@ -574,6 +646,68 @@ test('RPP-0483 release verifier blocks custom-table allowlist and apply carry-th
     assert.equal(summary.driverContractBoundary.contractBound, false);
     assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
     assertNoRawSentinels(summary, 'forged contract validation evidence summary');
+  });
+
+  await t.test('forged payload validation evidence with raw extras is not release-verifier eligible', () => {
+    const topology = releaseStateTopology();
+    const plan = releaseStatePlan(topology);
+    const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey);
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.value.rawFixture = rawSentinels[1];
+    const summary = summarize(topology, releaseVerifierProof(plan));
+
+    assert.equal(summary.status, 'blocked');
+    assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+    assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
+    assert.equal(summary.driverContractBoundary.contractEvidenceExactShape, true);
+    assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, false);
+    assert.equal(summary.driverContractBoundary.payloadEvidenceExactShape, false);
+    assert.equal(summary.driverContractBoundary.payloadValueHashMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.contractBound, false);
+    assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
+    assertNoRawSentinels(summary, 'forged payload validation evidence summary');
+  });
+
+  await t.test('allowlist row schema mismatch is not release-verifier eligible', () => {
+    const topology = releaseStateTopology();
+    const plan = releaseStatePlan(topology);
+    const mismatchedAllowlistTopology = releaseStateTopology({
+      allowlistOverride: {
+        rowSchema: {
+          required: ['state_id', 'payload', 'updated_marker', '__pluginOwner'],
+          fields: {
+            state_id: 'integer',
+            payload: {
+              type: 'object',
+              required: ['owner', 'mode', 'version', 'releaseBoundaryProof'],
+              additionalProperties: false,
+              properties: {
+                owner: 'string',
+                mode: 'string',
+                version: 'integer',
+                releaseBoundaryProof: 'string',
+              },
+            },
+            updated_marker: 'string',
+            __pluginOwner: 'string',
+          },
+        },
+      },
+    });
+    const summary = summarize(mismatchedAllowlistTopology, releaseVerifierProof(plan));
+
+    assert.equal(summary.status, 'blocked');
+    assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+    assert.equal(summary.ownershipBoundary.exactAllowlistOwnerDriver, true);
+    assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
+    assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, true);
+    assert.equal(summary.driverContractBoundary.allowlistContractBound, false);
+    assert.equal(summary.driverContractBoundary.allowlistContractHashMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.allowlistContractHashMatchesMutation, false);
+    assert.equal(summary.driverContractBoundary.allowlistRowSchemaMatchesMutation, false);
+    assert.notEqual(summary.driverContractBoundary.allowlistRowSchemaHash, digest(normalizedReleaseStateRowSchema));
+    assert.equal(summary.driverContractBoundary.contractBound, false);
+    assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
+    assertNoRawSentinels(summary, 'allowlist row schema mismatch summary');
   });
 
   await t.test('forged payload action is not release-verifier eligible', () => {
@@ -784,6 +918,49 @@ test('RPP-0483 release verifier blocks custom-table allowlist and apply carry-th
     assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
     assert.equal(summary.mutationBoundary.localHash, summary.localPluginStateEvidence.hash);
     assertNoRawSentinels(summary, 'planned payload row schema mismatch summary');
+  });
+
+  await t.test('unexpected nested payload properties are not release-verifier eligible with redacted evidence', () => {
+    const topology = releaseStateTopology();
+    const plan = releaseStatePlan(topology);
+    const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey);
+    const schemaMismatchValue = cloneJson(topology.localEditedSnapshot.db[boundary.table][boundary.rowId]);
+    schemaMismatchValue.payload.unexpected_private_note = rawSentinels[1];
+    schemaMismatchValue.payload.auth_token = 'rpp-0483-unexpected-auth-token-private';
+    topology.localEditedSnapshot.db[boundary.table][boundary.rowId] = schemaMismatchValue;
+    mutation.value = serializeResourceValue(schemaMismatchValue);
+    mutation.localHash = digest(schemaMismatchValue);
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.value.hash = digest(schemaMismatchValue);
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.schemaValidation =
+      unexpectedReleaseStateSchemaValidation(2);
+    const summary = summarize(topology, releaseVerifierProof(plan));
+    const unexpected = summary.driverContractBoundary.driverPayloadValidation.schemaValidation.fields.find(
+      (field) => field.path === 'payload' && field.state === 'unexpected',
+    );
+
+    assert.equal(summary.status, 'blocked');
+    assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+    assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
+    assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, false);
+    assert.equal(summary.driverContractBoundary.payloadActionMatchesMutation, true);
+    assert.equal(summary.driverContractBoundary.payloadValueHashMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.payloadSchemaValidationMatchesExpected, false);
+    assert.deepEqual(unexpected, {
+      field: 'payload',
+      path: 'payload',
+      expectedType: 'object',
+      required: true,
+      state: 'unexpected',
+      observedType: 'object',
+      observedExtraPropertyCount: 2,
+      matched: false,
+    });
+    assert.equal(summary.driverContractBoundary.contractBound, false);
+    assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
+    assert.equal(JSON.stringify(summary).includes('unexpected_private_note'), false);
+    assert.equal(JSON.stringify(summary).includes('auth_token'), false);
+    assert.equal(JSON.stringify(summary).includes('rpp-0483-unexpected-auth-token-private'), false);
+    assertNoRawSentinels(summary, 'unexpected nested payload properties summary');
   });
 
   await t.test('extra custom-table mutation is not release-verifier eligible', () => {

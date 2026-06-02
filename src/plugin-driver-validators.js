@@ -215,8 +215,10 @@ function validateContractBoundRowDriverPayload({
     issues.push({
       reasonCode: firstMismatch?.state === 'missing'
         ? 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_FIELD_MISSING'
-        : 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_TYPE_MISMATCH',
-      field: firstMismatch?.field || 'rowSchema',
+        : firstMismatch?.state === 'unexpected'
+          ? 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_UNEXPECTED_FIELD'
+          : 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_TYPE_MISMATCH',
+      field: firstMismatch?.path || firstMismatch?.field || 'rowSchema',
       expected: firstMismatch ? {
         type: firstMismatch.expectedType,
         required: firstMismatch.required,
@@ -288,28 +290,66 @@ function contractBoundRowSchemaValidationEvidence(rowSchema, value, action) {
       fields: [],
     };
   }
-  const valueIsObject = value && typeof value === 'object' && !Array.isArray(value);
-  const fields = normalized.fields.map((field) => {
-    const observedExists = valueIsObject && Object.prototype.hasOwnProperty.call(value, field.field);
-    const observed = observedExists ? value[field.field] : undefined;
-    const observedType = observedExists ? contractBoundRowSchemaValueType(observed) : null;
-    const matched = observedExists
-      ? observedType === field.type
-      : field.required !== true;
-    return {
-      field: field.field,
-      expectedType: field.type,
-      required: field.required === true,
-      state: observedExists ? 'present' : 'missing',
-      observedType,
-      matched,
-    };
+  const fields = contractBoundRowSchemaFieldEvidence({
+    schemaFields: normalized.fields,
+    value,
   });
   return {
     schemaHash,
     status: fields.every((field) => field.matched) ? 'matched' : 'mismatch',
     fields,
   };
+}
+
+function contractBoundRowSchemaFieldEvidence({
+  schemaFields,
+  value,
+  pathPrefix = '',
+} = {}) {
+  const valueIsObject = value && typeof value === 'object' && !Array.isArray(value);
+  const fields = [];
+  for (const field of schemaFields) {
+    const path = pathPrefix ? `${pathPrefix}.${field.field}` : field.field;
+    const observedExists = valueIsObject && Object.prototype.hasOwnProperty.call(value, field.field);
+    const observed = observedExists ? value[field.field] : undefined;
+    const observedType = observedExists ? contractBoundRowSchemaValueType(observed) : null;
+    const matched = observedExists
+      ? observedType === field.type
+      : field.required !== true;
+    fields.push({
+      field: field.field,
+      ...(pathPrefix ? { path } : {}),
+      expectedType: field.type,
+      required: field.required === true,
+      state: observedExists ? 'present' : 'missing',
+      observedType,
+      matched,
+    });
+    if (matched && field.type === 'object' && Array.isArray(field.properties)) {
+      fields.push(...contractBoundRowSchemaFieldEvidence({
+        schemaFields: field.properties,
+        value: observed,
+        pathPrefix: path,
+      }));
+      if (field.additionalProperties === false && observed && typeof observed === 'object' && !Array.isArray(observed)) {
+        const allowed = new Set(field.properties.map((property) => property.field));
+        const extraFields = Object.keys(observed).filter((extraField) => !allowed.has(extraField));
+        if (extraFields.length > 0) {
+          fields.push({
+            field: field.field,
+            path,
+            expectedType: 'object',
+            required: field.required === true,
+            state: 'unexpected',
+            observedType: contractBoundRowSchemaValueType(observed),
+            observedExtraPropertyCount: extraFields.length,
+            matched: false,
+          });
+        }
+      }
+    }
+  }
+  return fields;
 }
 
 function contractBoundRowSchemaValueType(value) {

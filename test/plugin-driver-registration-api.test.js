@@ -361,7 +361,15 @@ reprint_push_register_plugin_owned_row_driver([
         'required' => ['id', 'payload', '__pluginOwner'],
         'fields' => [
             'id' => 'integer',
-            'payload' => 'string',
+            'payload' => [
+                'type' => 'object',
+                'required' => ['mode', 'version'],
+                'additionalProperties' => false,
+                'properties' => [
+                    'mode' => 'string',
+                    'version' => 'integer',
+                ],
+            ],
             '__pluginOwner' => 'string',
         ],
     ],
@@ -422,7 +430,16 @@ echo json_encode([
       fields: [
         { field: '__pluginOwner', type: 'string', required: true },
         { field: 'id', type: 'integer', required: true },
-        { field: 'payload', type: 'string', required: true },
+        {
+          field: 'payload',
+          type: 'object',
+          required: true,
+          additionalProperties: false,
+          properties: [
+            { field: 'mode', type: 'string', required: true },
+            { field: 'version', type: 'integer', required: true },
+          ],
+        },
       ],
     },
   });
@@ -760,13 +777,24 @@ $row_schema = [
     'required' => ['id', 'payload', '__pluginOwner'],
     'fields' => [
         'id' => 'integer',
-        'payload' => 'string',
+        'payload' => [
+            'type' => 'object',
+            'required' => ['mode', 'version'],
+            'additionalProperties' => false,
+            'properties' => [
+                'mode' => 'string',
+                'version' => 'integer',
+            ],
+        ],
         '__pluginOwner' => 'string',
     ],
 ];
 $value = [
     'id' => 7,
-    'payload' => 'schema-bound-private-payload',
+    'payload' => [
+        'mode' => 'schema-bound-private-mode',
+        'version' => 1,
+    ],
     '__pluginOwner' => 'fixture-schema-bound-plugin',
 ];
 $snapshot = [
@@ -797,7 +825,7 @@ $base_mutation = [
     ),
 ];
 $forged_schema_payload = $base_mutation;
-$forged_schema_payload['value']['value']['payload'] = ['not' => 'a-string'];
+$forged_schema_payload['value']['value']['payload']['private_note'] = 'schema-bound-private-payload';
 $forged_schema_payload['pluginOwnedResource'] = rpp_schema_bound_policy(
     $resource_key,
     'wp_fixture_schema_bound_rows',
@@ -819,6 +847,7 @@ echo json_encode([
         return true;
     }),
     'schemaValidation' => $forged_schema_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['schemaValidation'],
+    'normalizedSchema' => $base_mutation['pluginOwnedResource']['contractValidationEvidence']['rowSchema'],
 ]);
 `);
 
@@ -830,15 +859,32 @@ echo json_encode([
   );
   assert.equal(report.schemaValidation.status, 'mismatch');
   assert.deepEqual(
-    report.schemaValidation.fields.find((field) => field.field === 'payload'),
+    report.schemaValidation.fields.find((field) => field.path === 'payload' && field.state === 'unexpected'),
     {
       field: 'payload',
-      expectedType: 'string',
+      path: 'payload',
+      expectedType: 'object',
       required: true,
-      state: 'present',
+      state: 'unexpected',
       observedType: 'object',
+      observedExtraPropertyCount: 1,
       matched: false,
     },
   );
+  assert.equal(JSON.stringify(report.schemaValidation).includes('private_note'), false);
+  assert.deepEqual(
+    report.normalizedSchema.fields.find((field) => field.field === 'payload'),
+    {
+      field: 'payload',
+      type: 'object',
+      required: true,
+      additionalProperties: false,
+      properties: [
+        { field: 'mode', type: 'string', required: true },
+        { field: 'version', type: 'integer', required: true },
+      ],
+    },
+  );
+  assert.equal(JSON.stringify(report).includes('schema-bound-private-mode'), false);
   assert.equal(JSON.stringify(report).includes('schema-bound-private-payload'), false);
 });

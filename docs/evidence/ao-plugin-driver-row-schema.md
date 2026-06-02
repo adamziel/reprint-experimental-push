@@ -11,14 +11,19 @@ cannot be swapped without changing the contract fingerprint.
 
 The first schema language is intentionally small:
 
-- required top-level row fields
+- required row fields
+- nested object `properties`
+- `additionalProperties: false` for declared object properties
 - field types: `string`, `integer`, `number`, `boolean`, `object`, `array`,
   and `null`
 
 Planner, apply, PHP registration/export, and the RPP-0483 production-shaped
 verifier now recompute schema validation evidence. A forged ready plan that
-changes a schema-bound field type and recomputes the value hash still refuses
-before mutation.
+changes a schema-bound field type, adds an undeclared nested payload property,
+or rewrites payload evidence while recomputing the value hash still refuses
+before mutation. Unexpected nested properties are reported at the declared
+object path with `observedExtraPropertyCount`; the evidence does not name the
+raw extra keys.
 
 ## Verification
 
@@ -39,17 +44,20 @@ Coverage includes:
 - accepted schema-bound custom row-driver payload evidence
 - planner refusal for malformed schema contracts
 - planner refusal for row payloads with wrong schema-bound field types
+- planner refusal for undeclared nested object properties without exposing raw
+  extra key names
 - apply refusal for forged ready plans with recomputed value hashes but invalid
   schema-bound payloads
 - PHP registered-driver policy export with normalized schema metadata
 - PHP exact-key evidence acceptance only when schema validation matches
 - RPP-0483 release-verifier refusal when payload hashes match but schema
-  validation does not
+  validation, exact payload evidence shape, or allowlist schema binding does
+  not
 
 ## Caveat
 
 This is not a full generic plugin merge driver or JSON Schema implementation.
-It proves the first plugin-declared schema contract: top-level required fields
-and field types. Nested properties, enum/const rules, merge strategies,
-activation/update effects, and broader plugin-owned file contracts remain
-separate release-scope work.
+It proves a plugin-declared row schema contract for required fields, nested
+object properties, and closed declared objects. Enum/const rules, merge
+strategies, activation/update effects, and broader plugin-owned file contracts
+remain separate release-scope work.
