@@ -1245,7 +1245,10 @@ function reprint_push_protocol_storage_guard_coverage_for_mutation(array $mutati
             && $expected_resource_exists
             && $table === 'wp_postmeta';
         $covered_blogmeta_put = !$is_delete && is_array($value) && $table === 'wp_blogmeta';
-        $covered = $covered_update || $covered_post_insert || $covered_postmeta_insert || $covered_postmeta_delete || $covered_blogmeta_put;
+        $covered_blogmeta_delete = $is_delete
+            && $expected_resource_exists
+            && $table === 'wp_blogmeta';
+        $covered = $covered_update || $covered_post_insert || $covered_postmeta_insert || $covered_postmeta_delete || $covered_blogmeta_put || $covered_blogmeta_delete;
         return array_merge($base, [
             'covered' => $covered,
             'boundary' => $covered_post_insert

@@ -1778,6 +1778,12 @@ function reprint_push_apply_resource_with_storage_guard(array $resource, array $
         ) {
             return reprint_push_guarded_delete_existing_postmeta_row($id, $expected_resource_value['value'], $expected_storage_value);
         }
+        if ($table === 'wp_blogmeta'
+            && ($expected_resource_value['exists'] ?? false) === true
+            && is_array($expected_resource_value['value'] ?? null)
+        ) {
+            return reprint_push_guarded_delete_existing_blogmeta_row($id, $expected_resource_value['value'], $expected_storage_value);
+        }
         reprint_push_apply_resource($resource, $payload);
         return [
             'applied' => true,
@@ -2232,6 +2238,58 @@ function reprint_push_guarded_update_existing_blogmeta_row(string $id, array $ex
     }
 
     return reprint_push_storage_guard_result('wp-blogmeta', 'wp_blogmeta', $table_name, 'update', ['blog_id', 'meta_key', 'meta_value', 'parent_fixture_marker'], $expected, $expected_storage, $rows, $shape);
+}
+
+function reprint_push_guarded_delete_existing_blogmeta_row(string $id, array $expected, ?array $expected_storage_value = null): array
+{
+    global $wpdb;
+
+    [$blog_id, $meta_key] = reprint_push_parse_blogmeta_row_id($id);
+    if ((int) ($expected['blog_id'] ?? 0) !== $blog_id
+        || (string) ($expected['meta_key'] ?? '') !== $meta_key
+        || !array_key_exists('meta_value', $expected)
+    ) {
+        throw new RuntimeException('Blogmeta expected row does not match row id: ' . $id);
+    }
+
+    $table_name = reprint_push_blogmeta_table_name();
+    $expected_storage = [
+        'blog_id' => $blog_id,
+        'meta_key' => $meta_key,
+        'meta_value' => (string) maybe_serialize($expected['meta_value']),
+    ];
+    if (($expected_storage_value['exists'] ?? false) === true && is_array($expected_storage_value['value'] ?? null)) {
+        $expected_storage = $expected_storage_value['value'];
+    }
+
+    $table = reprint_push_quote_identifier($table_name);
+    $expected_parent_fixture_marker_id = (int) ($expected_storage['parent_fixture_marker_meta_id'] ?? 0);
+    $expected_parent_fixture_marker = (string) ($expected_storage['parent_fixture_marker_meta_value'] ?? '');
+    $shape = "DELETE FROM {$table} WHERE blog_id = %d AND meta_key = %s AND meta_value = %s AND (SELECT COUNT(*) FROM (SELECT meta_id FROM {$table} WHERE blog_id = %d AND meta_key = %s) AS reprint_push_guard_blogmeta_count) = 1 AND (SELECT COUNT(*) FROM (SELECT marker.meta_id FROM {$table} marker WHERE marker.meta_id = %d AND marker.blog_id = %d AND marker.meta_key = %s AND marker.meta_value = %s AND marker.meta_value <> '') AS reprint_push_guard_parent_blog_marker_count) >= 1";
+    if (!reprint_push_table_exists($table_name)) {
+        return reprint_push_storage_guard_result('wp-blogmeta', 'wp_blogmeta', $table_name, 'delete', ['blog_id', 'meta_key', 'meta_value', 'parent_fixture_marker'], $expected, $expected_storage, 0, $shape);
+    }
+
+    $rows = $wpdb->query($wpdb->prepare(
+        $shape,
+        $blog_id,
+        $meta_key,
+        (string) ($expected_storage['meta_value'] ?? ''),
+        $blog_id,
+        $meta_key,
+        $expected_parent_fixture_marker_id,
+        $blog_id,
+        reprint_push_blog_fixture_meta_key(),
+        $expected_parent_fixture_marker
+    ));
+    if ($rows === false) {
+        throw new RuntimeException('Could not apply guarded blogmeta row delete: ' . $wpdb->last_error);
+    }
+    if ((int) $rows === 1) {
+        reprint_push_clean_blogmeta_cache($blog_id);
+    }
+
+    return reprint_push_storage_guard_result('wp-blogmeta', 'wp_blogmeta', $table_name, 'delete', ['blog_id', 'meta_key', 'meta_value', 'parent_fixture_marker'], $expected, $expected_storage, $rows, $shape);
 }
 
 function reprint_push_guarded_create_blogmeta_row(string $id, array $value, ?array $expected_storage_value = null): array

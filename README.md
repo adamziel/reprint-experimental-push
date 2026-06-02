@@ -95,7 +95,7 @@ apply still must prove that the live source matches the receipt's preconditions.
 | Planning | Three-way diff over base, local, and remote snapshots with `ready`, `blocked`, and `conflict` outcomes. |
 | Apply | Batch apply guarded by expected hashes, stale-plan rejection, idempotency keys, live revalidation before writes, and selected storage-boundary guards. |
 | Resources | File resources, WordPress row resources, plugin resources, selected metadata rows, and fixture-scoped plugin-owned tables. |
-| Storage guards | Fixture upload files, guarded WordPress row updates, fixture-scoped `wp_posts` creates through primary-key insert CAS evidence, selected `wp_postmeta`/`wp_blogmeta` creates through named-lock CAS evidence, and fixture-scoped `wp_postmeta` deletes through single-statement CAS evidence. |
+| Storage guards | Fixture upload files, guarded WordPress row updates, fixture-scoped `wp_posts` creates through primary-key insert CAS evidence, selected `wp_postmeta`/`wp_blogmeta` creates through named-lock CAS evidence, and fixture-scoped `wp_postmeta`/`wp_blogmeta` deletes through single-statement CAS evidence. |
 | Remote preservation | Remote-only changes and unplanned remote drift are preserved unless a planned change explicitly owns that resource. |
 | Conflict handling | Overlapping local and remote edits refuse before mutation. Non-ready entries suppress overlapping writes. |
 | Plugin-owned data | Owner context, merge-driver evidence, validation checks, and allowlist boundaries for plugin-owned mutations. |
@@ -331,8 +331,8 @@ Known remaining integration work includes:
 - Broader production storage-level compare-and-swap or locking around every
   final target write; selected fixture upload files, guarded WordPress row
   updates, `wp_posts` creates, fixture-scoped `wp_postmeta`/`wp_blogmeta`
-  creates, and fixture-scoped `wp_postmeta` deletes already have route-tested
-  storage-boundary evidence.
+  creates, and fixture-scoped `wp_postmeta`/`wp_blogmeta` deletes already have
+  route-tested storage-boundary evidence.
 - Production plugin activation/update flows with dependency and recovery checks.
 - Object-cache, cron, generated-file, and maintenance-mode interactions.
 - Generic plugin validator and merge-driver contracts beyond the current

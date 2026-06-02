@@ -297,6 +297,7 @@ test('production apply refuses uncovered storage write boundaries before mutatio
   const guardedPostmetaPut = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_put_postmeta_row');
   const guardedPostmetaDelete = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_delete_existing_postmeta_row');
   const guardedPostmetaCreate = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_create_postmeta_row');
+  const guardedBlogmetaDelete = functionBodyFromSource(snapshotSource, 'reprint_push_guarded_delete_existing_blogmeta_row');
   const guardedApply = functionBodyFromSource(snapshotSource, 'reprint_push_apply_resource_with_storage_guard');
   const dbJournalMutationEvidence = functionBodyFromSource(
     dbJournalLibSource,
@@ -350,7 +351,8 @@ test('production apply refuses uncovered storage write boundaries before mutatio
   assert.match(coverageClassifier, /\$covered_post_insert\s*=\s*!\$is_delete[\s\S]*\$table === 'wp_posts'/);
   assert.match(coverageClassifier, /\$covered_postmeta_insert\s*=\s*!\$is_delete[\s\S]*\$table === 'wp_postmeta'/);
   assert.match(coverageClassifier, /\$covered_postmeta_delete\s*=\s*\$is_delete[\s\S]*\$table === 'wp_postmeta'/);
-  assert.match(coverageClassifier, /\$covered_update \|\| \$covered_post_insert \|\| \$covered_postmeta_insert \|\| \$covered_postmeta_delete \|\| \$covered_blogmeta_put/);
+  assert.match(coverageClassifier, /\$covered_blogmeta_delete\s*=\s*\$is_delete[\s\S]*\$table === 'wp_blogmeta'/);
+  assert.match(coverageClassifier, /\$covered_update \|\| \$covered_post_insert \|\| \$covered_postmeta_insert \|\| \$covered_postmeta_delete \|\| \$covered_blogmeta_put \|\| \$covered_blogmeta_delete/);
   assert.match(coverageClassifier, /'wpdb-primary-key-insert-cas'/);
   assert.match(coverageClassifier, /'wpdb-named-lock-cas'/);
   assert.match(coverageClassifier, /'row-write-has-no-storage-guard'/);
@@ -361,6 +363,7 @@ test('production apply refuses uncovered storage write boundaries before mutatio
   assert.match(guardedApply, /if \(\$table === 'wp_postmeta'\) \{\s*return reprint_push_guarded_put_postmeta_row\(/);
   assert.match(guardedApply, /if \(\$table === 'wp_blogmeta'\) \{\s*return reprint_push_guarded_put_blogmeta_row\(/);
   assert.match(guardedApply, /if \(!empty\(\$payload\['absent'\]\)\) \{[\s\S]*\$table === 'wp_postmeta'[\s\S]*return reprint_push_guarded_delete_existing_postmeta_row\(/);
+  assert.match(guardedApply, /if \(!empty\(\$payload\['absent'\]\)\) \{[\s\S]*\$table === 'wp_blogmeta'[\s\S]*return reprint_push_guarded_delete_existing_blogmeta_row\(/);
   assertBefore(
     guardedApply,
     "if (!empty($payload['absent']))",
@@ -397,6 +400,11 @@ test('production apply refuses uncovered storage write boundaries before mutatio
   assert.match(guardedPostmetaDelete, /reprint_push_guard_parent_marker_count\) >= 1/);
   assert.match(guardedPostmetaDelete, /reprint_push_storage_guard_result\('wp-postmeta',\s*'wp_postmeta',\s*\$wpdb->postmeta,\s*'delete'/);
   assert.doesNotMatch(guardedPostmetaDelete, /delete_post_meta|wp_delete_post/);
+  assert.match(guardedBlogmetaDelete, /DELETE FROM \{\$table\} WHERE blog_id = %d AND meta_key = %s AND meta_value = %s/);
+  assert.match(guardedBlogmetaDelete, /reprint_push_guard_blogmeta_count\) = 1/);
+  assert.match(guardedBlogmetaDelete, /reprint_push_guard_parent_blog_marker_count\) >= 1/);
+  assert.match(guardedBlogmetaDelete, /reprint_push_storage_guard_result\('wp-blogmeta',\s*'wp_blogmeta',\s*\$table_name,\s*'delete'/);
+  assert.doesNotMatch(guardedBlogmetaDelete, /delete_metadata|delete_site_meta|delete_blog_option|wpmu_delete_blog/);
 
   assert.match(dbJournalMutationEvidence, /\$evidence\['storageGuardCoverage'\]\s*=\s*\$mutation\['storageGuardCoverage'\]/);
   assert.match(compactDbJournalResult, /'storageGuardCoverage'/);
