@@ -78,6 +78,12 @@ explicit identity map, it also records the normalized identity-map
 `contractHash`. Apply recomputes both contract hashes and rejects forged,
 missing, or unsupported rewrite evidence before any mutation.
 
+For meta tables whose row resource IDs include the referenced owner ID, planner
+also rewrites the dependent row key. Version 1 covers composite meta IDs shaped
+like `<owner_field>:<id>:meta_key:<key>` for supported WordPress meta families,
+including `wp_blogmeta.blog_id`. Apply then validates that the serialized
+payload field and the rewritten row key point at the same carried target row.
+
 Identity-map equivalence is proven only against maps already promoted as usable.
 The candidate map may rewrite its own primary row ID during equivalence
 comparison, but nested scalar references inside that row must resolve through a
@@ -86,9 +92,11 @@ valid nested maps are not sensitive to exporter row order; an invalid nested map
 cannot make another map usable.
 
 Apply also checks that each rewritten scalar field in the serialized mutation
-payload equals the primary ID from the carried `targetResourceKey`. A mutation
-whose rewrite evidence points at one row while the payload writes a different
-ID is refused before mutation with
+payload equals the primary ID from the carried `targetResourceKey`. Primary IDs
+are derived by WordPress table suffix, so prefixed site tables and multisite
+global targets such as `wp_blogs.blog_id` and `wp_site.id` stay bound to the
+same evidence path. A mutation whose rewrite evidence points at one row while
+the payload writes a different ID is refused before mutation with
 `WORDPRESS_GRAPH_REWRITE_TARGET_VALUE_MISMATCH`, with hash-only expected and
 observed ID evidence.
 

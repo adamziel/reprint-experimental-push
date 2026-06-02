@@ -2393,23 +2393,40 @@ function wordpressGraphIdentityMapDecisionForRewrite(rewrite, decisions) {
 function wordpressGraphRewriteTargetPrimaryValue(targetResource) {
   const id = String(targetResource?.id ?? '');
   const table = String(targetResource?.table ?? '');
-  const primaryKeyByTable = new Map([
-    ['wp_posts', 'ID'],
-    ['wp_postmeta', 'meta_id'],
-    ['wp_terms', 'term_id'],
-    ['wp_term_taxonomy', 'term_taxonomy_id'],
-    ['wp_comments', 'comment_ID'],
-    ['wp_commentmeta', 'meta_id'],
-    ['wp_termmeta', 'meta_id'],
-    ['wp_users', 'ID'],
-    ['wp_usermeta', 'umeta_id'],
-  ]);
-  const primaryKey = primaryKeyByTable.get(table);
+  const primaryKey = wordpressGraphRewritePrimaryKeyForTable(table);
   if (!primaryKey) {
     return null;
   }
   const prefix = `${primaryKey}:`;
   return id.startsWith(prefix) ? id.slice(prefix.length) : null;
+}
+
+function wordpressGraphRewritePrimaryKeyForTable(table) {
+  const primaryKeyBySuffix = [
+    ['registration_log', 'ID'],
+    ['blog_versions', 'blog_id'],
+    ['commentmeta', 'meta_id'],
+    ['sitemeta', 'meta_id'],
+    ['blogmeta', 'meta_id'],
+    ['comments', 'comment_ID'],
+    ['term_relationships', null],
+    ['term_taxonomy', 'term_taxonomy_id'],
+    ['postmeta', 'meta_id'],
+    ['usermeta', 'umeta_id'],
+    ['users', 'ID'],
+    ['termmeta', 'meta_id'],
+    ['links', 'link_id'],
+    ['blogs', 'blog_id'],
+    ['site', 'id'],
+    ['posts', 'ID'],
+    ['terms', 'term_id'],
+  ];
+  for (const [suffix, primaryKey] of primaryKeyBySuffix) {
+    if (table === `wp_${suffix}` || table.endsWith(`_${suffix}`)) {
+      return primaryKey;
+    }
+  }
+  return null;
 }
 
 function wordpressGraphRewriteScalarMatchesTarget(actualValue, targetId) {

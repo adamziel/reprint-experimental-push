@@ -2593,10 +2593,25 @@ function rewriteWordPressGraphMutation({ resource, localValue, identityMap }) {
 
 function rewriteWordPressGraphResourceId(resource, rewriteByField) {
   const suffix = wordpressGraphTableSuffix(resource.table);
-  if (suffix === 'postmeta' && rewriteByField.has('post_id')) {
-    const match = /^post_id:(\d+):meta_key:(.+)$/.exec(resource.id);
+  const metaOwnerFieldBySuffix = new Map([
+    ['postmeta', 'post_id'],
+    ['commentmeta', 'comment_id'],
+    ['termmeta', 'term_id'],
+    ['usermeta', 'user_id'],
+    ['sitemeta', 'site_id'],
+    ['blogmeta', 'blog_id'],
+  ]);
+  const metaOwnerField = metaOwnerFieldBySuffix.get(suffix);
+  if (metaOwnerField && rewriteByField.has(metaOwnerField)) {
+    const match = new RegExp(`^${escapeRegExp(metaOwnerField)}:(\\d+):meta_key:(.+)$`).exec(resource.id);
     if (match) {
-      return rowResource(resource.table, `post_id:${rewriteByField.get('post_id')}:meta_key:${match[2]}`);
+      return rowResource(resource.table, `${metaOwnerField}:${rewriteByField.get(metaOwnerField)}:meta_key:${match[2]}`);
+    }
+  }
+  if (suffix === 'blog_versions' && rewriteByField.has('blog_id')) {
+    const match = /^blog_id:(\d+)$/.exec(resource.id);
+    if (match) {
+      return rowResource(resource.table, `blog_id:${rewriteByField.get('blog_id')}`);
     }
   }
   if (suffix === 'term_relationships') {

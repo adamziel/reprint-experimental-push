@@ -4,6 +4,32 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Blogmeta Graph Identity Row-Key Rewrite
+
+- Last update: 2026-06-02 09:23 CEST +02:00.
+- Planner now rewrites composite WordPress meta row IDs when the owning scalar
+  reference is rewritten through a proven identity map. The focused RPP-0901
+  proof covers `wp_blogmeta.blog_id` rows shaped as
+  `blog_id:<source>:meta_key:<key>`, which are planned at the proven remote
+  blog target row key.
+- Apply now extracts rewrite target primary IDs by WordPress table suffix
+  instead of exact table name. This binds rewrite payload validation for
+  multisite targets such as `wp_blogs.blog_id` and keeps prefixed WordPress
+  tables on the same evidence path.
+- Forged ready plans that retain contract hashes but change the rewritten
+  `blog_id` payload refuse before mutation with
+  `WORDPRESS_GRAPH_REWRITE_TARGET_VALUE_MISMATCH`.
+- Stale explicit maps whose remote blog target no longer matches the local
+  source blog remain blocked before mutation, and dependent blogmeta rows
+  inherit hash-only target evidence.
+- Verification: focused syntax checks passed; RPP-0901 focused blogmeta test
+  passed with 3 subtests and 0 failures. See
+  [ao-graph-identity-blogmeta.md](evidence/ao-graph-identity-blogmeta.md).
+- Caveat: this proves explicit identity-map rewriting for a declared multisite
+  scalar reference and composite row key. It does not infer blog identity from
+  domains or paths, and it does not widen unsupported plugin-owned graph
+  surfaces.
+
 ## 2026-06-02 - Plugin Row Driver Reference Field Contracts
 
 - Last update: 2026-06-02 09:19 CEST +02:00.

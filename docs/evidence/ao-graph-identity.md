@@ -35,6 +35,12 @@ Lane: graph-identity
   primary ID. Forged ready plans with valid contract hashes but a mismatched
   rewritten payload field now refuse before mutation with hash-only
   `WORDPRESS_GRAPH_REWRITE_TARGET_VALUE_MISMATCH` evidence.
+- Adds RPP-0901 focused planner/apply evidence for multisite
+  `wp_blogmeta.blog_id` identity-map rewrites. Composite blogmeta row IDs shaped
+  as `blog_id:<source>:meta_key:<key>` are rewritten to the proven remote blog
+  target, and apply validates target primary IDs by WordPress table suffix so
+  `wp_blogs.blog_id` and prefixed tables stay bound to the same hash-only
+  rewrite evidence.
 
 ## Verification commands
 
@@ -87,6 +93,10 @@ RPP-0306 focused worker verification commands:
 - `node --test test/push-planner.test.js test/wordpress-graph-contracts.test.js test/playground-snapshot-lib.test.js test/graph-mapping-inventory.test.js`
   — 169 subtests, 0 failures, including the full planner graph surface,
   JS/PHP graph contract parity, snapshot gate coverage, and graph inventory.
+- `node --test test/rpp-0901-blogmeta-blog-id-reference-v6.test.js`
+  — 3 subtests, 0 failures, including `wp_blogmeta.blog_id` payload and
+  composite row-key rewrite, forged payload refusal, and stale mapped-target
+  refusal before mutation.
 
 A full `npm test` run was attempted for broader signal, but unrelated existing failures appeared in authenticated HTTP push client and playground snapshot/plugin-driver tests before the run was stopped; the focused graph-identity checks above passed.
 
@@ -113,3 +123,7 @@ A full `npm test` run was attempted for broader signal, but unrelated existing f
 - RPP-0319 / RPP-0320: cross-table create/reference batches can carry an importer/exporter identity map while preserving remote target rows and recording hash-only rewrite evidence.
 - RPP-0340: production importer/exporter identity-map proof covers immutable-base `pushIdentityMap` metadata, dependent row rewrites, stale-target fail-closed behavior, and hash-only provenance evidence.
 - RPP-0347 evidence note: generated comment user references include ready same-plan creates and stale user drift cases with hash-only blocker evidence.
+- RPP-0901: `wp_blogmeta.blog_id` references now rewrite through explicit
+  `wp_blogs` identity maps, including composite
+  `blog_id:<id>:meta_key:<key>` row IDs, apply-time forged payload refusal,
+  and stale target refusal.
