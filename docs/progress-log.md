@@ -7178,6 +7178,24 @@ linked implementation artifacts.
   remain 514/486; final release remains `NO-GO` because this is local
   recovery-classifier and SQLite recovery-table evidence, not external
   production-backed durability proof.
+- Contract-bound plugin payload release-verifier hardening: the current lane
+  now strengthens `RPP-0483` in
+  `scripts/playground/production-shaped-release-verify.mjs` and
+  `test/rpp-0483-custom-table-allowlist-release-verifier-v5.test.js`. The
+  production plugin-driver boundary summary now accepts contract-bound payload
+  evidence only when it binds the exact mutation action, planned value hash,
+  value state, contract `supportsDelete` flag, contract hash, and
+  `contractValidationHash`; forged action, value hash, and
+  contract-validation hash summaries fail the release verifier boundary while
+  staying hash-only. Validation passed with Node syntax checks, focused
+  RPP-0483 coverage 11/11, adjacent plugin-driver contract coverage 26/26,
+  production-shaped plugin-driver subset coverage 22/22, adjacent planner and
+  contract coverage 16/16, and full `test/production-shaped-proof.test.js`
+  coverage 134 total / 123 passed / 11 skipped / 0 failed. Release checklist
+  lint, scoped redaction scan, whitespace check, and RPP-0483 private-marker
+  leak scan also exited cleanly. Counts remain 514/486; final release remains
+  `NO-GO` because this is release-verifier hardening for a local plugin-driver
+  proof, not external production-backed plugin contract evidence.
 - Same-key different-body conflict route refinement: the current lane now
   preserves the older `session/rpp-517` RPP-0517 ancestry while retaining the
   stronger current production-shaped route proof. The route conflict payload now

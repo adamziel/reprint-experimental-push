@@ -5128,7 +5128,7 @@ test('RPP-0228 refuses unknown plugin-owned resources before mutation with redac
   }
 });
 
-test('allows plugin-owned custom table rows with explicit driver table policy', () => {
+test('blocks plugin-owned custom table rows with driver table policy but no explicit contract', () => {
   const resourceKey = 'row:["wp_reprint_push_driver_fixture","entry_id:1"]';
   const base = baseSite();
   base.db.wp_reprint_push_driver_fixture = {
@@ -5155,13 +5155,19 @@ test('allows plugin-owned custom table rows with explicit driver table policy', 
 
   const plan = planFor(base, local, remote);
 
-  assert.equal(plan.status, 'ready');
-  const mutation = mutationFor(plan, resourceKey);
-  assert.equal(mutation.pluginOwnedResource.driver, 'fixture-arbitrary-plugin-table');
-  assert.equal(mutation.pluginOwnedResource.supportsDelete, false);
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.mutations.length, 0);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  assert.equal(blocker.class, 'missing-plugin-driver-contract');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_REQUIRED');
+  assert.equal(blocker.driver, 'fixture-arbitrary-plugin-table');
+  assert.equal(blocker.pluginDriverContractRequiredEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_REQUIRED');
+  assert.equal(blocker.pluginDriverContractRequiredEvidence.table, 'wp_reprint_push_driver_fixture');
+  assert.equal(blocker.pluginDriverContractRequiredEvidence.rawValuesIncluded, false);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
 });
 
-test('RPP-0463 custom table allowlist exact match stays row owner driver and table bound', () => {
+test('RPP-0463 generic custom table allowlists require explicit row-driver contracts', () => {
   const allowedResourceKey = 'row:["wp_reprint_push_driver_fixture","entry_id:1"]';
   const wrongOwnerResourceKey = 'row:["wp_reprint_push_driver_fixture","entry_id:2"]';
   const wrongTableResourceKey = 'row:["wp_reprint_push_driver_fixture_shadow","entry_id:1"]';
@@ -5236,20 +5242,23 @@ test('RPP-0463 custom table allowlist exact match stays row owner driver and tab
   const remote = cloneJson(base);
 
   const plan = planFor(base, local, remote);
-  const allowedMutation = mutationFor(plan, allowedResourceKey);
+  const missingContractBlocker = plan.blockers.find((blocker) => blocker.resourceKey === allowedResourceKey);
   const wrongOwnerBlocker = plan.blockers.find((blocker) => blocker.resourceKey === wrongOwnerResourceKey);
   const wrongTableBlocker = plan.blockers.find((blocker) => blocker.resourceKey === wrongTableResourceKey);
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(plan.mutations.length, 1);
-  assert.equal(plan.blockers.length, 2);
-  assert.ok(allowedMutation, 'exact allowlist row should still plan a mutation');
-  assert.equal(allowedMutation.pluginOwnedResource.pluginOwner, 'driver-fixture');
-  assert.equal(allowedMutation.pluginOwnedResource.driver, 'fixture-arbitrary-plugin-table');
-  assert.equal(allowedMutation.pluginOwnedResource.supportsDelete, false);
-  assert.equal(allowedMutation.pluginOwnedResource.auditEvidence.format, 'hash-only');
-  assert.equal(allowedMutation.pluginOwnedResource.auditEvidence.rawValuesIncluded, false);
-  assert.match(allowedMutation.pluginOwnedResource.auditEvidence.ownerContextHash, /^[a-f0-9]{64}$/);
+  assert.equal(plan.mutations.length, 0);
+  assert.equal(plan.blockers.length, 3);
+  assert.equal(missingContractBlocker.class, 'missing-plugin-driver-contract');
+  assert.equal(missingContractBlocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_REQUIRED');
+  assert.equal(missingContractBlocker.pluginOwner, 'driver-fixture');
+  assert.equal(missingContractBlocker.driver, 'fixture-arbitrary-plugin-table');
+  assert.equal(
+    missingContractBlocker.pluginDriverContractRequiredEvidence.table,
+    'wp_reprint_push_driver_fixture',
+  );
+  assert.equal(missingContractBlocker.pluginDriverContractRequiredEvidence.rawValuesIncluded, false);
+  assert.equal(mutationFor(plan, allowedResourceKey), undefined);
   assert.equal(mutationFor(plan, wrongOwnerResourceKey), undefined);
   assert.equal(mutationFor(plan, wrongTableResourceKey), undefined);
 
@@ -5264,14 +5273,19 @@ test('RPP-0463 custom table allowlist exact match stays row owner driver and tab
     evidenceScope: 'local-focused',
     productionBacked: false,
     releaseGate: 'NO-GO',
-    accepted: {
-      resourceKey: allowedMutation.resourceKey,
-      pluginOwner: allowedMutation.pluginOwnedResource.pluginOwner,
-      driver: allowedMutation.pluginOwnedResource.driver,
-      auditEvidence: allowedMutation.pluginOwnedResource.auditEvidence,
-      ownerContextHash: digest(allowedMutation.pluginOwnedResource.ownerContext),
+    missingContract: {
+      resourceKey: missingContractBlocker.resourceKey,
+      pluginOwner: missingContractBlocker.pluginOwner,
+      driver: missingContractBlocker.driver,
+      class: missingContractBlocker.class,
+      reasonCode: missingContractBlocker.reasonCode,
+      requiredContractKind:
+        missingContractBlocker.pluginDriverContractRequiredEvidence.requiredContractKind,
+      requiredContractVersion:
+        missingContractBlocker.pluginDriverContractRequiredEvidence.requiredContractVersion,
+      evidenceHash: digest(missingContractBlocker.pluginDriverContractRequiredEvidence),
     },
-    refused: [wrongOwnerBlocker, wrongTableBlocker].map((blocker) => ({
+    refused: [missingContractBlocker, wrongOwnerBlocker, wrongTableBlocker].map((blocker) => ({
       resourceKey: blocker.resourceKey,
       pluginOwner: blocker.pluginOwner,
       driver: blocker.driver,

@@ -231,14 +231,27 @@ test('RPP-0483 release verifier carries exact custom-table allowlist through app
   assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, true);
   assert.equal(summary.driverContractBoundary.contractHashMatchesExpected, true);
   assert.equal(summary.driverContractBoundary.contractHashMatchesPayload, true);
+  assert.equal(summary.driverContractBoundary.payloadContractValidationHashMatchesExpected, true);
+  assert.equal(summary.driverContractBoundary.payloadValueHashMatchesExpected, true);
+  assert.equal(summary.driverContractBoundary.payloadValueStateMatchesExpected, true);
+  assert.equal(summary.driverContractBoundary.payloadActionMatchesMutation, true);
+  assert.equal(summary.driverContractBoundary.payloadContractSupportsDeleteMatches, true);
   assert.match(summary.driverContractBoundary.contractHash, /^[a-f0-9]{64}$/);
+  assert.match(summary.driverContractBoundary.expectedContractValidationHash, /^[a-f0-9]{64}$/);
   assert.equal(summary.driverContractBoundary.expectedContractHash, summary.driverContractBoundary.contractHash);
   assert.equal(summary.driverContractBoundary.contractValidation.reasonCode, 'PLUGIN_DRIVER_CONTRACT_ACCEPTED');
   assert.equal(summary.driverContractBoundary.contractValidation.contractKind, 'plugin-owned-row-driver');
   assert.equal(summary.driverContractBoundary.contractValidation.contractVersion, 1);
   assert.equal(summary.driverContractBoundary.contractValidation.contractHash, summary.driverContractBoundary.contractHash);
   assert.equal(summary.driverContractBoundary.driverPayloadValidation.validator, 'contract-bound-row-driver');
+  assert.equal(summary.driverContractBoundary.driverPayloadValidation.action, 'put');
   assert.equal(summary.driverContractBoundary.driverPayloadValidation.contractHash, summary.driverContractBoundary.contractHash);
+  assert.equal(
+    summary.driverContractBoundary.driverPayloadValidation.contractValidationHash,
+    summary.driverContractBoundary.expectedContractValidationHash,
+  );
+  assert.equal(summary.driverContractBoundary.driverPayloadValidation.value.state, 'present');
+  assert.equal(summary.driverContractBoundary.driverPayloadValidation.value.hash, mutation.localHash);
   assert.equal(summary.ownershipBoundary.exactAllowlistOwnerDriver, true);
   assert.equal(summary.ownershipBoundary.exactMutationOwnerDriver, true);
   assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, true);
@@ -332,6 +345,60 @@ test('RPP-0483 release verifier blocks custom-table allowlist and apply carry-th
     assert.equal(summary.driverContractBoundary.contractBound, false);
     assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
     assertNoRawSentinels(summary, 'forged contract fingerprint summary');
+  });
+
+  await t.test('forged payload action is not release-verifier eligible', () => {
+    const topology = releaseStateTopology();
+    const plan = releaseStatePlan(topology);
+    const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey);
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.action = 'delete';
+    const summary = summarize(topology, releaseVerifierProof(plan));
+
+    assert.equal(summary.status, 'blocked');
+    assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+    assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
+    assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, false);
+    assert.equal(summary.driverContractBoundary.payloadActionMatchesMutation, false);
+    assert.equal(summary.driverContractBoundary.payloadValueHashMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.contractBound, false);
+    assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
+    assertNoRawSentinels(summary, 'forged payload action summary');
+  });
+
+  await t.test('forged payload value hash is not release-verifier eligible', () => {
+    const topology = releaseStateTopology();
+    const plan = releaseStatePlan(topology);
+    const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey);
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.value.hash = '0'.repeat(64);
+    const summary = summarize(topology, releaseVerifierProof(plan));
+
+    assert.equal(summary.status, 'blocked');
+    assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+    assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
+    assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, false);
+    assert.equal(summary.driverContractBoundary.payloadActionMatchesMutation, true);
+    assert.equal(summary.driverContractBoundary.payloadValueHashMatchesExpected, false);
+    assert.equal(summary.driverContractBoundary.contractBound, false);
+    assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
+    assertNoRawSentinels(summary, 'forged payload value hash summary');
+  });
+
+  await t.test('forged payload contract-validation hash is not release-verifier eligible', () => {
+    const topology = releaseStateTopology();
+    const plan = releaseStatePlan(topology);
+    const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey);
+    mutation.pluginOwnedResource.driverPayloadValidationEvidence.contractValidationHash = '0'.repeat(64);
+    const summary = summarize(topology, releaseVerifierProof(plan));
+
+    assert.equal(summary.status, 'blocked');
+    assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+    assert.equal(summary.driverContractBoundary.contractEvidenceAccepted, true);
+    assert.equal(summary.driverContractBoundary.driverPayloadEvidenceAccepted, false);
+    assert.equal(summary.driverContractBoundary.payloadContractValidationHashMatchesExpected, false);
+    assert.equal(summary.driverContractBoundary.payloadValueHashMatchesExpected, true);
+    assert.equal(summary.driverContractBoundary.contractBound, false);
+    assert.equal(summary.ownershipBoundary.contractBoundDriverMutation, false);
+    assertNoRawSentinels(summary, 'forged payload contract-validation hash summary');
   });
 
   await t.test('extra custom-table mutation is not release-verifier eligible', () => {

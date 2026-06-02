@@ -11499,6 +11499,25 @@ export function summarizeProductionPluginDriverBoundaryProof({
   const expectedContractHash = contractValidationEvidence
     ? pluginOwnedRowDriverContractHash(contractValidationEvidence)
     : null;
+  const expectedContractValidationHash = contractValidationEvidence
+    ? digest(contractValidationEvidence)
+    : null;
+  const plannedMutationValue = mutation
+    ? deserializeResourceValue(mutation.value)
+    : null;
+  const expectedDriverPayloadAction = mutation?.action || null;
+  const expectedDriverPayloadValueState = mutation
+    ? (plannedMutationValue === ABSENT ? 'absent' : 'present')
+    : null;
+  const expectedDriverPayloadValueHash = mutation
+    ? digest(plannedMutationValue)
+    : null;
+  const driverPayloadValueEvidence =
+    driverPayloadValidationEvidence?.value
+    && typeof driverPayloadValidationEvidence.value === 'object'
+    && !Array.isArray(driverPayloadValidationEvidence.value)
+      ? driverPayloadValidationEvidence.value
+      : null;
   const contractEvidenceAccepted = contractValidationEvidence?.schemaVersion === 1
     && contractValidationEvidence?.operation === 'plugin-driver-contract-validation'
     && contractValidationEvidence?.contractKind === 'plugin-owned-row-driver'
@@ -11515,18 +11534,43 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && contractValidationEvidence?.supportsDelete === false
     && bareSha256Pattern.test(contractHash || '')
     && contractHash === expectedContractHash;
+  const driverPayloadContractValidationHashMatchesExpected =
+    Boolean(expectedContractValidationHash)
+    && driverPayloadValidationEvidence?.contractValidationHash === expectedContractValidationHash;
+  const driverPayloadValueHashMatchesExpected =
+    Boolean(expectedDriverPayloadValueHash)
+    && driverPayloadValueEvidence?.hash === expectedDriverPayloadValueHash
+    && bareSha256Pattern.test(driverPayloadValueEvidence.hash || '');
+  const driverPayloadValueStateMatchesExpected =
+    Boolean(expectedDriverPayloadValueState)
+    && driverPayloadValueEvidence?.state === expectedDriverPayloadValueState;
+  const driverPayloadActionMatchesMutation =
+    Boolean(expectedDriverPayloadAction)
+    && driverPayloadValidationEvidence?.action === expectedDriverPayloadAction;
+  const driverPayloadContractSupportsDeleteMatches =
+    driverPayloadValidationEvidence?.contractSupportsDelete === contractValidationEvidence?.supportsDelete;
   const driverPayloadEvidenceAccepted = contractEvidenceAccepted
+    && driverPayloadValidationEvidence?.schemaVersion === 1
+    && driverPayloadValidationEvidence?.operation === 'plugin-driver-payload-validation'
     && driverPayloadValidationEvidence?.validator === 'contract-bound-row-driver'
     && driverPayloadValidationEvidence?.outcome === 'accepted'
     && driverPayloadValidationEvidence?.reasonCode === 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED'
+    && Array.isArray(driverPayloadValidationEvidence?.issueCodes)
+    && driverPayloadValidationEvidence.issueCodes.length === 0
+    && driverPayloadValidationEvidence?.format === 'hash-only'
     && driverPayloadValidationEvidence?.rawValuesIncluded === false
     && driverPayloadValidationEvidence?.resourceKey === boundary.resourceKey
     && driverPayloadValidationEvidence?.pluginOwner === boundary.owner
     && driverPayloadValidationEvidence?.driver === boundary.driver
     && driverPayloadValidationEvidence?.table === boundary.table
     && driverPayloadValidationEvidence?.supportsDelete === false
+    && driverPayloadContractSupportsDeleteMatches
+    && driverPayloadActionMatchesMutation
     && driverPayloadValidationEvidence?.contractHash === contractHash
-    && bareSha256Pattern.test(driverPayloadValidationEvidence?.contractHash || '');
+    && bareSha256Pattern.test(driverPayloadValidationEvidence?.contractHash || '')
+    && driverPayloadContractValidationHashMatchesExpected
+    && driverPayloadValueStateMatchesExpected
+    && driverPayloadValueHashMatchesExpected;
   const contractBoundDriverMutation = contractEvidenceAccepted && driverPayloadEvidenceAccepted;
   const noActivePluginsDirectMutation = plannedMutations.every((entry) =>
     !(entry?.resource?.type === 'row'
@@ -11611,6 +11655,12 @@ export function summarizeProductionPluginDriverBoundaryProof({
         && contractHash === expectedContractHash,
       contractHashMatchesPayload: Boolean(contractHash)
         && driverPayloadValidationEvidence?.contractHash === contractHash,
+      expectedContractValidationHash,
+      payloadContractValidationHashMatchesExpected: driverPayloadContractValidationHashMatchesExpected,
+      payloadValueHashMatchesExpected: driverPayloadValueHashMatchesExpected,
+      payloadValueStateMatchesExpected: driverPayloadValueStateMatchesExpected,
+      payloadActionMatchesMutation: driverPayloadActionMatchesMutation,
+      payloadContractSupportsDeleteMatches: driverPayloadContractSupportsDeleteMatches,
       contractValidation: contractValidationEvidence ? {
         reasonCode: contractValidationEvidence.reasonCode || null,
         outcome: contractValidationEvidence.outcome || null,
@@ -11632,8 +11682,15 @@ export function summarizeProductionPluginDriverBoundaryProof({
         pluginOwner: driverPayloadValidationEvidence.pluginOwner || null,
         driver: driverPayloadValidationEvidence.driver || null,
         table: driverPayloadValidationEvidence.table || null,
+        action: driverPayloadValidationEvidence.action || null,
         supportsDelete: driverPayloadValidationEvidence.supportsDelete === true,
+        contractSupportsDelete: driverPayloadValidationEvidence.contractSupportsDelete === true,
         contractHash: driverPayloadValidationEvidence.contractHash || null,
+        contractValidationHash: driverPayloadValidationEvidence.contractValidationHash || null,
+        value: driverPayloadValueEvidence ? {
+          state: driverPayloadValueEvidence.state || null,
+          hash: driverPayloadValueEvidence.hash || null,
+        } : null,
         rawValuesIncluded: driverPayloadValidationEvidence.rawValuesIncluded === true,
       } : null,
     },
