@@ -7130,6 +7130,8 @@ function reprint_push_lab_rest_status_for_result(array $result): int
         case 'RECOVERY_BLOCKED':
         case 'RECOVERY_MUTATE_INSPECT_BLOCKED':
             return 409;
+        case 'UNSUPPORTED_STORAGE_GUARD':
+            return 409;
         case 'RECOVERY_MUTATE_NOT_IMPLEMENTED':
             return 501;
         case 'MISSING_DRY_RUN_RECEIPT':

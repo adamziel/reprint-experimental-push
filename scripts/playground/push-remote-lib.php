@@ -259,6 +259,21 @@ function reprint_push_protocol_run_payload(
             if (isset($pre_write_check['preWriteStagingProof']) && is_array($pre_write_check['preWriteStagingProof'])) {
                 $pre_write_evidence['preWriteStagingProof'] = $pre_write_check['preWriteStagingProof'];
             }
+            $storage_guard_coverage = reprint_push_protocol_assert_storage_guard_coverage(
+                $mutation,
+                $pre_write_check,
+                $preconditions,
+                $journal_context + $plan_evidence + [
+                    'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+                    'startedCursor' => $started_entry['cursor'],
+                    'index' => (int) $index,
+                    'appliedCount' => $applied,
+                ],
+                $mutation_event_callback,
+                $recovery_entries
+            );
+            $pre_write_evidence['storageGuardCoverage'] = $storage_guard_coverage;
+
             reprint_push_protocol_emit_mutation_event($mutation_event_callback, 'mutation-storage-write-ready', $journal_context + $plan_evidence + [
                 'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
                 'startedCursor' => $started_entry['cursor'],
@@ -990,6 +1005,144 @@ function reprint_push_protocol_emit_mutation_event($callback, string $event, arr
         return;
     }
     $callback($event, reprint_push_protocol_sanitize_journal_context($evidence));
+}
+
+function reprint_push_protocol_assert_storage_guard_coverage(
+    array $mutation,
+    array $pre_write_check,
+    array $preconditions,
+    array $journal_context,
+    $mutation_event_callback,
+    array &$recovery_entries
+): array {
+    $coverage = reprint_push_protocol_storage_guard_coverage_for_mutation($mutation, $pre_write_check);
+    if (($coverage['covered'] ?? false) === true) {
+        return $coverage;
+    }
+
+    $mutation_id = (string) ($mutation['id'] ?? '');
+    $resource_key = (string) ($mutation['resourceKey'] ?? '');
+    $precondition = $preconditions[$mutation_id] ?? [];
+    $before_hash = (string) ($precondition['expectedHash'] ?? '');
+    $actual_hash = (string) ($pre_write_check['actualHash'] ?? '');
+    $recovery_entries = reprint_push_protocol_mark_recovery_entry(
+        $recovery_entries,
+        $mutation_id,
+        'unsupported-storage-boundary',
+        $actual_hash
+    );
+
+    $failure_evidence = $journal_context + [
+        'mutationId' => $mutation_id,
+        'resourceKey' => $resource_key,
+        'resourceType' => (string) ($mutation['resource']['type'] ?? ''),
+        'beforeHash' => $before_hash,
+        'preWriteExpectedHash' => $before_hash,
+        'preWriteActualHash' => $actual_hash,
+        'actualHash' => $actual_hash,
+        'plannedAfterHash' => (string) ($mutation['localHash'] ?? ''),
+        'observedHash' => $actual_hash,
+        'phase' => 'storage-write-boundary',
+        'status' => 'rejected',
+        'preconditionCheck' => 'storage-boundary-unsupported',
+        'storageGuardCoverage' => $coverage,
+        'recoveryPlan' => $recovery_entries,
+    ];
+
+    reprint_push_protocol_emit_mutation_event($mutation_event_callback, 'mutation-precondition-failed', $failure_evidence);
+    reprint_push_protocol_append_journal_event('mutation-precondition-failed', $failure_evidence);
+
+    reprint_push_protocol_fail([
+        'ok' => false,
+        'code' => 'UNSUPPORTED_STORAGE_GUARD',
+        'message' => 'Storage-boundary guard is not implemented for ' . $resource_key . '.',
+        'resourceKey' => $resource_key,
+        'mutationId' => $mutation_id,
+        'expectedHash' => $before_hash,
+        'actualHash' => $actual_hash,
+        'preWriteExpectedHash' => $before_hash,
+        'preWriteActualHash' => $actual_hash,
+        'preconditionCheck' => 'storage-boundary-unsupported',
+        'storageGuardCoverage' => $coverage,
+    ]);
+}
+
+function reprint_push_protocol_storage_guard_coverage_for_mutation(array $mutation, array $pre_write_check): array
+{
+    $resource = isset($mutation['resource']) && is_array($mutation['resource']) ? $mutation['resource'] : [];
+    $payload = isset($mutation['value']) && is_array($mutation['value']) ? $mutation['value'] : [];
+    $resource_type = (string) ($resource['type'] ?? '');
+    $is_delete = !empty($payload['absent']);
+    $expected_resource_value = isset($pre_write_check['resourceValue']) && is_array($pre_write_check['resourceValue'])
+        ? $pre_write_check['resourceValue']
+        : ['exists' => false, 'value' => null];
+    $expected_storage_value = isset($pre_write_check['storageValue']) && is_array($pre_write_check['storageValue'])
+        ? $pre_write_check['storageValue']
+        : null;
+    $expected_resource_exists = ($expected_resource_value['exists'] ?? false) === true;
+    $expected_storage_exists = is_array($expected_storage_value) && ($expected_storage_value['exists'] ?? false) === true;
+
+    $base = [
+        'schemaVersion' => 1,
+        'required' => 'storage-guard-before-mutation',
+        'covered' => false,
+        'resourceType' => $resource_type,
+        'resourceKey' => (string) ($mutation['resourceKey'] ?? ''),
+        'mutationId' => (string) ($mutation['id'] ?? ''),
+        'resolutionPolicy' => 'preserve-remote-state-and-stop',
+        'mutationAttempted' => false,
+    ];
+
+    if ($resource_type === 'file') {
+        $path = (string) ($resource['path'] ?? '');
+        $is_upload = reprint_push_is_fixture_upload_path($path);
+        $is_plugin_file = reprint_push_is_fixture_plugin_file_path($path);
+        $operation = $is_delete ? 'delete' : ($expected_resource_exists ? 'update' : 'create');
+        $covered = $is_upload
+            || ($is_plugin_file && !$is_delete && $expected_resource_exists && $expected_storage_exists);
+        return array_merge($base, [
+            'covered' => $covered,
+            'boundary' => $is_delete ? 'filesystem-compare-unlink' : 'filesystem-compare-rename',
+            'driver' => $is_upload ? 'fixture-upload-file' : ($is_plugin_file ? 'fixture-plugin-file' : 'unsupported-file'),
+            'operation' => $operation,
+            'reason' => $covered ? 'covered-file-storage-boundary' : 'file-write-has-no-storage-guard',
+        ]);
+    }
+
+    if ($resource_type === 'row') {
+        $table = (string) ($resource['table'] ?? '');
+        $value = $payload['value'] ?? null;
+        $guarded_update_tables = [
+            'wp_posts',
+            'wp_options',
+            'wp_postmeta',
+            'wp_reprint_push_forms_lab',
+            'wp_reprint_push_release_state',
+        ];
+        $covered_update = !$is_delete
+            && is_array($value)
+            && $expected_resource_exists
+            && in_array($table, $guarded_update_tables, true);
+        $covered_blogmeta_put = !$is_delete && is_array($value) && $table === 'wp_blogmeta';
+        $covered = $covered_update || $covered_blogmeta_put;
+        return array_merge($base, [
+            'covered' => $covered,
+            'boundary' => $table === 'wp_blogmeta' && !$expected_resource_exists
+                ? 'wpdb-named-lock-cas'
+                : 'wpdb-single-statement-cas',
+            'driver' => $covered ? 'wordpress-row-storage-guard' : 'unsupported-row-storage-guard',
+            'logicalTable' => $table,
+            'operation' => $is_delete ? 'delete' : ($expected_resource_exists ? 'update' : 'insert'),
+            'reason' => $covered ? 'covered-row-storage-boundary' : 'row-write-has-no-storage-guard',
+        ]);
+    }
+
+    return array_merge($base, [
+        'boundary' => null,
+        'driver' => 'unsupported-resource-storage-guard',
+        'operation' => $is_delete ? 'delete' : 'put',
+        'reason' => 'resource-type-has-no-storage-guard',
+    ]);
 }
 
 function reprint_push_protocol_recovery_entries(array $mutations, array $preconditions): array

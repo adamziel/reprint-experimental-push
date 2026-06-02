@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const routeSourcePath = path.join(repoRoot, 'scripts/playground/push-remote-rest-plugin.php');
 const routeSource = readFileSync(routeSourcePath, 'utf8');
+const protocolSourcePath = path.join(repoRoot, 'scripts/playground/push-remote-lib.php');
+const protocolSource = readFileSync(protocolSourcePath, 'utf8');
 const dbJournalLibSourcePath = path.join(repoRoot, 'scripts/playground/push-db-journal-lib.php');
 const dbJournalLibSource = readFileSync(dbJournalLibSourcePath, 'utf8');
 const liveSmokeSourcePath = path.join(repoRoot, 'scripts/playground/production-apply-route-live-smoke.mjs');
@@ -37,6 +39,10 @@ function functionBodyFromSource(source, name) {
 
 function functionBody(name) {
   return functionBodyFromSource(routeSource, name);
+}
+
+function protocolFunctionBody(name) {
+  return functionBodyFromSource(protocolSource, name);
 }
 
 function routeRegistration(namespace, route) {
@@ -278,6 +284,68 @@ test('production apply revalidates live source hashes after claim start and befo
   assert.match(targetPlannedAppend, /'targetHash'\s*=>\s*hash\('sha256',\s*reprint_push_stable_json\(\$safe_target\)\)/);
   assert.match(targetPlannedAppend, /'hashOnly'\s*=>\s*true/);
   assert.match(targetPlannedAppend, /'rawValuesIncluded'\s*=>\s*false/);
+});
+
+test('production apply refuses uncovered storage write boundaries before mutation', () => {
+  const runPayload = protocolFunctionBody('reprint_push_protocol_run_payload');
+  const coverageAssert = protocolFunctionBody('reprint_push_protocol_assert_storage_guard_coverage');
+  const coverageClassifier = protocolFunctionBody('reprint_push_protocol_storage_guard_coverage_for_mutation');
+  const dbJournalMutationEvidence = functionBodyFromSource(
+    dbJournalLibSource,
+    'reprint_push_lab_db_journal_mutation_evidence',
+  );
+  const compactDbJournalResult = functionBodyFromSource(
+    dbJournalLibSource,
+    'reprint_push_lab_db_journal_compact_result',
+  );
+  const statusForResult = functionBody('reprint_push_lab_rest_status_for_result');
+
+  assertBefore(
+    runPayload,
+    'reprint_push_protocol_assert_storage_guard_coverage(',
+    "'mutation-storage-write-ready'",
+  );
+  assertBefore(
+    runPayload,
+    'reprint_push_protocol_assert_storage_guard_coverage(',
+    'reprint_push_apply_resource_with_storage_guard(',
+  );
+
+  assert.match(coverageAssert, /'code'\s*=>\s*'UNSUPPORTED_STORAGE_GUARD'/);
+  assert.match(coverageAssert, /'preconditionCheck'\s*=>\s*'storage-boundary-unsupported'/);
+  assert.match(coverageAssert, /'storageGuardCoverage'\s*=>\s*\$coverage/);
+  assert.match(coverageAssert, /'mutation-precondition-failed'/);
+  assert.doesNotMatch(coverageAssert, /reprint_push_apply_resource|reprint_push_apply_resource_with_storage_guard|wp_update_post|update_option|\$wpdb->query/);
+
+  for (const guardedTable of [
+    'wp_posts',
+    'wp_options',
+    'wp_postmeta',
+    'wp_reprint_push_forms_lab',
+    'wp_reprint_push_release_state',
+    'wp_blogmeta',
+  ]) {
+    assert.match(coverageClassifier, new RegExp(`'${guardedTable}'`));
+  }
+  for (const unsupportedTable of [
+    'wp_terms',
+    'wp_term_taxonomy',
+    'wp_term_relationships',
+    'wp_termmeta',
+    'wp_comments',
+    'wp_commentmeta',
+  ]) {
+    assert.doesNotMatch(coverageClassifier, new RegExp(`'${unsupportedTable}'`));
+  }
+  assert.match(coverageClassifier, /'resolutionPolicy'\s*=>\s*'preserve-remote-state-and-stop'/);
+  assert.match(coverageClassifier, /'mutationAttempted'\s*=>\s*false/);
+  assert.match(coverageClassifier, /'row-write-has-no-storage-guard'/);
+  assert.match(coverageClassifier, /'resource-type-has-no-storage-guard'/);
+  assert.doesNotMatch(coverageClassifier, /reprint_push_apply_resource|reprint_push_apply_resource_with_storage_guard|wp_update_post|update_option|\$wpdb->query/);
+
+  assert.match(dbJournalMutationEvidence, /\$evidence\['storageGuardCoverage'\]\s*=\s*\$mutation\['storageGuardCoverage'\]/);
+  assert.match(compactDbJournalResult, /'storageGuardCoverage'/);
+  assert.match(statusForResult, /case 'UNSUPPORTED_STORAGE_GUARD':\s*return 409;/);
 });
 
 test('RPP-0524 apply proof uses the real production-shaped route over sandbox-local loopback', () => {
