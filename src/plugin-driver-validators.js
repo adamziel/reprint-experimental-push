@@ -1,4 +1,8 @@
 import { ABSENT, digest } from './stable-json.js';
+import {
+  PLUGIN_DRIVER_CONTRACT_KIND,
+  PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+} from './plugin-driver-contracts.js';
 
 export const INVALID_SERIALIZED_OPTION_PAYLOAD = 'INVALID_SERIALIZED_OPTION_PAYLOAD';
 export const PLUGIN_DRIVER_CONTRACT_BOUND_VALIDATOR = 'contract-bound-row-driver';
@@ -67,6 +71,7 @@ function validateContractBoundRowDriverPayload({
   const expectedTable = contractValidationEvidence.table || table || null;
   const expectedOwner = contractValidationEvidence.pluginOwner || owner || null;
   const expectedDriver = contractValidationEvidence.driver || driver || null;
+  const contractSupportsDelete = contractValidationEvidence.supportsDelete === true;
   const issues = [];
 
   if (contractValidationEvidence.resourceKey !== resource?.key) {
@@ -77,7 +82,14 @@ function validateContractBoundRowDriverPayload({
       observed: resource?.key || null,
     });
   }
-  if (expectedOwner && owner && expectedOwner !== owner) {
+  if (expectedOwner && !isNonEmptyString(owner)) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_OWNER_MISSING',
+      field: 'pluginOwner',
+      expected: expectedOwner,
+      observed: owner ?? null,
+    });
+  } else if (expectedOwner && expectedOwner !== owner) {
     issues.push({
       reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_OWNER_MISMATCH',
       field: 'pluginOwner',
@@ -85,7 +97,14 @@ function validateContractBoundRowDriverPayload({
       observed: owner,
     });
   }
-  if (expectedDriver && driver && expectedDriver !== driver) {
+  if (expectedDriver && !isNonEmptyString(driver)) {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_DRIVER_MISSING',
+      field: 'driver',
+      expected: expectedDriver,
+      observed: driver ?? null,
+    });
+  } else if (expectedDriver && expectedDriver !== driver) {
     issues.push({
       reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_DRIVER_MISMATCH',
       field: 'driver',
@@ -109,12 +128,21 @@ function validateContractBoundRowDriverPayload({
       observed: resource?.table || null,
     });
   }
-  if (action === 'delete' && supportsDelete !== true) {
+  if (supportsDelete !== contractSupportsDelete) {
+    issues.push({
+      reasonCode: action === 'delete' && contractSupportsDelete !== true
+        ? 'PLUGIN_DRIVER_CONTRACT_BOUND_DELETE_UNSUPPORTED'
+        : 'PLUGIN_DRIVER_CONTRACT_BOUND_DELETE_SUPPORT_MISMATCH',
+      field: 'supportsDelete',
+      expected: contractSupportsDelete,
+      observed: supportsDelete === true,
+    });
+  } else if (action === 'delete' && contractSupportsDelete !== true) {
     issues.push({
       reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_DELETE_UNSUPPORTED',
       field: 'supportsDelete',
       expected: true,
-      observed: false,
+      observed: contractSupportsDelete,
     });
   }
   if (
@@ -152,6 +180,7 @@ function validateContractBoundRowDriverPayload({
     table: expectedTable,
     action,
     supportsDelete: supportsDelete === true,
+    contractSupportsDelete,
     value: {
       state: value === ABSENT ? 'absent' : 'present',
       hash: digest(value),
@@ -173,9 +202,18 @@ function validateContractBoundRowDriverPayload({
 
 function acceptedContractValidationEvidence(evidence) {
   return evidence?.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+    && evidence.schemaVersion === 1
     && evidence.operation === 'plugin-driver-contract-validation'
+    && evidence.contractKind === PLUGIN_DRIVER_CONTRACT_KIND
+    && evidence.contractVersion === PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION
     && evidence.outcome === 'accepted'
+    && Array.isArray(evidence.issueCodes)
+    && evidence.issueCodes.length === 0
     && evidence.rawValuesIncluded === false;
+}
+
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 function isSerializedWpOptionPayload(resource, driver, value) {

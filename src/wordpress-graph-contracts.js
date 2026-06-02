@@ -322,6 +322,14 @@ export function normalizeWordPressGraphIdentityMapContract(entry, {
       observed: contractKind ?? null,
     });
   }
+  if (hasOwn(entry, 'rawValuesIncluded') && entry.rawValuesIncluded !== false) {
+    issues.push({
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_RAW_VALUES_INCLUDED',
+      field: 'rawValuesIncluded',
+      required: false,
+      observed: entry.rawValuesIncluded,
+    });
+  }
   if (!sourceResource || sourceResource.type !== 'row') {
     issues.push({
       reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_MISSING_SOURCE_RESOURCE',

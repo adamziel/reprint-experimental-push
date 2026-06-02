@@ -48,6 +48,9 @@ that declares an explicit contract becomes strict:
 - malformed `supportsDelete` refuses before mutation
 - accepted contracts emit `plugin-driver-contract-validation` evidence
 - contract evidence is hash-only and carries no raw plugin payload values
+- accepted contract evidence does not by itself authorize a mutation: the
+  mutation envelope must still carry the same `pluginOwner`, `driver`, resource,
+  table, and `supportsDelete` binding at apply time
 
 This lets production integrations ratchet from allowlist-shaped support toward
 stable, reviewable plugin contracts without breaking older lab fixtures.
@@ -77,7 +80,8 @@ Planner and apply treat explicit row-driver contracts as more than allowlist
 shape. For custom row drivers outside the built-in driver set, apply requires:
 
 - accepted `plugin-driver-contract-validation` evidence,
-- exact resource key, plugin owner, driver, and table binding,
+- exact resource key, plugin owner, driver, table, and `supportsDelete` binding
+  in both the contract evidence and the mutation envelope,
 - accepted `contract-bound-row-driver` payload validation evidence,
 - hash-only value and contract evidence, with `rawValuesIncluded: false`.
 

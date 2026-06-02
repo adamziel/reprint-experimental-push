@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { applyPlan } from '../src/apply.js';
 import { createPushPlan } from '../src/planner.js';
+import { validatePluginOwnedDriverPayload } from '../src/plugin-driver-validators.js';
 
 const fixedNow = new Date('2026-06-02T00:00:00.000Z');
 const formsOptionResourceKey = 'row:["wp_options","option_name:forms_settings"]';
@@ -297,4 +298,197 @@ test('apply refuses forged custom row driver contracts when table binding is cha
   assert.equal(JSON.stringify(error.details).includes('base-contract-binding-secret'), false);
   assert.equal(JSON.stringify(error.details).includes('local-contract-binding-secret'), false);
   assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('apply refuses forged custom row driver contracts when mutation owner binding is removed', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-contract-owner-binding', secret: 'base-contract-owner-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-contract-owner-binding';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-contract-owner-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const forgedPlan = cloneJson(plan);
+  delete mutationFor(forgedPlan, resourceKey).pluginOwnedResource.pluginOwner;
+
+  let error;
+  try {
+    applyPlan(remote, forgedPlan);
+  } catch (caught) {
+    error = caught;
+  }
+
+  assert.equal(error?.code, 'PLUGIN_DRIVER_CONTRACT_BOUND_OWNER_MISSING');
+  assert.equal(error.details.resourceKey, resourceKey);
+  assert.equal(error.details.pluginOwner, 'forms');
+  assert.equal(error.details.driver, 'forms-contract-row');
+  assert.equal(error.details.contractValidationEvidence.pluginOwner, 'forms');
+  assert.equal(error.details.contractValidationEvidence.driver, 'forms-contract-row');
+  assert.equal(JSON.stringify(error.details).includes('base-contract-owner-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('local-contract-owner-secret'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('apply refuses forged custom row driver contracts when mutation driver binding is removed', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-contract-driver-binding', secret: 'base-contract-driver-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-contract-driver-binding';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-contract-driver-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const forgedPlan = cloneJson(plan);
+  delete mutationFor(forgedPlan, resourceKey).pluginOwnedResource.driver;
+
+  let error;
+  try {
+    applyPlan(remote, forgedPlan);
+  } catch (caught) {
+    error = caught;
+  }
+
+  assert.equal(error?.code, 'PLUGIN_DRIVER_CONTRACT_BOUND_DRIVER_MISSING');
+  assert.equal(error.details.resourceKey, resourceKey);
+  assert.equal(error.details.pluginOwner, 'forms');
+  assert.equal(error.details.driver, null);
+  assert.equal(error.details.contractValidationEvidence.pluginOwner, 'forms');
+  assert.equal(error.details.contractValidationEvidence.driver, 'forms-contract-row');
+  assert.equal(JSON.stringify(error.details).includes('base-contract-driver-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('local-contract-driver-secret'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('apply refuses forged custom row driver delete when contract evidence does not allow delete', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-contract-delete-binding', secret: 'base-contract-delete-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  delete local.db.wp_forms_contract_rows['entry_id:7'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract({ supportsDelete: true })),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const forgedPlan = cloneJson(plan);
+  const forgedMutation = mutationFor(forgedPlan, resourceKey);
+  forgedMutation.pluginOwnedResource.contractValidationEvidence.supportsDelete = false;
+
+  let error;
+  try {
+    applyPlan(remote, forgedPlan);
+  } catch (caught) {
+    error = caught;
+  }
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(forgedMutation.action, 'delete');
+  assert.equal(forgedMutation.pluginOwnedResource.supportsDelete, true);
+  assert.equal(error?.code, 'PLUGIN_DRIVER_CONTRACT_BOUND_DELETE_UNSUPPORTED');
+  assert.equal(error.details.resourceKey, resourceKey);
+  assert.equal(error.details.pluginOwner, 'forms');
+  assert.equal(error.details.driver, 'forms-contract-row');
+  assert.equal(error.details.contractValidationEvidence.supportsDelete, false);
+  assert.equal(JSON.stringify(error.details).includes('base-contract-delete-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('local-contract-delete-secret'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('contract-bound row driver validator refuses missing observed owner and driver bindings', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-contract-validator', secret: 'base-contract-validator-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-contract-validator';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-contract-validator-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const contractEvidence = mutation.pluginOwnedResource.contractValidationEvidence;
+  const value = local.db.wp_forms_contract_rows['entry_id:7'];
+
+  const missingOwner = validatePluginOwnedDriverPayload({
+    resource: mutation.resource,
+    owner: null,
+    driver: 'forms-contract-row',
+    table: 'wp_forms_contract_rows',
+    value,
+    contractValidationEvidence: contractEvidence,
+  });
+  const missingDriver = validatePluginOwnedDriverPayload({
+    resource: mutation.resource,
+    owner: 'forms',
+    driver: null,
+    table: 'wp_forms_contract_rows',
+    value,
+    contractValidationEvidence: contractEvidence,
+  });
+  const forgedDeleteSupport = validatePluginOwnedDriverPayload({
+    resource: mutation.resource,
+    owner: 'forms',
+    driver: 'forms-contract-row',
+    table: 'wp_forms_contract_rows',
+    value,
+    action: 'delete',
+    supportsDelete: true,
+    contractValidationEvidence: contractEvidence,
+  });
+
+  assert.equal(missingOwner.supported, false);
+  assert.equal(missingOwner.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_OWNER_MISSING');
+  assert.equal(missingOwner.evidence.outcome, 'refused-before-mutation');
+  assert.equal(missingOwner.evidence.rawValuesIncluded, false);
+  assert.equal(missingDriver.supported, false);
+  assert.equal(missingDriver.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_DRIVER_MISSING');
+  assert.equal(missingDriver.evidence.outcome, 'refused-before-mutation');
+  assert.equal(missingDriver.evidence.rawValuesIncluded, false);
+  assert.equal(forgedDeleteSupport.supported, false);
+  assert.equal(forgedDeleteSupport.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_DELETE_UNSUPPORTED');
+  assert.equal(forgedDeleteSupport.evidence.outcome, 'refused-before-mutation');
+  assert.equal(forgedDeleteSupport.evidence.supportsDelete, true);
+  assert.equal(forgedDeleteSupport.evidence.contractSupportsDelete, false);
+  assert.equal(forgedDeleteSupport.evidence.rawValuesIncluded, false);
+  assert.equal(JSON.stringify({ missingOwner, missingDriver, forgedDeleteSupport }).includes('base-contract-validator-secret'), false);
+  assert.equal(JSON.stringify({ missingOwner, missingDriver, forgedDeleteSupport }).includes('local-contract-validator-secret'), false);
 });

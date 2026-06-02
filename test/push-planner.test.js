@@ -6671,6 +6671,80 @@ test('unsupported explicit WordPress graph identity-map contract version fails c
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
+test('raw-value explicit WordPress graph identity-map contract fails closed before rewrite', () => {
+  const sourcePostResourceKey = 'row:["wp_posts","ID:2201"]';
+  const targetPostResourceKey = 'row:["wp_posts","ID:3201"]';
+  const childPostResourceKey = 'row:["wp_posts","ID:2202"]';
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [
+        {
+          contractVersion: 1,
+          contractKind: 'wordpress-graph-identity-map',
+          sourceResourceKey: sourcePostResourceKey,
+          targetResourceKey: targetPostResourceKey,
+          rawValuesIncluded: true,
+        },
+      ],
+    },
+  };
+  local.db.wp_posts['ID:2201'] = {
+    ID: 2201,
+    post_title: 'graph-contract-raw-private-title',
+    post_name: 'graph-contract-raw',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  remote.db.wp_posts['ID:3201'] = {
+    ID: 3201,
+    post_title: 'graph-contract-raw-private-title',
+    post_name: 'graph-contract-raw',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  local.db.wp_posts['ID:2202'] = {
+    ID: 2202,
+    post_title: 'graph-contract-raw-child-private-title',
+    post_name: 'graph-contract-raw-child',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 2201,
+    post_author: 0,
+  };
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const sourceBlocker = plan.blockers.find((blocker) => blocker.resourceKey === sourcePostResourceKey);
+  const childBlocker = plan.blockers.find((blocker) => blocker.resourceKey === childPostResourceKey);
+  const evidence = sourceBlocker.contractValidationEvidence;
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, sourcePostResourceKey), undefined);
+  assert.equal(mutationFor(plan, childPostResourceKey), undefined);
+  assert.equal(sourceBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(sourceBlocker.reasonCode, 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_RAW_VALUES_INCLUDED');
+  assert.equal(evidence.outcome, 'refused-before-mutation');
+  assert.equal(evidence.reasonCode, 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_RAW_VALUES_INCLUDED');
+  assert.deepEqual(evidence.issueCodes, ['WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_RAW_VALUES_INCLUDED']);
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(evidence.sourceResourceKey, sourcePostResourceKey);
+  assert.equal(evidence.targetResourceKey, targetPostResourceKey);
+  assert.equal(childBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(planJson.includes('graph-contract-raw-private-title'), false);
+  assert.equal(planJson.includes('graph-contract-raw-child-private-title'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
 test('RPP-0306 proves stable comment parent thread targets before planning child replies', () => {
   const parentCommentResourceKey = 'row:["wp_comments","comment_ID:31"]';
   const childCommentResourceKey = 'row:["wp_comments","comment_ID:32"]';

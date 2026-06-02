@@ -16,6 +16,10 @@ import {
   PLUGIN_DRIVER_CONTRACT_BOUND_VALIDATOR,
   validatePluginOwnedDriverPayload,
 } from './plugin-driver-validators.js';
+import {
+  PLUGIN_DRIVER_CONTRACT_KIND,
+  PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+} from './plugin-driver-contracts.js';
 import { wordpressGraphRelationshipContractForType } from './wordpress-graph-contracts.js';
 
 const JOURNAL_SCHEMA_VERSION = 1;
@@ -454,26 +458,35 @@ function isContractBoundRowDriverMutation(mutation, owner, driver, plannedValue,
   const contract = mutation.pluginOwnedResource?.contractValidationEvidence;
   const validation = driverPayloadSupport?.evidence;
   const table = mutation.pluginOwnedResource?.table || contract?.table || null;
+  const mutationSupportsDelete = mutation.pluginOwnedResource?.supportsDelete === true;
 
   return contract?.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+    && contract.schemaVersion === 1
     && contract.operation === 'plugin-driver-contract-validation'
+    && contract.contractKind === PLUGIN_DRIVER_CONTRACT_KIND
+    && contract.contractVersion === PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION
     && contract.outcome === 'accepted'
+    && Array.isArray(contract.issueCodes)
+    && contract.issueCodes.length === 0
     && contract.rawValuesIncluded === false
     && contract.resourceKey === mutation.resourceKey
     && contract.pluginOwner === owner
     && contract.driver === driver
+    && contract.supportsDelete === mutationSupportsDelete
     && typeof table === 'string'
     && table.length > 0
     && contract.table === table
     && mutation.resource?.type === 'row'
     && mutation.resource.table === table
-    && (plannedValue !== ABSENT || mutation.pluginOwnedResource?.supportsDelete === true)
+    && (plannedValue !== ABSENT || contract.supportsDelete === true)
     && validation?.validator === PLUGIN_DRIVER_CONTRACT_BOUND_VALIDATOR
     && validation.outcome === 'accepted'
     && validation.resourceKey === mutation.resourceKey
     && validation.pluginOwner === owner
     && validation.driver === driver
     && validation.table === table
+    && validation.supportsDelete === mutationSupportsDelete
+    && validation.contractSupportsDelete === contract.supportsDelete
     && validation.rawValuesIncluded === false;
 }
 
@@ -516,14 +529,27 @@ function validatePluginOwnedContractValidation(mutation, owner, driver) {
     return;
   }
 
-  const shapeAccepted = evidence.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+  const evidenceAccepted = evidence.reasonCode === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+    && evidence.schemaVersion === 1
     && evidence.operation === 'plugin-driver-contract-validation'
+    && evidence.contractKind === PLUGIN_DRIVER_CONTRACT_KIND
+    && evidence.contractVersion === PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION
     && evidence.outcome === 'accepted'
+    && Array.isArray(evidence.issueCodes)
+    && evidence.issueCodes.length === 0
+    && evidence.rawValuesIncluded === false;
+  const shapeAccepted = evidenceAccepted
     && evidence.resourceKey === mutation.resourceKey
     && evidence.pluginOwner === owner
-    && evidence.driver === driver
-    && evidence.rawValuesIncluded === false;
-  const bindingAccepted = shapeAccepted
+    && evidence.driver === driver;
+  const mutationOwner = mutation.pluginOwnedResource?.pluginOwner || null;
+  const mutationDriver = mutation.pluginOwnedResource?.driver || null;
+  const mutationSupportsDelete = mutation.pluginOwnedResource?.supportsDelete === true;
+  const mutationBindingAccepted = shapeAccepted
+    && mutationOwner === owner
+    && mutationDriver === driver
+    && evidence.supportsDelete === mutationSupportsDelete;
+  const bindingAccepted = mutationBindingAccepted
     && (!evidence.table || evidence.table === mutation.resource?.table)
     && (!mutation.pluginOwnedResource?.table || mutation.pluginOwnedResource.table === mutation.resource?.table)
     && (!evidence.table || !mutation.pluginOwnedResource?.table || evidence.table === mutation.pluginOwnedResource.table);
@@ -531,13 +557,16 @@ function validatePluginOwnedContractValidation(mutation, owner, driver) {
     return;
   }
 
-  const reasonCode = shapeAccepted
-    ? 'PLUGIN_DRIVER_CONTRACT_INVALID_BINDING'
-    : (
-      typeof evidence.reasonCode === 'string' && evidence.reasonCode
-        ? evidence.reasonCode
-        : 'PLUGIN_DRIVER_CONTRACT_INVALID'
-    );
+  const reasonCode = pluginDriverContractApplyRefusalCode({
+    evidence,
+    evidenceAccepted,
+    mutation,
+    owner,
+    driver,
+    mutationOwner,
+    mutationDriver,
+    mutationSupportsDelete,
+  });
   throw new PushPlanError(
     reasonCode,
     `Refusing to apply plugin-owned resource ${mutation.resourceKey} because driver contract validation did not pass.`,
@@ -549,6 +578,51 @@ function validatePluginOwnedContractValidation(mutation, owner, driver) {
       contractValidationEvidence: redactedPluginDriverContractValidationEvidence(evidence),
     },
   );
+}
+
+function pluginDriverContractApplyRefusalCode({
+  evidence,
+  evidenceAccepted,
+  mutation,
+  owner,
+  driver,
+  mutationOwner,
+  mutationDriver,
+  mutationSupportsDelete,
+}) {
+  if (!evidenceAccepted) {
+    return typeof evidence.reasonCode === 'string' && evidence.reasonCode
+      ? evidence.reasonCode
+      : 'PLUGIN_DRIVER_CONTRACT_INVALID';
+  }
+
+  if (evidence.resourceKey !== mutation.resourceKey) {
+    return 'PLUGIN_DRIVER_CONTRACT_BOUND_RESOURCE_MISMATCH';
+  }
+  if (evidence.pluginOwner !== owner) {
+    return 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_OWNER_MISMATCH';
+  }
+  if (!mutationOwner) {
+    return 'PLUGIN_DRIVER_CONTRACT_BOUND_OWNER_MISSING';
+  }
+  if (mutationOwner !== owner) {
+    return 'PLUGIN_DRIVER_CONTRACT_BOUND_OWNER_MISMATCH';
+  }
+  if (!mutationDriver) {
+    return 'PLUGIN_DRIVER_CONTRACT_BOUND_DRIVER_MISSING';
+  }
+  if (evidence.driver !== driver) {
+    return 'PLUGIN_DRIVER_CONTRACT_BOUND_DRIVER_MISMATCH';
+  }
+  if (mutationDriver !== driver) {
+    return 'PLUGIN_DRIVER_CONTRACT_BOUND_DRIVER_MISMATCH';
+  }
+  if (evidence.supportsDelete !== mutationSupportsDelete) {
+    return mutation.action === 'delete' && evidence.supportsDelete !== true
+      ? 'PLUGIN_DRIVER_CONTRACT_BOUND_DELETE_UNSUPPORTED'
+      : 'PLUGIN_DRIVER_CONTRACT_BOUND_DELETE_SUPPORT_MISMATCH';
+  }
+  return 'PLUGIN_DRIVER_CONTRACT_INVALID_BINDING';
 }
 
 function redactedPluginDriverContractValidationEvidence(evidence) {

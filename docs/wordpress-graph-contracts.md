@@ -71,8 +71,8 @@ mutation.
 
 Legacy identity maps still normalize for existing local coverage, but an entry
 that declares `contractKind: "wordpress-graph-identity-map"` is strict:
-unsupported contract versions or kinds, missing row resources, or self-maps
-fail closed before rewrite.
+unsupported contract versions or kinds, `rawValuesIncluded` values other than
+`false`, missing row resources, or self-maps fail closed before rewrite.
 
 Otherwise the mutation is blocked before apply with
 `stale-wordpress-graph-identity` and
