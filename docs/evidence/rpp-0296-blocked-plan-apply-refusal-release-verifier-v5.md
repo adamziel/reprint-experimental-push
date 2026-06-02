@@ -58,7 +58,7 @@ Generated-harness aggregate:
   "blockedCasesWithMutations": 64,
   "totalPlannedMutations": 715,
   "totalPlannedPreconditions": 715,
-  "totalBlockers": 235,
+  "totalBlockers": 255,
   "totalAtomicGroups": 2,
   "totalAppliedMutations": 0,
   "totalDurableJournalEvents": 0,

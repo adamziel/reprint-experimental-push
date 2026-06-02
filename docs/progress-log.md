@@ -4,6 +4,69 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Plugin Reference Field Identity-Map Rewrites
+
+- Last update: 2026-06-02 16:05 CEST +02:00.
+- Added contract-bound plugin reference-field rewriting through accepted
+  WordPress graph identity maps. A declared positive-integer scalar reference
+  such as `payload.post_id -> wp_posts.ID` can now rewrite from the local
+  source post ID to the proven remote target post ID only when the explicit
+  WordPress graph identity-map decision has already accepted the source/target
+  pair.
+- The mutation carries hash-only `referenceFieldRewrites` evidence, the
+  plugin reference-target validation proof carries the matching
+  `referenceRewriteHash`, and apply revalidates the rewritten payload value,
+  identity-map decision binding, target remote hash, contract hash, and carried
+  rewrite hash before mutation.
+- Missing maps and stale mapped targets remain fail-closed as
+  `stale-plugin-driver-reference-target` with no plugin row mutation. Forged
+  ready plans that change the rewritten value, add surplus raw rewrite
+  evidence, or alter the carried rewrite hash refuse before mutation without
+  leaking raw plugin payload sentinels.
+- Verification so far: planner/apply/plugin-driver syntax checks passed,
+  `node --test --test-name-pattern='reference-bound custom row driver' test/plugin-driver-contract.test.js`
+  passed with 11 subtests and 0 failures, and
+  `node --test test/plugin-driver-contract.test.js` passed with 54 subtests and
+  0 failures. Adjacent generated/plugin focus passed with 13 subtests and 0
+  failures, the full generated harness passed with 107 subtests and 0 failures,
+  and the full repo `node --test` suite passed with exit status 0.
+- Caveat: this is declared plugin-driver reference-field rewriting only. It
+  does not infer arbitrary plugin references, traverse undeclared plugin data,
+  or validate plugin-owned files, cron side effects, activation/update flows, or
+  general custom graph semantics.
+
+## 2026-06-02 - Generated Custom Taxonomy Identity-Map Coverage
+
+- Last update: 2026-06-02 15:37 CEST +02:00.
+- Added `customTaxonomyIdentityMapVariant3` generated target coverage for
+  custom taxonomy graph references that remain unsupported unless an explicit
+  WordPress graph identity-map contract proves the remote target.
+- The deterministic roster now has 20 support-only `product_cat` cases across
+  all 10 tiers: 10 ready cases with accepted `wp_terms` and
+  `wp_term_taxonomy` identity-map contracts, and 10 blocked stale cases where
+  the declared taxonomy target is not equivalent after identity rewriting.
+- Ready cases preserve mapped remote term and taxonomy rows as hash-only
+  `keep-remote` decisions, rewrite the dependent
+  `wp_term_relationships.term_taxonomy_id` payload and row key to the proven
+  remote taxonomy target, apply with live-remote preconditions, and reject
+  stale replay before mutation.
+- Blocked cases emit no custom taxonomy relationship mutation, keep the invalid
+  taxonomy map and dependent relationship fail-closed as
+  `stale-wordpress-graph-identity`, and refuse apply with `PLAN_NOT_READY`
+  before mutation.
+- Verification: generator and generated harness syntax checks passed,
+  `node --test --test-name-pattern='custom taxonomy identity-map' test/generated-push-harness.test.js`
+  passed with 1 subtest and 0 failures, adjacent blocked-plan aggregate tests
+  passed with 4 subtests and 0 failures, and adjacent RPP-0255/RPP-0295
+  keep-remote aggregate tests passed with 3 subtests and 0 failures. The full
+  generated harness passed with 107 subtests and 0 failures, and the full repo
+  `node --test` suite passed with exit status 0. Current generated totals are
+  8,675 mutations/preconditions, 2,217 decisions, 745 blockers, and 1,845
+  keep-remote decisions.
+- Caveat: this proves declared identity-map handling for a custom taxonomy
+  surface in generated local/model cases. It does not infer custom taxonomy
+  identity from slugs, names, plugin metadata, or undeclared payloads.
+
 ## 2026-06-02 - Registration Log Graph Identity Rewrite
 
 - Last update: 2026-06-02 14:28 CEST +02:00.
@@ -125,9 +188,10 @@ linked implementation artifacts.
   `node --test --test-name-pattern='plugin-owned reference-field' test/generated-push-harness.test.js`
   passed with 1 subtest and 0 failures. Adjacent blocked-plan refusal tests
   passed with 3 subtests and 0 failures. The new blocked row-driver cases add
-  10 decision-only keep-remote proofs, so RPP-0255/RPP-0295 aggregate evidence
-  now records 1,805 keep-remote decisions. The full repository
-  `node --test` suite exited 0 after the aggregate refresh. See
+  10 decision-only keep-remote proofs. After the later custom-taxonomy
+  identity-map refresh, current RPP-0255/RPP-0295 aggregate evidence records
+  1,845 keep-remote decisions. The full repository `node --test` suite exited
+  0 after the plugin-reference aggregate refresh. See
   [ao-plugin-driver-reference-fields.md](evidence/ao-plugin-driver-reference-fields.md).
 - Caveat: this proves declared reference-field target validation and
   conservative refusal in generated local/model cases. It does not implement

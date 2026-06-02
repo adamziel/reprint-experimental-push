@@ -445,6 +445,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-term-relationships-graph-release-verifier-v5',
     tag: 'wp-term-relationships-graph-release-verifier-v5',
   },
+  customTaxonomyIdentityMapVariant3: {
+    family: 'custom-taxonomy-identity-map-variant3',
+    tag: 'custom-taxonomy-identity-map-v3',
+  },
   atomicPluginInstallStack: {
     family: 'atomic-plugin-stack-ready',
     tag: 'atomic-plugin-install-stack-v3',
@@ -2239,6 +2243,15 @@ function buildGeneratedCase({ index, tier, rng }) {
     tags,
   });
 
+  addCustomTaxonomyIdentityMapVariant3Target({
+    family,
+    base,
+    local,
+    remote,
+    allocator,
+    tags,
+  });
+
   addPostGuidSlugCollisionTarget({
     family,
     tier,
@@ -2474,6 +2487,24 @@ function addWpTermRelationshipsGraphTarget({
     staleTarget,
     prefix: staleTarget ? 'stale-wp-term-relationships' : 'ready-wp-term-relationships',
   });
+  tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
+}
+
+function addCustomTaxonomyIdentityMapVariant3Target({
+  family,
+  base,
+  local,
+  remote,
+  allocator,
+  tags,
+}) {
+  const readyTarget = family === 'same-plan-taxonomy-graph';
+  const staleTarget = family === 'stale-post-author-graph';
+  if (!readyTarget && !staleTarget) {
+    return;
+  }
+
+  addCustomTaxonomyIdentityMapVariant3(base, local, remote, allocator, tags, { staleTarget });
   tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
 }
 
@@ -5241,6 +5272,92 @@ function addWpTermRelationshipsGraph(base, local, remote, allocator, tags, { sta
   tags.add('term-relationship-taxonomy-graph');
   tags.add('taxonomy-graph');
   tags.add('same-plan-graph');
+}
+
+function addCustomTaxonomyIdentityMapVariant3(base, local, remote, allocator, tags, { staleTarget }) {
+  const sourceTermId = allocator.graphId();
+  const targetTermId = allocator.graphId();
+  const sourceTaxonomyId = allocator.graphId();
+  const targetTaxonomyId = allocator.graphId();
+  const sourceTermRowId = `term_id:${sourceTermId}`;
+  const targetTermRowId = `term_id:${targetTermId}`;
+  const sourceTaxonomyRowId = `term_taxonomy_id:${sourceTaxonomyId}`;
+  const targetTaxonomyRowId = `term_taxonomy_id:${targetTaxonomyId}`;
+  const relationshipRowId = `object_id:1|term_taxonomy_id:${sourceTaxonomyId}`;
+  const label = `AO custom taxonomy identity ${sourceTaxonomyId}`;
+  const slug = `ao-custom-taxonomy-identity-${sourceTaxonomyId}`;
+  const description = `ao-custom-taxonomy-map-private-description-${sourceTaxonomyId}`;
+  const sourceTerm = {
+    term_id: sourceTermId,
+    name: label,
+    slug,
+    term_group: 0,
+  };
+  const targetTerm = {
+    ...sourceTerm,
+    term_id: targetTermId,
+  };
+  const sourceTaxonomy = {
+    term_taxonomy_id: sourceTaxonomyId,
+    term_id: sourceTermId,
+    taxonomy: 'product_cat',
+    description,
+    parent: 0,
+    count: 1,
+  };
+  const targetTaxonomy = {
+    ...sourceTaxonomy,
+    term_taxonomy_id: targetTaxonomyId,
+    term_id: targetTermId,
+  };
+
+  setRow(local, 'wp_terms', sourceTermRowId, sourceTerm);
+  setRow(remote, 'wp_terms', targetTermRowId, targetTerm);
+  setRow(local, 'wp_term_taxonomy', sourceTaxonomyRowId, sourceTaxonomy);
+  setRow(remote, 'wp_term_taxonomy', targetTaxonomyRowId, staleTarget
+    ? {
+        ...targetTaxonomy,
+        description: `ao-custom-taxonomy-map-remote-stale-private-${targetTaxonomyId}`,
+        count: 2,
+      }
+    : targetTaxonomy);
+  setRow(local, 'wp_term_relationships', relationshipRowId, {
+    object_id: 1,
+    term_taxonomy_id: sourceTaxonomyId,
+    term_order: 0,
+  });
+
+  addWordPressGraphIdentityMapRow(local, {
+    table: 'wp_terms',
+    localId: sourceTermRowId,
+    remoteId: targetTermRowId,
+    contractVersion: 1,
+    contractKind: 'wordpress-graph-identity-map',
+    rawValuesIncluded: false,
+  });
+  addWordPressGraphIdentityMapRow(local, {
+    table: 'wp_term_taxonomy',
+    localId: sourceTaxonomyRowId,
+    remoteId: targetTaxonomyRowId,
+    contractVersion: 1,
+    contractKind: 'wordpress-graph-identity-map',
+    rawValuesIncluded: false,
+  });
+
+  tags.add('custom-taxonomy-identity-map-v3');
+  tags.add(staleTarget ? 'custom-taxonomy-identity-map-v3-stale' : 'custom-taxonomy-identity-map-v3-ready');
+  tags.add('custom-taxonomy-identity-map-v3-explicit-contract');
+  tags.add('custom-taxonomy-identity-map-v3-hash-only');
+  tags.add('custom-taxonomy-graph');
+  tags.add('term-relationship-taxonomy-graph');
+  tags.add('taxonomy-graph');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('custom-taxonomy-identity-map-v3-non-ready');
+    tags.add('custom-taxonomy-identity-map-v3-stale-target');
+    tags.add('stale-graph');
+  }
 }
 
 function addLargeReadyPlanTier(tier, base, local, remote, allocator, tags) {

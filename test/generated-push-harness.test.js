@@ -18331,6 +18331,560 @@ function generatedRowResourceKey(table, id) {
   return `row:${JSON.stringify([table, id])}`;
 }
 
+test('AO generated harness records custom taxonomy identity-map variant 3 coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.customTaxonomyIdentityMapVariant3;
+  const expectedPerTier = Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2]));
+
+  assert.ok(coverage, 'missing custom taxonomy identity-map variant 3 target coverage');
+  assert.equal(coverage.family, 'custom-taxonomy-identity-map-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['custom-taxonomy-identity-map-v3']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { blocked: 10, ready: 10 });
+  assert.deepEqual(coverage.perTier, expectedPerTier);
+  assert.equal(report.summary.featureFamilies['custom-taxonomy-identity-map-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['custom-taxonomy-identity-map-v3-stale'], 10);
+  assert.equal(report.summary.featureFamilies['custom-taxonomy-identity-map-v3-non-ready'], 10);
+  assert.equal(report.summary.featureFamilies['custom-taxonomy-identity-map-v3-explicit-contract'], 20);
+
+  const firstEvidence = generatedCustomTaxonomyIdentityMapVariant3Evidence(coverage);
+  const replayEvidence = generatedCustomTaxonomyIdentityMapVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: "node --test --test-name-pattern='custom taxonomy identity-map' test/generated-push-harness.test.js",
+    caveat: 'Generated local/model evidence only; custom taxonomy support still requires explicit identity-map contracts.',
+    evidenceScope: 'local-generated-support-only',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'custom taxonomy identity-map evidence changed between runs');
+  assert.equal(firstEvidence.target, 'customTaxonomyIdentityMapVariant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+
+  const [readyCase, staleCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.variant, 'ready-explicit-identity-map');
+  assert.equal(readyCase.status, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.identityMap.term.contractReasonCode, 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_ACCEPTED');
+  assert.equal(readyCase.identityMap.taxonomy.contractReasonCode, 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_ACCEPTED');
+  assert.equal(readyCase.identityMap.term.sourceDecision, 'map-local-identity-to-remote');
+  assert.equal(readyCase.identityMap.taxonomy.sourceDecision, 'map-local-identity-to-remote');
+  assert.equal(readyCase.relationshipMutation.resourceKey, readyCase.surface.targetRelationship.resourceKey);
+  assert.equal(readyCase.relationshipMutation.plannedTermTaxonomyId, readyCase.surface.targetTaxonomy.id);
+  assert.equal(readyCase.relationshipMutation.rewrite.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
+  assert.equal(readyCase.relationshipMutation.rewrite.relationshipType, 'term-relationship-taxonomy');
+  assert.match(readyCase.relationshipMutation.rewrite.identityMapContractHash, /^[a-f0-9]{64}$/);
+  assert.match(readyCase.relationshipMutation.rewrite.identityMapContractValidationHash, /^[a-f0-9]{64}$/);
+
+  assert.equal(staleCase.variant, 'stale-invalid-identity-map');
+  assert.equal(staleCase.status, 'blocked');
+  assert.equal(staleCase.applied, false);
+  assert.equal(staleCase.taxonomyBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(staleCase.relationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(staleCase.relationshipBlocker.targetSupportSupported, false);
+  assert.equal(staleCase.relationshipBlocker.relationshipType, 'term-relationship-taxonomy');
+  assert.equal(staleCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(staleCase.refusal.beforeMutationCalls, 0);
+  assert.equal(staleCase.refusal.remoteBeforeHash, staleCase.refusal.remoteAfterHash);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('AO custom taxonomy identity'), false, 'custom taxonomy evidence leaked term label');
+  assert.equal(evidenceText.includes('ao-custom-taxonomy-identity'), false, 'custom taxonomy evidence leaked term slug');
+  assert.equal(evidenceText.includes('ao-custom-taxonomy-map-private'), false, 'custom taxonomy evidence leaked taxonomy description');
+});
+
+function generatedCustomTaxonomyIdentityMapVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('custom-taxonomy-identity-map-v3')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedCustomTaxonomyIdentityMapVariant3CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'stale';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'custom taxonomy target recount should match tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'custom taxonomy target recount should match statuses');
+  assert.equal(totalCases, targetCoverage.total, 'custom taxonomy target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'target should select one ready custom taxonomy case');
+  assert.ok(selectedCases.has('stale'), 'target should select one stale custom taxonomy case');
+
+  return {
+    target: 'customTaxonomyIdentityMapVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-support-only',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('stale'),
+    ],
+  };
+}
+
+function generatedCustomTaxonomyIdentityMapVariant3CaseEvidence(testCase, result) {
+  const staleTarget = testCase.tags.has('custom-taxonomy-identity-map-v3-stale');
+  assert.equal(
+    testCase.tags.has('custom-taxonomy-identity-map-v3-ready'),
+    !staleTarget,
+    `${testCase.id} should carry exactly one custom taxonomy ready/stale tag`,
+  );
+  assert.equal(
+    testCase.tags.has('custom-taxonomy-identity-map-v3-non-ready'),
+    staleTarget,
+    `${testCase.id} should tag stale custom taxonomy cases as non-ready`,
+  );
+
+  const shape = customTaxonomyIdentityMapVariant3Shape(testCase, { staleTarget });
+  const plan = createGeneratedPlan(testCase);
+  const surface = customTaxonomyIdentityMapVariant3Surface(testCase, shape);
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant: result.status === 'ready' ? 'ready-explicit-identity-map' : 'stale-invalid-identity-map',
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    surface,
+  };
+
+  if (result.status === 'ready') {
+    assert.equal(staleTarget, false, `${testCase.id} ready evidence should use equivalent remote targets`);
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(result.applied, true, `${testCase.id} should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const identityMap = customTaxonomyIdentityMapVariant3IdentityMapEvidence({ plan, shape });
+    const relationshipMutation = customTaxonomyIdentityMapVariant3ReadyMutationEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+    const evidence = {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      staleReplayRejected: result.staleReplayRejected,
+      staleReplayRejectionCode: result.staleReplayRejectionCode,
+      staleReplayRemoteUnchanged: result.staleReplayRemoteUnchanged,
+      identityMap,
+      relationshipMutation,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        identityMap,
+        relationshipMutation,
+      })}`,
+    };
+    assertCustomTaxonomyIdentityMapVariant3RawValuesAbsent(testCase, shape, JSON.stringify(evidence));
+    return evidence;
+  }
+
+  assert.equal(staleTarget, true, `${testCase.id} non-ready evidence should use the stale identity-map target`);
+  assert.equal(result.status, 'blocked', `${testCase.id} should validate as blocked`);
+  assert.equal(plan.status, 'blocked', `${testCase.id} should plan as blocked`);
+  assert.equal(result.applied, false, `${testCase.id} stale custom taxonomy graph should not apply`);
+  assert.equal(result.nonReadyRemoteUnchanged, true, `${testCase.id} stale custom taxonomy graph should leave remote unchanged`);
+
+  const taxonomyBlocker = customTaxonomyIdentityMapVariant3TaxonomyBlockerEvidence({ testCase, plan, shape });
+  const relationshipBlocker = customTaxonomyIdentityMapVariant3RelationshipBlockerEvidence({ testCase, plan, shape });
+  const refusal = customTaxonomyIdentityMapVariant3RefusalEvidence(testCase, plan);
+  const evidence = {
+    ...commonEvidence,
+    applied: result.applied,
+    taxonomyBlocker,
+    relationshipBlocker,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      taxonomyBlocker,
+      relationshipBlocker,
+      refusal,
+    })}`,
+  };
+  assertCustomTaxonomyIdentityMapVariant3RawValuesAbsent(testCase, shape, JSON.stringify(evidence));
+  return evidence;
+}
+
+function customTaxonomyIdentityMapVariant3Shape(testCase, { staleTarget }) {
+  const taxonomyRows = Object.entries(testCase.local.db.wp_term_taxonomy)
+    .filter(([, row]) => row.taxonomy === 'product_cat');
+
+  assert.equal(taxonomyRows.length, 1, `${testCase.id} should include one generated custom taxonomy row`);
+
+  const [sourceTaxonomyRowId, sourceTaxonomy] = taxonomyRows[0];
+  const sourceTermRowId = `term_id:${sourceTaxonomy.term_id}`;
+  const sourceTerm = testCase.local.db.wp_terms[sourceTermRowId];
+  const relationshipRowId = `object_id:1|term_taxonomy_id:${sourceTaxonomy.term_taxonomy_id}`;
+  const relationship = testCase.local.db.wp_term_relationships[relationshipRowId];
+  const mapEntries = testCase.local.meta?.wordpressGraphIdentityMap?.rows || [];
+  const termMap = mapEntries.find((entry) => entry.table === 'wp_terms' && entry.localId === sourceTermRowId);
+  const taxonomyMap = mapEntries.find((entry) =>
+    entry.table === 'wp_term_taxonomy' && entry.localId === sourceTaxonomyRowId);
+  const targetTermRowId = termMap?.remoteId;
+  const targetTaxonomyRowId = taxonomyMap?.remoteId;
+  const targetTerm = targetTermRowId ? testCase.remote.db.wp_terms[targetTermRowId] : null;
+  const targetTaxonomy = targetTaxonomyRowId ? testCase.remote.db.wp_term_taxonomy[targetTaxonomyRowId] : null;
+  const targetTaxonomyId = customTaxonomyIdentityMapVariant3IdFromRowId(targetTaxonomyRowId, 'term_taxonomy_id');
+  const targetRelationshipRowId = `object_id:1|term_taxonomy_id:${targetTaxonomyId}`;
+
+  assert.ok(sourceTerm, `${testCase.id} missing local custom taxonomy source term`);
+  assert.ok(relationship, `${testCase.id} missing local custom taxonomy relationship`);
+  assert.ok(termMap, `${testCase.id} missing explicit term identity map`);
+  assert.ok(taxonomyMap, `${testCase.id} missing explicit taxonomy identity map`);
+  assert.equal(termMap.contractKind, 'wordpress-graph-identity-map');
+  assert.equal(taxonomyMap.contractKind, 'wordpress-graph-identity-map');
+  assert.equal(termMap.contractVersion, 1);
+  assert.equal(taxonomyMap.contractVersion, 1);
+  assert.equal(termMap.rawValuesIncluded, false);
+  assert.equal(taxonomyMap.rawValuesIncluded, false);
+  assert.ok(targetTerm, `${testCase.id} missing remote target term`);
+  assert.ok(targetTaxonomy, `${testCase.id} missing remote target taxonomy`);
+  assert.equal(relationship.term_taxonomy_id, sourceTaxonomy.term_taxonomy_id);
+  assert.equal(targetTaxonomy.taxonomy, 'product_cat');
+
+  if (staleTarget) {
+    assert.notEqual(
+      sourceTaxonomy.description,
+      targetTaxonomy.description,
+      `${testCase.id} stale taxonomy target should not be equivalent`,
+    );
+  } else {
+    assert.equal(sourceTerm.name, targetTerm.name);
+    assert.equal(sourceTerm.slug, targetTerm.slug);
+    assert.equal(sourceTaxonomy.description, targetTaxonomy.description);
+    assert.equal(testCase.remote.db.wp_term_taxonomy[sourceTaxonomyRowId], undefined);
+    assert.equal(testCase.remote.db.wp_terms[sourceTermRowId], undefined);
+  }
+
+  return {
+    sourceTermId: sourceTerm.term_id,
+    targetTermId: customTaxonomyIdentityMapVariant3IdFromRowId(targetTermRowId, 'term_id'),
+    sourceTaxonomyId: sourceTaxonomy.term_taxonomy_id,
+    targetTaxonomyId,
+    sourceTermRowId,
+    targetTermRowId,
+    sourceTaxonomyRowId,
+    targetTaxonomyRowId,
+    sourceRelationshipRowId: relationshipRowId,
+    targetRelationshipRowId,
+    sourceTermResource: customTaxonomyIdentityMapVariant3RowResource('wp_terms', sourceTermRowId),
+    targetTermResource: customTaxonomyIdentityMapVariant3RowResource('wp_terms', targetTermRowId),
+    sourceTaxonomyResource: customTaxonomyIdentityMapVariant3RowResource('wp_term_taxonomy', sourceTaxonomyRowId),
+    targetTaxonomyResource: customTaxonomyIdentityMapVariant3RowResource('wp_term_taxonomy', targetTaxonomyRowId),
+    sourceRelationshipResource: customTaxonomyIdentityMapVariant3RowResource('wp_term_relationships', relationshipRowId),
+    targetRelationshipResource: customTaxonomyIdentityMapVariant3RowResource('wp_term_relationships', targetRelationshipRowId),
+    sourceTermResourceKey: generatedRowResourceKey('wp_terms', sourceTermRowId),
+    targetTermResourceKey: generatedRowResourceKey('wp_terms', targetTermRowId),
+    sourceTaxonomyResourceKey: generatedRowResourceKey('wp_term_taxonomy', sourceTaxonomyRowId),
+    targetTaxonomyResourceKey: generatedRowResourceKey('wp_term_taxonomy', targetTaxonomyRowId),
+    sourceRelationshipResourceKey: generatedRowResourceKey('wp_term_relationships', relationshipRowId),
+    targetRelationshipResourceKey: generatedRowResourceKey('wp_term_relationships', targetRelationshipRowId),
+    privateValues: [
+      sourceTerm.name,
+      sourceTerm.slug,
+      targetTerm.name,
+      targetTerm.slug,
+      sourceTaxonomy.description,
+      targetTaxonomy.description,
+    ].filter(Boolean),
+  };
+}
+
+function customTaxonomyIdentityMapVariant3Surface(testCase, shape) {
+  return {
+    relationship: {
+      relationshipKey: 'wp_term_relationships.term_taxonomy_id',
+      relationshipType: 'term-relationship-taxonomy',
+      taxonomy: 'product_cat',
+    },
+    sourceTerm: customTaxonomyIdentityMapVariant3SurfaceRow(testCase, shape.sourceTermResource, shape.sourceTermId),
+    targetTerm: customTaxonomyIdentityMapVariant3SurfaceRow(testCase, shape.targetTermResource, shape.targetTermId),
+    sourceTaxonomy: customTaxonomyIdentityMapVariant3SurfaceRow(testCase, shape.sourceTaxonomyResource, shape.sourceTaxonomyId),
+    targetTaxonomy: customTaxonomyIdentityMapVariant3SurfaceRow(testCase, shape.targetTaxonomyResource, shape.targetTaxonomyId),
+    sourceRelationship: customTaxonomyIdentityMapVariant3SurfaceRow(testCase, shape.sourceRelationshipResource, null),
+    targetRelationship: customTaxonomyIdentityMapVariant3SurfaceRow(testCase, shape.targetRelationshipResource, null),
+  };
+}
+
+function customTaxonomyIdentityMapVariant3SurfaceRow(testCase, resource, id) {
+  return {
+    ...(id !== null ? { id } : {}),
+    resourceKey: resource.key,
+    baseHash: resourceHash(testCase.base, resource),
+    localHash: resourceHash(testCase.local, resource),
+    remoteHash: resourceHash(testCase.remote, resource),
+  };
+}
+
+function customTaxonomyIdentityMapVariant3IdentityMapEvidence({ plan, shape }) {
+  return {
+    term: customTaxonomyIdentityMapVariant3DecisionEvidence(plan, {
+      sourceResourceKey: shape.sourceTermResourceKey,
+      targetResourceKey: shape.targetTermResourceKey,
+    }),
+    taxonomy: customTaxonomyIdentityMapVariant3DecisionEvidence(plan, {
+      sourceResourceKey: shape.sourceTaxonomyResourceKey,
+      targetResourceKey: shape.targetTaxonomyResourceKey,
+    }),
+  };
+}
+
+function customTaxonomyIdentityMapVariant3DecisionEvidence(plan, { sourceResourceKey, targetResourceKey }) {
+  const sourceDecision = plan.decisions.find((decision) => decision.resourceKey === sourceResourceKey);
+  const targetDecision = plan.decisions.find((decision) => decision.resourceKey === targetResourceKey);
+  const contractEvidence = sourceDecision?.identityMapContractValidationEvidence;
+
+  assert.equal(sourceDecision?.decision, 'map-local-identity-to-remote');
+  assert.equal(sourceDecision.targetResourceKey, targetResourceKey);
+  assert.equal(targetDecision?.decision, 'keep-remote');
+  assert.equal(contractEvidence?.contractKind, 'wordpress-graph-identity-map');
+  assert.equal(contractEvidence?.contractVersion, 1);
+  assert.equal(contractEvidence?.rawValuesIncluded, false);
+  assert.equal(contractEvidence?.reasonCode, 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_ACCEPTED');
+
+  return {
+    sourceResourceKey,
+    targetResourceKey,
+    sourceDecision: sourceDecision.decision,
+    targetDecision: targetDecision.decision,
+    identityMapSource: sourceDecision.identityMapSource,
+    contractReasonCode: contractEvidence.reasonCode,
+    contractHash: contractEvidence.contractHash,
+    contractValidationHash: `sha256:${digest(contractEvidence)}`,
+    sourceDecisionHash: `sha256:${digest(sourceDecision)}`,
+    targetDecisionHash: `sha256:${digest(targetDecision)}`,
+  };
+}
+
+function customTaxonomyIdentityMapVariant3ReadyMutationEvidence({ testCase, plan, applied, shape }) {
+  const relationshipMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === shape.targetRelationshipResourceKey);
+  const relationshipPrecondition = plan.preconditions.find((precondition) =>
+    precondition.resourceKey === shape.targetRelationshipResourceKey);
+
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === shape.sourceTermResourceKey), false);
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === shape.targetTermResourceKey), false);
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === shape.sourceTaxonomyResourceKey), false);
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === shape.targetTaxonomyResourceKey), false);
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === shape.sourceRelationshipResourceKey), false);
+  assert.ok(relationshipMutation, `${testCase.id} should plan the rewritten custom taxonomy relationship`);
+  assert.ok(relationshipPrecondition, `${testCase.id} should precondition the rewritten custom taxonomy relationship`);
+
+  const plannedRelationship = deserializeResourceValue(relationshipMutation.value);
+  const rewrite = relationshipMutation.wordpressGraphIdentity?.rewrites.find((entry) =>
+    entry.relationshipType === 'term-relationship-taxonomy');
+  const appliedHash = resourceHash(applied.site, shape.targetRelationshipResource);
+
+  assert.ok(rewrite, `${testCase.id} should carry term_taxonomy rewrite evidence`);
+  assert.equal(plannedRelationship.term_taxonomy_id, shape.targetTaxonomyId);
+  assert.equal(rewrite.field, 'term_taxonomy_id');
+  assert.equal(rewrite.sourceResourceKey, shape.sourceRelationshipResourceKey);
+  assert.equal(rewrite.rewrittenResourceKey, shape.targetRelationshipResourceKey);
+  assert.equal(rewrite.sourceTargetResourceKey, shape.sourceTaxonomyResourceKey);
+  assert.equal(rewrite.targetResourceKey, shape.targetTaxonomyResourceKey);
+  assert.match(rewrite.identityMapContractHash, /^[a-f0-9]{64}$/);
+  assert.match(rewrite.identityMapContractValidationHash, /^[a-f0-9]{64}$/);
+  assert.equal(relationshipPrecondition.mutationId, relationshipMutation.id);
+  assert.equal(relationshipPrecondition.expectedHash, relationshipMutation.remoteBeforeHash);
+  assert.equal(appliedHash, relationshipMutation.localHash, `${testCase.id} did not apply the rewritten relationship hash`);
+  assert.equal(applied.site.db.wp_term_relationships[shape.sourceRelationshipRowId], undefined);
+  assert.equal(
+    applied.site.db.wp_term_relationships[shape.targetRelationshipRowId].term_taxonomy_id,
+    shape.targetTaxonomyId,
+  );
+
+  return {
+    resourceKey: relationshipMutation.resourceKey,
+    action: relationshipMutation.action,
+    changeKind: relationshipMutation.changeKind,
+    plannedTermTaxonomyId: plannedRelationship.term_taxonomy_id,
+    plannedLocalHash: relationshipMutation.localHash,
+    rawLocalHash: resourceHash(testCase.local, shape.sourceRelationshipResource),
+    remoteBeforeHash: relationshipMutation.remoteBeforeHash,
+    preconditionExpectedHash: relationshipPrecondition.expectedHash,
+    appliedHash,
+    plannedPrecondition: true,
+    rewrite: {
+      relationshipKey: rewrite.relationshipKey,
+      relationshipType: rewrite.relationshipType,
+      field: rewrite.field,
+      sourceResourceKey: rewrite.sourceResourceKey,
+      rewrittenResourceKey: rewrite.rewrittenResourceKey,
+      sourceTargetResourceKey: rewrite.sourceTargetResourceKey,
+      targetResourceKey: rewrite.targetResourceKey,
+      identityMapSource: rewrite.identityMapSource,
+      identityMapContractHash: rewrite.identityMapContractHash,
+      identityMapContractValidationHash: rewrite.identityMapContractValidationHash,
+      sourceTargetLocalHash: rewrite.sourceTargetLocalHash,
+      targetRemoteHash: rewrite.targetRemoteHash,
+      rewriteHash: `sha256:${digest(rewrite)}`,
+    },
+    mutationHash: `sha256:${digest({
+      resourceKey: relationshipMutation.resourceKey,
+      action: relationshipMutation.action,
+      changeKind: relationshipMutation.changeKind,
+      plannedTermTaxonomyId: plannedRelationship.term_taxonomy_id,
+      localHash: relationshipMutation.localHash,
+      remoteBeforeHash: relationshipMutation.remoteBeforeHash,
+    })}`,
+  };
+}
+
+function customTaxonomyIdentityMapVariant3TaxonomyBlockerEvidence({ testCase, plan, shape }) {
+  const taxonomyMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === shape.sourceTaxonomyResourceKey
+    || mutation.resourceKey === shape.targetTaxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === shape.sourceTaxonomyResourceKey);
+  const reference = blocker?.references?.find((entry) => entry.relationshipType === 'identity-map-target');
+
+  assert.equal(taxonomyMutation, undefined, `${testCase.id} should not plan stale custom taxonomy target rows`);
+  assert.ok(blocker, `${testCase.id} should expose a custom taxonomy identity-map blocker`);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(blocker.reason, /not equivalent after identity rewriting/);
+  assert.ok(reference, `${testCase.id} should include stale identity-map target evidence`);
+  assert.equal(reference.targetResourceKey, shape.targetTaxonomyResourceKey);
+  assert.equal(reference.identityMapSource, 'local-snapshot.meta.identityMap[0].rows[1]');
+
+  return {
+    resourceKey: blocker.resourceKey,
+    class: blocker.class,
+    resolutionPolicy: blocker.resolutionPolicy,
+    reasonHash: `sha256:${digest(blocker.reason)}`,
+    targetResourceKey: reference.targetResourceKey,
+    targetRemoteHash: resourceHash(testCase.remote, shape.targetTaxonomyResource),
+    referenceHash: `sha256:${digest(reference)}`,
+    blockerHash: `sha256:${digest({
+      resourceKey: blocker.resourceKey,
+      class: blocker.class,
+      change: blocker.change,
+      references: blocker.references,
+    })}`,
+  };
+}
+
+function customTaxonomyIdentityMapVariant3RelationshipBlockerEvidence({ testCase, plan, shape }) {
+  const relationshipMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === shape.sourceRelationshipResourceKey
+    || mutation.resourceKey === shape.targetRelationshipResourceKey);
+  const blocker = plan.blockers.find((entry) =>
+    entry.resourceKey === shape.sourceRelationshipResourceKey
+    && entry.references?.some((reference) => reference.relationshipType === 'term-relationship-taxonomy'));
+  const reference = blocker?.references.find((entry) => entry.relationshipType === 'term-relationship-taxonomy');
+
+  assert.equal(relationshipMutation, undefined, `${testCase.id} should not plan the stale custom taxonomy relationship`);
+  assert.ok(blocker, `${testCase.id} should expose a relationship blocker`);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.ok(reference, `${testCase.id} should include relationship target evidence`);
+  assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
+  assert.equal(reference.sourceResourceKey, shape.sourceRelationshipResourceKey);
+  assert.equal(reference.targetResourceKey, shape.sourceTaxonomyResourceKey);
+  assert.equal(reference.targetSupport.supported, false);
+  assert.match(reference.targetSupport.reason, /not equivalent after identity rewriting/);
+
+  return {
+    resourceKey: blocker.resourceKey,
+    class: blocker.class,
+    relationshipKey: reference.relationshipKey,
+    relationshipType: reference.relationshipType,
+    targetResourceKey: reference.targetResourceKey,
+    targetSupportSupported: reference.targetSupport.supported,
+    targetSupportReasonHash: `sha256:${digest(reference.targetSupport.reason)}`,
+    targetLocalChange: reference.targetChange.localChange,
+    targetRemoteChange: reference.targetChange.remoteChange,
+    referenceHash: `sha256:${digest(reference)}`,
+  };
+}
+
+function customTaxonomyIdentityMapVariant3RefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  let beforeMutationCalls = 0;
+  const error = captureError(() => applyPlan(remoteBefore, plan, {
+    beforeMutation() {
+      beforeMutationCalls += 1;
+    },
+  }));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} stale custom taxonomy plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(beforeMutationCalls, 0, `${testCase.id} stale custom taxonomy refusal should happen before mutation`);
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} stale custom taxonomy refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    beforeMutationCalls,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
+}
+
+function customTaxonomyIdentityMapVariant3RowResource(table, id) {
+  return {
+    type: 'row',
+    table,
+    id,
+    key: generatedRowResourceKey(table, id),
+  };
+}
+
+function customTaxonomyIdentityMapVariant3IdFromRowId(rowId, prefix) {
+  const match = new RegExp(`^${prefix}:(\\d+)$`).exec(rowId || '');
+  assert.ok(match, `invalid ${prefix} row id ${rowId}`);
+  return Number.parseInt(match[1], 10);
+}
+
+function assertCustomTaxonomyIdentityMapVariant3RawValuesAbsent(testCase, shape, evidenceText) {
+  for (const value of shape.privateValues) {
+    assert.equal(
+      evidenceText.includes(String(value)),
+      false,
+      `${testCase.id} custom taxonomy identity-map evidence leaked ${value}`,
+    );
+  }
+}
+
 test('RPP-0342 generated harness emits featured image attachment ready and stale graph cases', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.featuredImageAttachmentGraph;

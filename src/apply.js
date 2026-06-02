@@ -651,6 +651,7 @@ function pluginOwnedReferenceTargetEvidenceIssue({
     if (!carriedField) {
       return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
     }
+    const referenceRewrite = pluginOwnedReferenceFieldRewriteForTarget(mutation, carriedField);
     if (carriedField.targetResourceKey === null) {
       if (!hasExactKeys(carriedField, [
         'path',
@@ -672,7 +673,7 @@ function pluginOwnedReferenceTargetEvidenceIssue({
       }
       continue;
     }
-    if (!hasExactKeys(carriedField, [
+    const expectedFieldKeys = [
       'path',
       'targetTable',
       'targetIdField',
@@ -691,7 +692,11 @@ function pluginOwnedReferenceTargetEvidenceIssue({
       'targetStable',
       'reasonCode',
       'targetChange',
-    ])) {
+    ];
+    if (referenceRewrite) {
+      expectedFieldKeys.push('referenceRewriteHash');
+    }
+    if (!hasExactKeys(carriedField, expectedFieldKeys)) {
       return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
     }
     if (carriedField.targetStable !== true || carriedField.targetRemotePresent !== true) {
@@ -725,6 +730,19 @@ function pluginOwnedReferenceTargetEvidenceIssue({
     });
     if (actualRemoteHash !== carriedField.targetRemoteHash) {
       return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_MISMATCH';
+    }
+    if (referenceRewrite && carriedField.referenceRewriteHash !== digest(referenceRewrite)) {
+      return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REWRITE_HASH_MISMATCH';
+    }
+    const targetStableBySnapshot = carriedField.targetRemoteHash === carriedField.targetBaseHash
+      || carriedField.targetRemoteHash === carriedField.targetLocalHash;
+    if (!targetStableBySnapshot) {
+      if (!referenceRewrite || !carriedField.referenceRewriteHash) {
+        return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REWRITE_EVIDENCE_MISSING';
+      }
+      if (!referenceTargetRewriteEvidenceMatches(referenceRewrite, carriedField, actualRemoteHash)) {
+        return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REWRITE_MISMATCH';
+      }
     }
     if (
       carriedField.targetBaseHash !== carriedField.targetChange?.base?.hash
@@ -845,6 +863,33 @@ function pluginOwnedReferenceTargetExpectedFields(referenceValidation) {
         .localeCompare(`${right.path || ''}:${right.targetResourceKey || ''}`));
 }
 
+function pluginOwnedReferenceFieldRewriteForTarget(mutation, carriedField) {
+  const rewrites = mutation.pluginOwnedResource?.referenceFieldRewrites;
+  if (!Array.isArray(rewrites)) {
+    return null;
+  }
+  return rewrites.find((rewrite) =>
+    rewrite?.path === carriedField.path
+    && rewrite.targetResourceKey === carriedField.targetResourceKey) || null;
+}
+
+function referenceTargetRewriteEvidenceMatches(rewrite, carriedField, actualRemoteHash) {
+  return rewrite?.schemaVersion === 1
+    && rewrite.operation === 'plugin-driver-reference-field-identity-rewrite'
+    && rewrite.reasonCode === 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_REWRITTEN'
+    && rewrite.outcome === 'accepted'
+    && rewrite.format === 'hash-only'
+    && rewrite.rawValuesIncluded === false
+    && rewrite.path === carriedField.path
+    && rewrite.targetTable === carriedField.targetTable
+    && rewrite.targetIdField === carriedField.targetIdField
+    && rewrite.scalarType === carriedField.scalarType
+    && rewrite.required === carriedField.required
+    && rewrite.targetResourceKey === carriedField.targetResourceKey
+    && rewrite.rewrittenValueHash === carriedField.observedHash
+    && rewrite.targetRemoteHash === actualRemoteHash;
+}
+
 function pluginOwnedReferenceTargetApplyEvidence({
   carried,
   referenceValidation,
@@ -895,6 +940,7 @@ function pluginOwnedReferenceTargetApplyFieldEvidence(carried, remote) {
       targetResourceKey: field.targetResourceKey || null,
       targetRemoteHash: field.targetRemoteHash || null,
       actualRemoteHash,
+      referenceRewriteHash: field.referenceRewriteHash || null,
       targetPrimaryRow: field.targetPrimaryRow || null,
       targetStable: field.targetStable === true,
       targetRemotePresent: field.targetRemotePresent === true,
@@ -2498,6 +2544,7 @@ function validateReadyPlanEnvelope(plan) {
     }
 
     issues.push(...wordpressGraphRewriteEnvelopeIssues(mutation, decisions));
+    issues.push(...pluginReferenceRewriteEnvelopeIssues(mutation, decisions));
   }
 
   for (const precondition of preconditions) {
@@ -2610,6 +2657,201 @@ function validateReadyPlanEnvelope(plan) {
       },
     );
   }
+}
+
+function pluginReferenceRewriteEnvelopeIssues(mutation, decisions = []) {
+  const rewrites = mutation.pluginOwnedResource?.referenceFieldRewrites;
+  if (rewrites === undefined) {
+    return [];
+  }
+
+  const issueBase = {
+    mutationId: mutation.id || null,
+    resourceKey: mutation.resourceKey || null,
+  };
+  if (!Array.isArray(rewrites) || rewrites.length === 0) {
+    return [{
+      ...issueBase,
+      code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_EVIDENCE_MISSING',
+    }];
+  }
+
+  const issues = [];
+  const plannedValue = deserializeResourceValue(mutation.value);
+  for (const [index, rewrite] of rewrites.entries()) {
+    const rewriteIssueBase = {
+      ...issueBase,
+      rewriteIndex: index,
+      path: typeof rewrite?.path === 'string' ? rewrite.path : null,
+    };
+    if (!hasExactKeys(rewrite, [
+      'schemaVersion',
+      'operation',
+      'reasonCode',
+      'outcome',
+      'format',
+      'rawValuesIncluded',
+      'resourceKey',
+      'pluginOwner',
+      'driver',
+      'table',
+      'path',
+      'targetTable',
+      'targetIdField',
+      'scalarType',
+      'required',
+      'sourceTargetResourceKey',
+      'targetResourceKey',
+      'identityMapSource',
+      'sourceValueHash',
+      'rewrittenValueHash',
+      'sourceTargetLocalHash',
+      'sourceTargetRemoteHash',
+      'targetRemoteHash',
+      'identityMapContractHash',
+      'identityMapContractValidationHash',
+    ])) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_EVIDENCE_INVALID',
+      });
+      continue;
+    }
+    if (
+      rewrite.schemaVersion !== 1
+      || rewrite.operation !== 'plugin-driver-reference-field-identity-rewrite'
+      || rewrite.reasonCode !== 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_REWRITTEN'
+      || rewrite.outcome !== 'accepted'
+      || rewrite.format !== 'hash-only'
+      || rewrite.rawValuesIncluded !== false
+    ) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_EVIDENCE_INVALID',
+      });
+    }
+    if (
+      rewrite.resourceKey !== mutation.resourceKey
+      || rewrite.pluginOwner !== (mutation.pluginOwnedResource?.pluginOwner || null)
+      || rewrite.driver !== (mutation.pluginOwnedResource?.driver || null)
+      || rewrite.table !== (mutation.pluginOwnedResource?.table || mutation.resource?.table || null)
+    ) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_BINDING_MISMATCH',
+      });
+    }
+    if (rewrite.scalarType !== 'positive-integer') {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_SCALAR_TYPE_UNSUPPORTED',
+      });
+    }
+    if (pluginDriverReferenceTargetPrimaryIdField(rewrite.targetTable) !== rewrite.targetIdField) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_TARGET_CONTRACT_MISMATCH',
+      });
+    }
+
+    const sourceTargetResource = parseWordPressGraphRowResourceKey(rewrite.sourceTargetResourceKey);
+    const targetResource = parseWordPressGraphRowResourceKey(rewrite.targetResourceKey);
+    if (!sourceTargetResource || !targetResource) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_RESOURCE_INVALID',
+      });
+      continue;
+    }
+    const sourceTargetValue = referenceTargetPrimaryId(
+      sourceTargetResource,
+      pluginDriverReferenceTargetPrimaryIdField(sourceTargetResource.table),
+    );
+    const expectedTargetValue = referenceTargetPrimaryId(targetResource, rewrite.targetIdField);
+    if (
+      sourceTargetResource.table !== rewrite.targetTable
+      || targetResource.table !== rewrite.targetTable
+      || sourceTargetValue === null
+      || expectedTargetValue === null
+    ) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_RESOURCE_TARGET_MISMATCH',
+      });
+      continue;
+    }
+    if (rewrite.sourceValueHash !== digest(String(sourceTargetValue))) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_SOURCE_VALUE_HASH_MISMATCH',
+        expectedHash: digest(String(sourceTargetValue)),
+        observedHash: hashEvidenceForDetails(rewrite.sourceValueHash),
+      });
+    }
+
+    const resolved = resolvePluginReferencePath(plannedValue, rewrite.path);
+    const actualTargetValue = resolved.exists ? resolved.value : undefined;
+    if (!wordpressGraphRewriteScalarMatchesTarget(actualTargetValue, expectedTargetValue)) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_TARGET_VALUE_MISMATCH',
+        targetResourceKey: rewrite.targetResourceKey,
+        expectedTargetIdHash: digest(String(expectedTargetValue)),
+        actualTargetValueHash: actualTargetValue === undefined || actualTargetValue === null
+          ? null
+          : digest(String(actualTargetValue)),
+      });
+    } else if (rewrite.rewrittenValueHash !== digest(String(actualTargetValue))) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_REWRITTEN_VALUE_HASH_MISMATCH',
+        expectedHash: digest(String(actualTargetValue)),
+        observedHash: hashEvidenceForDetails(rewrite.rewrittenValueHash),
+      });
+    }
+
+    const identityMapDecision = wordpressGraphIdentityMapDecisionForRewrite({
+      sourceTargetResourceKey: rewrite.sourceTargetResourceKey,
+    }, decisions);
+    if (!identityMapDecision) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_IDENTITY_MAP_DECISION_MISSING',
+      });
+      continue;
+    }
+    if (
+      identityMapDecision.targetResourceKey !== rewrite.targetResourceKey
+      || identityMapDecision.targetRemoteHash !== rewrite.targetRemoteHash
+    ) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_IDENTITY_MAP_DECISION_MISMATCH',
+      });
+    }
+    const contractEvidence = identityMapDecision.identityMapContractValidationEvidence || null;
+    if (contractEvidence) {
+      if (
+        rewrite.identityMapContractHash !== (contractEvidence.contractHash || null)
+        || rewrite.identityMapContractValidationHash !== digest(contractEvidence)
+      ) {
+        issues.push({
+          ...rewriteIssueBase,
+          code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_IDENTITY_MAP_CONTRACT_HASH_MISMATCH',
+        });
+      }
+    } else if (
+      rewrite.identityMapContractHash !== null
+      || rewrite.identityMapContractValidationHash !== null
+    ) {
+      issues.push({
+        ...rewriteIssueBase,
+        code: 'PLUGIN_DRIVER_REFERENCE_REWRITE_IDENTITY_MAP_CONTRACT_HASH_MISMATCH',
+      });
+    }
+  }
+
+  return issues;
 }
 
 function wordpressGraphRewriteEnvelopeIssues(mutation, decisions = []) {
@@ -2873,6 +3115,20 @@ function wordpressGraphRewriteScalarMatchesTarget(actualValue, targetId) {
     return false;
   }
   return String(actualValue) === String(targetId);
+}
+
+function resolvePluginReferencePath(value, path) {
+  if (!value || value === ABSENT || typeof value !== 'object' || Array.isArray(value)) {
+    return { exists: false, value: undefined };
+  }
+  let cursor = value;
+  for (const segment of String(path || '').split('.')) {
+    if (!cursor || typeof cursor !== 'object' || Array.isArray(cursor) || !Object.prototype.hasOwnProperty.call(cursor, segment)) {
+      return { exists: false, value: undefined };
+    }
+    cursor = cursor[segment];
+  }
+  return { exists: true, value: cursor };
 }
 
 function comparableResourceKey(resource) {

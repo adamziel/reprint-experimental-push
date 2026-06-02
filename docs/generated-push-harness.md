@@ -1053,6 +1053,22 @@ require the commentmeta row to fail closed as
 `stale-wordpress-graph-identity` with hash-only target evidence. This remains
 local generated support evidence only; final release remains `NO-GO`.
 
+The `customTaxonomyIdentityMapVariant3` target records explicit identity-map
+contracts for custom taxonomy references that would otherwise fail closed. The
+deterministic roster emits 20 support-only cases across all 10 tiers: 10 ready
+`product_cat` term relationship rewrites where `wp_terms` and
+`wp_term_taxonomy` source rows map to equivalent remote targets, and 10 blocked
+cases where the declared taxonomy map points at a non-equivalent remote target.
+Ready cases preserve the mapped remote term and taxonomy rows as hash-only
+`keep-remote` decisions, rewrite the dependent
+`wp_term_relationships.term_taxonomy_id` and composite row key to the proven
+remote target, and reject stale replay before mutation. Blocked cases emit no
+custom taxonomy relationship mutation and keep both the invalid identity map
+and dependent relationship fail-closed as `stale-wordpress-graph-identity`.
+This proves declared identity-map handling for a custom taxonomy surface; it
+does not infer custom taxonomy identity from slugs, names, plugin metadata, or
+undeclared payloads.
+
 The remaining unmapped WordPress graph surfaces continue to fail closed or stay
 intentionally unsupported until an explicit owner/driver, parser-aware rewrite,
 or equivalent remote identity-map proof exists:
@@ -1154,7 +1170,7 @@ rejects stale dependency replay with `PRECONDITION_FAILED` before mutation, and
 verifies the missing-dependency stack refuses apply with `PLAN_NOT_READY`
 before mutation while preserving the remote digest.
 
-At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 345 ready, 201 conflict, and 74 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 10 `sameIndependentContent` cases, 10 `sameIndependentContentVariant3` cases, 10 `sameIndependentContentVariant4` cases, 10 `sameIndependentContentReleaseVerifierVariant5` cases, 20 `postAuthorGraph` cases, 20 `postAuthorGraphVariant3` cases, 20 `postParentPageHierarchyVariant3` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 20 `atomicPluginInstallStackV2` cases, 20 `atomicPluginInstallStackV4` cases, 20 `atomicPluginInstallStackReleaseVerifierVariant5` cases, 20 `wpOptionsDriverSemanticsVariant3` cases, 20 `pluginOwnedOptionChangeReleaseVerifierVariant5` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, 10 `pluginOwnedCustomTableChangesReleaseVerifierVariant5` cases, 20 `pluginOwnedReferenceFieldVariant3` cases, 9 `remoteOnlyPreservation` cases, 9 `remoteOnlyPreservationVariant3` cases, 344 `staleRemoteAfterDryRun` ready-plan stale-replay precondition cases, 344 `staleRemoteAfterDryRunVariant3` ready-plan stale-replay precondition cases, 344 `staleRemoteAfterDryRunVariant4` ready-plan stale-replay precondition cases, and 344 `staleRemoteAfterDryRunReleaseVerifierVariant5` ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
+At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 345 ready, 201 conflict, and 74 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 10 `sameIndependentContent` cases, 10 `sameIndependentContentVariant3` cases, 10 `sameIndependentContentVariant4` cases, 10 `sameIndependentContentReleaseVerifierVariant5` cases, 20 `postAuthorGraph` cases, 20 `postAuthorGraphVariant3` cases, 20 `postParentPageHierarchyVariant3` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `customTaxonomyIdentityMapVariant3` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 20 `atomicPluginInstallStackV2` cases, 20 `atomicPluginInstallStackV4` cases, 20 `atomicPluginInstallStackReleaseVerifierVariant5` cases, 20 `wpOptionsDriverSemanticsVariant3` cases, 20 `pluginOwnedOptionChangeReleaseVerifierVariant5` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, 10 `pluginOwnedCustomTableChangesReleaseVerifierVariant5` cases, 20 `pluginOwnedReferenceFieldVariant3` cases, 9 `remoteOnlyPreservation` cases, 9 `remoteOnlyPreservationVariant3` cases, 344 `staleRemoteAfterDryRun` ready-plan stale-replay precondition cases, 344 `staleRemoteAfterDryRunVariant3` ready-plan stale-replay precondition cases, 344 `staleRemoteAfterDryRunVariant4` ready-plan stale-replay precondition cases, and 344 `staleRemoteAfterDryRunReleaseVerifierVariant5` ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
 
 ## Extension Rule
 

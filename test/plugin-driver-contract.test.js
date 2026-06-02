@@ -606,7 +606,7 @@ test('explicit plugin-owned row driver contract carries accepted proof into the 
   const mutation = mutationFor(plan, formsOptionResourceKey);
   const contractEvidence = mutation.pluginOwnedResource.contractValidationEvidence;
   const auditEvidence = mutation.pluginOwnedResource.auditEvidence;
-  const result = applyPlan(remote, plan);
+  const result = applyPlan(cloneJson(remote), plan);
   const evidenceJson = JSON.stringify(contractEvidence);
 
   assert.equal(plan.status, 'ready');
@@ -1268,10 +1268,11 @@ test('apply refuses unbound reference target evidence before mutation', () => {
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
-test('reference-bound custom row driver blocks identity-mapped source targets until rewritten', () => {
+test('reference-bound custom row driver rewrites identity-mapped source targets', () => {
   const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
   const sourcePostKey = 'row:["wp_posts","ID:2"]';
   const targetPostKey = 'row:["wp_posts","ID:22"]';
+  const rawSentinel = 'reference-identity-map-forged-raw-secret';
   const base = baseSite();
   base.db.wp_forms_contract_rows = {
     'entry_id:7': {
@@ -1304,29 +1305,181 @@ test('reference-bound custom row driver blocks identity-mapped source targets un
     ...local.db.wp_posts['ID:2'],
     ID: 22,
   };
-  const remoteBefore = JSON.stringify(remote);
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
-  const targetEvidence = blocker.referenceTargetValidationEvidence;
-  const blockerJson = JSON.stringify(blocker);
+  const mutation = mutationFor(plan, resourceKey);
+  const payloadEvidence = mutation.pluginOwnedResource.driverPayloadValidationEvidence;
+  const targetEvidence = mutation.pluginOwnedResource.referenceTargetValidationEvidence;
+  const rewrite = mutation.pluginOwnedResource.referenceFieldRewrites[0];
+  const result = applyPlan(remote, plan);
+  const evidenceJson = JSON.stringify({
+    mutation: mutation.pluginOwnedResource,
+    decisions: plan.decisions,
+    journal: result.journal,
+  });
 
-  assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 0);
-  assert.equal(mutationFor(plan, resourceKey), undefined);
-  assert.equal(blocker.class, 'stale-plugin-driver-reference-target');
-  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT');
-  assert.equal(targetEvidence.fields[0].targetResourceKey, sourcePostKey);
-  assert.equal(targetEvidence.fields[0].targetRemotePresent, false);
-  assert.equal(targetEvidence.fields[0].targetStable, false);
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutation.value.value.payload.post_id, 22);
+  assert.equal(result.site.db.wp_forms_contract_rows['entry_id:7'].payload.post_id, 22);
+  assert.equal(payloadEvidence.referenceValidation.fields[0].observedHash, digest('22'));
+  assert.equal(payloadEvidence.referenceValidation.fields[0].targetResourceKey, targetPostKey);
+  assert.equal(targetEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED');
+  assert.equal(targetEvidence.fields[0].targetResourceKey, targetPostKey);
+  assert.equal(targetEvidence.fields[0].targetRemotePresent, true);
+  assert.equal(targetEvidence.fields[0].targetStable, true);
+  assert.equal(targetEvidence.fields[0].targetChange.base.state, 'absent');
+  assert.equal(targetEvidence.fields[0].targetChange.local.state, 'absent');
+  assert.equal(targetEvidence.fields[0].targetBaseHash, targetEvidence.fields[0].targetChange.base.hash);
+  assert.equal(targetEvidence.fields[0].targetLocalHash, targetEvidence.fields[0].targetChange.local.hash);
+  assert.equal(targetEvidence.fields[0].targetRemoteHash, rewrite.targetRemoteHash);
+  assert.equal(targetEvidence.fields[0].referenceRewriteHash, digest(rewrite));
+  assert.equal(rewrite.operation, 'plugin-driver-reference-field-identity-rewrite');
+  assert.equal(rewrite.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_REWRITTEN');
+  assert.equal(rewrite.rawValuesIncluded, false);
+  assert.equal(rewrite.path, 'payload.post_id');
+  assert.equal(rewrite.sourceTargetResourceKey, sourcePostKey);
+  assert.equal(rewrite.targetResourceKey, targetPostKey);
+  assert.equal(rewrite.sourceValueHash, digest('2'));
+  assert.equal(rewrite.rewrittenValueHash, digest('22'));
   assert.equal(plan.decisions.some((entry) =>
     entry.resourceKey === sourcePostKey
     && entry.targetResourceKey === targetPostKey
     && entry.decision === 'map-local-identity-to-remote'), true);
-  assert.equal(blockerJson.includes('base-reference-identity-map-secret'), false);
-  assert.equal(blockerJson.includes('local-reference-identity-map-secret'), false);
-  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
-  assert.equal(JSON.stringify(remote), remoteBefore);
+  assert.equal(evidenceJson.includes('base-reference-identity-map-secret'), false);
+  assert.equal(evidenceJson.includes('local-reference-identity-map-secret'), false);
+
+  for (const variant of [
+    {
+      label: 'rewritten-value',
+      errorCode: 'PLAN_INVARIANT_VIOLATION',
+      issueCode: 'PLUGIN_DRIVER_REFERENCE_REWRITE_TARGET_VALUE_MISMATCH',
+      mutate(forgedMutation) {
+        forgedMutation.value.value.payload.post_id = 2;
+        forgedMutation.localHash = digest(forgedMutation.value.value);
+      },
+    },
+    {
+      label: 'rewrite-evidence',
+      errorCode: 'PLAN_INVARIANT_VIOLATION',
+      issueCode: 'PLUGIN_DRIVER_REFERENCE_REWRITE_EVIDENCE_INVALID',
+      mutate(forgedMutation) {
+        forgedMutation.pluginOwnedResource.referenceFieldRewrites[0].unexpectedRawPayload = rawSentinel;
+      },
+    },
+    {
+      label: 'rewrite-hash',
+      errorCode: 'INVALID_PLUGIN_DRIVER_REFERENCE_TARGET',
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REWRITE_HASH_MISMATCH',
+      mutate(forgedMutation) {
+        forgedMutation.pluginOwnedResource.referenceTargetValidationEvidence.fields[0].referenceRewriteHash = '0'.repeat(64);
+      },
+    },
+  ]) {
+    const remoteForVariant = cloneJson(remote);
+    const remoteBefore = JSON.stringify(remoteForVariant);
+    const forgedPlan = cloneJson(plan);
+    const forgedMutation = mutationFor(forgedPlan, resourceKey);
+    variant.mutate(forgedMutation);
+
+    let error;
+    try {
+      applyPlan(remoteForVariant, forgedPlan);
+    } catch (caught) {
+      error = caught;
+    }
+
+    assert.equal(error?.code, variant.errorCode, variant.label);
+    if (variant.errorCode === 'PLAN_INVARIANT_VIOLATION') {
+      assert.equal(error.details.issues.some((issue) => issue.code === variant.issueCode), true, variant.label);
+    } else {
+      assert.equal(error.details.reasonCode, variant.reasonCode, variant.label);
+      assert.equal(
+        error.details.applyValidationEvidence.referenceTargetValidationEvidence.reasonCode,
+        variant.reasonCode,
+        variant.label,
+      );
+    }
+    assert.equal(JSON.stringify(error.details).includes(rawSentinel), false, variant.label);
+    assert.equal(JSON.stringify(error.details).includes('base-reference-identity-map-secret'), false, variant.label);
+    assert.equal(JSON.stringify(error.details).includes('local-reference-identity-map-secret'), false, variant.label);
+    assert.equal(JSON.stringify(remoteForVariant), remoteBefore, variant.label);
+  }
+});
+
+test('reference-bound custom row driver keeps identity-map reference rewrites fail-closed without an accepted map', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const sourcePostKey = 'row:["wp_posts","ID:2"]';
+  const targetPostKey = 'row:["wp_posts","ID:22"]';
+
+  for (const variant of [
+    {
+      label: 'missing-map',
+      localMeta: {
+        pushPolicy: pluginOwnedResourcePolicy(referenceBoundCustomTableContract()),
+      },
+      mutateRemote() {},
+    },
+    {
+      label: 'stale-map',
+      localMeta: {
+        pushPolicy: pluginOwnedResourcePolicy(referenceBoundCustomTableContract()),
+        wordpressGraphIdentityMap: {
+          rows: [
+            {
+              sourceResourceKey: sourcePostKey,
+              targetResourceKey: targetPostKey,
+            },
+          ],
+        },
+      },
+      mutateRemote(remote) {
+        remote.db.wp_posts['ID:22'].post_title = 'stale identity-map target';
+      },
+    },
+  ]) {
+    const base = baseSite();
+    base.db.wp_forms_contract_rows = {
+      'entry_id:7': {
+        entry_id: 7,
+        payload: { mode: `base-reference-${variant.label}`, secret: `base-reference-${variant.label}-secret`, post_id: 2 },
+        updated_marker: 'base',
+        __pluginOwner: 'forms',
+      },
+    };
+    addStablePost(base, 2, `base ${variant.label} mapped source target`);
+    const local = cloneJson(base);
+    local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = `local-reference-${variant.label}`;
+    local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = `local-reference-${variant.label}-secret`;
+    local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+    local.meta = variant.localMeta;
+    const remote = cloneJson(base);
+    delete remote.db.wp_posts['ID:2'];
+    remote.db.wp_posts['ID:22'] = {
+      ...base.db.wp_posts['ID:2'],
+      ID: 22,
+    };
+    variant.mutateRemote(remote);
+    const remoteBefore = JSON.stringify(remote);
+
+    const plan = planFor(base, local, remote);
+    const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+    const targetEvidence = blocker.referenceTargetValidationEvidence;
+    const blockerJson = JSON.stringify(blocker);
+
+    assert.equal(plan.status, 'blocked', variant.label);
+    assert.equal(plan.summary.mutations, 0, variant.label);
+    assert.equal(mutationFor(plan, resourceKey), undefined, variant.label);
+    assert.equal(blocker.class, 'stale-plugin-driver-reference-target', variant.label);
+    assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT', variant.label);
+    assert.equal(targetEvidence.fields[0].targetResourceKey, sourcePostKey, variant.label);
+    assert.equal(targetEvidence.fields[0].targetRemotePresent, false, variant.label);
+    assert.equal(targetEvidence.fields[0].targetStable, false, variant.label);
+    assert.equal(blockerJson.includes(`base-reference-${variant.label}-secret`), false, variant.label);
+    assert.equal(blockerJson.includes(`local-reference-${variant.label}-secret`), false, variant.label);
+    assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/, variant.label);
+    assert.equal(JSON.stringify(remote), remoteBefore, variant.label);
+  }
 });
 
 test('explicit custom row driver merge policy is carried and bound through apply', () => {

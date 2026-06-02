@@ -83,7 +83,7 @@ Observed generated aggregate:
     "missing-plugin-dependency": 2,
     "stale-plugin-driver-reference-target": 10,
     "stale-plugin-owner-context": 13,
-    "stale-wordpress-graph-identity": 179,
+    "stale-wordpress-graph-identity": 199,
     "unsupported-plugin-owned-resource": 27
   }
 }

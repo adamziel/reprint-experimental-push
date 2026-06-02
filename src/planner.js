@@ -15,6 +15,7 @@ import {
   PLUGIN_DRIVER_REFUSE_ON_CONFLICT_MERGE_POLICY,
   pluginDriverReferenceTargetPrimaryIdField,
   normalizePluginOwnedRowDriverContract,
+  normalizePluginOwnedRowDriverReferenceFields,
   pluginOwnedRowDriverContractValidationEvidenceHash,
   pluginOwnedRowDriverContractValidationEvidenceMatches,
   pluginOwnedRowDriverContractHash,
@@ -184,7 +185,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
       identityMap: wordpressGraphIdentityMap,
     });
     const resource = graphIdentityRewrite.resource;
-    const localValue = graphIdentityRewrite.localValue;
+    let localValue = graphIdentityRewrite.localValue;
     const baseValue = graphIdentityRewrite.resource.key === sourceResource.key
       ? sourceBaseValue
       : getResource(base, resource);
@@ -194,13 +195,28 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     const baseHash = graphIdentityRewrite.resource.key === sourceResource.key
       ? sourceBaseHash
       : resourceHash(base, resource);
-    const localHash = graphIdentityRewrite.rewrites.length === 0
-      ? sourceLocalHash
-      : digest(localValue);
     const remoteHash = graphIdentityRewrite.resource.key === sourceResource.key
       ? sourceRemoteHash
       : resourceHash(remote, resource);
     const owner = pluginOwnerFor(resource, baseValue, localValue, remoteValue);
+    const precomputedPluginOwnedSupport = owner && isPluginOwnedDataResource(resource, owner)
+      ? pluginOwnedResourcePolicy.supportFor(resource, owner, {
+        plannedValue: localValue,
+        wordpressGraphIdentityMap,
+      })
+      : null;
+    if (
+      precomputedPluginOwnedSupport
+      && Object.prototype.hasOwnProperty.call(precomputedPluginOwnedSupport, 'plannedValue')
+    ) {
+      localValue = precomputedPluginOwnedSupport.plannedValue;
+    }
+    const pluginReferenceRewrites = Array.isArray(precomputedPluginOwnedSupport?.referenceFieldRewrites)
+      ? precomputedPluginOwnedSupport.referenceFieldRewrites
+      : [];
+    const localHash = graphIdentityRewrite.rewrites.length === 0 && pluginReferenceRewrites.length === 0
+      ? sourceLocalHash
+      : digest(localValue);
     const change = changeEvidence(
       resource,
       baseValue,
@@ -270,7 +286,11 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
       }
 
       if (isPluginOwnedDataResource(resource, owner)) {
-        const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
+        const support = precomputedPluginOwnedSupport
+          || pluginOwnedResourcePolicy.supportFor(resource, owner, {
+            plannedValue: localValue,
+            wordpressGraphIdentityMap,
+          });
         if (!support.supported) {
           addPluginOwnedResourceBlocker(plan, {
             resource,
@@ -402,7 +422,11 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         };
       }
       if (isPluginOwnedDataResource(resource, owner)) {
-        const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
+        const support = precomputedPluginOwnedSupport
+          || pluginOwnedResourcePolicy.supportFor(resource, owner, {
+            plannedValue: localValue,
+            wordpressGraphIdentityMap,
+          });
         const ownerContext = pluginOwnerContextEvidence({
           owner,
           resources,
@@ -446,6 +470,9 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           ...(support.driverPayloadValidationEvidence
             ? { driverPayloadValidationEvidence: support.driverPayloadValidationEvidence }
             : {}),
+          ...(support.referenceFieldRewrites
+            ? { referenceFieldRewrites: support.referenceFieldRewrites }
+            : {}),
           ...(support.referenceTargetValidationEvidence
             ? { referenceTargetValidationEvidence: support.referenceTargetValidationEvidence }
             : {}),
@@ -483,7 +510,11 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     }
 
     const pluginOwnedConflictSupport = owner && isPluginOwnedDataResource(resource, owner)
-      ? pluginOwnedResourcePolicy.supportFor(resource, owner)
+      ? precomputedPluginOwnedSupport
+        || pluginOwnedResourcePolicy.supportFor(resource, owner, {
+          plannedValue: localValue,
+          wordpressGraphIdentityMap,
+        })
       : null;
     addConflict(plan, {
       resource,
@@ -551,7 +582,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
   ];
 
   return {
-    supportFor(resource, owner) {
+    supportFor(resource, owner, options = {}) {
       const candidates = entries.filter((entry) =>
         entry.resourceKey === resource.key && entry.pluginOwner === owner);
 
@@ -628,7 +659,20 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
       }
 
       const supportedTable = supported.table || PLUGIN_DATA_DRIVER_TABLES.get(supported.driver) || null;
-      const plannedValue = getResource(local, resource);
+      let plannedValue = Object.prototype.hasOwnProperty.call(options, 'plannedValue')
+        ? options.plannedValue
+        : getResource(local, resource);
+      const referenceFieldRewriteSupport = pluginOwnedReferenceFieldRewriteSupport({
+        resource,
+        owner,
+        driver: supported.driver,
+        table: supportedTable,
+        contractValidationEvidence: supported.contractValidationEvidence,
+        plannedValue,
+        identityMap: options.wordpressGraphIdentityMap || null,
+      });
+      plannedValue = referenceFieldRewriteSupport.plannedValue;
+      const referenceFieldRewrites = referenceFieldRewriteSupport.rewrites;
       const action = plannedValue === ABSENT ? 'delete' : 'put';
       if (
         pluginOwnedPolicyEntryRequiresExplicitContract(supported)
@@ -641,6 +685,8 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
           driver: supported.driver,
           table: supportedTable,
           policySource: supported.source,
+          plannedValue,
+          ...(referenceFieldRewrites.length > 0 ? { referenceFieldRewrites } : {}),
           reason: 'Generic plugin-owned custom row drivers require an explicit accepted row-driver contract.',
           pluginDriverContractRequiredEvidence: pluginDriverContractRequiredEvidence({
             resource,
@@ -674,6 +720,8 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
           reasonCode: 'INVALID_SERIALIZED_OPTION_PAYLOAD',
           driver: supported.driver,
           policySource: supported.source,
+          plannedValue,
+          ...(referenceFieldRewrites.length > 0 ? { referenceFieldRewrites } : {}),
           reason: `Serialized option validator refused ${resource.key}: ${serializedOptionValidationEvidence.reasonCode}.`,
           serializedOptionValidationEvidence,
           driverPayloadValidationEvidence,
@@ -698,6 +746,8 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
           driver: supported.driver,
           table: supportedTable,
           policySource: supported.source,
+          plannedValue,
+          ...(referenceFieldRewrites.length > 0 ? { referenceFieldRewrites } : {}),
           reason: contractPayloadValidation.reason,
           driverPayloadValidationEvidence: contractPayloadValidation.evidence,
         };
@@ -717,6 +767,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
         base,
         local,
         remote,
+        referenceFieldRewrites,
       });
       if (!referenceTargetValidation.supported) {
         return {
@@ -726,6 +777,8 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
           driver: supported.driver,
           table: supportedTable,
           policySource: supported.source,
+          plannedValue,
+          ...(referenceFieldRewrites.length > 0 ? { referenceFieldRewrites } : {}),
           reason: referenceTargetValidation.reason,
           driverPayloadValidationEvidence,
           referenceTargetValidationEvidence: referenceTargetValidation.evidence,
@@ -749,6 +802,8 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
             className: 'unsupported-plugin-owned-resource',
             driver: supported.driver,
             policySource: supported.source,
+            plannedValue,
+            ...(referenceFieldRewrites.length > 0 ? { referenceFieldRewrites } : {}),
             reason: driverEvidence.reason,
             driverEvidence,
             ...(driverEvidence.dryRunValidationEvidence
@@ -763,6 +818,8 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
           policySource: supported.source,
           evidenceScope: supported.evidenceScope,
           supportsDelete: false,
+          plannedValue,
+          ...(referenceFieldRewrites.length > 0 ? { referenceFieldRewrites } : {}),
           driverEvidence,
         };
       }
@@ -773,7 +830,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
         driver: supported.driver,
         policySource: supported.source,
         evidenceScope: supported.evidenceScope,
-        row: getResource(local, resource),
+        row: plannedValue,
       });
       if (driverEvidence && !driverEvidence.supported) {
         return {
@@ -781,6 +838,8 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
           className: 'unsupported-plugin-owned-resource',
           driver: supported.driver,
           policySource: supported.source,
+          plannedValue,
+          ...(referenceFieldRewrites.length > 0 ? { referenceFieldRewrites } : {}),
           reason: driverEvidence.reason,
           driverEvidence,
         };
@@ -800,6 +859,8 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
           className: 'unsupported-plugin-owned-resource',
           driver: supported.driver,
           policySource: supported.source,
+          plannedValue,
+          ...(referenceFieldRewrites.length > 0 ? { referenceFieldRewrites } : {}),
           reason: 'Plugin-owned resource driver dry-run validation hook is not supported.',
           dryRunValidationEvidence,
         };
@@ -810,6 +871,8 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
           className: 'unsupported-plugin-owned-resource',
           driver: supported.driver,
           policySource: supported.source,
+          plannedValue,
+          ...(referenceFieldRewrites.length > 0 ? { referenceFieldRewrites } : {}),
           reason: 'Plugin-owned resource driver dry-run validation hook did not pass.',
           dryRunValidationEvidence,
         };
@@ -831,6 +894,8 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
         policySource: supported.source,
         evidenceScope: supported.evidenceScope,
         supportsDelete: supported.supportsDelete === true,
+        plannedValue,
+        ...(referenceFieldRewrites.length > 0 ? { referenceFieldRewrites } : {}),
         ...(supported.mergePolicy ? { mergePolicy: supported.mergePolicy } : {}),
         ...(supported.contractValidationEvidence
           ? { contractValidationEvidence: supported.contractValidationEvidence }
@@ -846,6 +911,152 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resource
       };
     },
   };
+}
+
+function pluginOwnedReferenceFieldRewriteSupport({
+  resource,
+  owner,
+  driver,
+  table,
+  contractValidationEvidence,
+  plannedValue,
+  identityMap,
+}) {
+  if (
+    plannedValue === ABSENT
+    || !plannedValue
+    || typeof plannedValue !== 'object'
+    || Array.isArray(plannedValue)
+    || !acceptedPluginOwnedRowDriverContractEvidence(contractValidationEvidence)
+    || !contractValidationEvidence?.referenceFields
+  ) {
+    return { plannedValue, rewrites: [] };
+  }
+
+  const referenceFields = normalizePluginOwnedRowDriverReferenceFields(
+    contractValidationEvidence.referenceFields,
+  ).normalized;
+  if (!referenceFields) {
+    return { plannedValue, rewrites: [] };
+  }
+
+  let rewrittenValue = plannedValue;
+  const rewrites = [];
+  for (const field of referenceFields.fields || []) {
+    const resolved = resolvePluginOwnedReferencePath(plannedValue, field.path);
+    if (!resolved.exists) {
+      continue;
+    }
+    const sourceTargetId = normalizePositiveInteger(resolved.value);
+    if (sourceTargetId === null) {
+      continue;
+    }
+    const sourceTargetResource = rowResource(
+      field.targetTable,
+      `${field.targetIdField}:${sourceTargetId}`,
+    );
+    const mapping = identityMap?.usableBySourceKey?.get(sourceTargetResource.key);
+    if (!pluginOwnedReferenceFieldIdentityMappingMatches(field, sourceTargetResource, mapping)) {
+      continue;
+    }
+
+    const rewrittenScalar = preserveWordPressGraphIdScalarType(
+      resolved.value,
+      mapping.targetPrimaryValue,
+    );
+    if (String(rewrittenScalar) === String(resolved.value)) {
+      continue;
+    }
+    if (rewrittenValue === plannedValue) {
+      rewrittenValue = deepClone(plannedValue);
+    }
+    writePluginOwnedReferencePath(rewrittenValue, field.path, rewrittenScalar);
+    rewrites.push(pluginOwnedReferenceFieldRewriteEvidence({
+      resource,
+      owner,
+      driver,
+      table,
+      field,
+      originalValue: resolved.value,
+      rewrittenValue: rewrittenScalar,
+      mapping,
+    }));
+  }
+
+  return { plannedValue: rewrittenValue, rewrites };
+}
+
+function pluginOwnedReferenceFieldIdentityMappingMatches(field, sourceTargetResource, mapping) {
+  return mapping?.usable === true
+    && mapping.sourceResource?.key === sourceTargetResource.key
+    && mapping.targetResource?.type === 'row'
+    && mapping.targetResource.table === field.targetTable
+    && pluginOwnedReferenceTargetPrimaryId(mapping.targetResource, field.targetIdField)
+      === mapping.targetPrimaryValue;
+}
+
+function pluginOwnedReferenceFieldRewriteEvidence({
+  resource,
+  owner,
+  driver,
+  table,
+  field,
+  originalValue,
+  rewrittenValue,
+  mapping,
+}) {
+  return {
+    schemaVersion: 1,
+    operation: 'plugin-driver-reference-field-identity-rewrite',
+    reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_REWRITTEN',
+    outcome: 'accepted',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    resourceKey: resource?.key || null,
+    pluginOwner: owner || null,
+    driver: driver || null,
+    table: table || resource?.table || null,
+    path: field.path,
+    targetTable: field.targetTable,
+    targetIdField: field.targetIdField,
+    scalarType: field.scalarType,
+    required: field.required === true,
+    sourceTargetResourceKey: mapping.sourceResource.key,
+    targetResourceKey: mapping.targetResource.key,
+    identityMapSource: mapping.source || null,
+    sourceValueHash: digest(String(originalValue)),
+    rewrittenValueHash: digest(String(rewrittenValue)),
+    sourceTargetLocalHash: mapping.sourceLocalHash,
+    sourceTargetRemoteHash: mapping.sourceRemoteHash,
+    targetRemoteHash: mapping.targetRemoteHash,
+    identityMapContractHash: mapping.contractValidationEvidence?.contractHash || null,
+    identityMapContractValidationHash: mapping.contractValidationEvidence
+      ? digest(mapping.contractValidationEvidence)
+      : null,
+  };
+}
+
+function resolvePluginOwnedReferencePath(value, path) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { exists: false, value: undefined };
+  }
+  let cursor = value;
+  for (const segment of String(path || '').split('.')) {
+    if (!cursor || typeof cursor !== 'object' || Array.isArray(cursor) || !Object.prototype.hasOwnProperty.call(cursor, segment)) {
+      return { exists: false, value: undefined };
+    }
+    cursor = cursor[segment];
+  }
+  return { exists: true, value: cursor };
+}
+
+function writePluginOwnedReferencePath(value, path, nextValue) {
+  const segments = String(path || '').split('.');
+  let cursor = value;
+  for (const segment of segments.slice(0, -1)) {
+    cursor = cursor[segment];
+  }
+  cursor[segments[segments.length - 1]] = nextValue;
 }
 
 function pluginOwnedPolicyEntriesFromSnapshot(snapshot, source) {
@@ -1155,6 +1366,9 @@ function pluginOwnedDriverAuditEvidence({
       : {}),
     ...(support.driverPayloadValidationEvidence
       ? { driverPayloadValidationHash: digest(support.driverPayloadValidationEvidence) }
+      : {}),
+    ...(support.referenceFieldRewrites
+      ? { referenceFieldRewriteHash: digest(support.referenceFieldRewrites) }
       : {}),
     ...(support.contractValidationEvidence
       ? { contractValidationHash: digest(support.contractValidationEvidence) }
@@ -3848,6 +4062,7 @@ function pluginOwnedReferenceTargetValidationSupport({
   base,
   local,
   remote,
+  referenceFieldRewrites = [],
 }) {
   const referenceValidation = driverPayloadValidationEvidence?.referenceValidation || null;
   if (!referenceValidation) {
@@ -3862,6 +4077,7 @@ function pluginOwnedReferenceTargetValidationSupport({
         base,
         local,
         remote,
+        referenceFieldRewrites,
       }))
     : [];
   const failedFields = fields.filter((field) => field.targetStable !== true);
@@ -3911,6 +4127,7 @@ function pluginOwnedReferenceTargetFieldEvidence({
   base,
   local,
   remote,
+  referenceFieldRewrites = [],
 }) {
   const baseEvidence = {
     path: field?.path || null,
@@ -3953,9 +4170,16 @@ function pluginOwnedReferenceTargetFieldEvidence({
   const targetRemoteHash = resourceHash(remote, targetResource);
   const targetRemotePresent = remoteValue !== ABSENT;
   const targetPrimaryRow = pluginOwnedReferenceTargetPrimaryRowEvidence(targetResource, remoteValue);
-  const targetStable = targetRemotePresent
+  const referenceRewrite = referenceFieldRewrites.find((rewrite) =>
+    rewrite.path === field.path
+    && rewrite.targetResourceKey === targetResource.key);
+  const targetStableBySnapshot = targetRemotePresent
     && targetPrimaryRow.matched === true
     && (targetRemoteHash === targetBaseHash || targetLocalHash === targetRemoteHash);
+  const targetStableByRewrite = targetRemotePresent
+    && targetPrimaryRow.matched === true
+    && pluginOwnedReferenceFieldRewriteTargetEvidenceMatches(referenceRewrite, targetResource, targetRemoteHash);
+  const targetStable = targetStableBySnapshot || targetStableByRewrite;
 
   return {
     ...baseEvidence,
@@ -3966,6 +4190,7 @@ function pluginOwnedReferenceTargetFieldEvidence({
     targetRemoteHash,
     targetRemotePresent,
     targetStable,
+    ...(targetStableByRewrite ? { referenceRewriteHash: digest(referenceRewrite) } : {}),
     reasonCode: targetStable
       ? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ACCEPTED'
       : targetRemotePresent
@@ -3983,6 +4208,16 @@ function pluginOwnedReferenceTargetFieldEvidence({
       targetRemoteHash,
     ),
   };
+}
+
+function pluginOwnedReferenceFieldRewriteTargetEvidenceMatches(referenceRewrite, targetResource, targetRemoteHash) {
+  return referenceRewrite?.operation === 'plugin-driver-reference-field-identity-rewrite'
+    && referenceRewrite.reasonCode === 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_REWRITTEN'
+    && referenceRewrite.outcome === 'accepted'
+    && referenceRewrite.format === 'hash-only'
+    && referenceRewrite.rawValuesIncluded === false
+    && referenceRewrite.targetResourceKey === targetResource.key
+    && referenceRewrite.targetRemoteHash === targetRemoteHash;
 }
 
 function pluginOwnedReferenceTargetPrimaryRowEvidence(targetResource, targetValue) {
@@ -4122,6 +4357,9 @@ function addPluginOwnedResourceBlocker(plan, {
       : {}),
     ...(support.driverPayloadValidationEvidence
       ? { driverPayloadValidationEvidence: support.driverPayloadValidationEvidence }
+      : {}),
+    ...(support.referenceFieldRewrites
+      ? { referenceFieldRewrites: support.referenceFieldRewrites }
       : {}),
     ...(support.referenceTargetValidationEvidence
       ? { referenceTargetValidationEvidence: support.referenceTargetValidationEvidence }

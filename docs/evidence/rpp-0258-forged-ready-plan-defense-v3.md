@@ -14,8 +14,8 @@ For generated ready-candidate plans, each mutation must have exactly one matchin
 
 ## Evidence added
 
-- `test/rpp-0258-forged-ready-plan-defense-v3.test.js` filters the deterministic generated harness to the 170 `ready-candidate` cases.
-- Coverage spans tiers 0 through 9 and 18 generated families, including file, row, option, graph, plugin-owned, and large-ready-plan surfaces.
+- `test/rpp-0258-forged-ready-plan-defense-v3.test.js` filters the deterministic generated harness to the 210 `ready-candidate` cases.
+- Coverage spans tiers 0 through 9 and 22 generated families, including file, row, option, graph, plugin-owned, and large-ready-plan surfaces.
 - For each generated ready candidate, the test verifies the generated apply contract, confirms one live-remote precondition per mutation, serializes a hash-only baseline envelope, and exercises these refusal paths:
   - missing live-remote precondition plus raw private forged `remoteBeforeHash` material;
   - duplicate live-remote precondition;

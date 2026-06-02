@@ -83,9 +83,26 @@ Lane: graph-identity
 - Adds RPP-0902 generated harness evidence for multisite `wp_sitemeta.site_id`
   references: 20 deterministic support-only cases across all 10 tiers, split
   between ready identity-map row rewrites and stale site drift blockers.
+- Adds generated harness evidence for explicit custom taxonomy identity-map
+  contracts: 20 deterministic support-only `product_cat` cases across all 10
+  tiers, split between ready `wp_term_relationships.term_taxonomy_id` rewrites
+  through accepted `wp_terms`/`wp_term_taxonomy` maps and stale
+  non-equivalent taxonomy target blockers.
+- Extends accepted WordPress graph identity maps into declared plugin-driver
+  reference fields. A plugin-owned row contract may rewrite a declared
+  positive-integer scalar such as `payload.post_id -> wp_posts.ID` from the
+  local source row ID to the proven remote target row ID only when the
+  identity-map decision has already accepted the source/target pair. The
+  mutation carries hash-only plugin reference rewrite evidence, the
+  reference-target proof binds the matching rewrite hash, and apply refuses
+  forged rewritten values, surplus raw rewrite evidence, or mismatched rewrite
+  hashes before mutation.
 
 ## Verification commands
 
+- `node --test --test-name-pattern='custom taxonomy identity-map|plugin-owned reference-field|reference-bound custom row driver' test/generated-push-harness.test.js test/plugin-driver-contract.test.js` — passed with 13 subtests, covering generated custom taxonomy identity maps and declared plugin reference-field rewrites through accepted WordPress identity maps.
+- `node --test test/generated-push-harness.test.js` — passed with 107 subtests after the custom taxonomy and plugin reference-field identity-map refresh.
+- `node --test` — passed with exit status 0 for the stable integrated worktree.
 - `node --check scripts/playground/local-production-complex-site-proof.js`, `node --check scripts/docker/production-complex-site-harness.mjs`, `node --check test/local-production-complex-site-proof.test.js`, and `node --check test/push-planner.test.js` — passed for the RPP-0310 proof changes.
 - `node --test test/local-production-complex-site-proof.test.js` — passed (18 tests), including post_tag release-evidence carry-through, fail-closed mutation checks, and importer/exporter identity-map proof.
 - `node --test test/push-planner.test.js` — passed (101 tests), including same-plan `post_tag` taxonomy closure and explicit identity-map reference rewriting.
@@ -169,6 +186,10 @@ RPP-0306 focused worker verification commands:
   — 1 subtest, 0 failures, including 20 generated `wp_sitemeta.site_id`
   support-only cases with ready identity-map row rewrites and stale site
   blockers.
+- `node --test --test-name-pattern='custom taxonomy identity-map' test/generated-push-harness.test.js`
+  — 1 subtest, 0 failures, including 20 generated custom taxonomy
+  support-only cases with explicit identity-map contracts, ready relationship
+  row rewrites, stale non-equivalent target blockers, and hash-only evidence.
 - `node --test test/generated-push-harness.test.js`
   — 105 subtests, 0 failures, including generated multisite
   `wp_registration_log.blog_id` coverage, generated multisite

@@ -53,6 +53,17 @@ evidence, then refuse apply-time target drift with
 mutation and block as `stale-plugin-driver-reference-target` with
 `PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT`.
 
+Production-scope reference fields can now rewrite through accepted WordPress
+graph identity maps. A declared `payload.post_id -> wp_posts.ID` field rewrites
+from the local source post ID to the proven remote target post ID only when the
+WordPress graph identity decision has already accepted the source/target row
+pair. The mutation carries hash-only `referenceFieldRewrites` evidence, the
+reference-target proof carries the matching `referenceRewriteHash`, and apply
+refuses forged ready plans when the rewritten value, rewrite evidence, or
+carried rewrite hash changes. Missing or stale maps continue to fail closed as
+`stale-plugin-driver-reference-target` without leaking raw plugin payload
+sentinels.
+
 The same slice also records hash-only merge-policy conflict evidence for
 contract-bound plugin rows whose accepted policy is `refuse-on-conflict`.
 Conflicting local/remote edits remain `conflict` plans and refuse apply with
@@ -74,18 +85,26 @@ node --test test/plugin-driver-contract.test.js
 node --test test/plugin-driver-registration-api.test.js test/playground-snapshot-lib.test.js
 node --test test/plugin-driver-contract.test.js test/plugin-driver-registration-api.test.js test/playground-snapshot-lib.test.js test/production-plugin-package-scenarios.test.js test/rpp-0441-driver-registration-api-v3.test.js test/rpp-0481-driver-registration-api-release-verifier-v5.test.js test/rpp-0483-custom-table-allowlist-release-verifier-v5.test.js
 node --test --test-name-pattern='plugin-owned reference-field' test/generated-push-harness.test.js
+node --test --test-name-pattern='reference-bound custom row driver' test/plugin-driver-contract.test.js
 ```
 
 The broad plugin-driver bundle passed with 95 tests/subtests and 0 failures.
 The focused generated-harness reference-field proof passed with 1 subtest and
 0 failures.
+The focused production-scope identity-map reference-field proof passed with 11
+subtests and 0 failures; the full plugin-driver contract file passed with 54
+subtests and 0 failures. The adjacent generated/plugin focus passed with 13
+subtests and 0 failures, the full generated harness passed with 107 subtests
+and 0 failures, and the full repo `node --test` suite passed with exit status
+0.
 
 ## Caveat
 
 This is a reference-field validator contract, not a generic plugin reference
 extractor or rewriter. It proves declared scalar reference fields are shaped,
 hash-bound, target-stability-checked, and exact across planner, JS apply, PHP
-registered-driver evidence, and generated harness ready/refusal cases.
-Arbitrary plugin graph traversal, reference rewriting, plugin-owned files,
-activation/update side effects, and merge policies beyond `refuse-on-conflict`
-remain release-scope work.
+registered-driver evidence, generated harness ready/refusal cases, and accepted
+WordPress graph identity-map rewrites. Arbitrary plugin graph traversal,
+undeclared reference rewriting, plugin-owned files, activation/update side
+effects, and merge policies beyond `refuse-on-conflict` remain release-scope
+work.

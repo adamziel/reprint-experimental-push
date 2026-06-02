@@ -327,20 +327,20 @@ test('RPP-0255 generated keep-remote decisions are decision-only across variant 
     ready: 345,
   });
   assert.deepEqual(Object.keys(first.evidence.keepRemoteCaseTiers), expectedGeneratedTiers);
-  assert.equal(first.evidence.casesWithKeepRemote, 542);
-  assert.equal(first.evidence.readyCasesWithKeepRemote, 293);
+  assert.equal(first.evidence.casesWithKeepRemote, 544);
+  assert.equal(first.evidence.readyCasesWithKeepRemote, 295);
   assert.equal(first.evidence.nonReadyCasesWithKeepRemote, 249);
-  assert.equal(first.evidence.keepRemoteDecisionCount, 1805);
-  assert.equal(first.evidence.readyAppliedDecisionCount, 816);
+  assert.equal(first.evidence.keepRemoteDecisionCount, 1845);
+  assert.equal(first.evidence.readyAppliedDecisionCount, 836);
   assert.equal(first.evidence.nonReadyRefusals, first.evidence.nonReadyCasesWithKeepRemote);
   assert.deepEqual(first.evidence.keepRemoteResourceTypes, {
     file: 316,
     plugin: 20,
-    row: 1469,
+    row: 1509,
   });
-  assert.deepEqual(first.evidence.keepRemoteLocalChanges, { unchanged: 1805 });
+  assert.deepEqual(first.evidence.keepRemoteLocalChanges, { unchanged: 1845 });
   assert.deepEqual(first.evidence.keepRemoteRemoteChanges, {
-    create: 624,
+    create: 664,
     delete: 30,
     update: 1151,
   });
