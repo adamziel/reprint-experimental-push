@@ -1167,7 +1167,10 @@ function rpp_reference_bound_policy(
     string $action,
     $value,
     array $reference_fields,
-    array $snapshot
+    array $snapshot,
+    array $reference_field_rewrites = [],
+    ?array $base_snapshot = null,
+    ?array $local_snapshot = null
 ): array {
     $normalized_references = reprint_push_normalize_plugin_owned_row_driver_reference_fields($reference_fields);
     $contract_hash = reprint_push_plugin_owned_row_driver_contract_hash(
@@ -1236,7 +1239,7 @@ function rpp_reference_bound_policy(
         ],
         'contractValidationHash' => hash('sha256', reprint_push_stable_json($contract)),
     ];
-    return [
+    $policy = [
         'pluginOwner' => $owner,
         'driver' => $driver,
         'table' => $table,
@@ -1250,9 +1253,16 @@ function rpp_reference_bound_policy(
             $driver,
             $contract,
             $payload_evidence,
-            $snapshot
+            $snapshot,
+            $reference_field_rewrites,
+            $base_snapshot,
+            $local_snapshot
         ),
     ];
+    if (count($reference_field_rewrites) > 0) {
+        $policy['referenceFieldRewrites'] = $reference_field_rewrites;
+    }
+    return $policy;
 }
 function rpp_reference_target_evidence(
     string $resource_key,
@@ -1261,8 +1271,13 @@ function rpp_reference_target_evidence(
     string $driver,
     array $contract,
     array $payload_evidence,
-    array $snapshot
+    array $snapshot,
+    array $reference_field_rewrites = [],
+    ?array $base_snapshot = null,
+    ?array $local_snapshot = null
 ): array {
+    $base_snapshot = $base_snapshot ?? $snapshot;
+    $local_snapshot = $local_snapshot ?? $snapshot;
     $reference_validation = $payload_evidence['referenceValidation'];
     $fields = [];
     foreach ($reference_validation['fields'] as $field) {
@@ -1292,6 +1307,8 @@ function rpp_reference_target_evidence(
             'id' => $target_id,
         ];
         $target_current = reprint_push_get_resource($snapshot, $target_resource);
+        $target_base_hash = reprint_push_hash_resource($base_snapshot, $target_resource);
+        $target_local_hash = reprint_push_hash_resource($local_snapshot, $target_resource);
         $target_hash = reprint_push_hash_resource($snapshot, $target_resource);
         $target_present = ($target_current['exists'] ?? false) === true;
         $target_id_field = $field['targetIdField'] ?? null;
@@ -1322,8 +1339,20 @@ function rpp_reference_target_evidence(
                 : null,
             'matched' => $target_primary_id !== null && $observed_primary_id === $target_primary_id,
         ];
-        $target_stable = $target_present && $target_primary_row['matched'];
-        $fields[] = array_merge($target_field, [
+        $reference_rewrite = rpp_reference_field_rewrite_for_target(
+            $reference_field_rewrites,
+            $field,
+            $target_resource_key
+        );
+        $target_stable_by_snapshot = $target_present
+            && $target_primary_row['matched']
+            && ($target_hash === $target_base_hash || $target_hash === $target_local_hash);
+        $target_stable_by_rewrite = $target_present
+            && $target_primary_row['matched']
+            && is_array($reference_rewrite)
+            && rpp_reference_field_rewrite_matches_target($reference_rewrite, $target_field, $target_hash);
+        $target_stable = $target_stable_by_snapshot || $target_stable_by_rewrite;
+        $target_field_evidence = array_merge($target_field, [
             'targetResource' => [
                 'type' => 'row',
                 'key' => $target_resource_key,
@@ -1331,8 +1360,8 @@ function rpp_reference_target_evidence(
                 'id' => $target_id,
             ],
             'targetPrimaryRow' => $target_primary_row,
-            'targetBaseHash' => $target_hash,
-            'targetLocalHash' => $target_hash,
+            'targetBaseHash' => $target_base_hash,
+            'targetLocalHash' => $target_local_hash,
             'targetRemoteHash' => $target_hash,
             'targetRemotePresent' => $target_present,
             'targetStable' => $target_stable,
@@ -1344,11 +1373,21 @@ function rpp_reference_target_evidence(
             'targetChange' => [
                 'localChange' => 'unchanged',
                 'remoteChange' => 'unchanged',
-                'base' => ['state' => $target_present ? 'present' : 'absent', 'hash' => $target_hash],
-                'local' => ['state' => $target_present ? 'present' : 'absent', 'hash' => $target_hash],
+                'base' => [
+                    'state' => reprint_push_get_resource($base_snapshot, $target_resource)['exists'] ? 'present' : 'absent',
+                    'hash' => $target_base_hash,
+                ],
+                'local' => [
+                    'state' => reprint_push_get_resource($local_snapshot, $target_resource)['exists'] ? 'present' : 'absent',
+                    'hash' => $target_local_hash,
+                ],
                 'remote' => ['state' => $target_present ? 'present' : 'absent', 'hash' => $target_hash],
             ],
         ]);
+        if ($target_stable_by_rewrite) {
+            $target_field_evidence['referenceRewriteHash'] = hash('sha256', reprint_push_stable_json($reference_rewrite));
+        }
+        $fields[] = $target_field_evidence;
     }
     $failed_fields = array_filter($fields, static function (array $field): bool {
         return ($field['targetStable'] ?? false) !== true;
@@ -1375,6 +1414,83 @@ function rpp_reference_target_evidence(
         'referenceValidationHash' => hash('sha256', reprint_push_stable_json($reference_validation)),
         'referenceFieldCount' => count($fields),
         'fields' => $fields,
+    ];
+}
+function rpp_reference_field_rewrite_for_target(
+    array $reference_field_rewrites,
+    array $field,
+    $target_resource_key
+): ?array {
+    foreach ($reference_field_rewrites as $rewrite) {
+        if (is_array($rewrite)
+            && ($rewrite['path'] ?? null) === ($field['path'] ?? null)
+            && ($rewrite['targetResourceKey'] ?? null) === $target_resource_key) {
+            return $rewrite;
+        }
+    }
+    return null;
+}
+function rpp_reference_field_rewrite_matches_target(array $rewrite, array $field, string $target_hash): bool {
+    return ($rewrite['schemaVersion'] ?? null) === 1
+        && ($rewrite['operation'] ?? null) === 'plugin-driver-reference-field-identity-rewrite'
+        && ($rewrite['reasonCode'] ?? null) === 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_REWRITTEN'
+        && ($rewrite['outcome'] ?? null) === 'accepted'
+        && ($rewrite['format'] ?? null) === 'hash-only'
+        && ($rewrite['rawValuesIncluded'] ?? null) === false
+        && ($rewrite['path'] ?? null) === ($field['path'] ?? null)
+        && ($rewrite['targetTable'] ?? null) === ($field['targetTable'] ?? null)
+        && ($rewrite['targetIdField'] ?? null) === ($field['targetIdField'] ?? null)
+        && ($rewrite['scalarType'] ?? null) === ($field['scalarType'] ?? null)
+        && ($rewrite['required'] ?? null) === ($field['required'] ?? null)
+        && ($rewrite['targetResourceKey'] ?? null) === ($field['targetResourceKey'] ?? null)
+        && ($rewrite['rewrittenValueHash'] ?? null) === ($field['observedHash'] ?? null)
+        && ($rewrite['targetRemoteHash'] ?? null) === $target_hash;
+}
+function rpp_reference_field_rewrite(
+    string $resource_key,
+    string $table,
+    string $owner,
+    string $driver,
+    array $field,
+    string $source_target_resource_key,
+    string $target_resource_key,
+    array $local_snapshot,
+    array $remote_snapshot
+): array {
+    [$source_table, $source_id] = reprint_push_parse_wordpress_graph_row_resource_key($source_target_resource_key);
+    [$target_table, $target_id] = reprint_push_parse_wordpress_graph_row_resource_key($target_resource_key);
+    $source_resource = ['type' => 'row', 'table' => $source_table, 'id' => $source_id];
+    $target_resource = ['type' => 'row', 'table' => $target_table, 'id' => $target_id];
+    $target_id_field = (string) ($field['targetIdField'] ?? '');
+    $source_id_field = reprint_push_plugin_driver_reference_target_primary_id_field($source_table);
+    $source_value = reprint_push_plugin_driver_reference_target_primary_id($source_id, $source_id_field);
+    $target_value = reprint_push_plugin_driver_reference_target_primary_id($target_id, $target_id_field);
+    return [
+        'schemaVersion' => 1,
+        'operation' => 'plugin-driver-reference-field-identity-rewrite',
+        'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_REWRITTEN',
+        'outcome' => 'accepted',
+        'format' => 'hash-only',
+        'rawValuesIncluded' => false,
+        'resourceKey' => $resource_key,
+        'pluginOwner' => $owner,
+        'driver' => $driver,
+        'table' => $table,
+        'path' => (string) ($field['path'] ?? ''),
+        'targetTable' => (string) ($field['targetTable'] ?? ''),
+        'targetIdField' => $target_id_field,
+        'scalarType' => (string) ($field['scalarType'] ?? 'positive-integer'),
+        'required' => !empty($field['required']),
+        'sourceTargetResourceKey' => $source_target_resource_key,
+        'targetResourceKey' => $target_resource_key,
+        'identityMapSource' => 'fixture-wordpress-graph-identity-map',
+        'sourceValueHash' => hash('sha256', reprint_push_stable_json((string) $source_value)),
+        'rewrittenValueHash' => hash('sha256', reprint_push_stable_json((string) $target_value)),
+        'sourceTargetLocalHash' => reprint_push_hash_resource($local_snapshot, $source_resource),
+        'sourceTargetRemoteHash' => reprint_push_hash_resource($remote_snapshot, $source_resource),
+        'targetRemoteHash' => reprint_push_hash_resource($remote_snapshot, $target_resource),
+        'identityMapContractHash' => null,
+        'identityMapContractValidationHash' => null,
     ];
 }
 reprint_push_register_plugin_owned_row_driver([
@@ -1529,6 +1645,66 @@ $forged_reference_value['pluginOwnedResource'] = rpp_reference_bound_policy(
     $reference_fields,
     $snapshot
 );
+$reference_rewrite_value = [
+    'id' => 7,
+    'payload' => [
+        'post_id' => 22,
+        'secret' => 'reference-bound-rewrite-private-payload',
+    ],
+    '__pluginOwner' => 'fixture-reference-bound-plugin',
+];
+$reference_rewrite_base_snapshot = $snapshot;
+$reference_rewrite_local_snapshot = $snapshot;
+$reference_rewrite_local_snapshot['db']['wp_posts']['ID:2']['post_title'] = 'reference rewrite local source target';
+$reference_rewrite_remote_snapshot = $snapshot;
+unset($reference_rewrite_remote_snapshot['db']['wp_posts']['ID:2']);
+$reference_rewrite_remote_snapshot['db']['wp_posts']['ID:22'] = [
+    'ID' => 22,
+    'post_type' => 'post',
+    'post_status' => 'publish',
+    'post_title' => 'reference rewrite remote target',
+];
+$reference_rewrite = rpp_reference_field_rewrite(
+    $resource_key,
+    'wp_fixture_reference_bound_rows',
+    'fixture-reference-bound-plugin',
+    'fixture-reference-bound-driver',
+    $reference_fields['fields'][0],
+    'row:["wp_posts","ID:2"]',
+    'row:["wp_posts","ID:22"]',
+    $reference_rewrite_local_snapshot,
+    $reference_rewrite_remote_snapshot
+);
+$reference_rewrite_mutation = [
+    'id' => 'mutation-reference-bound-rewrite',
+    'resourceKey' => $resource_key,
+    'resource' => ['type' => 'row', 'table' => 'wp_fixture_reference_bound_rows', 'id' => 'id:7'],
+    'action' => 'put',
+    'value' => ['value' => $reference_rewrite_value],
+    'pluginOwnedResource' => rpp_reference_bound_policy(
+        $resource_key,
+        'wp_fixture_reference_bound_rows',
+        'fixture-reference-bound-plugin',
+        'fixture-reference-bound-driver',
+        false,
+        'put',
+        $reference_rewrite_value,
+        $reference_fields,
+        $reference_rewrite_remote_snapshot,
+        [$reference_rewrite],
+        $reference_rewrite_base_snapshot,
+        $reference_rewrite_local_snapshot
+    ),
+];
+$reference_rewrite_without_rewrite_evidence = $reference_rewrite_mutation;
+unset($reference_rewrite_without_rewrite_evidence['pluginOwnedResource']['referenceFieldRewrites']);
+unset($reference_rewrite_without_rewrite_evidence['pluginOwnedResource']['referenceTargetValidationEvidence']['fields'][0]['referenceRewriteHash']);
+$forged_reference_rewrite_hash = $reference_rewrite_mutation;
+$forged_reference_rewrite_hash['pluginOwnedResource']['referenceTargetValidationEvidence']['fields'][0]['referenceRewriteHash'] = str_repeat('0', 64);
+$surplus_reference_rewrite_evidence = $reference_rewrite_mutation;
+$surplus_reference_rewrite_evidence['pluginOwnedResource']['referenceFieldRewrites'][0]['unexpectedRawPayload'] = 'reference-bound-rewrite-private-raw-payload';
+$stray_reference_rewrite_hash = $base_mutation;
+$stray_reference_rewrite_hash['pluginOwnedResource']['referenceTargetValidationEvidence']['fields'][0]['referenceRewriteHash'] = hash('sha256', reprint_push_stable_json(['stray' => true]));
 
 echo json_encode([
     'accepted' => rpp_driver_api_capture(static function () use ($base_mutation, $snapshot): bool {
@@ -1579,8 +1755,31 @@ echo json_encode([
         reprint_push_assert_supported_plugin_owned_mutation($forged_reference_value, $snapshot);
         return true;
     }),
+    'acceptedReferenceRewrite' => rpp_driver_api_capture(static function () use ($reference_rewrite_mutation, $reference_rewrite_remote_snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($reference_rewrite_mutation, $reference_rewrite_remote_snapshot);
+        return true;
+    }),
+    'referenceRewriteWithoutRewriteEvidence' => rpp_driver_api_capture(static function () use ($reference_rewrite_without_rewrite_evidence, $reference_rewrite_remote_snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($reference_rewrite_without_rewrite_evidence, $reference_rewrite_remote_snapshot);
+        return true;
+    }),
+    'forgedReferenceRewriteHash' => rpp_driver_api_capture(static function () use ($forged_reference_rewrite_hash, $reference_rewrite_remote_snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($forged_reference_rewrite_hash, $reference_rewrite_remote_snapshot);
+        return true;
+    }),
+    'surplusReferenceRewriteEvidence' => rpp_driver_api_capture(static function () use ($surplus_reference_rewrite_evidence, $reference_rewrite_remote_snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($surplus_reference_rewrite_evidence, $reference_rewrite_remote_snapshot);
+        return true;
+    }),
+    'strayReferenceRewriteHash' => rpp_driver_api_capture(static function () use ($stray_reference_rewrite_hash, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($stray_reference_rewrite_hash, $snapshot);
+        return true;
+    }),
     'referenceValidation' => $base_mutation['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation'],
     'referenceTargetValidation' => $base_mutation['pluginOwnedResource']['referenceTargetValidationEvidence'],
+    'referenceRewriteValidation' => $reference_rewrite_mutation['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation'],
+    'referenceRewriteTargetValidation' => $reference_rewrite_mutation['pluginOwnedResource']['referenceTargetValidationEvidence'],
+    'referenceFieldRewrite' => $reference_rewrite_mutation['pluginOwnedResource']['referenceFieldRewrites'][0],
     'malformedReferenceTargetValidationEvidence' => $malformed_reference_target_validation['pluginOwnedResource']['referenceTargetValidationEvidence'],
     'optionalReferenceValidation' => $optional_missing_reference_mutation['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation'],
     'optionalReferenceTargetValidation' => $optional_missing_reference_mutation['pluginOwnedResource']['referenceTargetValidationEvidence'],
@@ -1592,6 +1791,7 @@ echo json_encode([
 
   assert.deepEqual(report.accepted, { ok: true, value: true });
   assert.deepEqual(report.acceptedOptionalMissingReference, { ok: true, value: true });
+  assert.deepEqual(report.acceptedReferenceRewrite, { ok: true, value: true });
   assert.equal(report.missingReferenceTargetValidation.ok, false);
   assert.equal(report.forgedReferenceTargetValidation.ok, false);
   assert.equal(report.surplusReferenceTargetValidation.ok, false);
@@ -1602,6 +1802,10 @@ echo json_encode([
   assert.equal(report.missingReferenceValidation.ok, false);
   assert.equal(report.forgedReferenceValidation.ok, false);
   assert.equal(report.forgedReferenceValue.ok, false);
+  assert.equal(report.referenceRewriteWithoutRewriteEvidence.ok, false);
+  assert.equal(report.forgedReferenceRewriteHash.ok, false);
+  assert.equal(report.surplusReferenceRewriteEvidence.ok, false);
+  assert.equal(report.strayReferenceRewriteHash.ok, false);
   assert.equal(
     report.missingReferenceTargetValidation.error.message,
     'Unsupported plugin-owned mutation reference target evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
@@ -1642,6 +1846,17 @@ echo json_encode([
     report.forgedReferenceValue.error.message,
     'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
   );
+  for (const key of [
+    'referenceRewriteWithoutRewriteEvidence',
+    'forgedReferenceRewriteHash',
+    'surplusReferenceRewriteEvidence',
+    'strayReferenceRewriteHash',
+  ]) {
+    assert.equal(
+      report[key].error.message,
+      'Unsupported plugin-owned mutation reference target evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
+    );
+  }
   assert.deepEqual(report.normalizedReferences, {
     schemaVersion: 1,
     fields: [
@@ -1741,6 +1956,51 @@ echo json_encode([
       }),
     },
   });
+  assert.deepEqual(report.referenceRewriteValidation.fields[0], {
+    path: 'payload.post_id',
+    targetTable: 'wp_posts',
+    targetIdField: 'ID',
+    scalarType: 'positive-integer',
+    required: true,
+    state: 'present',
+    observedType: 'integer',
+    observedHash: digest('22'),
+    matched: true,
+    targetResourceKey: 'row:["wp_posts","ID:22"]',
+  });
+  assert.equal(report.referenceRewriteTargetValidation.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED');
+  assert.equal(report.referenceRewriteTargetValidation.outcome, 'accepted');
+  assert.equal(report.referenceRewriteTargetValidation.rawValuesIncluded, false);
+  assert.equal(report.referenceRewriteTargetValidation.fields[0].targetResourceKey, 'row:["wp_posts","ID:22"]');
+  assert.equal(report.referenceRewriteTargetValidation.fields[0].targetRemotePresent, true);
+  assert.equal(report.referenceRewriteTargetValidation.fields[0].targetStable, true);
+  assert.equal(report.referenceRewriteTargetValidation.fields[0].targetBaseHash, digest('__REPRINT_PUSH_ABSENT__'));
+  assert.equal(report.referenceRewriteTargetValidation.fields[0].targetLocalHash, digest('__REPRINT_PUSH_ABSENT__'));
+  assert.equal(report.referenceRewriteTargetValidation.fields[0].targetRemoteHash, digest({
+    ID: 22,
+    post_status: 'publish',
+    post_title: 'reference rewrite remote target',
+    post_type: 'post',
+  }));
+  assert.equal(
+    report.referenceRewriteTargetValidation.fields[0].referenceRewriteHash,
+    digest(report.referenceFieldRewrite),
+  );
+  assert.deepEqual(report.referenceRewriteTargetValidation.fields[0].targetPrimaryRow, {
+    targetIdField: 'ID',
+    expectedHash: digest('22'),
+    observedType: 'integer',
+    observedHash: digest('22'),
+    matched: true,
+  });
+  assert.equal(report.referenceFieldRewrite.operation, 'plugin-driver-reference-field-identity-rewrite');
+  assert.equal(report.referenceFieldRewrite.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_REWRITTEN');
+  assert.equal(report.referenceFieldRewrite.rawValuesIncluded, false);
+  assert.equal(report.referenceFieldRewrite.sourceTargetResourceKey, 'row:["wp_posts","ID:2"]');
+  assert.equal(report.referenceFieldRewrite.targetResourceKey, 'row:["wp_posts","ID:22"]');
+  assert.equal(report.referenceFieldRewrite.sourceValueHash, digest('2'));
+  assert.equal(report.referenceFieldRewrite.rewrittenValueHash, digest('22'));
+  assert.equal(report.referenceFieldRewrite.targetRemoteHash, report.referenceRewriteTargetValidation.fields[0].targetRemoteHash);
   assert.equal(
     report.malformedReferenceTargetValidationEvidence.reasonCode,
     'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ROW_ID_MISMATCH',
@@ -1783,4 +2043,6 @@ echo json_encode([
   });
   assert.equal(JSON.stringify(report).includes('reference-bound-private-payload'), false);
   assert.equal(JSON.stringify(report).includes('optional-reference-bound-private-payload'), false);
+  assert.equal(JSON.stringify(report).includes('reference-bound-rewrite-private-payload'), false);
+  assert.equal(JSON.stringify(report).includes('reference-bound-rewrite-private-raw-payload'), false);
 });

@@ -4507,6 +4507,10 @@ function reprint_push_assert_plugin_owned_driver_contract_bound_mutation(
         $reference_target_evidence = is_array($policy['referenceTargetValidationEvidence'] ?? null)
             ? $policy['referenceTargetValidationEvidence']
             : null;
+        $reference_field_rewrites_present = array_key_exists('referenceFieldRewrites', $policy);
+        $reference_field_rewrites = $reference_field_rewrites_present
+            ? ($policy['referenceFieldRewrites'] ?? null)
+            : null;
         if (!reprint_push_plugin_driver_reference_target_evidence_accepted(
             $reference_target_evidence,
             $contract,
@@ -4515,11 +4519,16 @@ function reprint_push_assert_plugin_owned_driver_contract_bound_mutation(
             $owner,
             $driver,
             $table,
-            $snapshot
+            $snapshot,
+            $reference_field_rewrites,
+            $reference_field_rewrites_present,
+            $planned
         )) {
             throw new RuntimeException('Unsupported plugin-owned mutation reference target evidence for ' . $resource_key);
         }
     } elseif (array_key_exists('referenceTargetValidationEvidence', $policy)) {
+        throw new RuntimeException('Unsupported plugin-owned mutation reference target evidence for ' . $resource_key);
+    } elseif (array_key_exists('referenceFieldRewrites', $policy)) {
         throw new RuntimeException('Unsupported plugin-owned mutation reference target evidence for ' . $resource_key);
     }
 }
@@ -4845,9 +4854,24 @@ function reprint_push_plugin_driver_reference_target_evidence_accepted(
     string $owner,
     string $driver,
     string $table,
-    array $snapshot
+    array $snapshot,
+    $reference_field_rewrites = null,
+    bool $reference_field_rewrites_present = false,
+    array $planned = ['exists' => false, 'value' => null]
 ): bool {
     if (!is_array($evidence)) {
+        return false;
+    }
+    if (!reprint_push_plugin_driver_reference_field_rewrites_evidence_accepted(
+        $reference_field_rewrites,
+        $reference_field_rewrites_present,
+        $resource_key,
+        $owner,
+        $driver,
+        $table,
+        $snapshot,
+        $planned
+    )) {
         return false;
     }
 
@@ -4911,11 +4935,16 @@ function reprint_push_plugin_driver_reference_target_evidence_accepted(
             $evidence['fields'],
             $expected_field
         );
+        $reference_rewrite = reprint_push_plugin_driver_reference_field_rewrite_for_target(
+            $reference_field_rewrites,
+            is_array($carried_field) ? $carried_field : $expected_field
+        );
         if (!is_array($carried_field)
             || !reprint_push_plugin_driver_reference_target_field_evidence_accepted(
                 $carried_field,
                 $expected_field,
-                $snapshot
+                $snapshot,
+                $reference_rewrite
             )) {
             return false;
         }
@@ -4966,10 +4995,191 @@ function reprint_push_plugin_driver_reference_target_find_field(array $fields, a
     return null;
 }
 
+function reprint_push_plugin_driver_reference_field_rewrite_for_target($rewrites, array $field): ?array
+{
+    if (!is_array($rewrites)) {
+        return null;
+    }
+    foreach ($rewrites as $rewrite) {
+        if (!is_array($rewrite)) {
+            continue;
+        }
+        if (($rewrite['path'] ?? null) === ($field['path'] ?? null)
+            && ($rewrite['targetResourceKey'] ?? null) === ($field['targetResourceKey'] ?? null)) {
+            return $rewrite;
+        }
+    }
+    return null;
+}
+
+function reprint_push_plugin_driver_reference_field_rewrites_evidence_accepted(
+    $rewrites,
+    bool $rewrites_present,
+    string $resource_key,
+    string $owner,
+    string $driver,
+    string $table,
+    array $snapshot,
+    array $planned
+): bool {
+    if (!$rewrites_present) {
+        return true;
+    }
+    if (!is_array($rewrites) || !array_is_list($rewrites) || count($rewrites) === 0) {
+        return false;
+    }
+    foreach ($rewrites as $rewrite) {
+        if (!reprint_push_plugin_driver_reference_field_rewrite_evidence_accepted(
+            $rewrite,
+            $resource_key,
+            $owner,
+            $driver,
+            $table,
+            $snapshot,
+            $planned
+        )) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function reprint_push_plugin_driver_reference_field_rewrite_evidence_accepted(
+    $rewrite,
+    string $resource_key,
+    string $owner,
+    string $driver,
+    string $table,
+    array $snapshot,
+    array $planned
+): bool {
+    if (!is_array($rewrite)
+        || !reprint_push_array_has_exact_keys($rewrite, [
+            'schemaVersion',
+            'operation',
+            'reasonCode',
+            'outcome',
+            'format',
+            'rawValuesIncluded',
+            'resourceKey',
+            'pluginOwner',
+            'driver',
+            'table',
+            'path',
+            'targetTable',
+            'targetIdField',
+            'scalarType',
+            'required',
+            'sourceTargetResourceKey',
+            'targetResourceKey',
+            'identityMapSource',
+            'sourceValueHash',
+            'rewrittenValueHash',
+            'sourceTargetLocalHash',
+            'sourceTargetRemoteHash',
+            'targetRemoteHash',
+            'identityMapContractHash',
+            'identityMapContractValidationHash',
+        ])) {
+        return false;
+    }
+    if (($rewrite['schemaVersion'] ?? null) !== 1
+        || ($rewrite['operation'] ?? null) !== 'plugin-driver-reference-field-identity-rewrite'
+        || ($rewrite['reasonCode'] ?? null) !== 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_REWRITTEN'
+        || ($rewrite['outcome'] ?? null) !== 'accepted'
+        || ($rewrite['format'] ?? null) !== 'hash-only'
+        || ($rewrite['rawValuesIncluded'] ?? null) !== false
+        || ($rewrite['resourceKey'] ?? null) !== $resource_key
+        || ($rewrite['pluginOwner'] ?? null) !== $owner
+        || ($rewrite['driver'] ?? null) !== $driver
+        || ($rewrite['table'] ?? null) !== $table
+        || ($rewrite['scalarType'] ?? null) !== 'positive-integer'
+        || !is_bool($rewrite['required'] ?? null)
+        || !reprint_push_is_sha256_hex($rewrite['sourceValueHash'] ?? null)
+        || !reprint_push_is_sha256_hex($rewrite['rewrittenValueHash'] ?? null)
+        || !reprint_push_is_sha256_hex($rewrite['sourceTargetLocalHash'] ?? null)
+        || !reprint_push_is_sha256_hex($rewrite['sourceTargetRemoteHash'] ?? null)
+        || !reprint_push_is_sha256_hex($rewrite['targetRemoteHash'] ?? null)) {
+        return false;
+    }
+    foreach (['path', 'targetTable', 'targetIdField', 'sourceTargetResourceKey', 'targetResourceKey'] as $key) {
+        if (!is_string($rewrite[$key] ?? null) || (string) $rewrite[$key] === '') {
+            return false;
+        }
+    }
+    if (($rewrite['identityMapSource'] ?? null) !== null && !is_string($rewrite['identityMapSource'])) {
+        return false;
+    }
+    $contract_hash = $rewrite['identityMapContractHash'] ?? null;
+    $contract_validation_hash = $rewrite['identityMapContractValidationHash'] ?? null;
+    if (($contract_hash === null) !== ($contract_validation_hash === null)) {
+        return false;
+    }
+    if ($contract_hash !== null
+        && (!reprint_push_is_sha256_hex($contract_hash) || !reprint_push_is_sha256_hex($contract_validation_hash))) {
+        return false;
+    }
+
+    try {
+        [$source_table, $source_id] = reprint_push_parse_wordpress_graph_row_resource_key(
+            (string) $rewrite['sourceTargetResourceKey']
+        );
+        [$target_table, $target_id] = reprint_push_parse_wordpress_graph_row_resource_key(
+            (string) $rewrite['targetResourceKey']
+        );
+    } catch (Throwable $error) {
+        return false;
+    }
+    if ($source_table !== (string) $rewrite['targetTable']
+        || $target_table !== (string) $rewrite['targetTable']
+        || reprint_push_plugin_driver_reference_target_primary_id_field($target_table) !== (string) $rewrite['targetIdField']) {
+        return false;
+    }
+
+    $source_id_field = reprint_push_plugin_driver_reference_target_primary_id_field($source_table);
+    $source_value = reprint_push_plugin_driver_reference_target_primary_id($source_id, $source_id_field);
+    $target_value = reprint_push_plugin_driver_reference_target_primary_id($target_id, (string) $rewrite['targetIdField']);
+    if ($source_value === null || $target_value === null) {
+        return false;
+    }
+    if (($rewrite['sourceValueHash'] ?? null) !== hash('sha256', reprint_push_stable_json((string) $source_value))
+        || ($rewrite['rewrittenValueHash'] ?? null) !== hash('sha256', reprint_push_stable_json((string) $target_value))) {
+        return false;
+    }
+
+    $planned_value = is_array($planned['value'] ?? null) ? $planned['value'] : [];
+    $resolved = reprint_push_plugin_driver_payload_reference_path_value($planned_value, (string) $rewrite['path']);
+    $planned_reference_value = !empty($resolved['exists'])
+        ? reprint_push_normalize_plugin_driver_reference_positive_integer($resolved['value'])
+        : null;
+    if ($planned_reference_value !== $target_value) {
+        return false;
+    }
+
+    $target_resource = [
+        'type' => 'row',
+        'table' => $target_table,
+        'id' => $target_id,
+    ];
+    $current = reprint_push_get_resource($snapshot, $target_resource);
+    if (($current['exists'] ?? false) !== true) {
+        return false;
+    }
+    $current_hash = reprint_push_hash_resource($snapshot, $target_resource);
+    return ($rewrite['targetRemoteHash'] ?? null) === $current_hash
+        && reprint_push_plugin_driver_reference_rewrite_target_primary_id_matches(
+            $target_table,
+            $target_id,
+            (string) $rewrite['targetIdField'],
+            $current['value'] ?? null
+        );
+}
+
 function reprint_push_plugin_driver_reference_target_field_evidence_accepted(
     array $field,
     array $expected,
-    array $snapshot
+    array $snapshot,
+    ?array $reference_rewrite = null
 ): bool {
     foreach ([
         'path',
@@ -5011,7 +5221,7 @@ function reprint_push_plugin_driver_reference_target_field_evidence_accepted(
     if (!is_string($target_resource_key) || $target_resource_key === '') {
         return false;
     }
-    if (!reprint_push_array_has_exact_keys($field, [
+    $expected_field_keys = [
         'path',
         'targetTable',
         'targetIdField',
@@ -5030,7 +5240,11 @@ function reprint_push_plugin_driver_reference_target_field_evidence_accepted(
         'targetStable',
         'reasonCode',
         'targetChange',
-    ])) {
+    ];
+    if ($reference_rewrite !== null) {
+        $expected_field_keys[] = 'referenceRewriteHash';
+    }
+    if (!reprint_push_array_has_exact_keys($field, $expected_field_keys)) {
         return false;
     }
     if (($field['targetStable'] ?? null) !== true
@@ -5074,14 +5288,74 @@ function reprint_push_plugin_driver_reference_target_field_evidence_accepted(
         return false;
     }
     $current_hash = reprint_push_hash_resource($snapshot, $target_resource);
-    return ($field['targetRemoteHash'] ?? null) === $current_hash
-        && ($field['targetBaseHash'] ?? null) === ($field['targetChange']['base']['hash'] ?? null)
+    if (($field['targetRemoteHash'] ?? null) !== $current_hash) {
+        return false;
+    }
+    if ($reference_rewrite !== null
+        && ($field['referenceRewriteHash'] ?? null) !== hash('sha256', reprint_push_stable_json($reference_rewrite))) {
+        return false;
+    }
+    $target_stable_by_snapshot = ($field['targetRemoteHash'] ?? null) === ($field['targetBaseHash'] ?? null)
+        || ($field['targetRemoteHash'] ?? null) === ($field['targetLocalHash'] ?? null);
+    if (!$target_stable_by_snapshot
+        && ($reference_rewrite === null
+            || !is_string($field['referenceRewriteHash'] ?? null)
+            || !reprint_push_plugin_driver_reference_target_rewrite_evidence_matches(
+                $reference_rewrite,
+                $field,
+                $current_hash
+            ))) {
+        return false;
+    }
+
+    return ($field['targetBaseHash'] ?? null) === ($field['targetChange']['base']['hash'] ?? null)
         && ($field['targetLocalHash'] ?? null) === ($field['targetChange']['local']['hash'] ?? null)
         && ($field['targetRemoteHash'] ?? null) === ($field['targetChange']['remote']['hash'] ?? null)
         && reprint_push_plugin_driver_reference_target_change_evidence_accepted(
             $field['targetChange'] ?? null,
             $current_hash
         );
+}
+
+function reprint_push_plugin_driver_reference_target_rewrite_evidence_matches(
+    array $rewrite,
+    array $field,
+    string $current_hash
+): bool {
+    return ($rewrite['schemaVersion'] ?? null) === 1
+        && ($rewrite['operation'] ?? null) === 'plugin-driver-reference-field-identity-rewrite'
+        && ($rewrite['reasonCode'] ?? null) === 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_REWRITTEN'
+        && ($rewrite['outcome'] ?? null) === 'accepted'
+        && ($rewrite['format'] ?? null) === 'hash-only'
+        && ($rewrite['rawValuesIncluded'] ?? null) === false
+        && ($rewrite['path'] ?? null) === ($field['path'] ?? null)
+        && ($rewrite['targetTable'] ?? null) === ($field['targetTable'] ?? null)
+        && ($rewrite['targetIdField'] ?? null) === ($field['targetIdField'] ?? null)
+        && ($rewrite['scalarType'] ?? null) === ($field['scalarType'] ?? null)
+        && ($rewrite['required'] ?? null) === ($field['required'] ?? null)
+        && ($rewrite['targetResourceKey'] ?? null) === ($field['targetResourceKey'] ?? null)
+        && ($rewrite['rewrittenValueHash'] ?? null) === ($field['observedHash'] ?? null)
+        && ($rewrite['targetRemoteHash'] ?? null) === $current_hash;
+}
+
+function reprint_push_plugin_driver_reference_rewrite_target_primary_id_matches(
+    string $target_table,
+    string $target_id,
+    string $target_id_field,
+    $current_value
+): bool {
+    if (reprint_push_plugin_driver_reference_target_primary_id_field($target_table) !== $target_id_field) {
+        return false;
+    }
+    $expected_primary_id = reprint_push_plugin_driver_reference_target_primary_id($target_id, $target_id_field);
+    $observed_exists = is_array($current_value)
+        && !array_is_list($current_value)
+        && array_key_exists($target_id_field, $current_value);
+    $observed = $observed_exists ? $current_value[$target_id_field] : null;
+    $observed_primary_id = $observed_exists
+        ? reprint_push_normalize_plugin_driver_reference_positive_integer($observed)
+        : null;
+    return $expected_primary_id !== null && $observed_primary_id === $expected_primary_id;
 }
 
 function reprint_push_plugin_driver_reference_target_primary_row_evidence_accepted(
