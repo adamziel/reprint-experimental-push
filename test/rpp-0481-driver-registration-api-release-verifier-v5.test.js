@@ -348,6 +348,18 @@ $valid_mutation['pluginOwnedResource'] = rpp_0481_contract_bound_policy(
 $delete_mutation = $valid_mutation;
 $delete_mutation['action'] = 'delete';
 $delete_mutation['value'] = ['absent' => true];
+$forged_resource_key = 'row:' . wp_json_encode([$driver_table, 'entry_id:2'], JSON_UNESCAPED_SLASHES);
+$forged_key_mutation = $valid_mutation;
+$forged_key_mutation['resourceKey'] = $forged_resource_key;
+$forged_key_mutation['pluginOwnedResource'] = rpp_0481_contract_bound_policy(
+    $forged_resource_key,
+    $driver_table,
+    $plugin_owner,
+    $driver_name,
+    false,
+    'put',
+    $forged_key_mutation['value']['value']
+);
 $validation = [
     'acceptedUpdate' => rpp_0481_capture(static function () use ($valid_mutation, $validation_snapshot): bool {
         reprint_push_assert_supported_plugin_owned_mutation($valid_mutation, $validation_snapshot);
@@ -355,6 +367,10 @@ $validation = [
     }),
     'unsupportedDelete' => rpp_0481_capture(static function () use ($delete_mutation, $validation_snapshot): bool {
         reprint_push_assert_supported_plugin_owned_mutation($delete_mutation, $validation_snapshot);
+        return true;
+    }),
+    'forgedCanonicalResourceKey' => rpp_0481_capture(static function () use ($forged_key_mutation, $validation_snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($forged_key_mutation, $validation_snapshot);
         return true;
     }),
 ];
@@ -554,6 +570,13 @@ test('RPP-0481 release verifier driver registration API proves exact accepted an
     report.validation.unsupportedDelete.error.message,
     `Unsupported plugin-owned mutation delete for ${arbitraryPluginFixturePackageBoundary.resourceKey}`,
   );
+  const forgedResourceKey = `row:${JSON.stringify([arbitraryPluginFixturePackageBoundary.table, 'entry_id:2'])}`;
+  assert.equal(report.validation.forgedCanonicalResourceKey.ok, false);
+  assert.equal(report.validation.forgedCanonicalResourceKey.error.class, 'RuntimeException');
+  assert.equal(
+    report.validation.forgedCanonicalResourceKey.error.message,
+    `Unsupported plugin-owned mutation contract for ${forgedResourceKey}`,
+  );
   assert.deepEqual(report.validateLog, [
     {
       driver: arbitraryPluginFixturePackageBoundary.driver,
@@ -626,8 +649,11 @@ test('RPP-0481 release verifier driver registration API proves exact accepted an
     arbitraryPluginFixturePackageBoundary.table,
     arbitraryPluginFixturePackageBoundary.pluginOwner,
     arbitraryPluginFixturePackageBoundary.resourceKey,
+    forgedResourceKey,
     'entry_id:1',
+    'entry_id:2',
     'local-update',
+    `Unsupported plugin-owned mutation contract for ${forgedResourceKey}`,
     ...registrationGuardCases.map((entry) => entry.message),
   ]) {
     assert.equal(serializedEvidence.includes(rawValue), false, `release-verifier evidence leaked ${rawValue}`);

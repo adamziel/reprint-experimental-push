@@ -527,6 +527,17 @@ $refused_contract['pluginOwnedResource']['contractValidationEvidence']['outcome'
 $refused_contract['pluginOwnedResource']['contractValidationEvidence']['reasonCode'] = 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_VERSION';
 $forged_payload = $base_mutation;
 $forged_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['value']['hash'] = str_repeat('0', 64);
+$forged_resource_key = $base_mutation;
+$forged_resource_key['resourceKey'] = 'row:["wp_fixture_contract_bound_rows","id:8"]';
+$forged_resource_key['pluginOwnedResource'] = rpp_contract_bound_policy(
+    'row:["wp_fixture_contract_bound_rows","id:8"]',
+    'wp_fixture_contract_bound_rows',
+    'fixture-contract-bound-plugin',
+    'fixture-contract-bound-driver',
+    true,
+    'put',
+    $value
+);
 
 echo json_encode([
     'accepted' => rpp_driver_api_capture(static function () use ($base_mutation, $snapshot): bool {
@@ -545,6 +556,10 @@ echo json_encode([
         reprint_push_assert_supported_plugin_owned_mutation($forged_payload, $snapshot);
         return true;
     }),
+    'forgedResourceKey' => rpp_driver_api_capture(static function () use ($forged_resource_key, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($forged_resource_key, $snapshot);
+        return true;
+    }),
 ]);
 `);
 
@@ -555,5 +570,7 @@ echo json_encode([
   assert.equal(report.refusedContract.error.message, 'Unsupported plugin-owned mutation contract for row:["wp_fixture_contract_bound_rows","id:7"]');
   assert.equal(report.forgedPayload.ok, false);
   assert.equal(report.forgedPayload.error.message, 'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
+  assert.equal(report.forgedResourceKey.ok, false);
+  assert.equal(report.forgedResourceKey.error.message, 'Unsupported plugin-owned mutation contract for row:["wp_fixture_contract_bound_rows","id:8"]');
   assert.equal(JSON.stringify(report).includes('contract-bound-private-payload'), false);
 });

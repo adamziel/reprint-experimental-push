@@ -98,6 +98,69 @@ test('RPP-0713 apply batch sizing accepts bounded deterministic sizes and reject
   assert.ok(report.invalid.every((entry) => entry.mode === 'apply'));
 });
 
+test('RPP-0713 PHP protocol refuses non-canonical mutation and precondition resource keys before apply', () => {
+  const report = runPhp(`
+    if (!function_exists('apply_filters')) {
+        function apply_filters($hook_name, $value) { return $value; }
+    }
+    if (!function_exists('wp_json_encode')) {
+        function wp_json_encode($value, $flags = 0) { return json_encode($value, $flags); }
+    }
+    require 'scripts/playground/snapshot-lib.php';
+    require 'scripts/playground/push-remote-lib.php';
+
+    function rpp_capture_protocol_shape(callable $callback): array {
+        try {
+            $callback();
+            return ['ok' => true];
+        } catch (Reprint_Push_Protocol_Error $error) {
+            return $error->result;
+        }
+    }
+
+    $valid_mutation = [
+        'id' => 'mutation-canonical-row',
+        'resourceKey' => 'row:["wp_options","option_name:demo"]',
+        'resource' => ['type' => 'row', 'table' => 'wp_options', 'id' => 'option_name:demo'],
+        'value' => ['value' => ['option_name' => 'demo', 'option_value' => 'local']],
+        'localHash' => str_repeat('a', 64),
+    ];
+    $forged_mutation = $valid_mutation;
+    $forged_mutation['resourceKey'] = 'row:["wp_options","option_name:other"]';
+
+    $valid_precondition = [
+        'mutationId' => 'mutation-canonical-row',
+        'resourceKey' => 'row:["wp_options","option_name:demo"]',
+        'resource' => ['type' => 'row', 'table' => 'wp_options', 'id' => 'option_name:demo'],
+        'expectedHash' => str_repeat('b', 64),
+    ];
+    $forged_precondition = $valid_precondition;
+    $forged_precondition['resource'] = ['type' => 'row', 'table' => 'wp_options', 'id' => 'option_name:other'];
+
+    echo json_encode([
+        'validMutation' => rpp_capture_protocol_shape(static function () use ($valid_mutation): void {
+            reprint_push_protocol_validate_mutation_shape($valid_mutation);
+        }),
+        'forgedMutation' => rpp_capture_protocol_shape(static function () use ($forged_mutation): void {
+            reprint_push_protocol_validate_mutation_shape($forged_mutation);
+        }),
+        'validPrecondition' => rpp_capture_protocol_shape(static function () use ($valid_precondition): void {
+            reprint_push_protocol_validate_precondition_shape($valid_precondition);
+        }),
+        'forgedPrecondition' => rpp_capture_protocol_shape(static function () use ($forged_precondition): void {
+            reprint_push_protocol_validate_precondition_shape($forged_precondition);
+        }),
+    ], JSON_THROW_ON_ERROR);
+  `);
+
+  assert.deepEqual(report.validMutation, { ok: true });
+  assert.equal(report.forgedMutation.code, 'INVALID_PLAN');
+  assert.equal(report.forgedMutation.message, 'Mutation resourceKey is not canonical for resource object.');
+  assert.deepEqual(report.validPrecondition, { ok: true });
+  assert.equal(report.forgedPrecondition.code, 'INVALID_PLAN');
+  assert.equal(report.forgedPrecondition.message, 'Precondition resourceKey is not canonical for resource object.');
+});
+
 test('RPP-0713 apply loop revalidates each configured batch before mutation work and journals batch boundaries', () => {
   const runPayload = functionBody(protocolSource, 'reprint_push_protocol_run_payload');
   const revalidateBatch = functionBody(protocolSource, 'reprint_push_protocol_revalidate_apply_batch');

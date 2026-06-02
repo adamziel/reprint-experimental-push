@@ -869,6 +869,25 @@ function reprint_push_hash_resource(array $snapshot, array $resource): string
     return hash('sha256', reprint_push_stable_json($resource_value['value']));
 }
 
+function reprint_push_resource_object_key(array $resource): ?string
+{
+    $type = $resource['type'] ?? null;
+    if ($type === 'file' && isset($resource['path']) && is_string($resource['path'])) {
+        return 'file:' . $resource['path'];
+    }
+    if ($type === 'plugin' && isset($resource['name']) && is_string($resource['name'])) {
+        return 'plugin:' . $resource['name'];
+    }
+    if ($type === 'row'
+        && isset($resource['table'])
+        && is_string($resource['table'])
+        && isset($resource['id'])
+        && is_string($resource['id'])) {
+        return 'row:' . wp_json_encode([$resource['table'], $resource['id']], JSON_UNESCAPED_SLASHES);
+    }
+    return null;
+}
+
 function reprint_push_get_resource(array $snapshot, array $resource): array
 {
     $type = $resource['type'] ?? null;
@@ -3363,6 +3382,9 @@ function reprint_push_assert_plugin_owned_driver_contract_bound_mutation(
 
     if ($resource_key === '' || ($resource['type'] ?? null) !== 'row') {
         throw new RuntimeException('Unsupported plugin-owned mutation contract for ' . ($resource_key !== '' ? $resource_key : 'unknown'));
+    }
+    if (reprint_push_resource_object_key($resource) !== $resource_key) {
+        throw new RuntimeException('Unsupported plugin-owned mutation contract for ' . $resource_key);
     }
     if ((string) ($policy['pluginOwner'] ?? '') !== $owner
         || (string) ($policy['driver'] ?? '') !== $driver

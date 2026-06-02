@@ -363,6 +363,54 @@ test('apply refuses forged custom row driver contracts when table binding is cha
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
+test('apply refuses forged custom row driver plans when resourceKey no longer matches the row resource', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const forgedResourceKey = 'row:["wp_forms_contract_rows","entry_id:8"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-resource-key-binding', secret: 'base-resource-key-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-resource-key-binding';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-resource-key-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const forgedPlan = cloneJson(plan);
+  const mutation = mutationFor(forgedPlan, resourceKey);
+  mutation.resourceKey = forgedResourceKey;
+  mutation.pluginOwnedResource.resourceKey = forgedResourceKey;
+  mutation.pluginOwnedResource.contractValidationEvidence.resourceKey = forgedResourceKey;
+  mutation.pluginOwnedResource.driverPayloadValidationEvidence.resourceKey = forgedResourceKey;
+
+  let error;
+  try {
+    applyPlan(remote, forgedPlan);
+  } catch (caught) {
+    error = caught;
+  }
+
+  assert.equal(error?.code, 'PLAN_INVARIANT_VIOLATION');
+  assert.ok(
+    error.details.issues.some((issue) =>
+      issue.code === 'MUTATION_RESOURCE_KEY_MISMATCH'
+      && issue.resourceKey === forgedResourceKey
+      && issue.actualResourceKey === resourceKey,
+    ),
+  );
+  assert.equal(JSON.stringify(error.details).includes('base-resource-key-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('local-resource-key-secret'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
 test('apply refuses forged custom row driver contracts when mutation owner binding is removed', () => {
   const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
   const base = baseSite();

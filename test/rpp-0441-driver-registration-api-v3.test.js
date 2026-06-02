@@ -438,6 +438,26 @@ $validation = [
         ], $validation_snapshot);
         return true;
     }),
+    'forgedCanonicalResourceKey' => rpp_0441_capture(static function () use ($validation_snapshot): bool {
+        $value = ['id' => 7, 'marker' => 'accept', '__pluginOwner' => 'rpp-0441-alpha-plugin'];
+        $forged_resource_key = 'row:["wp_rpp_0441_alpha_rows","id:70"]';
+        reprint_push_assert_supported_plugin_owned_mutation([
+            'resourceKey' => $forged_resource_key,
+            'resource' => ['type' => 'row', 'table' => 'wp_rpp_0441_alpha_rows', 'id' => 'id:7'],
+            'action' => 'put',
+            'value' => ['value' => $value],
+            'pluginOwnedResource' => rpp_0441_contract_bound_policy(
+                $forged_resource_key,
+                'wp_rpp_0441_alpha_rows',
+                'rpp-0441-alpha-plugin',
+                'rpp-0441-alpha-driver',
+                true,
+                'put',
+                $value
+            ),
+        ], $validation_snapshot);
+        return true;
+    }),
 ];
 
 $refusals = [
@@ -716,6 +736,12 @@ echo json_encode([
     report.validation.forgedPayloadEvidence.error.message,
     'Unsupported plugin-owned mutation payload evidence for row:["wp_rpp_0441_alpha_rows","id:7"]',
   );
+  assert.equal(report.validation.forgedCanonicalResourceKey.ok, false);
+  assert.equal(report.validation.forgedCanonicalResourceKey.error.class, 'RuntimeException');
+  assert.equal(
+    report.validation.forgedCanonicalResourceKey.error.message,
+    'Unsupported plugin-owned mutation contract for row:["wp_rpp_0441_alpha_rows","id:70"]',
+  );
   assert.deepEqual(report.validateLog, [
     {
       driver: 'rpp-0441-alpha-driver',
@@ -830,8 +856,10 @@ echo json_encode([
     'rpp-0441-beta-plugin',
     'rpp-0441-filter-plugin',
     'row:["wp_rpp_0441_alpha_rows","id:7"]',
+    'row:["wp_rpp_0441_alpha_rows","id:70"]',
     'Unsupported plugin-owned mutation delete for row:["wp_rpp_0441_beta_rows","id:8"]',
     'Unsupported plugin-owned mutation driver for row:["wp_rpp_0441_alpha_rows","id:7"]',
+    'Unsupported plugin-owned mutation contract for row:["wp_rpp_0441_alpha_rows","id:70"]',
     'missing driver name for table: wp_rpp_0441_missing_name_rows',
     'duplicate driver name: rpp-0441-alpha-driver',
     'duplicate table mapping for table: wp_rpp_0441_alpha_rows',

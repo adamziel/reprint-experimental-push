@@ -1485,6 +1485,11 @@ function reprint_push_protocol_validate_mutation_shape(array $mutation): void
             'message' => 'Mutation resource and value must be objects.',
         ]);
     }
+    reprint_push_protocol_assert_resource_key_matches_resource(
+        (string) $mutation['resourceKey'],
+        $mutation['resource'],
+        'Mutation'
+    );
 }
 
 function reprint_push_protocol_validate_precondition_shape(array $precondition): void
@@ -1503,6 +1508,34 @@ function reprint_push_protocol_validate_precondition_shape(array $precondition):
             'ok' => false,
             'code' => 'INVALID_PLAN',
             'message' => 'Precondition resource must be an object.',
+        ]);
+    }
+    reprint_push_protocol_assert_resource_key_matches_resource(
+        (string) $precondition['resourceKey'],
+        $precondition['resource'],
+        'Precondition'
+    );
+}
+
+function reprint_push_protocol_assert_resource_key_matches_resource(string $resource_key, array $resource, string $label): void
+{
+    $resource_object_key = isset($resource['key']) && is_string($resource['key']) && $resource['key'] !== ''
+        ? $resource['key']
+        : null;
+    if ($resource_object_key !== null && $resource_object_key !== $resource_key) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_PLAN',
+            'message' => $label . ' resource key does not match resource object.',
+        ]);
+    }
+
+    $canonical_key = reprint_push_resource_object_key($resource);
+    if ($canonical_key !== null && $canonical_key !== $resource_key) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_PLAN',
+            'message' => $label . ' resourceKey is not canonical for resource object.',
         ]);
     }
 }
