@@ -1064,12 +1064,20 @@ export function buildBrewcommerceAssumedRealSiteProvenance({
   artifactPath = 'docs/evidence/ao-docker-local-production.md',
   command = `${brewcommerceAssumedRealSiteEnvKey}=1 npm run verify:release:docker-local-production`,
 } = {}) {
-  return buildDockerReleaseEvidenceProvenance({
+  const provenance = buildDockerReleaseEvidenceProvenance({
     generatedAt,
     artifactPath,
     command,
     mode: brewcommerceAssumedRealSiteMode,
   });
+  return {
+    ...provenance,
+    evidenceRows: provenance.evidenceRows.map((row) => ({
+      ...row,
+      sourceKind: 'support-only-assumption',
+      status: 'checked-support-only',
+    })),
+  };
 }
 
 export function buildDockerLocalProductionReleaseEvidenceProvenance({
@@ -1416,16 +1424,17 @@ export async function runDockerLocalProductionHarness({
     const releaseEvidence = buildBrewcommerceAssumedRealSiteReleaseEvidence({ plan, assumption });
     const releaseEvidenceProvenance = buildBrewcommerceAssumedRealSiteProvenance({ generatedAt });
     const verify = {
-      status: 0,
+      status: 2,
       signal: null,
       dockerExecuted: false,
       assumptionMode: assumption.mode,
+      failClosed: true,
     };
     const artifact = {
       ...buildPrerequisiteGateArtifact({
         probe,
         plan,
-        status: 'passed',
+        status: 'blocked',
         releaseEvidence,
         verify,
         generatedAt,
@@ -1439,16 +1448,16 @@ export async function runDockerLocalProductionHarness({
     artifact.deterministic = buildDeterministicArtifactMetadata(artifact);
     writeEvidenceArtifact(plan.evidence.releaseGateInputFile, artifact);
     stdout.write(`${JSON.stringify({
-      event: 'brewcommerce-blueprint-assumed-real-site-release-gate',
+      event: 'brewcommerce-blueprint-assumed-real-site-support-only',
       envKey: brewcommerceAssumedRealSiteEnvKey,
       dockerPrerequisiteBlockerCode: probe.blocker?.code || null,
       releaseGateInputFile: plan.evidence.releaseGateInputFile,
       releaseMovementAllowed: artifact.releaseGateEvaluation?.releaseMovement?.allowed === true,
     }, null, 2)}\n`);
     stdout.write(`${JSON.stringify(artifact, null, 2)}\n`);
-    stdout.write('[RPP-DOCKER-LOCAL-PRODUCTION:PASS]\n');
+    stdout.write('[RPP-DOCKER-LOCAL-PRODUCTION:FAIL-CLOSED]\n');
     cleanupUnstartedWorkDir();
-    return { status: 0, probe, plan, artifact };
+    return { status: 2, probe, plan, artifact };
   }
 
   if (!probe.ok) {

@@ -358,6 +358,38 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
       );
     }
 
+    const referenceTargetSupport = pluginOwnedReferenceTargetApplySupport({
+      remote,
+      mutation,
+      owner,
+      driver,
+      driverPayloadValidationEvidence: driverPayloadSupport.evidence,
+    });
+    if (!referenceTargetSupport.valid) {
+      throw new PushPlanError(
+        'INVALID_PLUGIN_DRIVER_REFERENCE_TARGET',
+        `Refusing to apply plugin-owned resource ${mutation.resourceKey} with unproven reference targets.`,
+        {
+          mutationId: mutation.id,
+          resourceKey: mutation.resourceKey,
+          pluginOwner: owner,
+          driver,
+          reasonCode: referenceTargetSupport.reasonCode,
+          applyValidationEvidence: pluginOwnedApplyValidationEvidence({
+            remote,
+            mutation,
+            owner,
+            driver,
+            plannedValue,
+            remoteValue,
+            outcome: 'refused-before-mutation',
+            driverPayloadValidationEvidence: driverPayloadSupport.evidence,
+            referenceTargetValidationEvidence: referenceTargetSupport.evidence,
+          }),
+        },
+      );
+    }
+
     const supported = mutation.pluginOwnedResource?.pluginOwner === owner
       && isActivePluginOwnerPresent(remote, owner, plan)
       && isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue, driverPayloadSupport);
@@ -463,6 +495,211 @@ function pluginOwnedDriverPayloadSupport({ mutation, plannedValue, owner, driver
     reasonCode: serializedOptionValidationEvidence.valid ? null : 'INVALID_SERIALIZED_OPTION_PAYLOAD',
     evidence,
   };
+}
+
+function pluginOwnedReferenceTargetApplySupport({
+  remote,
+  mutation,
+  owner,
+  driver,
+  driverPayloadValidationEvidence,
+}) {
+  const referenceValidation = driverPayloadValidationEvidence?.referenceValidation || null;
+  if (!referenceValidation) {
+    return { valid: true, reasonCode: null, evidence: null };
+  }
+
+  const carried = mutation.pluginOwnedResource?.referenceTargetValidationEvidence || null;
+  if (!carried) {
+    return {
+      valid: false,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_EVIDENCE_MISSING',
+      evidence: pluginOwnedReferenceTargetApplyEvidence({
+        carried,
+        referenceValidation,
+        driverPayloadValidationEvidence,
+        mutation,
+        owner,
+        driver,
+        remote,
+        issueCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_EVIDENCE_MISSING',
+      }),
+    };
+  }
+
+  const issueCode = pluginOwnedReferenceTargetEvidenceIssue({
+    carried,
+    referenceValidation,
+    driverPayloadValidationEvidence,
+    mutation,
+    owner,
+    driver,
+    remote,
+  });
+  if (issueCode) {
+    return {
+      valid: false,
+      reasonCode: issueCode,
+      evidence: pluginOwnedReferenceTargetApplyEvidence({
+        carried,
+        referenceValidation,
+        driverPayloadValidationEvidence,
+        mutation,
+        owner,
+        driver,
+        remote,
+        issueCode,
+      }),
+    };
+  }
+
+  return { valid: true, reasonCode: null, evidence: carried };
+}
+
+function pluginOwnedReferenceTargetEvidenceIssue({
+  carried,
+  referenceValidation,
+  driverPayloadValidationEvidence,
+  mutation,
+  owner,
+  driver,
+  remote,
+}) {
+  if (
+    carried.schemaVersion !== 1
+    || carried.operation !== 'plugin-driver-reference-target-validation'
+    || carried.validator !== 'contract-bound-row-driver-reference-targets'
+    || carried.reasonCode !== 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED'
+    || carried.outcome !== 'accepted'
+    || carried.format !== 'hash-only'
+    || carried.rawValuesIncluded !== false
+  ) {
+    return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_EVIDENCE_INVALID';
+  }
+  if (
+    carried.resourceKey !== mutation.resourceKey
+    || carried.pluginOwner !== owner
+    || carried.driver !== driver
+    || carried.table !== (mutation.pluginOwnedResource?.table || mutation.resource?.table || null)
+  ) {
+    return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_BINDING_MISMATCH';
+  }
+  if (
+    carried.contractHash !== (mutation.pluginOwnedResource?.contractValidationEvidence?.contractHash || null)
+    || carried.contractValidationHash !== pluginOwnedRowDriverContractValidationEvidenceHash(
+      mutation.pluginOwnedResource?.contractValidationEvidence,
+    )
+    || carried.payloadValidationHash !== digest(driverPayloadValidationEvidence)
+    || carried.referenceValidationHash !== digest(referenceValidation)
+  ) {
+    return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_HASH_MISMATCH';
+  }
+
+  const expectedFields = pluginOwnedReferenceTargetExpectedFields(referenceValidation);
+  const carriedFields = Array.isArray(carried.fields) ? carried.fields : null;
+  if (!carriedFields || carriedFields.length !== expectedFields.length) {
+    return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
+  }
+  for (const expectedField of expectedFields) {
+    const carriedField = carriedFields.find((field) =>
+      field.path === expectedField.path
+      && field.targetResourceKey === expectedField.targetResourceKey);
+    if (!carriedField) {
+      return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
+    }
+    if (carriedField.targetResourceKey === null) {
+      if (carriedField.targetStable !== true || carriedField.required === true) {
+        return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
+      }
+      continue;
+    }
+    if (carriedField.targetStable !== true || carriedField.targetRemotePresent !== true) {
+      return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_UNPROVEN';
+    }
+    const targetResource = parseWordPressGraphRowResourceKey(carriedField.targetResourceKey);
+    if (!targetResource) {
+      return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_UNPARSEABLE';
+    }
+    const actualRemoteHash = resourceHash(remote, {
+      type: 'row',
+      table: targetResource.table,
+      id: targetResource.id,
+      key: targetResource.key,
+    });
+    if (actualRemoteHash !== carriedField.targetRemoteHash) {
+      return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_MISMATCH';
+    }
+  }
+
+  return null;
+}
+
+function pluginOwnedReferenceTargetExpectedFields(referenceValidation) {
+  return (Array.isArray(referenceValidation?.fields) ? referenceValidation.fields : [])
+    .map((field) => ({
+      path: field?.path || null,
+      targetResourceKey: field?.targetResourceKey || null,
+    }))
+    .sort((left, right) =>
+      `${left.path || ''}:${left.targetResourceKey || ''}`
+        .localeCompare(`${right.path || ''}:${right.targetResourceKey || ''}`));
+}
+
+function pluginOwnedReferenceTargetApplyEvidence({
+  carried,
+  referenceValidation,
+  driverPayloadValidationEvidence,
+  mutation,
+  owner,
+  driver,
+  remote,
+  issueCode,
+}) {
+  return {
+    schemaVersion: 1,
+    operation: 'plugin-driver-reference-target-apply-validation',
+    reasonCode: issueCode,
+    outcome: 'refused-before-mutation',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    mutationId: mutation.id,
+    resourceKey: mutation.resourceKey,
+    pluginOwner: owner,
+    driver,
+    table: mutation.pluginOwnedResource?.table || mutation.resource?.table || null,
+    expectedReferenceValidationHash: digest(referenceValidation),
+    expectedPayloadValidationHash: digest(driverPayloadValidationEvidence),
+    carriedReferenceValidationHash: carried?.referenceValidationHash || null,
+    carriedPayloadValidationHash: carried?.payloadValidationHash || null,
+    carriedReasonCode: carried?.reasonCode || null,
+    fields: pluginOwnedReferenceTargetApplyFieldEvidence(carried, remote),
+  };
+}
+
+function pluginOwnedReferenceTargetApplyFieldEvidence(carried, remote) {
+  if (!Array.isArray(carried?.fields)) {
+    return [];
+  }
+  return carried.fields.map((field) => {
+    const targetResource = parseWordPressGraphRowResourceKey(field.targetResourceKey);
+    const actualRemoteHash = targetResource
+      ? resourceHash(remote, {
+        type: 'row',
+        table: targetResource.table,
+        id: targetResource.id,
+        key: targetResource.key,
+      })
+      : null;
+    return {
+      path: field.path || null,
+      targetResourceKey: field.targetResourceKey || null,
+      targetRemoteHash: field.targetRemoteHash || null,
+      actualRemoteHash,
+      targetStable: field.targetStable === true,
+      targetRemotePresent: field.targetRemotePresent === true,
+      reasonCode: field.reasonCode || null,
+    };
+  });
 }
 
 function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue, driverPayloadSupport = null) {
@@ -945,6 +1182,7 @@ function pluginOwnedApplyValidationEvidence({
   remoteValue,
   outcome,
   driverPayloadValidationEvidence = mutation.pluginOwnedResource?.driverPayloadValidationEvidence || null,
+  referenceTargetValidationEvidence = mutation.pluginOwnedResource?.referenceTargetValidationEvidence || null,
 }) {
   const serializedOptionValidationEvidence = mutation.resource?.type === 'row'
     && mutation.resource.table === 'wp_options'
@@ -982,6 +1220,7 @@ function pluginOwnedApplyValidationEvidence({
     },
     driverEvidence: pluginOwnedDriverEvidenceSummary(mutation.pluginOwnedResource?.driverEvidence),
     ...(driverPayloadValidationEvidence ? { driverPayloadValidationEvidence } : {}),
+    ...(referenceTargetValidationEvidence ? { referenceTargetValidationEvidence } : {}),
     ...(serializedOptionValidationEvidence?.serialized ? { serializedOptionValidationEvidence } : {}),
   };
 }

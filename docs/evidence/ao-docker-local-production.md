@@ -14,7 +14,8 @@ The 2026-06-01 update adds an explicit operator override for this sandbox:
 Docker prerequisite probe in the artifact, records `dockerExecuted: false`, and
 treats the BrewCommerce Blueprint as a real site only because the operator
 asserted that assumption. It does not silently use Playground or packaged
-fallback evidence.
+fallback evidence. The current harness keeps that assumption support-only and
+fail-closed; it cannot move the Docker release gate without a real Docker run.
 
 ## Harness contract
 
@@ -194,11 +195,14 @@ Docker code: DOCKER_CLI_MISSING
 ```
 
 The emitted artifact explicitly records the assumption and does not claim Docker
-containers executed:
+containers executed. Because Docker did not execute, the artifact is blocked:
 
 ```json
 {
-  "status": "passed",
+  "status": "blocked",
+  "ok": false,
+  "acceptedForReleaseGate": false,
+  "failClosed": true,
   "scope": "final-release",
   "assumption": {
     "mode": "brewcommerce-blueprint-creates-real-site",
@@ -235,15 +239,14 @@ Observed summary:
 
 ```json
 {
-  "ok": true,
-  "releaseStatus": "GO",
-  "gateState": "release-ready",
-  "finalGates": "20/20",
-  "primaryFailureCode": null,
+  "ok": false,
+  "releaseStatus": "NO-GO",
+  "gateState": "held",
+  "releaseMovementAllowed": false,
   "provenance": {
     "total": 20,
-    "accepted": 20,
-    "rejected": 0
+    "accepted": 0,
+    "rejected": 20
   }
 }
 ```
@@ -252,8 +255,8 @@ Observed summary:
 
 This lane advances these earliest relevant checklist items. The original Docker
 path still requires a real Docker-capable environment to claim
-`dockerExecuted: true`; the 2026-06-01 override is a separate
-assumption-backed final-release path.
+`dockerExecuted: true`; the BrewCommerce override is a separate support-only
+record for the operator assumption.
 
 - RPP-0801: three-site/four-role local production topology records exact unavailable capability.
 - RPP-0802 has evidence toward the Docker WordPress topology contract: the generated runner uses `npm run verify:release`, Docker service DNS URLs, readiness waits, and no packaged fallback. Docker remains unavailable in this VM, so the override records `dockerExecuted: false`.
@@ -262,6 +265,6 @@ assumption-backed final-release path.
 - RPP-0903: release gate input artifact fails closed when the required Docker proof cannot run.
 
 A real Docker pass remains required for a `dockerExecuted: true` artifact. The
-explicit BrewCommerce assumption path can produce a release-ready
-`release-gate-input.json` without packaged fallback, while preserving the Docker
-CLI absence in the same artifact.
+explicit BrewCommerce assumption path can document the assumption and topology
+intent without packaged fallback, but it remains release `NO-GO` while
+`dockerExecuted` is `false`.

@@ -570,7 +570,7 @@ test('Release gate artifact is stable across run-local paths and can be consumed
   );
 });
 
-test('Assumed BrewCommerce real-site path resolves Docker NO-GO records without claiming Docker executed', async (t) => {
+test('Assumed BrewCommerce real-site path stays fail-closed without Docker execution', async (t) => {
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-docker-assumed-work-'));
   const evidenceDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-docker-assumed-evidence-'));
   t.after(() => {
@@ -601,13 +601,16 @@ test('Assumed BrewCommerce real-site path resolves Docker NO-GO records without 
   const artifact = result.artifact;
   const artifactFile = path.join(evidenceDir, 'release-gate-input.json');
 
-  assert.equal(result.status, 0);
+  assert.equal(result.status, 2);
   assert.equal(stderrText, '');
-  assert.match(stdoutText, /brewcommerce-blueprint-assumed-real-site-release-gate/);
-  assert.match(stdoutText, /\[RPP-DOCKER-LOCAL-PRODUCTION:PASS\]/);
+  assert.match(stdoutText, /brewcommerce-blueprint-assumed-real-site-support-only/);
+  assert.match(stdoutText, /\[RPP-DOCKER-LOCAL-PRODUCTION:FAIL-CLOSED\]/);
   assert.equal(fs.existsSync(artifactFile), true);
-  assert.equal(artifact.status, 'passed');
+  assert.equal(artifact.status, 'blocked');
   assert.equal(artifact.scope, 'final-release');
+  assert.equal(artifact.ok, false);
+  assert.equal(artifact.acceptedForReleaseGate, false);
+  assert.equal(artifact.failClosed, true);
   assert.equal(artifact.assumption.mode, brewcommerceAssumedRealSiteMode);
   assert.equal(artifact.prerequisiteProbe.blocker.code, 'DOCKER_CLI_MISSING');
   assert.equal(artifact.evidence.brewcommerceBlueprintAssumedRealSite.ok, true);
@@ -615,9 +618,8 @@ test('Assumed BrewCommerce real-site path resolves Docker NO-GO records without 
   assert.equal(artifact.evidence.dockerLocalProductionProof.dockerExecuted, false);
   assert.equal(artifact.evidence.dockerVerifyReleaseTopology.dockerExecuted, false);
   assert.equal(artifact.evidence.dockerVerifyReleaseTopology.topologyValidationOk, true);
-  assert.equal(artifact.releaseGateEvaluation.ok, true);
-  assert.equal(artifact.releaseGateEvaluation.releaseMovement.allowed, true);
-  assert.equal(artifact.releaseGateEvaluation.totals.passed, 20);
+  assert.equal(artifact.releaseGateEvaluation.ok, false);
+  assert.equal(artifact.releaseGateEvaluation.releaseMovement.allowed, false);
   assert.equal(artifact.releaseEvidenceProvenance.requiredProductionEvidence.length, 20);
   assert.equal(artifact.releaseEvidenceProvenance.evidenceRows.length, 20);
   assert.equal(validateReleaseGateArtifact(artifact).ok, true);
@@ -635,18 +637,15 @@ test('Assumed BrewCommerce real-site path resolves Docker NO-GO records without 
     now: new Date('2026-06-01T09:20:00.000Z'),
   });
 
-  assert.equal(gateResult.exitCode, 0);
-  assert.equal(gateResult.report.ok, true);
-  assert.equal(gateResult.report.releaseStatus, 'GO');
-  assert.equal(gateResult.report.primaryFailureCode, null);
-  assert.equal(gateResult.report.releaseMovement.allowed, true);
+  assert.equal(gateResult.exitCode, 1);
+  assert.equal(gateResult.report.ok, false);
+  assert.equal(gateResult.report.releaseStatus, 'NO-GO');
+  assert.equal(gateResult.report.releaseMovement.allowed, false);
   assert.equal(gateResult.report.releaseEvidenceProvenance.required, true);
-  assert.equal(gateResult.report.releaseEvidenceProvenance.ready, true);
-  assert.deepEqual(gateResult.report.releaseEvidenceProvenance.summary.productionRequired, {
-    total: 20,
-    accepted: 20,
-    rejected: 0,
-  });
+  assert.equal(gateResult.report.releaseEvidenceProvenance.ready, false);
+  assert.equal(gateResult.report.releaseEvidenceProvenance.summary.productionRequired.total, 20);
+  assert.equal(gateResult.report.releaseEvidenceProvenance.summary.productionRequired.accepted, 0);
+  assert.equal(gateResult.report.releaseEvidenceProvenance.summary.productionRequired.rejected, 20);
 });
 
 test('Runner planner proof script preserves the docker runtime and env-shaped complex fixture', () => {

@@ -14,6 +14,7 @@ import {
   PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
   PLUGIN_DRIVER_REFUSE_ON_CONFLICT_MERGE_POLICY,
   normalizePluginOwnedRowDriverContract,
+  pluginOwnedRowDriverContractValidationEvidenceHash,
   pluginOwnedRowDriverContractValidationEvidenceMatches,
   pluginOwnedRowDriverContractHash,
 } from './plugin-driver-contracts.js';
@@ -88,6 +89,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     local,
     remote,
     intents,
+    resources,
   });
   const wordpressGraphIdentityMap = buildWordPressGraphIdentityMap({ base, local, remote });
 
@@ -443,6 +445,9 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           ...(support.driverPayloadValidationEvidence
             ? { driverPayloadValidationEvidence: support.driverPayloadValidationEvidence }
             : {}),
+          ...(support.referenceTargetValidationEvidence
+            ? { referenceTargetValidationEvidence: support.referenceTargetValidationEvidence }
+            : {}),
           ...(support.dryRunValidationEvidence
             ? { dryRunValidationEvidence: support.dryRunValidationEvidence }
             : {}),
@@ -536,7 +541,7 @@ function mapIntentsByResource(intents) {
   return map;
 }
 
-function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
+function buildPluginOwnedResourcePolicy({ base, local, remote, intents, resources }) {
   const entries = [
     ...pluginOwnedPolicyEntriesFromSnapshot(base, 'base-snapshot'),
     ...pluginOwnedPolicyEntriesFromSnapshot(local, 'local-snapshot'),
@@ -700,6 +705,35 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         driverPayloadValidationEvidence = contractPayloadValidation.evidence;
       }
 
+      const referenceTargetValidation = pluginOwnedReferenceTargetValidationSupport({
+        resource,
+        owner,
+        driver: supported.driver,
+        table: supportedTable,
+        contractValidationEvidence: supported.contractValidationEvidence,
+        driverPayloadValidationEvidence,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!referenceTargetValidation.supported) {
+        return {
+          supported: false,
+          className: 'stale-plugin-driver-reference-target',
+          reasonCode: referenceTargetValidation.reasonCode,
+          driver: supported.driver,
+          table: supportedTable,
+          policySource: supported.source,
+          reason: referenceTargetValidation.reason,
+          driverPayloadValidationEvidence,
+          referenceTargetValidationEvidence: referenceTargetValidation.evidence,
+          ...(supported.contractValidationEvidence
+            ? { contractValidationEvidence: supported.contractValidationEvidence }
+            : {}),
+        };
+      }
+
       if (supported.driver === 'fixture-forms-lab-table') {
         const driverEvidence = fixtureFormsLabTableDriverEvidence({
           resource,
@@ -803,6 +837,9 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         ...(driverEvidence ? { driverEvidence } : {}),
         ...(serializedOptionValidationEvidence?.serialized ? { serializedOptionValidationEvidence } : {}),
         ...(driverPayloadValidationEvidence ? { driverPayloadValidationEvidence } : {}),
+        ...(referenceTargetValidation.evidence
+          ? { referenceTargetValidationEvidence: referenceTargetValidation.evidence }
+          : {}),
         ...(dryRunValidationEvidence ? { dryRunValidationEvidence } : {}),
         ...(applyValidationEvidence ? { applyValidationEvidence } : {}),
       };
@@ -3799,6 +3836,158 @@ function remotePluginRemovalReleaseGateEvidence(evidenceScope) {
   };
 }
 
+function pluginOwnedReferenceTargetValidationSupport({
+  resource,
+  owner,
+  driver,
+  table,
+  contractValidationEvidence,
+  driverPayloadValidationEvidence,
+  resources,
+  base,
+  local,
+  remote,
+}) {
+  const referenceValidation = driverPayloadValidationEvidence?.referenceValidation || null;
+  if (!referenceValidation) {
+    return { supported: true, evidence: null };
+  }
+
+  const fields = Array.isArray(referenceValidation.fields)
+    ? referenceValidation.fields.map((field) =>
+      pluginOwnedReferenceTargetFieldEvidence({
+        field,
+        resources,
+        base,
+        local,
+        remote,
+      }))
+    : [];
+  const failedFields = fields.filter((field) => field.targetStable !== true);
+  const accepted = referenceValidation.status === 'matched' && failedFields.length === 0;
+  const reasonCode = accepted
+    ? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED'
+    : failedFields[0]?.reasonCode || 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_UNPROVEN';
+  const evidence = {
+    schemaVersion: 1,
+    operation: 'plugin-driver-reference-target-validation',
+    validator: 'contract-bound-row-driver-reference-targets',
+    reasonCode,
+    outcome: accepted ? 'accepted' : 'refused-before-mutation',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    resourceKey: resource?.key || null,
+    pluginOwner: owner || null,
+    driver: driver || null,
+    table: table || null,
+    contractHash: contractValidationEvidence?.contractHash || null,
+    contractValidationHash: contractValidationEvidence
+      ? pluginOwnedRowDriverContractValidationEvidenceHash(contractValidationEvidence)
+      : null,
+    payloadValidationHash: driverPayloadValidationEvidence
+      ? digest(driverPayloadValidationEvidence)
+      : null,
+    referenceValidationHash: digest(referenceValidation),
+    referenceFieldCount: fields.length,
+    fields,
+  };
+
+  if (accepted) {
+    return { supported: true, evidence };
+  }
+
+  return {
+    supported: false,
+    reasonCode,
+    reason: `Plugin-owned row driver reference targets for ${resource.key} are not proven stable against the live remote graph.`,
+    evidence,
+  };
+}
+
+function pluginOwnedReferenceTargetFieldEvidence({
+  field,
+  resources,
+  base,
+  local,
+  remote,
+}) {
+  const baseEvidence = {
+    path: field?.path || null,
+    targetTable: field?.targetTable || null,
+    targetIdField: field?.targetIdField || null,
+    scalarType: field?.scalarType || null,
+    required: field?.required === true,
+    state: field?.state || null,
+    observedType: field?.observedType || null,
+    observedHash: field?.observedHash || null,
+    targetResourceKey: field?.targetResourceKey || null,
+  };
+
+  if (!field?.targetResourceKey) {
+    const optionalMissing = field?.required !== true && field?.state === 'missing';
+    return {
+      ...baseEvidence,
+      targetStable: optionalMissing,
+      reasonCode: optionalMissing
+        ? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_NOT_REQUIRED'
+        : 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_MISSING',
+    };
+  }
+
+  const targetResource = resources.find((candidate) => candidate.key === field.targetResourceKey)
+    || parseWordPressGraphRowResourceKey(field.targetResourceKey);
+  if (!targetResource) {
+    return {
+      ...baseEvidence,
+      targetStable: false,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_UNPARSEABLE',
+    };
+  }
+
+  const baseValue = getResource(base, targetResource);
+  const localValue = getResource(local, targetResource);
+  const remoteValue = getResource(remote, targetResource);
+  const targetBaseHash = resourceHash(base, targetResource);
+  const targetLocalHash = resourceHash(local, targetResource);
+  const targetRemoteHash = resourceHash(remote, targetResource);
+  const targetRemotePresent = remoteValue !== ABSENT;
+  const targetStable = targetRemotePresent
+    && (targetRemoteHash === targetBaseHash || targetLocalHash === targetRemoteHash);
+
+  return {
+    ...baseEvidence,
+    targetResource: targetResourceEvidence(targetResource),
+    targetBaseHash,
+    targetLocalHash,
+    targetRemoteHash,
+    targetRemotePresent,
+    targetStable,
+    reasonCode: targetStable
+      ? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ACCEPTED'
+      : targetRemotePresent
+        ? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_UNPROVEN'
+        : 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT',
+    targetChange: changeEvidence(
+      targetResource,
+      baseValue,
+      localValue,
+      remoteValue,
+      targetBaseHash,
+      targetLocalHash,
+      targetRemoteHash,
+    ),
+  };
+}
+
+function targetResourceEvidence(resource) {
+  return {
+    type: resource?.type || null,
+    key: resource?.key || null,
+    table: resource?.table || null,
+    id: resource?.id || null,
+  };
+}
+
 function pluginOwnedDriverDeleteSupportRefusalEvidence({ resource, owner, support }) {
   return {
     schemaVersion: 1,
@@ -3886,6 +4075,9 @@ function addPluginOwnedResourceBlocker(plan, {
       : {}),
     ...(support.driverPayloadValidationEvidence
       ? { driverPayloadValidationEvidence: support.driverPayloadValidationEvidence }
+      : {}),
+    ...(support.referenceTargetValidationEvidence
+      ? { referenceTargetValidationEvidence: support.referenceTargetValidationEvidence }
       : {}),
     ...(support.contractValidationEvidence
       ? { contractValidationEvidence: support.contractValidationEvidence }

@@ -39,6 +39,20 @@ function baseSite() {
   };
 }
 
+function addStablePost(site, id, title = `plugin reference target ${id}`) {
+  site.db ||= {};
+  site.db.wp_posts ||= {};
+  site.db.wp_posts[`ID:${id}`] = {
+    ID: id,
+    post_type: 'post',
+    post_title: title,
+    post_name: `plugin-reference-target-${id}`,
+    post_parent: 0,
+    post_author: 0,
+    guid: `urn:reprint-plugin-reference-target:${id}`,
+  };
+}
+
 function pluginOwnedResourcePolicy(...allowedResources) {
   return {
     pluginOwnedResources: {
@@ -704,6 +718,7 @@ test('reference-bound custom row driver carries hash-only reference evidence thr
       __pluginOwner: 'forms',
     },
   };
+  addStablePost(base, 2);
   const local = cloneJson(base);
   local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-reference-contract';
   local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-reference-secret';
@@ -717,6 +732,7 @@ test('reference-bound custom row driver carries hash-only reference evidence thr
   const mutation = mutationFor(plan, resourceKey);
   const contractEvidence = mutation.pluginOwnedResource.contractValidationEvidence;
   const payloadEvidence = mutation.pluginOwnedResource.driverPayloadValidationEvidence;
+  const targetEvidence = mutation.pluginOwnedResource.referenceTargetValidationEvidence;
   const result = applyPlan(remote, plan);
   const evidenceJson = JSON.stringify({
     mutation: mutation.pluginOwnedResource,
@@ -751,10 +767,164 @@ test('reference-bound custom row driver carries hash-only reference evidence thr
     payloadEvidence.contractValidationHash,
     pluginOwnedRowDriverContractValidationEvidenceHash(contractEvidence),
   );
+  assert.equal(targetEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED');
+  assert.equal(targetEvidence.outcome, 'accepted');
+  assert.equal(targetEvidence.rawValuesIncluded, false);
+  assert.equal(targetEvidence.fields[0].path, 'payload.post_id');
+  assert.equal(targetEvidence.fields[0].targetResourceKey, 'row:["wp_posts","ID:2"]');
+  assert.equal(targetEvidence.fields[0].targetStable, true);
+  assert.equal(targetEvidence.fields[0].targetRemotePresent, true);
   assert.equal(result.appliedMutations, 1);
   assert.equal(result.site.db.wp_forms_contract_rows['entry_id:7'].payload.mode, 'local-reference-contract');
   assert.equal(evidenceJson.includes('base-reference-secret'), false);
   assert.equal(evidenceJson.includes('local-reference-secret'), false);
+});
+
+test('reference-bound custom row driver blocks missing WordPress target rows before mutation', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-reference-missing-target', secret: 'base-reference-missing-target-secret', post_id: 2 },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-reference-missing-target';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-reference-missing-target-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(referenceBoundCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const targetEvidence = blocker.referenceTargetValidationEvidence;
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'stale-plugin-driver-reference-target');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT');
+  assert.equal(blocker.driverPayloadValidationEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED');
+  assert.equal(targetEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT');
+  assert.equal(targetEvidence.outcome, 'refused-before-mutation');
+  assert.equal(targetEvidence.rawValuesIncluded, false);
+  assert.equal(targetEvidence.fields[0].path, 'payload.post_id');
+  assert.equal(targetEvidence.fields[0].targetResourceKey, 'row:["wp_posts","ID:2"]');
+  assert.equal(targetEvidence.fields[0].targetRemotePresent, false);
+  assert.equal(targetEvidence.fields[0].targetStable, false);
+  assert.equal(blockerJson.includes('base-reference-missing-target-secret'), false);
+  assert.equal(blockerJson.includes('local-reference-missing-target-secret'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('reference-bound custom row driver revalidates target rows at apply time', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-reference-target-drift', secret: 'base-reference-target-drift-secret', post_id: 2 },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  addStablePost(base, 2, 'base reference target drift');
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-reference-target-drift';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-reference-target-drift-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(referenceBoundCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const plan = planFor(base, local, remote);
+  remote.db.wp_posts['ID:2'].post_title = 'remote reference target drift after dry run';
+  const remoteBefore = JSON.stringify(remote);
+
+  let error;
+  try {
+    applyPlan(remote, plan);
+  } catch (caught) {
+    error = caught;
+  }
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(error?.code, 'INVALID_PLUGIN_DRIVER_REFERENCE_TARGET');
+  assert.equal(error.details.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_MISMATCH');
+  assert.equal(error.details.applyValidationEvidence.referenceTargetValidationEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_MISMATCH');
+  assert.equal(error.details.applyValidationEvidence.referenceTargetValidationEvidence.fields[0].targetResourceKey, 'row:["wp_posts","ID:2"]');
+  assert.equal(JSON.stringify(error.details).includes('base-reference-target-drift-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('local-reference-target-drift-secret'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('reference-bound custom row driver blocks identity-mapped source targets until rewritten', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const sourcePostKey = 'row:["wp_posts","ID:2"]';
+  const targetPostKey = 'row:["wp_posts","ID:22"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-reference-identity-map', secret: 'base-reference-identity-map-secret', post_id: 2 },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  addStablePost(base, 2, 'base mapped source target');
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-reference-identity-map';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-reference-identity-map-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.db.wp_posts['ID:2'].post_title = 'local mapped source target';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(referenceBoundCustomTableContract()),
+    wordpressGraphIdentityMap: {
+      rows: [
+        {
+          sourceResourceKey: sourcePostKey,
+          targetResourceKey: targetPostKey,
+        },
+      ],
+    },
+  };
+  const remote = cloneJson(base);
+  delete remote.db.wp_posts['ID:2'];
+  remote.db.wp_posts['ID:22'] = {
+    ...local.db.wp_posts['ID:2'],
+    ID: 22,
+  };
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const targetEvidence = blocker.referenceTargetValidationEvidence;
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'stale-plugin-driver-reference-target');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT');
+  assert.equal(targetEvidence.fields[0].targetResourceKey, sourcePostKey);
+  assert.equal(targetEvidence.fields[0].targetRemotePresent, false);
+  assert.equal(targetEvidence.fields[0].targetStable, false);
+  assert.equal(plan.decisions.some((entry) =>
+    entry.resourceKey === sourcePostKey
+    && entry.targetResourceKey === targetPostKey
+    && entry.decision === 'map-local-identity-to-remote'), true);
+  assert.equal(blockerJson.includes('base-reference-identity-map-secret'), false);
+  assert.equal(blockerJson.includes('local-reference-identity-map-secret'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
 test('explicit custom row driver merge policy is carried and bound through apply', () => {
@@ -1821,6 +1991,7 @@ test('apply refuses forged reference-bound custom row driver payloads before mut
       __pluginOwner: 'forms',
     },
   };
+  addStablePost(base, 2);
   const local = cloneJson(base);
   local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-reference-apply';
   local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-reference-apply-secret';
