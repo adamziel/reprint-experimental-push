@@ -64,6 +64,7 @@ export function buildGraphMappingInventory({
       rewritesRequireEquivalentRemoteTarget: true,
       explicitContractsFailClosed: true,
       rewritesRecordHashOnlyEvidence: true,
+      identityMapRowsRecordContractHash: true,
     },
     mappedFamilyCounters: { ...familyCounters },
     blockedFamilies,

@@ -1,3 +1,5 @@
+import { digest } from './stable-json.js';
+
 export const WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION = 1;
 export const WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND = 'wordpress-graph-identity-map';
 
@@ -266,6 +268,21 @@ export function wordpressGraphRelationshipSupportsScalarRewrite(reference) {
   return reference?.rewriteSupported !== false;
 }
 
+export function wordpressGraphIdentityMapContractHash({
+  sourceResource = null,
+  targetResource = null,
+  sourceResourceKey = null,
+  targetResourceKey = null,
+} = {}) {
+  const normalized = normalizedWordPressGraphIdentityMapContract({
+    sourceResource,
+    targetResource,
+    sourceResourceKey,
+    targetResourceKey,
+  });
+  return normalized ? digest(normalized) : null;
+}
+
 export function normalizeWordPressGraphIdentityMapContract(entry, {
   source = null,
   sourceResource = null,
@@ -374,6 +391,9 @@ export function normalizeWordPressGraphIdentityMapContract(entry, {
   }
 
   const accepted = issues.length === 0;
+  const contractHash = accepted
+    ? wordpressGraphIdentityMapContractHash({ sourceResource, targetResource })
+    : null;
   return {
     explicit: true,
     valid: accepted,
@@ -390,6 +410,7 @@ export function normalizeWordPressGraphIdentityMapContract(entry, {
       issues,
       source,
       rawValuesIncluded: false,
+      contractHash,
       sourceResourceKey: sourceResourceKey || null,
       targetResourceKey: targetResourceKey || null,
       sourceTable: sourceResource?.table || null,
@@ -398,6 +419,61 @@ export function normalizeWordPressGraphIdentityMapContract(entry, {
       targetId: targetResource?.id || null,
     },
   };
+}
+
+function normalizedWordPressGraphIdentityMapContract({
+  sourceResource = null,
+  targetResource = null,
+  sourceResourceKey = null,
+  targetResourceKey = null,
+} = {}) {
+  const source = normalizeContractResource(sourceResource, sourceResourceKey);
+  const target = normalizeContractResource(targetResource, targetResourceKey);
+  if (!source || !target || source.key === target.key) {
+    return null;
+  }
+  return {
+    schemaVersion: WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION,
+    contractKind: WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+    sourceResourceKey: source.key,
+    targetResourceKey: target.key,
+    sourceTable: source.table,
+    targetTable: target.table,
+    sourceId: source.id,
+    targetId: target.id,
+    resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
+    rawValuesIncluded: false,
+  };
+}
+
+function normalizeContractResource(resource, resourceKey = null) {
+  if (resource?.type === 'row' && isNonEmptyString(resource.table) && isNonEmptyString(resource.id)) {
+    return {
+      key: resource.key || `row:${JSON.stringify([resource.table, resource.id])}`,
+      table: resource.table,
+      id: resource.id,
+    };
+  }
+  return parseRowResourceKey(resourceKey);
+}
+
+function parseRowResourceKey(resourceKey) {
+  if (!isNonEmptyString(resourceKey) || !resourceKey.startsWith('row:')) {
+    return null;
+  }
+  try {
+    const [table, id] = JSON.parse(resourceKey.slice('row:'.length));
+    if (isNonEmptyString(table) && isNonEmptyString(id)) {
+      return {
+        key: `row:${JSON.stringify([table, id])}`,
+        table,
+        id,
+      };
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 function graphRelationshipContract({

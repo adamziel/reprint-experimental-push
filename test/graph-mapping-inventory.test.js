@@ -54,6 +54,7 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
     rewritesRequireEquivalentRemoteTarget: true,
     explicitContractsFailClosed: true,
     rewritesRecordHashOnlyEvidence: true,
+    identityMapRowsRecordContractHash: true,
   });
   assert.deepEqual(inventory.mappedFamilyCounters, {
     totalFamilies: 7,

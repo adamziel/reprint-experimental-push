@@ -4,6 +4,23 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Graph Identity Map Contract Hash Binding
+
+- Last update: 2026-06-02 05:34 CEST +02:00.
+- Explicit WordPress graph identity-map contracts now carry a normalized
+  `contractHash` for the source/target row mapping. Planner rewrite evidence
+  stores that hash alongside the validation evidence hash, and apply recomputes
+  it from `sourceTargetResourceKey` and `targetResourceKey` before any mutation.
+- Forged identity-map contract hash evidence now fails closed with
+  `WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_CONTRACT_HASH_MISMATCH`, preserving the
+  remote unchanged. Legacy identity-map rows remain covered by existing
+  fixtures, but explicit `wordpress-graph-identity-map` rows are now
+  contract-bound.
+- Caveat: this closes a forged-evidence asymmetry in the explicit graph
+  identity-map path. Broader graph support still requires more general
+  identity/reference rewriting beyond stable fixtures and production importer /
+  exporter evidence. Final release remains `NO-GO`.
+
 ## 2026-06-02 - Target Envelope Transaction Boundary Tightening
 
 - Last update: 2026-06-02 05:26 CEST +02:00.

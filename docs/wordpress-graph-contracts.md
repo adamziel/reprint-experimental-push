@@ -47,6 +47,7 @@ It also declares the explicit identity-map contract:
   "operation": "wordpress-graph-identity-map-contract-validation",
   "sourceResourceKey": "row:[\"wp_posts\",\"ID:2001\"]",
   "targetResourceKey": "row:[\"wp_posts\",\"ID:3001\"]",
+  "contractHash": "sha256 hash of the normalized identity-map contract",
   "outcome": "accepted",
   "rawValuesIncluded": false
 }
@@ -65,9 +66,10 @@ one of these paths:
   usable
 
 When planner rewrites a scalar graph reference, the mutation records the
-relationship contract kind, version, and hash. Apply recomputes that contract
-hash and rejects forged, missing, or unsupported rewrite evidence before any
-mutation.
+relationship contract kind, version, and hash. For rewrites backed by an
+explicit identity map, it also records the normalized identity-map
+`contractHash`. Apply recomputes both contract hashes and rejects forged,
+missing, or unsupported rewrite evidence before any mutation.
 
 Legacy identity maps still normalize for existing local coverage, but an entry
 that declares `contractKind: "wordpress-graph-identity-map"` is strict:
@@ -137,6 +139,7 @@ normalized to:
   "contractKind": "wordpress-graph-identity-map",
   "sourceResourceKey": "row:[\"wp_posts\",\"ID:2001\"]",
   "targetResourceKey": "row:[\"wp_posts\",\"ID:3001\"]",
+  "contractHash": "sha256 hash of the normalized identity-map contract",
   "rawValuesIncluded": false
 }
 ```

@@ -6566,6 +6566,9 @@ test('explicit WordPress graph identity-map contract carries accepted proof thro
   const forgedPlan = cloneJson(plan);
   const forgedRemote = cloneJson(remote);
   const forgedRemoteBefore = JSON.stringify(forgedRemote);
+  const forgedIdentityPlan = cloneJson(plan);
+  const forgedIdentityRemote = cloneJson(remote);
+  const forgedIdentityRemoteBefore = JSON.stringify(forgedIdentityRemote);
   const result = applyPlan(remote, plan);
   const sourceDecision = decisionFor(plan, sourcePostResourceKey);
   const childMutation = mutationFor(plan, childPostResourceKey);
@@ -6592,6 +6595,8 @@ test('explicit WordPress graph identity-map contract carries accepted proof thro
   assert.equal(rewrite.relationshipContractKind, 'wordpress-graph-relationship');
   assert.equal(rewrite.relationshipContractVersion, 1);
   assert.match(rewrite.relationshipContractHash, /^[a-f0-9]{64}$/);
+  assert.match(contractEvidence.contractHash, /^[a-f0-9]{64}$/);
+  assert.equal(rewrite.identityMapContractHash, contractEvidence.contractHash);
   assert.equal(rewrite.identityMapContractValidationHash, digest(contractEvidence));
   assert.equal(deserializeMutationValue(childMutation).post_parent, 3201);
   assert.equal(result.site.db.wp_posts['ID:2202'].post_parent, 3201);
@@ -6610,6 +6615,19 @@ test('explicit WordPress graph identity-map contract carries accepted proof thro
   assert.equal(forgedIssue.resourceKey, childPostResourceKey);
   assert.equal(forgedIssue.relationshipType, 'post-parent');
   assert.equal(JSON.stringify(forgedRemote), forgedRemoteBefore);
+
+  const forgedIdentityRewrite = mutationFor(forgedIdentityPlan, childPostResourceKey)
+    .wordpressGraphIdentity.rewrites[0];
+  forgedIdentityRewrite.identityMapContractHash = '0'.repeat(64);
+  const forgedIdentityError = captureError(() => applyPlan(forgedIdentityRemote, forgedIdentityPlan));
+  const forgedIdentityIssue = forgedIdentityError.details.issues.find((issue) =>
+    issue.code === 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_CONTRACT_HASH_MISMATCH');
+
+  assert.ok(forgedIdentityError instanceof PushPlanError);
+  assert.equal(forgedIdentityError.code, 'PLAN_INVARIANT_VIOLATION');
+  assert.equal(forgedIdentityIssue.resourceKey, childPostResourceKey);
+  assert.equal(forgedIdentityIssue.relationshipType, 'post-parent');
+  assert.equal(JSON.stringify(forgedIdentityRemote), forgedIdentityRemoteBefore);
 });
 
 test('unsupported explicit WordPress graph identity-map contract version fails closed before rewrite', () => {

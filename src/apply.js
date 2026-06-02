@@ -21,7 +21,10 @@ import {
   PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
   pluginOwnedRowDriverContractHash,
 } from './plugin-driver-contracts.js';
-import { wordpressGraphRelationshipContractForType } from './wordpress-graph-contracts.js';
+import {
+  wordpressGraphIdentityMapContractHash,
+  wordpressGraphRelationshipContractForType,
+} from './wordpress-graph-contracts.js';
 
 const JOURNAL_SCHEMA_VERSION = 1;
 const SHA256_HEX_PATTERN = /^[a-f0-9]{64}$/;
@@ -2131,6 +2134,40 @@ function wordpressGraphRewriteEnvelopeIssues(mutation) {
         code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_CONTRACT_HASH_INVALID',
         observedHash: hashEvidenceForDetails(rewrite.identityMapContractValidationHash),
       });
+    }
+    if (
+      rewrite.identityMapContractHash !== undefined
+      && hashEvidenceState(rewrite.identityMapContractHash) !== 'hash'
+    ) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_CONTRACT_HASH_INVALID',
+        observedHash: hashEvidenceForDetails(rewrite.identityMapContractHash),
+      });
+    }
+    if (
+      rewrite.identityMapContractValidationHash !== undefined
+      || rewrite.identityMapContractHash !== undefined
+    ) {
+      const expectedIdentityMapContractHash = wordpressGraphIdentityMapContractHash({
+        sourceResourceKey: rewrite.sourceTargetResourceKey,
+        targetResourceKey: rewrite.targetResourceKey,
+      });
+      if (!expectedIdentityMapContractHash) {
+        issues.push({
+          ...issueBase,
+          code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_CONTRACT_INCOMPLETE',
+          sourceTargetResourceKey: rewrite.sourceTargetResourceKey || null,
+          targetResourceKey: rewrite.targetResourceKey || null,
+        });
+      } else if (rewrite.identityMapContractHash !== expectedIdentityMapContractHash) {
+        issues.push({
+          ...issueBase,
+          code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_CONTRACT_HASH_MISMATCH',
+          expectedHash: expectedIdentityMapContractHash,
+          observedHash: hashEvidenceForDetails(rewrite.identityMapContractHash),
+        });
+      }
     }
   }
 

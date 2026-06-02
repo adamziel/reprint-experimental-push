@@ -2452,7 +2452,10 @@ function rewriteWordPressGraphMutation({ resource, localValue, identityMap }) {
       targetResourceKey: mapping.targetResource.key,
       identityMapSource: mapping.source,
       ...(mapping.contractValidationEvidence
-        ? { identityMapContractValidationHash: digest(mapping.contractValidationEvidence) }
+        ? {
+          identityMapContractHash: mapping.contractValidationEvidence.contractHash || null,
+          identityMapContractValidationHash: digest(mapping.contractValidationEvidence),
+        }
         : {}),
       sourceTargetLocalHash: mapping.sourceLocalHash,
       targetRemoteHash: mapping.targetRemoteHash,

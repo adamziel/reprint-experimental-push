@@ -11,6 +11,7 @@ import {
   WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
   WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS,
   WORDPRESS_GRAPH_UNSUPPORTED_SURFACE_CONTRACTS,
+  wordpressGraphIdentityMapContractHash,
 } from '../src/wordpress-graph-contracts.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -536,6 +537,7 @@ test('snapshot library exports WordPress graph contracts that match the JS plann
     rewritesRequireEquivalentRemoteTarget: true,
     explicitContractsFailClosed: true,
     rewritesRecordHashOnlyEvidence: true,
+    identityMapRowsRecordContractHash: true,
     rawValuesIncluded: false,
   });
   assert.equal(
@@ -570,6 +572,10 @@ test('snapshot library exports only explicit WordPress graph identity-map contra
         contractKind: WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
         sourceResourceKey: 'row:["wp_posts","ID:2001"]',
         targetResourceKey: 'row:["wp_posts","ID:3001"]',
+        contractHash: wordpressGraphIdentityMapContractHash({
+          sourceResourceKey: 'row:["wp_posts","ID:2001"]',
+          targetResourceKey: 'row:["wp_posts","ID:3001"]',
+        }),
         rawValuesIncluded: false,
       },
       {
@@ -577,6 +583,10 @@ test('snapshot library exports only explicit WordPress graph identity-map contra
         contractKind: WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
         sourceResourceKey: 'row:["wp_users","ID:41"]',
         targetResourceKey: 'row:["wp_users","ID:82"]',
+        contractHash: wordpressGraphIdentityMapContractHash({
+          sourceResourceKey: 'row:["wp_users","ID:41"]',
+          targetResourceKey: 'row:["wp_users","ID:82"]',
+        }),
         rawValuesIncluded: false,
       },
     ],
@@ -590,6 +600,10 @@ test('snapshot library exports only explicit WordPress graph identity-map contra
       contractKind: WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
       sourceResourceKey: 'row:["wp_comments","comment_ID:10"]',
       targetResourceKey: 'row:["wp_comments","comment_ID:20"]',
+      contractHash: wordpressGraphIdentityMapContractHash({
+        sourceResourceKey: 'row:["wp_comments","comment_ID:10"]',
+        targetResourceKey: 'row:["wp_comments","comment_ID:20"]',
+      }),
       rawValuesIncluded: false,
     },
   ]);
