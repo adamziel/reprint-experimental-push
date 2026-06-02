@@ -132,6 +132,68 @@ function rpp_0441_driver(string $driver, string $table, string $owner, bool $sup
     ];
 }
 
+function rpp_0441_contract_bound_policy(
+    string $resource_key,
+    string $table,
+    string $owner,
+    string $driver,
+    bool $supports_delete,
+    string $action,
+    $value
+): array {
+    $contract = [
+        'schemaVersion' => 1,
+        'operation' => 'plugin-driver-contract-validation',
+        'contractKind' => 'plugin-owned-row-driver',
+        'contractVersion' => 1,
+        'outcome' => 'accepted',
+        'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_ACCEPTED',
+        'issueCodes' => [],
+        'issues' => [],
+        'source' => 'rpp-0441-test',
+        'evidenceScope' => 'local-generated',
+        'rawValuesIncluded' => false,
+        'resourceKey' => $resource_key,
+        'pluginOwner' => $owner,
+        'driver' => $driver,
+        'table' => $table,
+        'supportsDelete' => $supports_delete,
+    ];
+    $payload_hash = $action === 'delete'
+        ? hash('sha256', '"__REPRINT_PUSH_ABSENT__"')
+        : hash('sha256', reprint_push_stable_json($value));
+    return [
+        'pluginOwner' => $owner,
+        'driver' => $driver,
+        'table' => $table,
+        'supportsDelete' => $supports_delete,
+        'contractValidationEvidence' => $contract,
+        'driverPayloadValidationEvidence' => [
+            'schemaVersion' => 1,
+            'operation' => 'plugin-driver-payload-validation',
+            'validator' => 'contract-bound-row-driver',
+            'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED',
+            'outcome' => 'accepted',
+            'issueCodes' => [],
+            'issues' => [],
+            'format' => 'hash-only',
+            'rawValuesIncluded' => false,
+            'resourceKey' => $resource_key,
+            'pluginOwner' => $owner,
+            'driver' => $driver,
+            'table' => $table,
+            'action' => $action,
+            'supportsDelete' => $supports_delete,
+            'contractSupportsDelete' => $supports_delete,
+            'value' => [
+                'state' => $action === 'delete' ? 'absent' : 'present',
+                'hash' => $payload_hash,
+            ],
+            'contractValidationHash' => hash('sha256', reprint_push_stable_json($contract)),
+        ],
+    ];
+}
+
 function rpp_0441_summarize_driver($driver) {
     if (!is_array($driver)) {
         return null;
@@ -274,11 +336,21 @@ $validation_snapshot = [
 ];
 $validation = [
     'acceptedPut' => rpp_0441_capture(static function () use ($validation_snapshot): bool {
+        $value = ['id' => 7, 'marker' => 'accept', '__pluginOwner' => 'rpp-0441-alpha-plugin'];
         reprint_push_assert_supported_plugin_owned_mutation([
             'resourceKey' => 'row:["wp_rpp_0441_alpha_rows","id:7"]',
             'resource' => ['type' => 'row', 'table' => 'wp_rpp_0441_alpha_rows', 'id' => 'id:7'],
-            'value' => ['value' => ['id' => 7, 'marker' => 'accept', '__pluginOwner' => 'rpp-0441-alpha-plugin']],
-            'pluginOwnedResource' => ['driver' => 'rpp-0441-alpha-driver'],
+            'action' => 'put',
+            'value' => ['value' => $value],
+            'pluginOwnedResource' => rpp_0441_contract_bound_policy(
+                'row:["wp_rpp_0441_alpha_rows","id:7"]',
+                'wp_rpp_0441_alpha_rows',
+                'rpp-0441-alpha-plugin',
+                'rpp-0441-alpha-driver',
+                true,
+                'put',
+                $value
+            ),
         ], $validation_snapshot);
         return true;
     }),
@@ -286,8 +358,17 @@ $validation = [
         reprint_push_assert_supported_plugin_owned_mutation([
             'resourceKey' => 'row:["wp_rpp_0441_alpha_rows","id:7"]',
             'resource' => ['type' => 'row', 'table' => 'wp_rpp_0441_alpha_rows', 'id' => 'id:7'],
+            'action' => 'delete',
             'value' => ['absent' => true],
-            'pluginOwnedResource' => ['driver' => 'rpp-0441-alpha-driver'],
+            'pluginOwnedResource' => rpp_0441_contract_bound_policy(
+                'row:["wp_rpp_0441_alpha_rows","id:7"]',
+                'wp_rpp_0441_alpha_rows',
+                'rpp-0441-alpha-plugin',
+                'rpp-0441-alpha-driver',
+                true,
+                'delete',
+                null
+            ),
         ], $validation_snapshot);
         return true;
     }),
@@ -295,17 +376,65 @@ $validation = [
         reprint_push_assert_supported_plugin_owned_mutation([
             'resourceKey' => 'row:["wp_rpp_0441_beta_rows","id:8"]',
             'resource' => ['type' => 'row', 'table' => 'wp_rpp_0441_beta_rows', 'id' => 'id:8'],
+            'action' => 'delete',
             'value' => ['absent' => true],
             'pluginOwnedResource' => ['driver' => 'rpp-0441-beta-driver'],
         ], $validation_snapshot);
         return true;
     }),
     'rejectedByCallback' => rpp_0441_capture(static function () use ($validation_snapshot): bool {
+        $value = ['id' => 7, 'marker' => 'reject', '__pluginOwner' => 'rpp-0441-alpha-plugin'];
         reprint_push_assert_supported_plugin_owned_mutation([
             'resourceKey' => 'row:["wp_rpp_0441_alpha_rows","id:7"]',
             'resource' => ['type' => 'row', 'table' => 'wp_rpp_0441_alpha_rows', 'id' => 'id:7'],
-            'value' => ['value' => ['id' => 7, 'marker' => 'reject', '__pluginOwner' => 'rpp-0441-alpha-plugin']],
-            'pluginOwnedResource' => ['driver' => 'rpp-0441-alpha-driver'],
+            'action' => 'put',
+            'value' => ['value' => $value],
+            'pluginOwnedResource' => rpp_0441_contract_bound_policy(
+                'row:["wp_rpp_0441_alpha_rows","id:7"]',
+                'wp_rpp_0441_alpha_rows',
+                'rpp-0441-alpha-plugin',
+                'rpp-0441-alpha-driver',
+                true,
+                'put',
+                $value
+            ),
+        ], $validation_snapshot);
+        return true;
+    }),
+    'missingContractEvidence' => rpp_0441_capture(static function () use ($validation_snapshot): bool {
+        $value = ['id' => 7, 'marker' => 'accept', '__pluginOwner' => 'rpp-0441-alpha-plugin'];
+        reprint_push_assert_supported_plugin_owned_mutation([
+            'resourceKey' => 'row:["wp_rpp_0441_alpha_rows","id:7"]',
+            'resource' => ['type' => 'row', 'table' => 'wp_rpp_0441_alpha_rows', 'id' => 'id:7'],
+            'action' => 'put',
+            'value' => ['value' => $value],
+            'pluginOwnedResource' => [
+                'pluginOwner' => 'rpp-0441-alpha-plugin',
+                'driver' => 'rpp-0441-alpha-driver',
+                'table' => 'wp_rpp_0441_alpha_rows',
+                'supportsDelete' => true,
+            ],
+        ], $validation_snapshot);
+        return true;
+    }),
+    'forgedPayloadEvidence' => rpp_0441_capture(static function () use ($validation_snapshot): bool {
+        $value = ['id' => 7, 'marker' => 'accept', '__pluginOwner' => 'rpp-0441-alpha-plugin'];
+        $policy = rpp_0441_contract_bound_policy(
+            'row:["wp_rpp_0441_alpha_rows","id:7"]',
+            'wp_rpp_0441_alpha_rows',
+            'rpp-0441-alpha-plugin',
+            'rpp-0441-alpha-driver',
+            true,
+            'put',
+            $value
+        );
+        $policy['driverPayloadValidationEvidence']['value']['hash'] = str_repeat('0', 64);
+        reprint_push_assert_supported_plugin_owned_mutation([
+            'resourceKey' => 'row:["wp_rpp_0441_alpha_rows","id:7"]',
+            'resource' => ['type' => 'row', 'table' => 'wp_rpp_0441_alpha_rows', 'id' => 'id:7'],
+            'action' => 'put',
+            'value' => ['value' => $value],
+            'pluginOwnedResource' => $policy,
         ], $validation_snapshot);
         return true;
     }),
@@ -485,6 +614,8 @@ echo json_encode([
 
   assert.deepEqual(report.policyAllowed, [
     {
+      contractVersion: 1,
+      contractKind: 'plugin-owned-row-driver',
       resourceKey: 'row:["wp_rpp_0441_alpha_rows","id:7"]',
       pluginOwner: 'rpp-0441-alpha-plugin',
       driver: 'rpp-0441-alpha-driver',
@@ -492,6 +623,8 @@ echo json_encode([
       supportsDelete: true,
     },
     {
+      contractVersion: 1,
+      contractKind: 'plugin-owned-row-driver',
       resourceKey: 'row:["wp_rpp_0441_beta_rows","id:8"]',
       pluginOwner: 'rpp-0441-beta-plugin',
       driver: 'rpp-0441-beta-driver',
@@ -499,6 +632,8 @@ echo json_encode([
       supportsDelete: false,
     },
     {
+      contractVersion: 1,
+      contractKind: 'plugin-owned-row-driver',
       resourceKey: 'row:["wp_rpp_0441_filter_rows","id:9"]',
       pluginOwner: 'rpp-0441-filter-plugin',
       driver: 'rpp-0441-filter-key-driver',
@@ -568,6 +703,18 @@ echo json_encode([
   assert.equal(
     report.validation.rejectedByCallback.error.message,
     'Unsupported plugin-owned mutation driver for row:["wp_rpp_0441_alpha_rows","id:7"]',
+  );
+  assert.equal(report.validation.missingContractEvidence.ok, false);
+  assert.equal(report.validation.missingContractEvidence.error.class, 'RuntimeException');
+  assert.equal(
+    report.validation.missingContractEvidence.error.message,
+    'Unsupported plugin-owned mutation contract for row:["wp_rpp_0441_alpha_rows","id:7"]',
+  );
+  assert.equal(report.validation.forgedPayloadEvidence.ok, false);
+  assert.equal(report.validation.forgedPayloadEvidence.error.class, 'RuntimeException');
+  assert.equal(
+    report.validation.forgedPayloadEvidence.error.message,
+    'Unsupported plugin-owned mutation payload evidence for row:["wp_rpp_0441_alpha_rows","id:7"]',
   );
   assert.deepEqual(report.validateLog, [
     {

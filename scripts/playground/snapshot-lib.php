@@ -3326,6 +3326,13 @@ function reprint_push_assert_supported_plugin_owned_mutation(array $mutation, ar
         if (!empty($mutation['value']['absent']) && empty($registered_driver['supportsDelete'])) {
             throw new RuntimeException('Unsupported plugin-owned mutation delete for ' . (string) ($mutation['resourceKey'] ?? 'unknown'));
         }
+        reprint_push_assert_plugin_owned_driver_contract_bound_mutation(
+            $mutation,
+            (string) $owner,
+            $driver,
+            $registered_driver,
+            $planned
+        );
         $callback = $registered_driver['validateMutationCallback'] ?? null;
         if (!is_string($callback) || $callback === '' || !is_callable($callback)) {
             throw new RuntimeException('Unsupported plugin-owned mutation driver for ' . (string) ($mutation['resourceKey'] ?? 'unknown'));
@@ -3337,6 +3344,125 @@ function reprint_push_assert_supported_plugin_owned_mutation(array $mutation, ar
     }
 
     throw new RuntimeException('Unsupported plugin-owned mutation driver for ' . (string) ($mutation['resourceKey'] ?? 'unknown'));
+}
+
+function reprint_push_assert_plugin_owned_driver_contract_bound_mutation(
+    array $mutation,
+    string $owner,
+    string $driver,
+    array $registered_driver,
+    array $planned
+): void {
+    $resource_key = (string) ($mutation['resourceKey'] ?? '');
+    $resource = is_array($mutation['resource'] ?? null) ? $mutation['resource'] : [];
+    $policy = is_array($mutation['pluginOwnedResource'] ?? null) ? $mutation['pluginOwnedResource'] : [];
+    $table = (string) ($resource['table'] ?? '');
+    $supports_delete = !empty($policy['supportsDelete']);
+    $registered_supports_delete = !empty($registered_driver['supportsDelete']);
+    $action = !empty($mutation['value']['absent']) ? 'delete' : 'put';
+
+    if ($resource_key === '' || ($resource['type'] ?? null) !== 'row') {
+        throw new RuntimeException('Unsupported plugin-owned mutation contract for ' . ($resource_key !== '' ? $resource_key : 'unknown'));
+    }
+    if ((string) ($policy['pluginOwner'] ?? '') !== $owner
+        || (string) ($policy['driver'] ?? '') !== $driver
+        || (string) ($policy['table'] ?? '') !== $table
+        || $supports_delete !== $registered_supports_delete) {
+        throw new RuntimeException('Unsupported plugin-owned mutation contract for ' . $resource_key);
+    }
+
+    $contract = is_array($policy['contractValidationEvidence'] ?? null)
+        ? $policy['contractValidationEvidence']
+        : null;
+    if (!reprint_push_plugin_driver_contract_evidence_accepted($contract, $resource_key, $owner, $driver, $table, $supports_delete)) {
+        throw new RuntimeException('Unsupported plugin-owned mutation contract for ' . $resource_key);
+    }
+
+    $payload_evidence = is_array($policy['driverPayloadValidationEvidence'] ?? null)
+        ? $policy['driverPayloadValidationEvidence']
+        : null;
+    if (!reprint_push_plugin_driver_payload_evidence_accepted(
+        $payload_evidence,
+        $contract,
+        $resource_key,
+        $owner,
+        $driver,
+        $table,
+        $supports_delete,
+        $action,
+        $planned
+    )) {
+        throw new RuntimeException('Unsupported plugin-owned mutation payload evidence for ' . $resource_key);
+    }
+}
+
+function reprint_push_plugin_driver_contract_evidence_accepted(
+    ?array $evidence,
+    string $resource_key,
+    string $owner,
+    string $driver,
+    string $table,
+    bool $supports_delete
+): bool {
+    if (!is_array($evidence)) {
+        return false;
+    }
+    return ($evidence['reasonCode'] ?? null) === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+        && ($evidence['schemaVersion'] ?? null) === 1
+        && ($evidence['operation'] ?? null) === 'plugin-driver-contract-validation'
+        && ($evidence['contractKind'] ?? null) === REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_KIND
+        && ($evidence['contractVersion'] ?? null) === REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_VERSION
+        && ($evidence['outcome'] ?? null) === 'accepted'
+        && isset($evidence['issueCodes'])
+        && is_array($evidence['issueCodes'])
+        && count($evidence['issueCodes']) === 0
+        && ($evidence['rawValuesIncluded'] ?? null) === false
+        && ($evidence['resourceKey'] ?? null) === $resource_key
+        && ($evidence['pluginOwner'] ?? null) === $owner
+        && ($evidence['driver'] ?? null) === $driver
+        && ($evidence['table'] ?? null) === $table
+        && ($evidence['supportsDelete'] ?? null) === $supports_delete;
+}
+
+function reprint_push_plugin_driver_payload_evidence_accepted(
+    ?array $evidence,
+    array $contract,
+    string $resource_key,
+    string $owner,
+    string $driver,
+    string $table,
+    bool $supports_delete,
+    string $action,
+    array $planned
+): bool {
+    if (!is_array($evidence)) {
+        return false;
+    }
+    $expected_state = !empty($planned['exists']) ? 'present' : 'absent';
+    $expected_hash = !empty($planned['exists'])
+        ? hash('sha256', reprint_push_stable_json($planned['value']))
+        : hash('sha256', '"__REPRINT_PUSH_ABSENT__"');
+    $value_evidence = is_array($evidence['value'] ?? null) ? $evidence['value'] : [];
+
+    return ($evidence['reasonCode'] ?? null) === 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED'
+        && ($evidence['schemaVersion'] ?? null) === 1
+        && ($evidence['operation'] ?? null) === 'plugin-driver-payload-validation'
+        && ($evidence['validator'] ?? null) === 'contract-bound-row-driver'
+        && ($evidence['outcome'] ?? null) === 'accepted'
+        && isset($evidence['issueCodes'])
+        && is_array($evidence['issueCodes'])
+        && count($evidence['issueCodes']) === 0
+        && ($evidence['rawValuesIncluded'] ?? null) === false
+        && ($evidence['resourceKey'] ?? null) === $resource_key
+        && ($evidence['pluginOwner'] ?? null) === $owner
+        && ($evidence['driver'] ?? null) === $driver
+        && ($evidence['table'] ?? null) === $table
+        && ($evidence['action'] ?? null) === $action
+        && ($evidence['supportsDelete'] ?? null) === $supports_delete
+        && ($evidence['contractSupportsDelete'] ?? null) === ($contract['supportsDelete'] ?? null)
+        && ($evidence['contractValidationHash'] ?? null) === hash('sha256', reprint_push_stable_json($contract))
+        && ($value_evidence['state'] ?? null) === $expected_state
+        && ($value_evidence['hash'] ?? null) === $expected_hash;
 }
 
 function reprint_push_valid_fixture_forms_lab_driver_evidence($evidence, array $snapshot): bool

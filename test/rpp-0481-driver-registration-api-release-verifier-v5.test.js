@@ -225,6 +225,67 @@ function rpp_0481_capture(callable $callback): array {
     }
 }
 
+function rpp_0481_contract_bound_policy(
+    string $resource_key,
+    string $table,
+    string $owner,
+    string $driver,
+    bool $supports_delete,
+    string $action,
+    $value
+): array {
+    $contract = [
+        'schemaVersion' => 1,
+        'operation' => 'plugin-driver-contract-validation',
+        'contractKind' => 'plugin-owned-row-driver',
+        'contractVersion' => 1,
+        'outcome' => 'accepted',
+        'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_ACCEPTED',
+        'issueCodes' => [],
+        'issues' => [],
+        'source' => 'rpp-0481-release-verifier',
+        'evidenceScope' => 'release-verifier-driver-guard-bundle',
+        'rawValuesIncluded' => false,
+        'resourceKey' => $resource_key,
+        'pluginOwner' => $owner,
+        'driver' => $driver,
+        'table' => $table,
+        'supportsDelete' => $supports_delete,
+    ];
+    return [
+        'pluginOwner' => $owner,
+        'driver' => $driver,
+        'table' => $table,
+        'supportsDelete' => $supports_delete,
+        'contractValidationEvidence' => $contract,
+        'driverPayloadValidationEvidence' => [
+            'schemaVersion' => 1,
+            'operation' => 'plugin-driver-payload-validation',
+            'validator' => 'contract-bound-row-driver',
+            'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED',
+            'outcome' => 'accepted',
+            'issueCodes' => [],
+            'issues' => [],
+            'format' => 'hash-only',
+            'rawValuesIncluded' => false,
+            'resourceKey' => $resource_key,
+            'pluginOwner' => $owner,
+            'driver' => $driver,
+            'table' => $table,
+            'action' => $action,
+            'supportsDelete' => $supports_delete,
+            'contractSupportsDelete' => $supports_delete,
+            'value' => [
+                'state' => $action === 'delete' ? 'absent' : 'present',
+                'hash' => $action === 'delete'
+                    ? hash('sha256', '"__REPRINT_PUSH_ABSENT__"')
+                    : hash('sha256', reprint_push_stable_json($value)),
+            ],
+            'contractValidationHash' => hash('sha256', reprint_push_stable_json($contract)),
+        ],
+    ];
+}
+
 $driver_name = ${JSON.stringify(arbitraryPluginFixturePackageBoundary.driver)};
 $driver_table = ${JSON.stringify(arbitraryPluginFixturePackageBoundary.table)};
 $plugin_owner = ${JSON.stringify(arbitraryPluginFixturePackageBoundary.pluginOwner)};
@@ -265,6 +326,7 @@ $validation_snapshot = [
 $valid_mutation = [
     'resourceKey' => $resource_key,
     'resource' => ['type' => 'row', 'table' => $driver_table, 'id' => 'entry_id:1'],
+    'action' => 'put',
     'value' => [
         'value' => [
             'entry_id' => 1,
@@ -273,9 +335,18 @@ $valid_mutation = [
             '__pluginOwner' => $plugin_owner,
         ],
     ],
-    'pluginOwnedResource' => ['driver' => $driver_name],
 ];
+$valid_mutation['pluginOwnedResource'] = rpp_0481_contract_bound_policy(
+    $resource_key,
+    $driver_table,
+    $plugin_owner,
+    $driver_name,
+    false,
+    'put',
+    $valid_mutation['value']['value']
+);
 $delete_mutation = $valid_mutation;
+$delete_mutation['action'] = 'delete';
 $delete_mutation['value'] = ['absent' => true];
 $validation = [
     'acceptedUpdate' => rpp_0481_capture(static function () use ($valid_mutation, $validation_snapshot): bool {

@@ -416,3 +416,144 @@ echo json_encode([
   assert.equal(JSON.stringify(report).includes('super-secret-contract-payload'), false);
   assert.equal(JSON.stringify(report).includes('release-state-private'), false);
 });
+
+test('registered plugin-owned row driver PHP validation requires contract-bound evidence', () => {
+  const report = runPhpDriverProbe(`
+function rpp_contract_bound_policy(
+    string $resource_key,
+    string $table,
+    string $owner,
+    string $driver,
+    bool $supports_delete,
+    string $action,
+    $value
+): array {
+    $contract = [
+        'schemaVersion' => 1,
+        'operation' => 'plugin-driver-contract-validation',
+        'contractKind' => 'plugin-owned-row-driver',
+        'contractVersion' => 1,
+        'outcome' => 'accepted',
+        'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_ACCEPTED',
+        'issueCodes' => [],
+        'issues' => [],
+        'source' => 'plugin-driver-registration-api-test',
+        'evidenceScope' => 'local-focused',
+        'rawValuesIncluded' => false,
+        'resourceKey' => $resource_key,
+        'pluginOwner' => $owner,
+        'driver' => $driver,
+        'table' => $table,
+        'supportsDelete' => $supports_delete,
+    ];
+    return [
+        'pluginOwner' => $owner,
+        'driver' => $driver,
+        'table' => $table,
+        'supportsDelete' => $supports_delete,
+        'contractValidationEvidence' => $contract,
+        'driverPayloadValidationEvidence' => [
+            'schemaVersion' => 1,
+            'operation' => 'plugin-driver-payload-validation',
+            'validator' => 'contract-bound-row-driver',
+            'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED',
+            'outcome' => 'accepted',
+            'issueCodes' => [],
+            'issues' => [],
+            'format' => 'hash-only',
+            'rawValuesIncluded' => false,
+            'resourceKey' => $resource_key,
+            'pluginOwner' => $owner,
+            'driver' => $driver,
+            'table' => $table,
+            'action' => $action,
+            'supportsDelete' => $supports_delete,
+            'contractSupportsDelete' => $supports_delete,
+            'value' => [
+                'state' => $action === 'delete' ? 'absent' : 'present',
+                'hash' => $action === 'delete'
+                    ? hash('sha256', '"__REPRINT_PUSH_ABSENT__"')
+                    : hash('sha256', reprint_push_stable_json($value)),
+            ],
+            'contractValidationHash' => hash('sha256', reprint_push_stable_json($contract)),
+        ],
+    ];
+}
+reprint_push_register_plugin_owned_row_driver([
+    'driver' => 'fixture-contract-bound-driver',
+    'table' => 'wp_fixture_contract_bound_rows',
+    'pluginOwner' => 'fixture-contract-bound-plugin',
+    'supportsDelete' => true,
+    'exportRowsCallback' => 'rpp_driver_api_export_rows',
+    'applyRowCallback' => 'rpp_driver_api_apply_row',
+    'validateMutationCallback' => 'rpp_driver_api_validate_mutation',
+]);
+$resource_key = 'row:["wp_fixture_contract_bound_rows","id:7"]';
+$value = [
+    'id' => 7,
+    'payload' => 'contract-bound-private-payload',
+    '__pluginOwner' => 'fixture-contract-bound-plugin',
+];
+$snapshot = [
+    'db' => [
+        'wp_fixture_contract_bound_rows' => [
+            'id:7' => [
+                'id' => 7,
+                '__pluginOwner' => 'fixture-contract-bound-plugin',
+            ],
+        ],
+    ],
+];
+$base_mutation = [
+    'id' => 'mutation-contract-bound',
+    'resourceKey' => $resource_key,
+    'resource' => ['type' => 'row', 'table' => 'wp_fixture_contract_bound_rows', 'id' => 'id:7'],
+    'action' => 'put',
+    'value' => ['value' => $value],
+    'pluginOwnedResource' => rpp_contract_bound_policy(
+        $resource_key,
+        'wp_fixture_contract_bound_rows',
+        'fixture-contract-bound-plugin',
+        'fixture-contract-bound-driver',
+        true,
+        'put',
+        $value
+    ),
+];
+$missing_contract = $base_mutation;
+unset($missing_contract['pluginOwnedResource']['contractValidationEvidence']);
+$refused_contract = $base_mutation;
+$refused_contract['pluginOwnedResource']['contractValidationEvidence']['outcome'] = 'refused-before-mutation';
+$refused_contract['pluginOwnedResource']['contractValidationEvidence']['reasonCode'] = 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_VERSION';
+$forged_payload = $base_mutation;
+$forged_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['value']['hash'] = str_repeat('0', 64);
+
+echo json_encode([
+    'accepted' => rpp_driver_api_capture(static function () use ($base_mutation, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($base_mutation, $snapshot);
+        return true;
+    }),
+    'missingContract' => rpp_driver_api_capture(static function () use ($missing_contract, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($missing_contract, $snapshot);
+        return true;
+    }),
+    'refusedContract' => rpp_driver_api_capture(static function () use ($refused_contract, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($refused_contract, $snapshot);
+        return true;
+    }),
+    'forgedPayload' => rpp_driver_api_capture(static function () use ($forged_payload, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($forged_payload, $snapshot);
+        return true;
+    }),
+]);
+`);
+
+  assert.deepEqual(report.accepted, { ok: true, value: true });
+  assert.equal(report.missingContract.ok, false);
+  assert.equal(report.missingContract.error.message, 'Unsupported plugin-owned mutation contract for row:["wp_fixture_contract_bound_rows","id:7"]');
+  assert.equal(report.refusedContract.ok, false);
+  assert.equal(report.refusedContract.error.message, 'Unsupported plugin-owned mutation contract for row:["wp_fixture_contract_bound_rows","id:7"]');
+  assert.equal(report.forgedPayload.ok, false);
+  assert.equal(report.forgedPayload.error.message, 'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
+  assert.equal(JSON.stringify(report).includes('contract-bound-private-payload'), false);
+});
