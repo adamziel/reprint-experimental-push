@@ -81,7 +81,10 @@ test('RPP-0519 production-shaped apply rejects rotated and invalidated credentia
 
     const base = await exportSnapshot(server);
     const planningBase = withoutExecutorAuthBootstrapRows(base);
-    const planningLocal = withoutExecutorAuthBootstrapRows(localEditedSnapshot);
+    const planningLocal = withUnchangedCorePageOptions(
+      withoutExecutorAuthBootstrapRows(localEditedSnapshot),
+      planningBase,
+    );
     const sourcePlan = createPushPlan({
       base: planningBase,
       local: planningLocal,
@@ -153,7 +156,7 @@ test('RPP-0519 production-shaped apply rejects rotated and invalidated credentia
       session,
       idempotencyKey,
     });
-    assert.equal(currentApply.status, 200, `current credential apply HTTP ${currentApply.status}`);
+    assert.equal(currentApply.status, 200, `current credential apply HTTP ${currentApply.status}: ${JSON.stringify(currentApply.body)}`);
     assert.equal(currentApply.body?.ok, true);
     assert.equal(currentApply.body?.auth?.scope, authScope);
     assert.equal(currentApply.body?.auth?.session?.id, session);
@@ -400,6 +403,20 @@ function withoutExecutorAuthBootstrapRows(snapshot) {
   const next = structuredClone(snapshot);
   delete next.db?.wp_users;
   delete next.db?.wp_usermeta;
+  return next;
+}
+
+function withUnchangedCorePageOptions(snapshot, base) {
+  const next = structuredClone(snapshot);
+  const baseOptions = base.db?.wp_options || {};
+  for (const optionId of ['option_name:page_for_posts', 'option_name:page_on_front']) {
+    if (!baseOptions[optionId]) {
+      continue;
+    }
+    next.db ||= {};
+    next.db.wp_options ||= {};
+    next.db.wp_options[optionId] = structuredClone(baseOptions[optionId]);
+  }
   return next;
 }
 

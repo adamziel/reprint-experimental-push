@@ -62,7 +62,7 @@ export function applyPlan(remote, plan, options = {}) {
   }
 
   validateSupportedPluginContextMutations(plan);
-  validateReadyPlanEnvelope(plan);
+  validateReadyPlanEnvelope(plan, remote);
   validateAtomicGroupDependencyPlan(remote, plan);
   validateNoDirectActivePluginsMutations(plan);
 
@@ -2408,7 +2408,7 @@ function validatePreconditions(remote, plan) {
   }
 }
 
-function validateReadyPlanEnvelope(plan) {
+function validateReadyPlanEnvelope(plan, remote) {
   const issues = [];
   const mutations = Array.isArray(plan.mutations) ? plan.mutations : [];
   const preconditions = Array.isArray(plan.preconditions) ? plan.preconditions : [];
@@ -2543,7 +2543,7 @@ function validateReadyPlanEnvelope(plan) {
       }
     }
 
-    issues.push(...wordpressGraphRewriteEnvelopeIssues(mutation, decisions));
+    issues.push(...wordpressGraphRewriteEnvelopeIssues(mutation, decisions, remote));
     issues.push(...pluginReferenceRewriteEnvelopeIssues(mutation, decisions));
   }
 
@@ -2854,7 +2854,7 @@ function pluginReferenceRewriteEnvelopeIssues(mutation, decisions = []) {
   return issues;
 }
 
-function wordpressGraphRewriteEnvelopeIssues(mutation, decisions = []) {
+function wordpressGraphRewriteEnvelopeIssues(mutation, decisions = [], remote = null) {
   const identity = mutation.wordpressGraphIdentity;
   if (!identity) {
     return [];
@@ -2898,6 +2898,18 @@ function wordpressGraphRewriteEnvelopeIssues(mutation, decisions = []) {
         code: 'WORDPRESS_GRAPH_REWRITE_FIELD_NOT_IN_CONTRACT',
         field: rewrite.field || null,
         allowedFields: [...contract.sourceFields],
+      });
+    }
+    if (!wordpressGraphRewriteSourceMatchesContract({
+      contract,
+      mutation,
+      plannedValue,
+    })) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_SOURCE_CONTRACT_MISMATCH',
+        sourceSuffix: contract.sourceSuffix || null,
+        sourceCondition: contract.sourceCondition || null,
       });
     }
     if (rewrite.relationshipContractKind !== contract.contractKind) {
@@ -2991,6 +3003,13 @@ function wordpressGraphRewriteEnvelopeIssues(mutation, decisions = []) {
     }
     const identityMapDecision = wordpressGraphIdentityMapDecisionForRewrite(rewrite, decisions);
     const identityMapContractEvidence = identityMapDecision?.identityMapContractValidationEvidence || null;
+    if (!identityMapDecision) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_DECISION_MISSING',
+        sourceTargetResourceKey: rewrite.sourceTargetResourceKey || null,
+      });
+    }
     if (identityMapContractEvidence) {
       const expectedIdentityMapContractHash = identityMapContractEvidence.contractHash || null;
       const expectedIdentityMapContractValidationHash = digest(identityMapContractEvidence);
@@ -3022,14 +3041,28 @@ function wordpressGraphRewriteEnvelopeIssues(mutation, decisions = []) {
           });
         }
       }
-      if (rewrite.targetResourceKey !== identityMapDecision.targetResourceKey) {
-        issues.push({
-          ...issueBase,
-          code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_DECISION_TARGET_MISMATCH',
-          expectedTargetResourceKey: identityMapDecision.targetResourceKey || null,
-          observedTargetResourceKey: rewrite.targetResourceKey || null,
-        });
-      }
+    }
+    if (
+      identityMapDecision
+      && rewrite.targetResourceKey !== identityMapDecision.targetResourceKey
+    ) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_DECISION_TARGET_MISMATCH',
+        expectedTargetResourceKey: identityMapDecision.targetResourceKey || null,
+        observedTargetResourceKey: rewrite.targetResourceKey || null,
+      });
+    }
+    if (
+      identityMapDecision
+      && rewrite.targetRemoteHash !== identityMapDecision.targetRemoteHash
+    ) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_DECISION_TARGET_HASH_MISMATCH',
+        expectedHash: hashEvidenceForDetails(identityMapDecision.targetRemoteHash),
+        observedHash: hashEvidenceForDetails(rewrite.targetRemoteHash),
+      });
     }
 
     const targetResource = parseWordPressGraphRowResourceKey(rewrite.targetResourceKey);
@@ -3040,6 +3073,34 @@ function wordpressGraphRewriteEnvelopeIssues(mutation, decisions = []) {
         targetResourceKey: rewrite.targetResourceKey || null,
       });
       continue;
+    }
+    const targetResourceObject = {
+      type: 'row',
+      table: targetResource.table,
+      id: targetResource.id,
+      key: targetResource.key,
+    };
+    const actualTargetRemoteHash = resourceHash(remote, targetResourceObject);
+    if (rewrite.targetRemoteHash !== actualTargetRemoteHash) {
+      issues.push({
+        ...issueBase,
+        code: 'WORDPRESS_GRAPH_REWRITE_TARGET_REMOTE_HASH_MISMATCH',
+        targetResourceKey: rewrite.targetResourceKey || null,
+        expectedHash: hashEvidenceForDetails(rewrite.targetRemoteHash),
+        actualHash: hashEvidenceForDetails(actualTargetRemoteHash),
+      });
+    }
+    const targetValidationIssue = wordpressGraphRewriteTargetValidationIssue({
+      contract,
+      targetResource,
+      targetValue: getResource(remote, targetResourceObject),
+    });
+    if (targetValidationIssue) {
+      issues.push({
+        ...issueBase,
+        ...targetValidationIssue,
+        targetResourceKey: rewrite.targetResourceKey || null,
+      });
     }
     const actualTargetValue = plannedValue && typeof plannedValue === 'object'
       ? plannedValue[rewrite.field]
@@ -3060,6 +3121,82 @@ function wordpressGraphRewriteEnvelopeIssues(mutation, decisions = []) {
   }
 
   return issues;
+}
+
+function wordpressGraphRewriteSourceMatchesContract({
+  contract,
+  mutation,
+  plannedValue,
+}) {
+  if (!wordpressGraphRewriteTableMatchesSuffix(mutation.resource?.table, contract.sourceSuffix)) {
+    return false;
+  }
+  if (!contract.sourceCondition) {
+    return true;
+  }
+  if (!plannedValue || plannedValue === ABSENT || typeof plannedValue !== 'object' || Array.isArray(plannedValue)) {
+    return false;
+  }
+
+  const separator = contract.sourceCondition.indexOf(':');
+  if (separator <= 0 || separator === contract.sourceCondition.length - 1) {
+    return false;
+  }
+  const field = contract.sourceCondition.slice(0, separator);
+  const expected = contract.sourceCondition.slice(separator + 1);
+  if (String(plannedValue[field] ?? '') !== expected) {
+    return false;
+  }
+  if (field === 'option_name') {
+    return mutation.resource?.id === `option_name:${expected}`;
+  }
+  return true;
+}
+
+function wordpressGraphRewriteTargetValidationIssue({
+  contract,
+  targetResource,
+  targetValue,
+}) {
+  if (!targetValue || targetValue === ABSENT || typeof targetValue !== 'object' || Array.isArray(targetValue)) {
+    return {
+      code: 'WORDPRESS_GRAPH_REWRITE_TARGET_REMOTE_MISSING',
+    };
+  }
+
+  const primaryKey = wordpressGraphRewritePrimaryKeyForTable(targetResource.table);
+  const expectedPrimaryValue = wordpressGraphRewriteTargetPrimaryValue(targetResource);
+  const observedPrimaryValue = primaryKey ? targetValue[primaryKey] : undefined;
+  if (
+    !primaryKey
+    || expectedPrimaryValue === null
+    || !wordpressGraphRewriteScalarMatchesTarget(observedPrimaryValue, expectedPrimaryValue)
+  ) {
+    return {
+      code: 'WORDPRESS_GRAPH_REWRITE_TARGET_PRIMARY_ID_MISMATCH',
+      targetIdField: primaryKey || null,
+      expectedTargetIdHash: expectedPrimaryValue === null ? null : digest(String(expectedPrimaryValue)),
+      observedTargetIdHash: observedPrimaryValue === undefined || observedPrimaryValue === null
+        ? null
+        : digest(String(observedPrimaryValue)),
+    };
+  }
+
+  const postType = wordpressGraphPostTypeValidationValue(contract.targetValidation);
+  if (postType && String(targetValue.post_type || '') !== postType) {
+    return {
+      code: 'WORDPRESS_GRAPH_REWRITE_TARGET_POST_TYPE_MISMATCH',
+      requiredPostType: postType,
+      observedPostTypeHash: digest(String(targetValue.post_type || '')),
+    };
+  }
+
+  return null;
+}
+
+function wordpressGraphPostTypeValidationValue(targetValidation) {
+  const match = /^post-type:(.+)$/.exec(String(targetValidation || ''));
+  return match ? match[1] : null;
 }
 
 function wordpressGraphIdentityMapDecisionForRewrite(rewrite, decisions) {
@@ -3108,6 +3245,13 @@ function wordpressGraphRewritePrimaryKeyForTable(table) {
     }
   }
   return null;
+}
+
+function wordpressGraphRewriteTableMatchesSuffix(table, suffix) {
+  if (typeof table !== 'string' || typeof suffix !== 'string' || !suffix) {
+    return false;
+  }
+  return table === `wp_${suffix}` || table.endsWith(`_${suffix}`);
 }
 
 function wordpressGraphRewriteScalarMatchesTarget(actualValue, targetId) {

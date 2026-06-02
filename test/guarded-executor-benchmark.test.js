@@ -127,12 +127,12 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.wordpressGraphIdentity.allPostmetaReferencesUseStableRemoteIdentity, true);
   assert.equal(report.evidence.wordpressGraphIdentity.graphIdentityBlockers, 0);
   assert.deepEqual(report.evidence.wordpressGraphIdentity.familyCounters, {
-    totalFamilies: 8,
-    mappedFamilies: 7,
+    totalFamilies: 9,
+    mappedFamilies: 8,
     unmappedFamilies: 0,
     blockedFamilies: 0,
     guardedFamilies: 1,
-    mappedReferences: report.shape.rowCount + 8,
+    mappedReferences: report.shape.rowCount + 9,
     unmappedReferences: 0,
   });
   assert.equal(
@@ -153,6 +153,10 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   );
   assert.equal(
     report.evidence.wordpressGraphIdentity.familyReport.postmetaEditLastUserRefs.status,
+    'mapped',
+  );
+  assert.equal(
+    report.evidence.wordpressGraphIdentity.familyReport.optionPageRefs.status,
     'mapped',
   );
   assert.equal(

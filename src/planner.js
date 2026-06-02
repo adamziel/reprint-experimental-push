@@ -3183,6 +3183,26 @@ function wordpressGraphReferences(resource, value) {
     }
   }
 
+  if (suffix === 'options') {
+    const resourceOptionName = wordpressGraphOptionNameFromResource(resource);
+    if (resourceOptionName === 'page_on_front' && value.option_name === 'page_on_front') {
+      addReference({
+        field: 'option_value',
+        relationshipType: 'option-page-on-front-post',
+        targetTable: 'posts',
+        targetId: value.option_value,
+      });
+    }
+    if (resourceOptionName === 'page_for_posts' && value.option_name === 'page_for_posts') {
+      addReference({
+        field: 'option_value',
+        relationshipType: 'option-page-for-posts-post',
+        targetTable: 'posts',
+        targetId: value.option_value,
+      });
+    }
+  }
+
   if (suffix === 'term_relationships') {
     addReference({
       field: 'object_id',
@@ -3286,6 +3306,11 @@ function wordpressGraphReferences(resource, value) {
   }
 
   return references;
+}
+
+function wordpressGraphOptionNameFromResource(resource) {
+  const match = /^option_name:(.+)$/.exec(String(resource?.id || ''));
+  return match ? match[1] : null;
 }
 
 function serializedBlockGraphReferences(resource, value) {
@@ -3580,6 +3605,16 @@ function wordpressGraphRelationshipTargetSupport(reference, { baseValue, localVa
       remoteValue,
       postType: 'wp_block',
       reason: `WordPress graph mutation ${reference.sourceResourceKey} references a serialized reusable block target that is not a supported wp_block row.`,
+    });
+  }
+
+  if (targetValidation === 'post-type:page') {
+    return wordpressGraphPostTypeTargetSupport(reference, {
+      baseValue,
+      localValue,
+      remoteValue,
+      postType: 'page',
+      reason: `WordPress graph mutation ${reference.sourceResourceKey} references an option page target that is not a supported page row.`,
     });
   }
 

@@ -108,7 +108,9 @@ The default generated run covers:
   drift blockers, `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
   featured-image attachment references with ready postmeta/attachment closure
-  and stale attachment blockers,
+  and stale attachment blockers, core `wp_options.page_on_front` and
+  `wp_options.page_for_posts` page references with fixed option row keys,
+  scalar `option_value` rewrites, and `post-type:page` target validation,
   supported and unsupported plugin-owned data, driver owner identity binding
   variant-3 generated cases with one supported exact-owner policy and four
   fail-closed unsupported owner-policy/context/apply-revalidation variants,

@@ -40,6 +40,8 @@ const BENCHMARK_GRAPH_ROW_IDS = Object.freeze({
   featuredAttachment: 'ID:20002',
   featuredImageMeta: 'meta_id:20001',
   editLastUserMeta: 'meta_id:20002',
+  optionPageTarget: 'ID:20003',
+  pageOnFrontOption: 'option_name:page_on_front',
   term: 'term_id:20001',
   termTaxonomy: 'term_taxonomy_id:20001',
   termRelationship: 'object_id:10000|term_taxonomy_id:20001',
@@ -74,6 +76,13 @@ export const GRAPH_FAMILY_DEFINITIONS = Object.freeze([
     plannerOwner: 'planner:test/postmeta-edit-last-user-reference.test.js',
     smokeOwner: 'smoke:scripts/bench/guarded-executor-benchmark.js',
     notes: 'Benchmark covers a ready-plan _edit_last row against an unchanged stable wp_users target.',
+  }),
+  Object.freeze({
+    id: 'optionPageRefs',
+    label: 'wp_options page refs',
+    plannerOwner: 'planner:test/wp-options-page-reference.test.js',
+    smokeOwner: 'smoke:scripts/bench/guarded-executor-benchmark.js',
+    notes: 'Benchmark covers a ready-plan page_on_front option row against an unchanged stable wp_posts page target.',
   }),
   Object.freeze({
     id: 'termsTaxonomies',
@@ -743,8 +752,18 @@ function buildBenchmarkSites(config, stagedFile) {
       [PAYMENTS_PLUGIN]: { version: '2.1.0', active: true },
     },
     db: {
-      wp_posts: benchmarkStablePosts(config.rowCount),
+      wp_posts: {
+        ...benchmarkStablePosts(config.rowCount),
+        [BENCHMARK_GRAPH_ROW_IDS.optionPageTarget]: {
+          ID: 20003,
+          post_title: 'Benchmark front page',
+          post_status: 'publish',
+          post_type: 'page',
+          post_parent: 0,
+        },
+      },
       wp_postmeta: {},
+      wp_options: {},
       wp_users: benchmarkStableUsers(),
       wp_terms: {},
       wp_term_taxonomy: {},
@@ -851,6 +870,20 @@ function buildBenchmarkSites(config, stagedFile) {
       post_id: benchmarkPostIdForRow(3),
       meta_key: '_edit_last',
       meta_value: String(BENCHMARK_EDIT_LAST_USER_ID),
+    },
+  });
+
+  const optionPageResourceKey = addBenchmarkRow({
+    site: local,
+    rowResourceKeys,
+    familyFixtures,
+    familyId: 'optionPageRefs',
+    table: 'wp_options',
+    id: BENCHMARK_GRAPH_ROW_IDS.pageOnFrontOption,
+    value: {
+      option_name: 'page_on_front',
+      option_value: '20003',
+      autoload: 'yes',
     },
   });
 
@@ -965,6 +998,10 @@ function buildBenchmarkSites(config, stagedFile) {
         ...familyFixtures.postmetaEditLastUserRefs,
         representativeResourceKey: editLastUserMetaResourceKey,
       },
+      optionPageRefs: {
+        ...familyFixtures.optionPageRefs,
+        representativeResourceKey: optionPageResourceKey,
+      },
       termsTaxonomies: {
         ...familyFixtures.termsTaxonomies,
         representativeResourceKeys: [
@@ -991,6 +1028,7 @@ function initializeFamilyFixtures() {
     postsParents: { resourceKeys: [] },
     featuredImagesAttachments: { resourceKeys: [] },
     postmetaEditLastUserRefs: { resourceKeys: [] },
+    optionPageRefs: { resourceKeys: [] },
     termsTaxonomies: { resourceKeys: [] },
     termRelationships: { resourceKeys: [] },
     termmeta: { resourceKeys: [] },

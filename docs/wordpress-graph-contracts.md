@@ -100,6 +100,16 @@ relationship contracts, not generic postmeta behavior. Version 1 rewrites
 to a proven `wp_users.ID` target. A malformed carried user row, stale user
 identity map, or forged `_edit_last` payload is refused before mutation.
 
+Core `wp_options` rows with known whole-scalar page references are also
+explicit relationship contracts. Version 1 rewrites `page_on_front` and
+`page_for_posts` only when `option_value` is a positive integer ID pointing to
+a proven `wp_posts.ID` row whose `post_type` is `page`. Missing page targets,
+non-page post targets, stale identity maps, or forged option payloads are
+refused before mutation. Other option rows, zero or empty page option values,
+and serialized option payloads such as `theme_mods_*`, widgets, nav-menu
+options, and sticky-post arrays remain outside this contract and are not
+generic graph rewrite surfaces.
+
 Rows whose identity does not contain the rewritten field keep their row key.
 For example, `wp_links.link_owner` keeps the `link_id:<id>` row resource fixed
 while the serialized owner field rewrites to the proven remote `wp_users`
@@ -107,8 +117,10 @@ target. Multisite `wp_blogs.site_id` similarly keeps the `blog_id:<id>` row
 resource fixed while the serialized `site_id` payload rewrites to the proven
 remote `wp_site` target. Multisite `wp_registration_log.blog_id` keeps the
 registration row's `ID:<id>` primary row key fixed while rewriting only the
-serialized `blog_id` payload to the proven remote `wp_blogs` target. Apply
-validates the payload against the carried target row before any mutation.
+serialized `blog_id` payload to the proven remote `wp_blogs` target. The
+`wp_options.page_on_front` and `wp_options.page_for_posts` rows similarly keep
+their `option_name:<name>` row keys fixed while rewriting only `option_value`.
+Apply validates the payload against the carried target row before any mutation.
 
 Identity-map equivalence is proven only against maps already promoted as usable.
 The candidate map may rewrite its own primary row ID during equivalence

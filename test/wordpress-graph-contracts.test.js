@@ -44,6 +44,10 @@ test('WordPress graph contracts mark serialized block references as detect-only'
     .find((contract) => contract.relationshipType === 'featured-image-attachment');
   const editLastUser = WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS
     .find((contract) => contract.relationshipType === 'postmeta-edit-last-user');
+  const pageOnFront = WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS
+    .find((contract) => contract.relationshipType === 'option-page-on-front-post');
+  const pageForPosts = WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS
+    .find((contract) => contract.relationshipType === 'option-page-for-posts-post');
 
   assert.deepEqual(
     serializedContracts.map((contract) => contract.relationshipType),
@@ -81,6 +85,18 @@ test('WordPress graph contracts mark serialized block references as detect-only'
     }),
     true,
   );
+  assert.equal(pageOnFront.scalarRewriteSupported, true);
+  assert.equal(pageOnFront.sourceCondition, 'option_name:page_on_front');
+  assert.equal(pageOnFront.targetValidation, 'post-type:page');
+  assert.equal(pageForPosts.scalarRewriteSupported, true);
+  assert.equal(pageForPosts.sourceCondition, 'option_name:page_for_posts');
+  assert.equal(pageForPosts.targetValidation, 'post-type:page');
+  assert.equal(
+    wordpressGraphRelationshipSupportsScalarRewrite({
+      relationshipType: 'option-page-on-front-post',
+    }),
+    true,
+  );
 });
 
 test('WordPress graph contracts bind core targets to primary-row validation', () => {
@@ -96,6 +112,8 @@ test('WordPress graph contracts bind core targets to primary-row validation', ()
     'comment-user': 'valid-user-row',
     'commentmeta-comment': 'valid-comment-row',
     'link-owner': 'valid-user-row',
+    'option-page-for-posts-post': 'post-type:page',
+    'option-page-on-front-post': 'post-type:page',
     'post-author': 'valid-user-row',
     'post-parent': 'valid-post-row',
     'postmeta-edit-last-user': 'valid-user-row',

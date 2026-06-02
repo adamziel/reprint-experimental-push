@@ -15,6 +15,8 @@ const fixedNow = new Date('2026-05-31T00:00:00.000Z');
 const guardedExecutorBenchmarkId = 'guarded-executor-benchmark';
 const snapshotHashingBenchmarkId = 'rpp-0710-parallel-snapshot-hashing';
 const fastPathLaneId = 'parallel-snapshot-hash-fast-path';
+const expectedUnitSnapshotHashResources = 26;
+const expectedUnitSnapshotHashJobs = expectedUnitSnapshotHashResources * 3;
 const sha256HexPattern = /^[a-f0-9]{64}$/;
 const sha256EvidencePattern = /^sha256:[a-f0-9]{64}$/;
 const expectedSnapshotGateIds = Object.freeze([
@@ -111,8 +113,8 @@ test('RPP-0790 release verifier variant 5 carries parallel snapshot hashing supp
   assert.equal(proof.benchmarkCarryThrough.sourceRppId, 'RPP-0710');
   assert.equal(proof.benchmarkCarryThrough.benchmarkId, snapshotHashingBenchmarkId);
   assert.equal(proof.benchmarkCarryThrough.runnerBenchmarkId, guardedExecutorBenchmarkId);
-  assert.equal(proof.benchmarkCarryThrough.shape.snapshotHashResources, 24);
-  assert.equal(proof.benchmarkCarryThrough.shape.snapshotHashJobs, 72);
+  assert.equal(proof.benchmarkCarryThrough.shape.snapshotHashResources, expectedUnitSnapshotHashResources);
+  assert.equal(proof.benchmarkCarryThrough.shape.snapshotHashJobs, expectedUnitSnapshotHashJobs);
   assert.equal(proof.benchmarkCarryThrough.shape.snapshotHashConcurrency, 2);
   assert.equal(proof.benchmarkCarryThrough.runtime.budgetStatus, 'passed');
   assert.equal(proof.benchmarkCarryThrough.productionThroughput.status, 'blocked');
@@ -122,7 +124,7 @@ test('RPP-0790 release verifier variant 5 carries parallel snapshot hashing supp
   assert.equal(proof.scheduler.maxObservedInFlight <= proof.scheduler.maxConcurrency, true);
   assert.equal(proof.scheduler.bounded, true);
   assert.equal(proof.hashSet.snapshotCount, 3);
-  assert.equal(proof.hashSet.resourceCount, 24);
+  assert.equal(proof.hashSet.resourceCount, expectedUnitSnapshotHashResources);
   assert.equal(proof.hashSet.hashCount, proof.hashSet.expectedHashCount);
   assert.equal(proof.hashSet.parallelDigest, proof.hashSet.sequentialDigest);
   assert.equal(proof.hashSet.parallelDigest, proof.hashSet.secondRunDigest);
@@ -212,8 +214,8 @@ test('RPP-0790 release verifier variant 5 preserves failed support-gate evidence
 
   assert.equal(proof.snapshot.status, 'passed');
   assert.equal(proof.snapshot.scheduler.maxConcurrency, 2);
-  assert.equal(proof.snapshot.hashSet.resourceCount, 24);
-  assert.equal(proof.snapshot.hashSet.hashCount, 72);
+  assert.equal(proof.snapshot.hashSet.resourceCount, expectedUnitSnapshotHashResources);
+  assert.equal(proof.snapshot.hashSet.hashCount, expectedUnitSnapshotHashJobs);
   assert.deepEqual(proof.snapshot.correctnessGateStatuses, [
     'passed',
     'passed',

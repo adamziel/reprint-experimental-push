@@ -61,6 +61,16 @@ function reprint_push_export_snapshot(): array
         ];
         $snapshot['db']['wp_options']['option_name:' . $option_name] = $row;
     }
+    foreach (reprint_push_core_page_option_names() as $option_name) {
+        $value = get_option($option_name, null);
+        if ($value === null) {
+            continue;
+        }
+        $snapshot['db']['wp_options']['option_name:' . $option_name] = [
+            'option_name' => $option_name,
+            'option_value' => reprint_push_normalize_snapshot_value($value),
+        ];
+    }
 
     $posts = $wpdb->get_results(
         "SELECT p.ID, p.post_title, p.post_name, p.post_content, p.post_status, p.post_type, p.post_parent, p.post_author
@@ -1165,6 +1175,8 @@ function reprint_push_wordpress_graph_relationship_contracts(): array
         reprint_push_wordpress_graph_relationship_contract('serialized-block-reusable-block', 'posts', ['post_content', 'post_excerpt'], 'posts', false, 'post-type:wp_block'),
         reprint_push_wordpress_graph_relationship_contract('featured-image-attachment', 'postmeta', ['meta_value'], 'posts', true, 'post-type:attachment', 'meta_key:_thumbnail_id'),
         reprint_push_wordpress_graph_relationship_contract('postmeta-edit-last-user', 'postmeta', ['meta_value'], 'users', true, 'valid-user-row', 'meta_key:_edit_last'),
+        reprint_push_wordpress_graph_relationship_contract('option-page-on-front-post', 'options', ['option_value'], 'posts', true, 'post-type:page', 'option_name:page_on_front'),
+        reprint_push_wordpress_graph_relationship_contract('option-page-for-posts-post', 'options', ['option_value'], 'posts', true, 'post-type:page', 'option_name:page_for_posts'),
         reprint_push_wordpress_graph_relationship_contract('term-relationship-object', 'term_relationships', ['object_id'], 'posts', true, 'valid-post-row'),
         reprint_push_wordpress_graph_relationship_contract('term-relationship-taxonomy', 'term_relationships', ['term_taxonomy_id'], 'term_taxonomy', true, 'valid-term-taxonomy-row'),
         reprint_push_wordpress_graph_relationship_contract('term-taxonomy-term', 'term_taxonomy', ['term_id'], 'terms', true, 'valid-term-row'),
@@ -1460,6 +1472,7 @@ function reprint_push_wordpress_graph_table_suffixes(): array
         'term_taxonomy',
         'postmeta',
         'usermeta',
+        'options',
         'users',
         'termmeta',
         'links',
@@ -1707,12 +1720,16 @@ function reprint_push_guarded_update_existing_option_row(string $id, array $expe
     global $wpdb;
 
     $option_name = reprint_push_option_name($id);
-    if (!in_array($option_name, reprint_push_allowed_plugin_option_names(), true)) {
+    if (
+        !in_array($option_name, reprint_push_allowed_plugin_option_names(), true)
+        && !in_array($option_name, reprint_push_core_page_option_names(), true)
+    ) {
         throw new RuntimeException('Refusing to mutate non-fixture option: ' . $option_name);
     }
     if (!array_key_exists('option_value', $expected) || !array_key_exists('option_value', $value)) {
         throw new RuntimeException('Option row payload must include option_value');
     }
+    reprint_push_assert_core_page_option_payload_supported($option_name, $value);
 
     $expected_storage = [
         'option_name' => $option_name,
@@ -2599,7 +2616,10 @@ function reprint_push_assert_supported_apply_resource(array $resource): void
         }
         if ($table === 'wp_options') {
             $option_name = reprint_push_option_name($id);
-            if (!in_array($option_name, reprint_push_allowed_plugin_option_names(), true)) {
+            if (
+                !in_array($option_name, reprint_push_allowed_plugin_option_names(), true)
+                && !in_array($option_name, reprint_push_core_page_option_names(), true)
+            ) {
                 throw new RuntimeException('Unsupported option for fixture apply: ' . $option_name);
             }
             return;
@@ -2836,17 +2856,24 @@ function reprint_push_apply_post_row(string $id, bool $is_delete, $value): void
 function reprint_push_apply_option_row(string $id, bool $is_delete, $value): void
 {
     $option_name = reprint_push_option_name($id);
-    if (!in_array($option_name, reprint_push_allowed_plugin_option_names(), true)) {
+    if (
+        !in_array($option_name, reprint_push_allowed_plugin_option_names(), true)
+        && !in_array($option_name, reprint_push_core_page_option_names(), true)
+    ) {
         throw new RuntimeException('Refusing to mutate non-fixture option: ' . $option_name);
     }
 
     if ($is_delete) {
+        if (in_array($option_name, reprint_push_core_page_option_names(), true)) {
+            throw new RuntimeException('Refusing to delete core page option: ' . $option_name);
+        }
         delete_option($option_name);
         return;
     }
     if (!is_array($value) || !array_key_exists('option_value', $value)) {
         throw new RuntimeException('Option row payload must include option_value');
     }
+    reprint_push_assert_core_page_option_payload_supported($option_name, $value);
     update_option($option_name, $value['option_value']);
 }
 
@@ -3620,6 +3647,36 @@ function reprint_push_forms_lab_table_name(): string
 function reprint_push_allowed_plugin_option_names(): array
 {
     return array_keys(reprint_push_allowed_plugin_options());
+}
+
+function reprint_push_core_page_option_names(): array
+{
+    return [
+        'page_on_front',
+        'page_for_posts',
+    ];
+}
+
+function reprint_push_assert_core_page_option_payload_supported(string $option_name, array $value): void
+{
+    if (!in_array($option_name, reprint_push_core_page_option_names(), true)) {
+        return;
+    }
+    $option_value = $value['option_value'] ?? null;
+    if ($option_value === '' || $option_value === '0' || $option_value === 0 || $option_value === null) {
+        return;
+    }
+    if (is_int($option_value)) {
+        $page_id = $option_value;
+    } elseif (is_string($option_value) && preg_match('/^[1-9]\d*$/', $option_value) === 1) {
+        $page_id = (int) $option_value;
+    } else {
+        throw new RuntimeException('Core page option payload must be a positive page id or empty value: ' . $option_name);
+    }
+    $post = get_post($page_id);
+    if (!$post || $post->post_type !== 'page') {
+        throw new RuntimeException('Core page option payload must point at an existing page: ' . $option_name);
+    }
 }
 
 function reprint_push_allowed_plugin_options(): array

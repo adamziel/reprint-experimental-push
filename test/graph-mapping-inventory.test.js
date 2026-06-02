@@ -29,6 +29,8 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
     'serialized-block-reusable-block',
     'featured-image-attachment',
     'postmeta-edit-last-user',
+    'option-page-on-front-post',
+    'option-page-for-posts-post',
     'term-relationship-object',
     'term-relationship-taxonomy',
     'term-taxonomy-term',
@@ -58,12 +60,12 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
     identityMapRowsRecordContractHash: true,
   });
   assert.deepEqual(inventory.mappedFamilyCounters, {
-    totalFamilies: 8,
-    mappedFamilies: 7,
+    totalFamilies: 9,
+    mappedFamilies: 8,
     unmappedFamilies: 0,
     blockedFamilies: 0,
     guardedFamilies: 1,
-    mappedReferences: 32,
+    mappedReferences: 33,
     unmappedReferences: 0,
   });
   assert.equal(inventory.blockedFamilies.length, 0);
@@ -71,7 +73,7 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
     inventory.guardedFamilies.map((family) => family.id),
     ['unsupportedPluginOwnedSurfaces'],
   );
-  assert.equal(inventory.families.length, 8);
+  assert.equal(inventory.families.length, 9);
   assert.ok(
     inventory.suggestedLaneShards.some((shard) =>
       shard.shardId === 'planner:test/push-planner.test.js'
@@ -88,6 +90,11 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
     inventory.suggestedLaneShards.some((shard) =>
       shard.shardId === 'smoke:scripts/bench/guarded-executor-benchmark.js'
       && shard.families.includes('postmetaEditLastUserRefs')),
+  );
+  assert.ok(
+    inventory.suggestedLaneShards.some((shard) =>
+      shard.shardId === 'planner:test/wp-options-page-reference.test.js'
+      && shard.families.includes('optionPageRefs')),
   );
 });
 
