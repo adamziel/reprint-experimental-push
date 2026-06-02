@@ -365,7 +365,7 @@ function claimScopedOwnershipRecord(records, claim) {
   ) || ownershipRecords[0] || null;
 }
 
-function persistedTargetEnvelopeMatchesPlan(records, plan) {
+export function persistedTargetEnvelopeMatchesPlan(records, plan) {
   const targets = (Array.isArray(records) ? records : [])
     .filter((record) => record.type === 'target-planned' && record.planId === plan?.id);
   const mutations = Array.isArray(plan?.mutations) ? plan.mutations : [];
@@ -402,7 +402,14 @@ function persistedTargetEnvelopeMatchesPlan(records, plan) {
       continue;
     }
 
-    const expectedAfterHash = afterHashForMutation(mutation);
+    const expectedAfterHash = digest(deserializeResourceValue(mutation.value));
+    if (hasNonEmptyString(mutation.localHash) && mutation.localHash !== expectedAfterHash) {
+      issues.push({
+        code: 'TARGET_PLANNED_MUTATION_VALUE_HASH_MISMATCH',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey,
+      });
+    }
     if (target.resourceKey !== mutation.resourceKey) {
       issues.push({
         code: 'TARGET_PLANNED_RESOURCE_MISMATCH',

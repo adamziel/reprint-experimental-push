@@ -793,7 +793,7 @@ test('RPP-0654 rejects invalid committed target envelopes before replay proof mo
       name: 'drifted',
       filePath: journalCopyPath(afterCommit.records, 'reprint-rpp-0654-drifted-envelope-'),
       plan: driftedPlan,
-      expectedIssueCode: 'TARGET_PLANNED_AFTER_HASH_MISMATCH',
+      expectedIssueCode: 'TARGET_PLANNED_MUTATION_VALUE_HASH_MISMATCH',
     },
   ];
 

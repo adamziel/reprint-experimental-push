@@ -38,7 +38,11 @@ memory of the failed run. Record these facts before choosing an action:
 - journal ownership result and active writer or claim evidence;
 - restart-readable journal records with monotonic ordering;
 - planned mutation count and per-target old/new/blocked-unknown counts;
+- a plan-scoped `target-planned` row for every supplied mutation, with no
+  extra or duplicate target rows;
 - before and after hashes for each planned target;
+- target resource keys, before hashes, and after hashes that exactly match the
+  supplied plan envelope and planned mutation values;
 - current observed hash for each planned target;
 - terminal journal evidence, or the specific missing terminal evidence that
   caused the block;

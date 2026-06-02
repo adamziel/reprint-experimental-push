@@ -2804,6 +2804,158 @@ test('restart inspection treats completed replay as fully updated no-op state', 
   assert.deepEqual(inspection.counts, { old: 0, new: 8, blockedUnknown: 0 });
 });
 
+test('restart inspection blocks when the supplied plan is truncated against persisted targets', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const truncatedPlan = clone(plan);
+  truncatedPlan.mutations = plan.mutations.slice(0, 1);
+  const current = clone(remote);
+  const journal = openPlanRecoveryJournal({ filePath, plan, current: remote, now: fixedNow });
+  applyFirstMutations(current, plan, plan.mutations.length);
+  journal.close();
+
+  const inspection = inspectRecoveryJournal({
+    journalPath: filePath,
+    plan: truncatedPlan,
+    current,
+  });
+
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.equal(inspection.reasonCode, 'BLOCKED_JOURNAL_INTEGRITY');
+  assert.equal(inspection.classification.journalIntegrity, 'blocked');
+  assert.equal(inspection.journal.integrity.errors[0].code, 'TARGET_PLANNED_COUNT_MISMATCH');
+  assert.deepEqual(inspection.journal.integrity.errors[0], {
+    code: 'TARGET_PLANNED_COUNT_MISMATCH',
+    expected: 1,
+    actual: 8,
+  });
+});
+
+test('restart inspection blocks extra persisted targets before classifying a fully updated remote', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const current = clone(remote);
+  const journal = openPlanRecoveryJournal({ filePath, plan, current: remote, now: fixedNow });
+  applyFirstMutations(current, plan, plan.mutations.length);
+  journal.close();
+  const reopened = openRecoveryJournal(filePath, { truncate: false, now: fixedNow });
+  reopened.appendEvent('target-planned', {
+    planId: plan.id,
+    mutationId: 'mutation-extra',
+    resourceKey: 'file:extra.txt',
+    beforeHash: 'a'.repeat(64),
+    afterHash: 'b'.repeat(64),
+    state: 'planned',
+    artifactRefs: {},
+  });
+  reopened.close();
+
+  const inspection = inspectRecoveryJournal({
+    journalPath: filePath,
+    plan,
+    current,
+  });
+
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.equal(inspection.reasonCode, 'BLOCKED_JOURNAL_INTEGRITY');
+  assert.equal(inspection.classification.journalIntegrity, 'blocked');
+  assert.equal(inspection.journal.integrity.errors[0].code, 'TARGET_PLANNED_COUNT_MISMATCH');
+  assert.deepEqual(inspection.journal.integrity.errors[0], {
+    code: 'TARGET_PLANNED_COUNT_MISMATCH',
+    expected: 8,
+    actual: 9,
+  });
+});
+
+test('restart inspection blocks target before-hash drift in the supplied plan envelope', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const driftedPlan = clone(plan);
+  driftedPlan.mutations[0].remoteBeforeHash = 'f'.repeat(64);
+  const current = clone(remote);
+  const journal = openPlanRecoveryJournal({ filePath, plan, current: remote, now: fixedNow });
+  applyFirstMutations(current, plan, plan.mutations.length);
+  journal.close();
+
+  const inspection = inspectRecoveryJournal({
+    journalPath: filePath,
+    plan: driftedPlan,
+    current,
+  });
+
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.equal(inspection.reasonCode, 'BLOCKED_JOURNAL_INTEGRITY');
+  assert.equal(
+    inspection.journal.integrity.errors.find((entry) =>
+      entry.code === 'TARGET_PLANNED_BEFORE_HASH_MISMATCH')?.mutationId,
+    plan.mutations[0].id,
+  );
+});
+
+test('restart inspection blocks target after-hash drift from forged mutation values', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const driftedPlan = clone(plan);
+  driftedPlan.mutations[0].value.value.content = 'forged-local-after-content';
+  const current = clone(remote);
+  const journal = openPlanRecoveryJournal({ filePath, plan, current: remote, now: fixedNow });
+  applyFirstMutations(current, plan, plan.mutations.length);
+  journal.close();
+
+  const inspection = inspectRecoveryJournal({
+    journalPath: filePath,
+    plan: driftedPlan,
+    current,
+  });
+  const issueCodes = inspection.journal.integrity.errors.map((entry) => entry.code);
+
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.equal(inspection.reasonCode, 'BLOCKED_JOURNAL_INTEGRITY');
+  assert.equal(issueCodes.includes('TARGET_PLANNED_MUTATION_VALUE_HASH_MISMATCH'), true);
+  assert.equal(issueCodes.includes('TARGET_PLANNED_AFTER_HASH_MISMATCH'), true);
+});
+
+test('restart inspection blocks duplicate persisted target rows before recovery classification', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const current = clone(remote);
+  const journal = openPlanRecoveryJournal({ filePath, plan, current: remote, now: fixedNow });
+  applyFirstMutations(current, plan, plan.mutations.length);
+  journal.close();
+  const persisted = readRecoveryJournal(filePath);
+  const duplicateTarget = persisted.records.find((record) => record.type === 'target-planned');
+  const reopened = openRecoveryJournal(filePath, { truncate: false, now: fixedNow });
+  reopened.appendEvent('target-planned', {
+    planId: duplicateTarget.planId,
+    mutationId: duplicateTarget.mutationId,
+    resourceKey: duplicateTarget.resourceKey,
+    beforeHash: duplicateTarget.beforeHash,
+    afterHash: duplicateTarget.afterHash,
+    state: duplicateTarget.state,
+    artifactRefs: duplicateTarget.artifactRefs || {},
+  });
+  reopened.close();
+
+  const inspection = inspectRecoveryJournal({
+    journalPath: filePath,
+    plan,
+    current,
+  });
+
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.equal(inspection.reasonCode, 'BLOCKED_JOURNAL_INTEGRITY');
+  assert.equal(
+    inspection.journal.integrity.errors.find((entry) =>
+      entry.code === 'JOURNAL_DUPLICATE_TARGET')?.mutationId,
+    duplicateTarget.mutationId,
+  );
+});
+
 test('restart inspection blocks when current state drifts outside before and after hashes', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
@@ -3732,7 +3884,10 @@ test('production recovery journal same-claim retry rejects target envelope drift
     }),
     (error) => {
       assert.equal(error.code, 'RECOVERY_JOURNAL_TARGET_ENVELOPE_MISMATCH');
-      assert.equal(error.details.issues[0].code, 'TARGET_PLANNED_AFTER_HASH_MISMATCH');
+      assert.equal(
+        error.details.issues.some((entry) => entry.code === 'TARGET_PLANNED_MUTATION_VALUE_HASH_MISMATCH'),
+        true,
+      );
       return true;
     },
   );

@@ -1,6 +1,7 @@
 import { resourceHash } from './resources.js';
 import {
   classifyRecoveryJournalClaims,
+  persistedTargetEnvelopeMatchesPlan,
   readRecoveryJournal,
   readRecoveryJournalPaged,
 } from './recovery-journal.js';
@@ -44,6 +45,7 @@ export function inspectRecoveryJournal({ journal, journalPath, plan, current, jo
     if (targetByMutation.has(record.mutationId)) {
       integrityErrors.push({
         code: 'JOURNAL_DUPLICATE_TARGET',
+        mutationId: record.mutationId || null,
         message: `Journal has duplicate target metadata for ${record.mutationId}.`,
       });
       continue;
@@ -56,6 +58,15 @@ export function inspectRecoveryJournal({ journal, journalPath, plan, current, jo
       plan,
       persisted: withIntegrityErrors(persisted, integrityErrors),
       reason: 'Recovery journal target metadata is inconsistent.',
+    });
+  }
+
+  const targetEnvelope = persistedTargetEnvelopeMatchesPlan(persisted.records, plan);
+  if (!targetEnvelope.matches) {
+    return blockedInspection({
+      plan,
+      persisted: withIntegrityErrors(persisted, targetEnvelope.issues),
+      reason: 'Recovery journal target metadata does not match the supplied plan envelope.',
     });
   }
 

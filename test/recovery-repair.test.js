@@ -185,18 +185,58 @@ test('incomplete target envelope cannot be marked repaired even when current mat
       assert.deepEqual(
         error.details.incompleteJournalTargets.map((target) => target.code),
         [
-          'missing-journal-record',
-          'missing-journal-record',
-          'missing-journal-record',
-          'missing-journal-record',
+          'journal-integrity-blocked',
+          'journal-integrity-blocked',
+          'journal-integrity-blocked',
+          'journal-integrity-blocked',
         ],
       );
+      assert.equal(error.details.report.journalStatus, 'blocked');
       return true;
     },
   );
 
   assert.equal(recoveryRepairJournalHasRepairedMarker(filePath), false);
   assert.equal(readRecoveryJournal(filePath).records.some((record) => record.type === 'journal-repaired'), false);
+});
+
+test('truncated supplied plan cannot be inspected or replayed as repaired', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const truncatedPlan = clone(plan);
+  truncatedPlan.mutations = plan.mutations.slice(0, 1);
+  const current = localSite();
+  openTargetJournal(filePath, plan, remote);
+
+  const report = inspectRecoveryRepair({
+    journalPath: filePath,
+    plan: truncatedPlan,
+    current,
+  });
+
+  assert.equal(report.status, 'blocked-incomplete-journal');
+  assert.equal(report.journalStatus, 'blocked');
+  assert.equal(report.canMarkRepaired, false);
+  assert.equal(report.counts.total, 1);
+  assert.equal(report.inspection.reasonCode, 'BLOCKED_JOURNAL_INTEGRITY');
+  assert.equal(report.inspection.journal.integrity.errors[0].code, 'TARGET_PLANNED_COUNT_MISMATCH');
+  assert.throws(
+    () => replayRecoveryRepair({ journalPath: filePath, plan: truncatedPlan, current }),
+    (error) => {
+      assert.ok(error instanceof RecoveryRepairError);
+      assert.equal(error.code, 'RECOVERY_REPAIR_INCOMPLETE_JOURNAL');
+      return true;
+    },
+  );
+  assert.throws(
+    () => markRecoveryJournalRepaired({ journalPath: filePath, plan: truncatedPlan, current, now: fixedNow }),
+    (error) => {
+      assert.ok(error instanceof RecoveryRepairError);
+      assert.equal(error.code, 'RECOVERY_REPAIR_INCOMPLETE_JOURNAL');
+      return true;
+    },
+  );
 });
 
 test('repair replay mutates only old targets and leaves already-updated targets untouched', () => {
