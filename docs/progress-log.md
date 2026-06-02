@@ -7312,20 +7312,23 @@ linked implementation artifacts.
   `scripts/playground/production-shaped-release-verify.mjs`, and
   `test/rpp-0400-importer-exporter-identity-map-release-verifier-v5.test.js`.
   The production-shaped verifier now reports
-  `graphIdentity.productionImporterExporterIdentityMap` support evidence. The
-  proof carries a base importer/exporter `pushIdentityMap` from an exported
-  source resource to an imported target resource, proves the ready plan uses
-  that map, rewrites dependent child-post and postmeta references to the
-  imported target IDs, applies only dependent rows with live-remote
-  preconditions while preserving the imported target row, and fails closed for
-  stale imported targets with `PLAN_NOT_READY` before mutation or journal
-  events. Validation passed with Node syntax checks, focused RPP-0400 coverage
-  2/2, importer/exporter graph adjacent coverage 6/6, graph inventory adjacent
-  coverage 4/4, full production-shaped proof coverage 134 tests (123 passing,
-  11 skipped), checklist lint, scoped artifact redaction scan, release hygiene
-  tests 23/23, raw fixture scan, and merge diff whitespace checks. Counts are
-  now 510/490; final release remains `NO-GO` because this is local support-only
-  release-verifier evidence, not production-backed release evidence.
+  `graphIdentity.productionImporterExporterIdentityMap` evidence with a default
+  support-only posture and a checked production-backed subproof when all live
+  snapshots plus `checkedProductionEvidence: true` are present. The proof
+  carries a base importer/exporter `pushIdentityMap` from an exported source
+  resource to an imported target resource, projects that metadata into the
+  planner base, proves the ready plan uses that map, rewrites dependent
+  child-post and postmeta references to the imported target IDs, applies only
+  dependent rows with live-remote preconditions while preserving the imported
+  target row, and fails closed for stale imported targets with `PLAN_NOT_READY`
+  before mutation or journal events. Validation passed with Node syntax checks,
+  focused RPP-0400 coverage 5/5, importer/exporter graph adjacent coverage
+  9/9, graph inventory adjacent coverage 7/7, full production-shaped proof
+  coverage 134 tests (123 passing, 11 skipped), checklist lint, scoped artifact
+  redaction scan, release gate hygiene tests 22/22, raw fixture scan, and merge
+  diff whitespace checks. Counts are now 510/490; final release remains `NO-GO`
+  because the product still requires broader auth/session, durable journal,
+  generic plugin-driver, and general graph-identity production boundaries.
 - Cross-table create batch release-verifier proof v5: the current lane now
   contains `RPP-0399` evidence in
   `docs/evidence/rpp-0399-cross-table-create-batch-release-verifier-v5.md`,

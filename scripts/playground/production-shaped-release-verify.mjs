@@ -8737,12 +8737,22 @@ export function summarizeMergeInvariantReleaseVerifierProofs() {
   };
 }
 
-export function summarizeGraphIdentityReleaseVerifierProofs() {
+export function summarizeGraphIdentityReleaseVerifierProofs({
+  remoteBaseSnapshot = null,
+  localEditedSnapshot = null,
+  remoteChangedSnapshot = null,
+  checkedProductionEvidence = false,
+} = {}) {
   return {
     serializedBlockReference: summarizeSerializedBlockReferenceReleaseVerifierProof(),
     postGuidSlugCollision: summarizePostGuidSlugCollisionReleaseVerifierProof(),
     crossTableCreateBatch: summarizeCrossTableCreateBatchReleaseVerifierProof(),
-    productionImporterExporterIdentityMap: summarizeProductionImporterExporterIdentityMapReleaseVerifierProof(),
+    productionImporterExporterIdentityMap: summarizeProductionImporterExporterIdentityMapReleaseVerifierProof({
+      remoteBaseSnapshot,
+      localEditedSnapshot,
+      remoteChangedSnapshot,
+      checkedProductionEvidence,
+    }),
   };
 }
 
@@ -9245,19 +9255,50 @@ function crossTableCreateBatchDurableJournal(events) {
 
 export function summarizeProductionImporterExporterIdentityMapReleaseVerifierProof({
   now = new Date('2026-05-30T16:04:00.000Z'),
+  remoteBaseSnapshot = null,
+  localEditedSnapshot = null,
+  remoteChangedSnapshot = null,
+  checkedProductionEvidence = false,
 } = {}) {
   try {
-    return buildProductionImporterExporterIdentityMapReleaseVerifierProof(now);
+    return buildProductionImporterExporterIdentityMapReleaseVerifierProof({
+      now,
+      remoteBaseSnapshot,
+      localEditedSnapshot,
+      remoteChangedSnapshot,
+      checkedProductionEvidence,
+    });
   } catch (error) {
+    const checkedSnapshotsRequested = checkedProductionEvidence === true
+      || remoteBaseSnapshot !== null
+      || localEditedSnapshot !== null
+      || remoteChangedSnapshot !== null;
+    const evidenceScope = checkedSnapshotsRequested && checkedProductionEvidence === true
+      ? 'production-backed'
+      : 'local-production-shaped';
+    const releaseGateEvidence = productionImporterExporterIdentityMapReleaseGate({
+      checked: false,
+      checkedProductionEvidence,
+      evidenceScope,
+      productionScopeClaimed: evidenceScope === 'production-backed',
+      productionBacked: false,
+    });
     return {
       rpp: 'RPP-0400',
       evidenceSource: 'release-verifier-production-importer-exporter-identity-map-v5',
       status: 'blocked',
       verdict: 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_RELEASE_VERIFIER_REQUIRED',
       productionBacked: false,
+      supportOnly: true,
+      checked: false,
+      checkedProductionEvidence: checkedProductionEvidence === true,
+      sourceKind: checkedSnapshotsRequested ? 'checked-production-snapshots' : 'local-production-shaped-fixtures',
       releaseEligible: false,
       releaseGate: 'NO-GO',
-      evidenceScope: 'local-production-shaped',
+      releaseGateEvidence,
+      acceptedForReleaseGate: false,
+      evidenceScope,
+      releaseGateEvidenceScope: evidenceScope,
       boundary: productionImporterExporterIdentityMapReleaseVerifierBoundaryEvidence(),
       rawValuesIncluded: false,
       error: {
@@ -9268,9 +9309,55 @@ export function summarizeProductionImporterExporterIdentityMapReleaseVerifierPro
   }
 }
 
-function buildProductionImporterExporterIdentityMapReleaseVerifierProof(now) {
+function buildProductionImporterExporterIdentityMapReleaseVerifierProof({
+  now,
+  remoteBaseSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+  checkedProductionEvidence,
+}) {
   const boundary = productionImporterExporterIdentityMapReleaseVerifierBoundary;
-  const snapshots = productionImporterExporterIdentityMapReleaseVerifierSnapshots();
+  const checkedSnapshotsRequested = checkedProductionEvidence === true
+    || remoteBaseSnapshot !== null
+    || localEditedSnapshot !== null
+    || remoteChangedSnapshot !== null;
+  const missingSnapshots = checkedSnapshotsRequested
+    ? [
+      ['remoteBaseSnapshot', remoteBaseSnapshot],
+      ['localEditedSnapshot', localEditedSnapshot],
+      ['remoteChangedSnapshot', remoteChangedSnapshot],
+    ].filter(([, value]) => !value).map(([name]) => name)
+    : [];
+  const evidenceScope = checkedSnapshotsRequested && checkedProductionEvidence === true
+    ? 'production-backed'
+    : 'local-production-shaped';
+  const sourceKind = checkedSnapshotsRequested
+    ? 'checked-production-snapshots'
+    : 'local-production-shaped-fixtures';
+  if (missingSnapshots.length > 0) {
+    return productionImporterExporterIdentityMapReleaseVerifierBlockedProof({
+      evidenceScope,
+      sourceKind,
+      checkedProductionEvidence,
+      missingEvidence: missingSnapshots,
+      verdict: 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_RELEASE_VERIFIER_REQUIRED',
+    });
+  }
+  const snapshots = checkedSnapshotsRequested
+    ? {
+      source: productionImporterExporterIdentityMapReleaseVerifierIdentityMapSourceSnapshot(
+        remoteBaseSnapshot,
+      ),
+      checkedRemoteBase: remoteBaseSnapshot,
+      localEdited: localEditedSnapshot,
+      importedRemote: productionImporterExporterIdentityMapReleaseVerifierSnapshotWithoutIdentityMaps(
+        remoteBaseSnapshot,
+      ),
+      staleRemote: productionImporterExporterIdentityMapReleaseVerifierSnapshotWithoutIdentityMaps(
+        remoteChangedSnapshot,
+      ),
+    }
+    : productionImporterExporterIdentityMapReleaseVerifierSnapshots();
   const readyPlan = createPushPlan({
     base: snapshots.source,
     local: snapshots.localEdited,
@@ -9370,6 +9457,9 @@ function buildProductionImporterExporterIdentityMapReleaseVerifierProof(now) {
   const invariants = {
     baseCarriesImporterPushIdentityMap:
       productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.source).mapEntries === 1,
+    checkedRemoteBaseCarriesImportedTargetRows:
+      !checkedSnapshotsRequested
+      || productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.checkedRemoteBase).targetPosts === 1,
     localCarriesExportedSourceRows: productionImporterExporterIdentityMapReleaseVerifierCounts(
       snapshots.localEdited,
     ).sourcePosts === 1
@@ -9411,17 +9501,41 @@ function buildProductionImporterExporterIdentityMapReleaseVerifierProof(now) {
     evidenceRedactsRawValues: !rawValuesIncluded,
   };
   const ok = Object.values(invariants).every(Boolean);
+  const productionScopeClaimed = evidenceScope === 'production-backed';
+  const productionBacked = ok
+    && checkedProductionEvidence === true
+    && checkedSnapshotsRequested
+    && productionScopeClaimed;
+  const releaseGateEvidence = productionImporterExporterIdentityMapReleaseGate({
+    checked: ok,
+    checkedProductionEvidence,
+    evidenceScope,
+    productionScopeClaimed,
+    productionBacked,
+  });
   const proof = {
     rpp: 'RPP-0400',
     evidenceSource: 'release-verifier-production-importer-exporter-identity-map-v5',
-    status: ok ? 'support_only' : 'blocked',
+    status: ok
+      ? (productionBacked ? 'checked' : 'support_only')
+      : 'blocked',
     verdict: ok
-      ? 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_CARRIED_THROUGH'
+      ? (productionBacked
+          ? 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_PRODUCTION_BACKED'
+          : 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_CARRIED_THROUGH')
       : 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_RELEASE_VERIFIER_REQUIRED',
-    productionBacked: false,
-    releaseEligible: false,
-    releaseGate: 'NO-GO',
-    evidenceScope: 'local-production-shaped',
+    productionBacked,
+    supportOnly: !productionBacked,
+    checked: ok,
+    checkedProductionEvidence: checkedProductionEvidence === true,
+    sourceKind,
+    productionScopeClaimed,
+    releaseEligible: productionBacked,
+    releaseGate: productionBacked ? 'GO' : 'NO-GO',
+    releaseGateEvidence,
+    acceptedForReleaseGate: releaseGateEvidence.acceptedForReleaseGate,
+    evidenceScope,
+    releaseGateEvidenceScope: evidenceScope,
     releaseVerifier: {
       checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
       check: 'production-importer-exporter-identity-map',
@@ -9431,10 +9545,18 @@ function buildProductionImporterExporterIdentityMapReleaseVerifierProof(now) {
     boundary: productionImporterExporterIdentityMapReleaseVerifierBoundaryEvidence(),
     counts: {
       source: productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.source),
+      ...(checkedSnapshotsRequested ? {
+        checkedRemoteBase: productionImporterExporterIdentityMapReleaseVerifierCounts(
+          snapshots.checkedRemoteBase,
+        ),
+      } : {}),
       localEdited: productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.localEdited),
       importedRemote: productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.importedRemote),
       staleRemote: productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.staleRemote),
     },
+    checkedSnapshotEvidence: checkedSnapshotsRequested
+      ? productionImporterExporterIdentityMapReleaseVerifierCheckedSnapshotEvidence(snapshots)
+      : null,
     plan: {
       status: readyPlan.status,
       summary: readyPlan.summary,
@@ -9492,6 +9614,7 @@ function buildProductionImporterExporterIdentityMapReleaseVerifierProof(now) {
   };
   proof.proofHash = sha256Evidence({
     boundary: proof.boundary,
+    checkedSnapshotEvidence: proof.checkedSnapshotEvidence,
     plan: proof.plan,
     mapEvidence: proof.mapEvidence,
     appliedEvidence: proof.appliedEvidence,
@@ -9499,6 +9622,97 @@ function buildProductionImporterExporterIdentityMapReleaseVerifierProof(now) {
     invariants: proof.invariants,
   });
   return proof;
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierBlockedProof({
+  evidenceScope,
+  sourceKind,
+  checkedProductionEvidence,
+  missingEvidence,
+  verdict,
+}) {
+  const releaseGateEvidence = productionImporterExporterIdentityMapReleaseGate({
+    checked: false,
+    checkedProductionEvidence,
+    evidenceScope,
+    productionScopeClaimed: evidenceScope === 'production-backed',
+    productionBacked: false,
+  });
+  const proof = {
+    rpp: 'RPP-0400',
+    evidenceSource: 'release-verifier-production-importer-exporter-identity-map-v5',
+    status: 'blocked',
+    verdict,
+    productionBacked: false,
+    supportOnly: true,
+    checked: false,
+    checkedProductionEvidence: checkedProductionEvidence === true,
+    sourceKind,
+    productionScopeClaimed: evidenceScope === 'production-backed',
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    releaseGateEvidence,
+    acceptedForReleaseGate: false,
+    evidenceScope,
+    releaseGateEvidenceScope: evidenceScope,
+    boundary: productionImporterExporterIdentityMapReleaseVerifierBoundaryEvidence(),
+    missingEvidence,
+    rawValuesIncluded: false,
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    boundary: proof.boundary,
+    missingEvidence,
+    evidenceScope,
+    sourceKind,
+  });
+  return proof;
+}
+
+function productionImporterExporterIdentityMapReleaseGate({
+  checked,
+  checkedProductionEvidence,
+  evidenceScope,
+  productionScopeClaimed,
+  productionBacked,
+}) {
+  if (checked && productionBacked) {
+    return {
+      status: 'GO',
+      verdict: 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_PRODUCTION_BACKED',
+      evidenceScope,
+      productionBacked: true,
+      acceptedForReleaseGate: true,
+      note: 'importer/exporter identity-map proof is production-backed and apply-revalidated on the checked release path',
+    };
+  }
+
+  if (productionScopeClaimed) {
+    return {
+      status: 'NO-GO',
+      verdict: checkedProductionEvidence
+        ? 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_INCOMPLETE'
+        : 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_PRODUCTION_PROOF_REQUIRED',
+      evidenceScope,
+      productionBacked: false,
+      acceptedForReleaseGate: false,
+      note: 'importer/exporter identity-map proof carries production-backed scope but lacks complete checked production verifier proof; release gate remains NO-GO',
+    };
+  }
+
+  return {
+    status: 'NO-GO',
+    verdict: checked
+      ? 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED'
+      : 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_RELEASE_VERIFIER_REQUIRED',
+    evidenceScope,
+    productionBacked: false,
+    acceptedForReleaseGate: false,
+    note: `importer/exporter identity-map proof is local/support-only; evidenceScope=${evidenceScope}; production-backed release gate evidence is still required`,
+  };
 }
 
 function productionImporterExporterIdentityMapReleaseVerifierBoundaryEvidence() {
@@ -9596,6 +9810,49 @@ function productionImporterExporterIdentityMapReleaseVerifierSnapshots() {
     localEdited,
     importedRemote,
     staleRemote,
+  };
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierSnapshotWithoutIdentityMaps(snapshot) {
+  const copy = cloneReleaseVerifierJson(snapshot);
+  if (!copy.meta || typeof copy.meta !== 'object') {
+    return copy;
+  }
+  delete copy.meta.pushIdentityMap;
+  delete copy.meta.wordpressGraphIdentityMap;
+  delete copy.meta.graphIdentityMap;
+  return copy;
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierIdentityMapSourceSnapshot(snapshot) {
+  const copy = {
+    files: {},
+    plugins: {},
+    db: {
+      wp_posts: {},
+      wp_postmeta: {},
+    },
+  };
+  const meta = snapshot?.meta;
+  if (meta && typeof meta === 'object') {
+    for (const key of ['wordpressGraphIdentityMap', 'graphIdentityMap', 'pushIdentityMap']) {
+      if (Object.hasOwn(meta, key)) {
+        copy.meta ||= {};
+        copy.meta[key] = cloneReleaseVerifierJson(meta[key]);
+      }
+    }
+  }
+  return copy;
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierCheckedSnapshotEvidence(snapshots) {
+  return {
+    format: 'hash-only',
+    sourceProjectionHash: sha256Evidence(snapshots.source),
+    checkedRemoteBaseHash: sha256Evidence(snapshots.checkedRemoteBase),
+    localEditedHash: sha256Evidence(snapshots.localEdited),
+    importedRemoteProjectionHash: sha256Evidence(snapshots.importedRemote),
+    staleRemoteProjectionHash: sha256Evidence(snapshots.staleRemote),
   };
 }
 
@@ -13938,7 +14195,14 @@ try {
         ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
       };
       const mergeInvariantProofs = summarizeMergeInvariantReleaseVerifierProofs();
-      const graphIdentityProofs = summarizeGraphIdentityReleaseVerifierProofs();
+      const graphIdentityProofs = summarizeGraphIdentityReleaseVerifierProofs({
+        remoteBaseSnapshot,
+        localEditedSnapshot,
+        remoteChangedSnapshot,
+        checkedProductionEvidence: packagedSourceFixture === null
+          && Boolean(explicitReleaseVerifySourceUrl)
+          && checkedDurableJournalAccepted,
+      });
       const generatedHarnessProofs = summarizeGeneratedHarnessReleaseVerifierProofs();
       const checkedProductionPluginDriverAccepted = packagedSourceFixture !== null
         ? productionPluginDriverProof.verdict === 'PACKAGED_PLUGIN_DRIVER_BOUNDARY_OK'
