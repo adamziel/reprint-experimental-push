@@ -173,7 +173,7 @@ try {
     });
     assert.equal(labReceiptOnProductionApply.status, 409);
     assert.equal(labReceiptOnProductionApply.body.ok, false);
-    assert.equal(labReceiptOnProductionApply.body.code, 'AUTH_RECEIPT_MISMATCH');
+    assert.equal(labReceiptOnProductionApply.body.code, 'AUTH_RECEIPT_SIGNATURE_MISMATCH');
     assert.equal(labReceiptOnProductionApply.body.mode, 'apply');
     await assertCurrentSurface(client, snapshots.base, 'lab-authenticated receipt on production-shaped apply must not mutate');
 
@@ -186,7 +186,7 @@ try {
     });
     assert.equal(productionReceiptOnLabApply.status, 409);
     assert.equal(productionReceiptOnLabApply.body.ok, false);
-    assert.equal(productionReceiptOnLabApply.body.code, 'AUTH_RECEIPT_MISMATCH');
+    assert.equal(productionReceiptOnLabApply.body.code, 'AUTH_RECEIPT_SIGNATURE_MISMATCH');
     assert.equal(productionReceiptOnLabApply.body.mode, 'apply');
     await assertCurrentSurface(client, snapshots.base, 'production-shaped receipt on lab-authenticated apply must not mutate');
 
@@ -201,7 +201,7 @@ try {
     });
     assert.equal(sessionMismatchReceiptOnApply.status, 409);
     assert.equal(sessionMismatchReceiptOnApply.body.ok, false);
-    assert.equal(sessionMismatchReceiptOnApply.body.code, 'AUTH_RECEIPT_MISMATCH');
+    assert.equal(sessionMismatchReceiptOnApply.body.code, 'AUTH_RECEIPT_SIGNATURE_MISMATCH');
     assert.equal(sessionMismatchReceiptOnApply.body.mode, 'apply');
     await assertCurrentSurface(client, snapshots.base, 'production-shaped stale session receipt apply must not mutate');
 
@@ -217,7 +217,7 @@ try {
     });
     assert.equal(fallbackMismatchReceiptOnApply.status, 409);
     assert.equal(fallbackMismatchReceiptOnApply.body.ok, false);
-    assert.equal(fallbackMismatchReceiptOnApply.body.code, 'AUTH_RECEIPT_MISMATCH');
+    assert.equal(fallbackMismatchReceiptOnApply.body.code, 'AUTH_RECEIPT_SIGNATURE_MISMATCH');
     assert.equal(fallbackMismatchReceiptOnApply.body.mode, 'apply');
     await assertCurrentSurface(client, snapshots.base, 'production-shaped fallback-drift receipt apply must not mutate');
 

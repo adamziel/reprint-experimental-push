@@ -202,6 +202,19 @@ try {
       receipt.authBinding.protocol.protocolBindingHash,
       digest(withoutKey(receipt.authBinding.protocol, 'protocolBindingHash')),
     );
+    assert.equal(receipt.authBinding?.receiptSignature?.schemaVersion, 1);
+    assert.equal(receipt.authBinding.receiptSignature.algorithm, 'hmac-sha256');
+    assert.equal(receipt.authBinding.receiptSignature.keyScope, 'short-lived-push-session-receipt');
+    assert.equal(receipt.authBinding.receiptSignature.expiresAt, receipt.authBinding.expiresAt);
+    assert.equal(
+      receipt.authBinding.receiptSignature.protocolBindingHash,
+      receipt.authBinding.protocol.protocolBindingHash,
+    );
+    assert.match(receipt.authBinding.receiptSignature.payloadHash || '', /^[a-f0-9]{64}$/);
+    assert.match(receipt.authBinding.receiptSignature.receiptBodyHash || '', /^[a-f0-9]{64}$/);
+    assert.match(receipt.authBinding.receiptSignature.signatureHash || '', /^[a-f0-9]{64}$/);
+    assert.equal(Object.hasOwn(receipt.authBinding.receiptSignature, 'signature'), false);
+    assert.equal(Object.hasOwn(receipt.authBinding.receiptSignature, 'receiptSigningKey'), false);
     assert.equal(receipt.receiptHash, digest(withoutKey(receipt, 'receiptHash')));
 
     const after = await client.get('/snapshot');
@@ -251,6 +264,15 @@ try {
           idempotencyKeyHashLength: String(receipt.authBinding.protocol.signature.dryRunRequest.idempotencyKeyHash || '').length,
           mutationSetHashLength: String(receipt.authBinding.protocol.exporter.mutationSetHash || '').length,
           preconditionSetHashLength: String(receipt.authBinding.protocol.exporter.preconditionSetHash || '').length,
+        },
+        receiptSignature: {
+          algorithm: receipt.authBinding.receiptSignature.algorithm,
+          keyScope: receipt.authBinding.receiptSignature.keyScope,
+          signingKeyHashLength: String(receipt.authBinding.receiptSignature.signingKeyHash || '').length,
+          payloadHashLength: String(receipt.authBinding.receiptSignature.payloadHash || '').length,
+          receiptBodyHashLength: String(receipt.authBinding.receiptSignature.receiptBodyHash || '').length,
+          signatureHashLength: String(receipt.authBinding.receiptSignature.signatureHash || '').length,
+          rawSignatureIncluded: Object.hasOwn(receipt.authBinding.receiptSignature, 'signature'),
         },
       },
       signedRequest: {

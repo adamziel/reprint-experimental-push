@@ -933,7 +933,9 @@ test('RPP-0568 v4 route validates bound dry-run receipts before mutation-capable
   assert.match(bindReceipt, /'issue'\s*=>\s*reprint_push_lab_rest_authenticated_push_session_issue_binding/);
   assert.match(bindReceipt, /'sessionUser'\s*=>\s*reprint_push_lab_rest_authenticated_user_identity_binding/);
   assert.match(bindReceipt, /'planPayloadHash'\s*=>\s*\$plan_payload_hash/);
-  assert.match(bindReceipt, /'expiresAt'\s*=>\s*gmdate\('Y-m-d\\TH:i:s\\Z',\s*time\(\) \+ 300\)/);
+  assert.match(bindReceipt, /'expiresAt'\s*=>\s*reprint_push_lab_rest_authenticated_receipt_expires_at\(\$request\)/);
+  assert.match(bindReceipt, /\$receipt\['authBinding'\]\['receiptSignature'\]\s*=/);
+  assert.match(bindReceipt, /reprint_push_lab_rest_authenticated_receipt_signature\(\$request,\s*\$receipt\)/);
   assert.match(bindReceipt, /unset\(\$receipt\['receiptHash'\]\)/);
   assert.match(bindReceipt, /\$receipt\['receiptHash'\]\s*=\s*hash\('sha256',\s*reprint_push_stable_json\(\$receipt\)\)/);
 

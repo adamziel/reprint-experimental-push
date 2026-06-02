@@ -99,6 +99,14 @@ test('production dry-run receipts bind scope identity session and plan hash', ()
   assert.match(bindReceipt, /'pushSession'\s*=>\s*\[/);
   assert.match(bindReceipt, /'plan'\s*=>\s*\[/);
   assert.match(bindReceipt, /'protocol'\s*=>\s*reprint_push_lab_rest_authenticated_receipt_protocol_binding/);
+  assert.match(bindReceipt, /'expiresAt'\s*=>\s*reprint_push_lab_rest_authenticated_receipt_expires_at\(\$request\)/);
+  assert.match(bindReceipt, /\$receipt\['authBinding'\]\['receiptSignature'\]\s*=/);
+  assert.match(bindReceipt, /reprint_push_lab_rest_authenticated_receipt_signature\(\$request,\s*\$receipt\)/);
+  assertBefore(
+    bindReceipt,
+    "reprint_push_lab_rest_authenticated_receipt_signature($request, $receipt)",
+    "unset($receipt['receiptHash'])",
+  );
 
   const subjectBinding = functionBody('reprint_push_lab_rest_authenticated_receipt_subject_binding');
   assert.match(subjectBinding, /'scopeHash'\s*=>\s*hash\('sha256',\s*\(string\)\s*\(\$profile\['authScope'\]/);
@@ -133,6 +141,30 @@ test('production dry-run receipts bind scope identity session and plan hash', ()
   assert.match(protocolBinding, /'mutationSetHash'\s*=>\s*\(string\)\s*\(\$receipt\['mutationSetHash'\]/);
   assert.match(protocolBinding, /'preconditionSetHash'\s*=>\s*\(string\)\s*\(\$receipt\['preconditionSetHash'\]/);
   assert.match(protocolBinding, /'protocolBindingHash'\]\s*=\s*hash\('sha256',\s*reprint_push_stable_json\(\$binding\)\)/);
+
+  const receiptSignature = functionBody('reprint_push_lab_rest_authenticated_receipt_signature');
+  assert.match(receiptSignature, /'algorithm'\s*=>\s*'hmac-sha256'/);
+  assert.match(receiptSignature, /'keyScope'\s*=>\s*'short-lived-push-session-receipt'/);
+  assert.match(receiptSignature, /'signingKeyHash'\s*=>\s*\$receipt_signing_key_hash/);
+  assert.match(receiptSignature, /'payloadHash'\s*=>\s*hash\('sha256',\s*\$payload_json\)/);
+  assert.match(receiptSignature, /'receiptBodyHash'\s*=>\s*\(string\)\s*\(\$payload\['receiptBodyHash'\]/);
+  assert.match(receiptSignature, /'signatureHash'\s*=>\s*hash\('sha256',\s*\$signature\)/);
+  assert.doesNotMatch(receiptSignature, /'signature'\s*=>/);
+  assert.doesNotMatch(receiptSignature, /'receiptSigningKey'\s*=>/);
+
+  const receiptSignaturePayload = functionBody('reprint_push_lab_rest_authenticated_receipt_signature_payload');
+  assert.match(receiptSignaturePayload, /unset\(\$body\['receiptHash'\]\)/);
+  assert.match(receiptSignaturePayload, /unset\(\$body\['authBinding'\]\['receiptSignature'\]\)/);
+  assert.match(receiptSignaturePayload, /'receiptBodyHash'\s*=>\s*hash\('sha256',\s*reprint_push_stable_json\(\$body\)\)/);
+  assert.match(receiptSignaturePayload, /'dryRunCanonicalHash'\s*=>\s*\(string\)\s*\(\$push_session\['dryRunCanonicalHash'\]/);
+  assert.match(receiptSignaturePayload, /'dryRunIdempotencyKeyHash'\s*=>\s*\(string\)\s*\(\$push_session\['dryRunIdempotencyKeyHash'\]/);
+  assert.match(receiptSignaturePayload, /'applyRoute'\s*=>\s*\(string\)\s*\(\$routes\['apply'\]/);
+  assert.match(receiptSignaturePayload, /'protocolBindingHash'\s*=>\s*\(string\)\s*\(\$protocol\['protocolBindingHash'\]/);
+
+  const receiptExpiresAt = functionBody('reprint_push_lab_rest_authenticated_receipt_expires_at');
+  assert.match(receiptExpiresAt, /reprint_push_lab_receipt_expires_at/);
+  assert.match(receiptExpiresAt, /reprint_push_lab_rest_lab_routes_enabled\(\)/);
+  assert.match(receiptExpiresAt, /return gmdate\('Y-m-d\\TH:i:s\\Z',\s*time\(\) \+ 300\)/);
 });
 
 test('authenticated apply validates dry-run receipt subject and plan binding before mutation path', () => {
@@ -188,6 +220,10 @@ test('RPP-0523 dry-run proof uses the real production-shaped route over sandbox-
   assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.protocol\?\.routes\?\.apply, '\/push\/apply'\)/);
   assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.protocol\?\.signature\?\.dryRunRequest\?\.route, '\/push\/dry-run'\)/);
   assert.match(liveSmokeSource, /receipt\.authBinding\.protocol\.protocolBindingHash,\s+digest\(withoutKey\(receipt\.authBinding\.protocol, 'protocolBindingHash'\)\),/s);
+  assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.receiptSignature\?\.schemaVersion, 1\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\.receiptSignature\.algorithm, 'hmac-sha256'\)/);
+  assert.match(liveSmokeSource, /receipt\.authBinding\.receiptSignature\.protocolBindingHash,\s+receipt\.authBinding\.protocol\.protocolBindingHash,/s);
+  assert.match(liveSmokeSource, /assert\.equal\(Object\.hasOwn\(receipt\.authBinding\.receiptSignature, 'signature'\), false\)/);
   assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.session\?\.type, 'production-auth-session'\)/);
   assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.session\?\.id, session\)/);
   assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.binding\?\.planHash, expectedPlanHash\)/);
@@ -227,6 +263,9 @@ test('RPP-0523 live proof summary reports hash-only dry-run binding evidence', (
   assert.match(dryRunSummary, /dryRunRoute: receipt\.authBinding\.request\.dryRunRoute/);
   assert.match(dryRunSummary, /protocolBindingHashLength: String\(receipt\.authBinding\.protocol\.protocolBindingHash \|\| ''\)\.length/);
   assert.match(dryRunSummary, /applyRoute: receipt\.authBinding\.protocol\.routes\.apply/);
+  assert.match(dryRunSummary, /receiptSignature: \{/);
+  assert.match(dryRunSummary, /signatureHashLength: String\(receipt\.authBinding\.receiptSignature\.signatureHash \|\| ''\)\.length/);
+  assert.match(dryRunSummary, /rawSignatureIncluded: Object\.hasOwn\(receipt\.authBinding\.receiptSignature, 'signature'\)/);
   assert.match(dryRunSummary, /idMatchesPreflight: receipt\.authBinding\.session\.id === session/);
   assert.match(dryRunSummary, /scopeHashLength: String\(receipt\.authBinding\.binding\.scopeHash \|\| ''\)\.length/);
   assert.match(dryRunSummary, /identityHashLength: String\(receipt\.authBinding\.binding\.identityHash \|\| ''\)\.length/);

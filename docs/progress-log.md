@@ -4,6 +4,28 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Server-Minted Auth Receipt Signatures
+
+- Last update: 2026-06-02 06:52 CEST +02:00.
+- Authenticated dry-run receipts now carry a server-minted, hash-only
+  `receiptSignature` envelope bound to the short-lived push session, protocol
+  binding, dry-run canonical request, idempotency key, receipt body, and receipt
+  expiry. The envelope records HMAC and payload hashes but does not expose the
+  raw signature or receipt signing key.
+- Authenticated apply now validates that signature before expiry handling,
+  idempotency admission, journal work, or mutation-capable work. Missing
+  signatures refuse with `AUTH_RECEIPT_SIGNATURE_REQUIRED`; forged body,
+  binding, session, or expiry changes refuse with
+  `AUTH_RECEIPT_SIGNATURE_MISMATCH`; malformed or unavailable signing context
+  refuses with `AUTH_RECEIPT_SIGNATURE_INVALID`.
+- A signed-but-expired receipt still reaches the intended
+  `AUTH_RECEIPT_EXPIRED` refusal, proving expiry remains a server-minted
+  property rather than a client-editable escape hatch.
+- Caveat: this hardens the local Playground/authenticated route boundary and
+  deterministic source proofs. Production still needs the broader real
+  exporter/importer endpoint, durable audit store, transport auth, and hosted
+  smoke/soak evidence before release movement.
+
 ## 2026-06-02 - Active Plugins Apply Refusal Driver Evidence
 
 - Last update: 2026-06-02 06:28 CEST +02:00.

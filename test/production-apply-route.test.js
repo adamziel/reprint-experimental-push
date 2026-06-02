@@ -94,6 +94,32 @@ test('production apply rejects unsigned requests before parsing JSON plans', () 
     'reprint_push_lab_rest_validate_authenticated_receipt($request, $payload, $plan, $receipt_payload)',
     'reprint_push_lab_rest_apply_with_db_journal($request, true)',
   );
+
+  const validateReceipt = functionBody('reprint_push_lab_rest_validate_authenticated_receipt');
+  assertBefore(
+    validateReceipt,
+    'reprint_push_lab_rest_validate_authenticated_receipt_signature($request, $receipt)',
+    '$expires_at = strtotime',
+  );
+  assert.match(validateReceipt, /reprint_push_lab_rest_validate_authenticated_receipt_signature\(\$request,\s*\$receipt\)/);
+
+  const validateSignature = functionBody('reprint_push_lab_rest_validate_authenticated_receipt_signature');
+  assert.match(validateSignature, /AUTH_RECEIPT_SIGNATURE_REQUIRED/);
+  assert.match(validateSignature, /AUTH_RECEIPT_SIGNATURE_INVALID/);
+  assert.match(validateSignature, /AUTH_RECEIPT_SIGNATURE_MISMATCH/);
+  assert.match(validateSignature, /hash_hmac\('sha256',\s*\$payload_json,\s*\$receipt_signing_key\)/);
+  assert.match(validateSignature, /hash\('sha256',\s*\$expected_signature\)/);
+  assert.doesNotMatch(validateSignature, /\$wpdb|update_option|reprint_push_protocol_run_payload|reprint_push_apply_resource/);
+});
+
+test('production apply maps receipt signature refusals before mutation work', () => {
+  const statusForResult = functionBody('reprint_push_lab_rest_status_for_result');
+
+  assert.match(statusForResult, /case 'AUTH_RECEIPT_SIGNATURE_INVALID':\s*return 400;/);
+  assert.match(
+    statusForResult,
+    /case 'AUTH_RECEIPT_SIGNATURE_REQUIRED':\s*case 'AUTH_RECEIPT_SIGNATURE_MISMATCH':\s*case 'ATOMIC_GROUP_DEPENDENCY_INVALID':\s*return 409;/s,
+  );
 });
 
 test('production apply revalidates live source hashes after claim start and before mutation execution', () => {

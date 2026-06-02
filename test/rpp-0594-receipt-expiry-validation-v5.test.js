@@ -651,6 +651,11 @@ test('RPP-0594 v5 pins receipt expiry validation before apply mutation entry', (
   );
   assertBefore(
     validateReceipt,
+    'reprint_push_lab_rest_validate_authenticated_receipt_signature($request, $receipt)',
+    '$expires_at = strtotime',
+  );
+  assertBefore(
+    validateReceipt,
     '$expires_at = strtotime',
     '$current = reprint_push_lab_rest_auth_evidence($request);',
   );
@@ -672,8 +677,16 @@ test('RPP-0594 v5 pins receipt expiry validation before apply mutation entry', (
 
   assert.match(validateReceipt, /Authenticated dry-run receipt has expired\./);
   assert.match(validateReceipt, /AUTH_RECEIPT_EXPIRED/);
+  assert.match(validateReceipt, /reprint_push_lab_rest_validate_authenticated_receipt_signature\(\$request,\s*\$receipt\)/);
   assert.match(validateReceipt, /\$expires_at\s*=\s*strtotime\(\(string\) \(\$binding\['expiresAt'\]/);
   assert.match(validateReceipt, /if \(!\$expires_at \|\| \$expires_at < time\(\)\)/);
+
+  const validateSignature = functionBody('reprint_push_lab_rest_validate_authenticated_receipt_signature');
+  assert.match(validateSignature, /AUTH_RECEIPT_SIGNATURE_REQUIRED/);
+  assert.match(validateSignature, /AUTH_RECEIPT_SIGNATURE_INVALID/);
+  assert.match(validateSignature, /AUTH_RECEIPT_SIGNATURE_MISMATCH/);
+  assert.match(validateSignature, /hash_hmac\('sha256',\s*\$payload_json,\s*\$receipt_signing_key\)/);
+  assert.match(validateSignature, /hash\('sha256',\s*\$expected_signature\)/);
 });
 
 test('RPP-0594 v5 refuses expired missing malformed stale or drifted expiry evidence before release movement', async () => {

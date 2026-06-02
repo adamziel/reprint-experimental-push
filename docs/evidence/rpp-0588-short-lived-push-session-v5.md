@@ -20,6 +20,10 @@ variant 5 verifier proof:
 - source-order assertions keep signed dry-run verification before receipt
   binding, and keep authenticated receipt validation before the apply/journal
   mutation path;
+- authenticated dry-run receipt validation now requires the server-minted
+  `receiptSignature` envelope to match the short-lived push session, protocol
+  binding, dry-run canonical request, idempotency key, receipt body, and
+  receipt expiry before mutation admission;
 - a dry-run-only mocked production-shaped flow proves the receipt subject,
   issue, session-user, request, and plan hashes agree on the canonical plan and
   bounded push session; and

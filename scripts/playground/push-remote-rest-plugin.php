@@ -4753,6 +4753,7 @@ function reprint_push_lab_rest_mint_signed_session(array $auth, string $signing_
 {
     $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
     $session_hash = hash('sha256', $token);
+    $receipt_signing_key = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
     $now = time();
     $session = [
         'schemaVersion' => 1,
@@ -4770,6 +4771,8 @@ function reprint_push_lab_rest_mint_signed_session(array $auth, string $signing_
         'signingKeyHash' => $signing_key_hash,
         'sourceHash' => (string) ($source_identity['sourceHash'] ?? ''),
         'sourceUrlHash' => (string) ($source_identity['sourceUrlHash'] ?? ''),
+        'receiptSigningKey' => $receipt_signing_key,
+        'receiptSigningKeyHash' => hash('sha256', $receipt_signing_key),
         'issuedAt' => gmdate('Y-m-d\TH:i:s\Z', $now),
         'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', $now + REPRINT_PUSH_LAB_SIGNED_SESSION_TTL),
         'expiresAtUnix' => $now + REPRINT_PUSH_LAB_SIGNED_SESSION_TTL,
@@ -5648,12 +5651,147 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
             $plan
         ),
         'issuedAt' => gmdate('Y-m-d\TH:i:s\Z'),
-        'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', time() + 300),
+        'expiresAt' => reprint_push_lab_rest_authenticated_receipt_expires_at($request),
     ];
+    $receipt['authBinding']['receiptSignature'] =
+        reprint_push_lab_rest_authenticated_receipt_signature($request, $receipt);
     unset($receipt['receiptHash']);
     $receipt['receiptHash'] = hash('sha256', reprint_push_stable_json($receipt));
 
     return $receipt;
+}
+
+function reprint_push_lab_rest_authenticated_receipt_signature(
+    WP_REST_Request $request,
+    array $receipt
+): array {
+    $session = reprint_push_lab_rest_receipt_signing_session($request);
+    $receipt_signing_key = (string) ($session['receiptSigningKey'] ?? '');
+    $receipt_signing_key_hash = (string) ($session['receiptSigningKeyHash'] ?? '');
+    if ($receipt_signing_key === '' || $receipt_signing_key_hash === '') {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'AUTH_RECEIPT_SIGNATURE_INVALID',
+            'message' => 'Dry-run receipt signing requires a server-side receipt signing key.',
+            'mode' => 'dry-run',
+        ]);
+    }
+
+    $payload = reprint_push_lab_rest_authenticated_receipt_signature_payload($receipt);
+    $payload_json = reprint_push_stable_json($payload);
+    $signature = hash_hmac('sha256', $payload_json, $receipt_signing_key);
+
+    return [
+        'schemaVersion' => 1,
+        'algorithm' => 'hmac-sha256',
+        'keyScope' => 'short-lived-push-session-receipt',
+        'signingKeyHash' => $receipt_signing_key_hash,
+        'payloadHash' => hash('sha256', $payload_json),
+        'receiptBodyHash' => (string) ($payload['receiptBodyHash'] ?? ''),
+        'protocolBindingHash' => (string) ($payload['protocolBindingHash'] ?? ''),
+        'dryRunCanonicalHash' => (string) ($payload['dryRunCanonicalHash'] ?? ''),
+        'dryRunIdempotencyKeyHash' => (string) ($payload['dryRunIdempotencyKeyHash'] ?? ''),
+        'expiresAt' => (string) ($payload['expiresAt'] ?? ''),
+        'signatureHash' => hash('sha256', $signature),
+    ];
+}
+
+function reprint_push_lab_rest_authenticated_receipt_expires_at(WP_REST_Request $request): string
+{
+    $override = trim((string) $request->get_param('reprint_push_lab_receipt_expires_at'));
+    if ($override !== '' && reprint_push_lab_rest_lab_routes_enabled()) {
+        $timestamp = strtotime($override);
+        if ($timestamp !== false) {
+            return gmdate('Y-m-d\TH:i:s\Z', $timestamp);
+        }
+    }
+
+    return gmdate('Y-m-d\TH:i:s\Z', time() + 300);
+}
+
+function reprint_push_lab_rest_receipt_signing_session(WP_REST_Request $request): ?array
+{
+    $signature = reprint_push_lab_rest_signature_context($request);
+    $session_context = isset($signature['session']) && is_array($signature['session'])
+        ? $signature['session']
+        : [];
+    $session_id = (string) ($session_context['id'] ?? '');
+    if ($session_id === '') {
+        return null;
+    }
+
+    $session = reprint_push_lab_rest_signed_session($session_id);
+    if (!is_array($session)) {
+        return null;
+    }
+
+    $expected_session_hash = (string) ($session_context['sessionHash'] ?? '');
+    if ($expected_session_hash !== ''
+        && !hash_equals($expected_session_hash, (string) ($session['sessionHash'] ?? ''))
+    ) {
+        return null;
+    }
+
+    return $session;
+}
+
+function reprint_push_lab_rest_authenticated_receipt_signature_payload(array $receipt): array
+{
+    $body = $receipt;
+    unset($body['receiptHash']);
+    if (isset($body['authBinding']) && is_array($body['authBinding'])) {
+        unset($body['authBinding']['receiptSignature']);
+    }
+
+    $binding = isset($receipt['authBinding']) && is_array($receipt['authBinding'])
+        ? $receipt['authBinding']
+        : [];
+    $push_session = isset($binding['pushSession']) && is_array($binding['pushSession'])
+        ? $binding['pushSession']
+        : [];
+    $request = isset($binding['request']) && is_array($binding['request'])
+        ? $binding['request']
+        : [];
+    $protocol = isset($binding['protocol']) && is_array($binding['protocol'])
+        ? $binding['protocol']
+        : [];
+    $routes = isset($protocol['routes']) && is_array($protocol['routes'])
+        ? $protocol['routes']
+        : [];
+
+    return [
+        'schemaVersion' => 1,
+        'operation' => 'auth-bound-dry-run-receipt-signature',
+        'protocol' => (string) ($receipt['protocol'] ?? ''),
+        'mode' => (string) ($receipt['mode'] ?? ''),
+        'receiptBodyHash' => hash('sha256', reprint_push_stable_json($body)),
+        'planHash' => (string) ($receipt['planHash'] ?? ''),
+        'planFingerprint' => (string) ($receipt['planFingerprint'] ?? ''),
+        'summaryHash' => (string) ($receipt['summaryHash'] ?? ''),
+        'mutationSetHash' => (string) ($receipt['mutationSetHash'] ?? ''),
+        'preconditionSetHash' => (string) ($receipt['preconditionSetHash'] ?? ''),
+        'snapshotHash' => (string) ($receipt['snapshotHash'] ?? ''),
+        'mutationCount' => (int) ($receipt['mutationCount'] ?? 0),
+        'authScope' => (string) ($binding['scope'] ?? ''),
+        'authPlanHash' => (string) ($binding['planHash'] ?? ''),
+        'issuedAt' => (string) ($binding['issuedAt'] ?? ''),
+        'expiresAt' => (string) ($binding['expiresAt'] ?? ''),
+        'identityHash' => hash('sha256', reprint_push_stable_json($binding['identity'] ?? [])),
+        'authSessionHash' => hash('sha256', reprint_push_stable_json($binding['session'] ?? [])),
+        'sessionUserHash' => hash('sha256', reprint_push_stable_json($binding['sessionUser'] ?? [])),
+        'subjectBindingHash' => (string) ($binding['binding']['bindingHash'] ?? ''),
+        'pushSessionHash' => (string) ($push_session['sessionHash'] ?? ''),
+        'pushSessionSigningKeyHash' => (string) ($push_session['signingKeyHash'] ?? ''),
+        'dryRunNonceHash' => (string) ($push_session['dryRunNonceHash'] ?? ''),
+        'dryRunContentHash' => (string) ($push_session['dryRunContentHash'] ?? ''),
+        'dryRunCanonicalHash' => (string) ($push_session['dryRunCanonicalHash'] ?? ''),
+        'dryRunIdempotencyKeyHash' => (string) ($push_session['dryRunIdempotencyKeyHash'] ?? ''),
+        'restNamespace' => (string) ($request['restNamespace'] ?? ''),
+        'routeProfile' => (string) ($request['routeProfile'] ?? ''),
+        'dryRunRoute' => (string) ($request['dryRunRoute'] ?? ''),
+        'applyRoute' => (string) ($routes['apply'] ?? ''),
+        'protocolBindingHash' => (string) ($protocol['protocolBindingHash'] ?? ''),
+    ];
 }
 
 function reprint_push_lab_rest_authenticated_push_session_issue_binding(
@@ -5969,6 +6107,8 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt hash does not match receipt body.', $receipt);
     }
 
+    reprint_push_lab_rest_validate_authenticated_receipt_signature($request, $receipt);
+
     if ((string) ($binding['scope'] ?? '') !== (string) $profile['authScope']) {
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt auth scope does not match authenticated push scope.', $receipt);
     }
@@ -6126,6 +6266,86 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
             reprint_push_lab_rest_auth_receipt_mismatch('Production-shaped apply must reuse the dry-run receipt idempotency binding.', $receipt);
         }
     }
+}
+
+function reprint_push_lab_rest_validate_authenticated_receipt_signature(
+    WP_REST_Request $request,
+    array $receipt
+): void {
+    $binding = isset($receipt['authBinding']) && is_array($receipt['authBinding'])
+        ? $receipt['authBinding']
+        : [];
+    $signature = isset($binding['receiptSignature']) && is_array($binding['receiptSignature'])
+        ? $binding['receiptSignature']
+        : null;
+
+    if (!is_array($signature)) {
+        reprint_push_lab_rest_auth_receipt_mismatch(
+            'Authenticated dry-run receipt is missing the server-minted receipt signature.',
+            $receipt,
+            'AUTH_RECEIPT_SIGNATURE_REQUIRED'
+        );
+    }
+
+    $algorithm = (string) ($signature['algorithm'] ?? '');
+    $payload_hash = (string) ($signature['payloadHash'] ?? '');
+    $receipt_body_hash = (string) ($signature['receiptBodyHash'] ?? '');
+    $signing_key_hash = (string) ($signature['signingKeyHash'] ?? '');
+    $signature_hash = (string) ($signature['signatureHash'] ?? '');
+    if ((int) ($signature['schemaVersion'] ?? 0) !== 1
+        || $algorithm !== 'hmac-sha256'
+        || !reprint_push_lab_rest_receipt_signature_hash($payload_hash)
+        || !reprint_push_lab_rest_receipt_signature_hash($receipt_body_hash)
+        || !reprint_push_lab_rest_receipt_signature_hash($signing_key_hash)
+        || !reprint_push_lab_rest_receipt_signature_hash($signature_hash)
+    ) {
+        reprint_push_lab_rest_auth_receipt_mismatch(
+            'Authenticated dry-run receipt has a malformed receipt signature envelope.',
+            $receipt,
+            'AUTH_RECEIPT_SIGNATURE_INVALID'
+        );
+    }
+
+    $session = reprint_push_lab_rest_receipt_signing_session($request);
+    $receipt_signing_key = (string) ($session['receiptSigningKey'] ?? '');
+    $expected_signing_key_hash = (string) ($session['receiptSigningKeyHash'] ?? '');
+    if ($receipt_signing_key === ''
+        || !reprint_push_lab_rest_receipt_signature_hash($expected_signing_key_hash)
+    ) {
+        reprint_push_lab_rest_auth_receipt_mismatch(
+            'Authenticated apply cannot validate the receipt signature because the server signing session is unavailable.',
+            $receipt,
+            'AUTH_RECEIPT_SIGNATURE_INVALID'
+        );
+    }
+
+    if (!hash_equals($expected_signing_key_hash, $signing_key_hash)) {
+        reprint_push_lab_rest_auth_receipt_mismatch(
+            'Authenticated dry-run receipt signature is not bound to the current server signing session.',
+            $receipt,
+            'AUTH_RECEIPT_SIGNATURE_MISMATCH'
+        );
+    }
+
+    $payload = reprint_push_lab_rest_authenticated_receipt_signature_payload($receipt);
+    $payload_json = reprint_push_stable_json($payload);
+    $expected_payload_hash = hash('sha256', $payload_json);
+    $expected_signature = hash_hmac('sha256', $payload_json, $receipt_signing_key);
+    if (!hash_equals($expected_payload_hash, $payload_hash)
+        || !hash_equals((string) ($payload['receiptBodyHash'] ?? ''), $receipt_body_hash)
+        || !hash_equals(hash('sha256', $expected_signature), $signature_hash)
+    ) {
+        reprint_push_lab_rest_auth_receipt_mismatch(
+            'Authenticated dry-run receipt signature does not match the receipt body and protocol binding.',
+            $receipt,
+            'AUTH_RECEIPT_SIGNATURE_MISMATCH'
+        );
+    }
+}
+
+function reprint_push_lab_rest_receipt_signature_hash(string $value): bool
+{
+    return preg_match('/^[a-f0-9]{64}$/', $value) === 1;
 }
 
 function reprint_push_lab_rest_auth_receipt_mismatch(
@@ -6670,6 +6890,7 @@ function reprint_push_lab_rest_status_for_result(array $result): int
         case 'INVALID_CHUNK_UPLOAD':
         case 'INVALID_PLAN':
         case 'INVALID_RECEIPT':
+        case 'AUTH_RECEIPT_SIGNATURE_INVALID':
             return 400;
         case 'PRECONDITION_FAILED':
             return 412;
@@ -6677,6 +6898,8 @@ function reprint_push_lab_rest_status_for_result(array $result): int
         case 'RECEIPT_MISMATCH':
         case 'AUTH_RECEIPT_MISMATCH':
         case 'AUTH_RECEIPT_EXPIRED':
+        case 'AUTH_RECEIPT_SIGNATURE_REQUIRED':
+        case 'AUTH_RECEIPT_SIGNATURE_MISMATCH':
         case 'ATOMIC_GROUP_DEPENDENCY_INVALID':
             return 409;
         default:

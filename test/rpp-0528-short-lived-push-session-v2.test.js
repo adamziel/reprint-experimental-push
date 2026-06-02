@@ -125,6 +125,9 @@ test('RPP-0528 dry-run receipts bind authenticated scope identity session and pl
   assert.match(bindReceipt, /'pushSession'\s*=>\s*\[/);
   assert.match(bindReceipt, /'issue'\s*=>\s*reprint_push_lab_rest_authenticated_push_session_issue_binding/);
   assert.match(bindReceipt, /'plan'\s*=>\s*\[/);
+  assert.match(bindReceipt, /'expiresAt'\s*=>\s*reprint_push_lab_rest_authenticated_receipt_expires_at\(\$request\)/);
+  assert.match(bindReceipt, /\$receipt\['authBinding'\]\['receiptSignature'\]\s*=/);
+  assert.match(bindReceipt, /reprint_push_lab_rest_authenticated_receipt_signature\(\$request,\s*\$receipt\)/);
   assert.match(bindReceipt, /unset\(\$receipt\['receiptHash'\]\)/);
   assert.match(bindReceipt, /\$receipt\['receiptHash'\]\s*=\s*hash\('sha256',\s*reprint_push_stable_json\(\$receipt\)\)/);
 

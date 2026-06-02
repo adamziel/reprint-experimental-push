@@ -436,6 +436,31 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
   await assertNoMutation(server, dryRunBefore.body.snapshot, 'authenticated dry-run');
   readyReceipt = dryRun.body.receipt;
 
+  const missingReceiptSignatureBody = {
+    plan: readyPlan,
+    receipt: mutateReceipt(readyReceipt, (receipt) => {
+      delete receipt.authBinding.receiptSignature;
+    }),
+  };
+  const missingReceiptSignature = await postAuthenticated(
+    server,
+    '/apply',
+    missingReceiptSignatureBody,
+    signedRequestHeaders(
+      credentials.admin,
+      'POST',
+      '/wp-json/reprint-push-lab/v1/authenticated/apply',
+      JSON.stringify(missingReceiptSignatureBody),
+      { session: pushSession, idempotencyKey: 'auth-http-missing-receipt-signature' },
+    ),
+  );
+  await assertFailureNoMutation(server, missingReceiptSignature, dryRunBefore.body.snapshot, {
+    status: 409,
+    code: 'AUTH_RECEIPT_SIGNATURE_REQUIRED',
+    label: 'missing authenticated receipt signature apply',
+    journalEvent: 'auth-receipt-mismatch',
+  });
+
   const missingKey = await postAuthenticated(
     server,
     '/apply',
@@ -483,7 +508,7 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
     journalEvent: 'auth-receipt-mismatch',
   });
 
-  const expiredReceipt = await postAuthenticated(
+  const forgedExpiredReceipt = await postAuthenticated(
     server,
     '/apply',
     {
@@ -505,10 +530,47 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
       { session: pushSession, idempotencyKey: 'auth-http-expired-receipt' },
     ),
   );
-  await assertFailureNoMutation(server, expiredReceipt, dryRunBefore.body.snapshot, {
+  await assertFailureNoMutation(server, forgedExpiredReceipt, dryRunBefore.body.snapshot, {
+    status: 409,
+    code: 'AUTH_RECEIPT_SIGNATURE_MISMATCH',
+    label: 'forged expired authenticated receipt apply',
+    journalEvent: 'auth-receipt-mismatch',
+  });
+
+  const expiredDryRunPath =
+    `/dry-run?reprint_push_lab_receipt_expires_at=${encodeURIComponent('2000-01-01T00:00:00Z')}`;
+  const signedExpiredDryRun = await signedPostAuthenticated(
+    server,
+    expiredDryRunPath,
+    { plan: readyPlan },
+    credentials.admin,
+    {
+      session: pushSession,
+      idempotencyKey: 'auth-http-signed-expired-dry-run',
+    },
+  );
+  assert.equal(signedExpiredDryRun.status, 200);
+  assert.equal(signedExpiredDryRun.body.ok, true);
+  assert.equal(signedExpiredDryRun.body.receipt.authBinding.expiresAt, '2000-01-01T00:00:00Z');
+  assertReceiptSignature(signedExpiredDryRun.body.receipt);
+
+  const signedExpiredApplyBody = { plan: readyPlan, receipt: signedExpiredDryRun.body.receipt };
+  const signedExpiredApply = await postAuthenticated(
+    server,
+    '/apply',
+    signedExpiredApplyBody,
+    signedRequestHeaders(
+      credentials.admin,
+      'POST',
+      '/wp-json/reprint-push-lab/v1/authenticated/apply',
+      JSON.stringify(signedExpiredApplyBody),
+      { session: pushSession, idempotencyKey: 'auth-http-signed-expired-receipt' },
+    ),
+  );
+  await assertFailureNoMutation(server, signedExpiredApply, dryRunBefore.body.snapshot, {
     status: 409,
     code: 'AUTH_RECEIPT_EXPIRED',
-    label: 'expired authenticated receipt apply',
+    label: 'signed expired authenticated receipt apply',
     journalEvent: 'auth-receipt-mismatch',
   });
 
@@ -527,7 +589,7 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
   );
   await assertFailureNoMutation(server, identityMismatch, dryRunBefore.body.snapshot, {
     status: 409,
-    code: 'AUTH_RECEIPT_MISMATCH',
+    code: 'AUTH_RECEIPT_SIGNATURE_MISMATCH',
     label: 'receipt identity mismatch apply',
     journalEvent: 'auth-receipt-mismatch',
   });
@@ -632,7 +694,12 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
         : 'Playground did not establish the bootstrapped limited Application Password identity; request remained non-mutating at auth-required before capability checks.',
     },
     tamperedReceipt: { status: tamperedReceipt.status, code: tamperedReceipt.body.code },
-    expiredReceipt: { status: expiredReceipt.status, code: expiredReceipt.body.code },
+    missingReceiptSignature: {
+      status: missingReceiptSignature.status,
+      code: missingReceiptSignature.body.code,
+    },
+    forgedExpiredReceipt: { status: forgedExpiredReceipt.status, code: forgedExpiredReceipt.body.code },
+    signedExpiredReceipt: { status: signedExpiredApply.status, code: signedExpiredApply.body.code },
     identityMismatch: { status: identityMismatch.status, code: identityMismatch.body.code },
     missingIdempotencyKey: { status: missingKey.status, code: missingKey.body.code },
     unsignedSignedRoutes: {
@@ -658,6 +725,7 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
   summary.dryRun = {
     status: dryRun.status,
     receiptHash: dryRun.body.receipt.receiptHash,
+    receiptSignatureHash: dryRun.body.receipt.authBinding.receiptSignature.signatureHash,
     authBound: true,
     nonMutating: true,
   };
@@ -1242,6 +1310,7 @@ function assertAuthenticatedReceipt(receipt, auth, plan) {
   assert.equal(receipt.authBinding.preconditions.mutationSetHash, receipt.mutationSetHash);
   assert.equal(receipt.authBinding.preconditions.mutationCount, plan.mutations.length);
   assert.ok(Date.parse(receipt.authBinding.expiresAt) > Date.now(), 'auth receipt should not be expired');
+  assertReceiptSignature(receipt);
 
   const protocolWithoutHash = JSON.parse(JSON.stringify(receipt.authBinding.protocol));
   const protocolBindingHash = protocolWithoutHash.protocolBindingHash;
@@ -1252,6 +1321,45 @@ function assertAuthenticatedReceipt(receipt, auth, plan) {
   const receiptHash = withoutHash.receiptHash;
   delete withoutHash.receiptHash;
   assert.equal(digest(withoutHash), receiptHash, 'auth-bound receipt hash mismatch');
+}
+
+function assertReceiptSignature(receipt) {
+  const signature = receipt.authBinding?.receiptSignature;
+  assert.equal(signature?.schemaVersion, 1);
+  assert.equal(signature.algorithm, 'hmac-sha256');
+  assert.equal(signature.keyScope, 'short-lived-push-session-receipt');
+  assert.equal(signature.expiresAt, receipt.authBinding.expiresAt);
+  assert.equal(signature.protocolBindingHash, receipt.authBinding.protocol.protocolBindingHash);
+  assert.equal(signature.dryRunCanonicalHash, receipt.authBinding.pushSession.dryRunCanonicalHash);
+  assert.equal(signature.dryRunIdempotencyKeyHash, receipt.authBinding.pushSession.dryRunIdempotencyKeyHash);
+  for (const field of [
+    'signingKeyHash',
+    'payloadHash',
+    'receiptBodyHash',
+    'protocolBindingHash',
+    'dryRunCanonicalHash',
+    'dryRunIdempotencyKeyHash',
+    'signatureHash',
+  ]) {
+    assert.match(signature[field] || '', /^[a-f0-9]{64}$/, `receipt signature ${field} must be a sha256 hash`);
+  }
+  assert.equal(Object.hasOwn(signature, 'signature'), false, 'receipt signature must not expose raw HMAC');
+  assert.equal(Object.hasOwn(signature, 'signingKey'), false, 'receipt signature must not expose signing key');
+  assertNoRawReceiptSignatureSecrets(signature);
+}
+
+function assertNoRawReceiptSignatureSecrets(signature) {
+  const serialized = JSON.stringify(signature);
+  for (const forbidden of [
+    credentials.admin.username,
+    credentials.admin.password,
+    credentials.altAdmin.username,
+    credentials.altAdmin.password,
+    'Basic ',
+    'authorization',
+  ]) {
+    assert.equal(serialized.includes(forbidden), false, `receipt signature leaked ${forbidden}`);
+  }
 }
 
 function mutateReceipt(receipt, mutate) {

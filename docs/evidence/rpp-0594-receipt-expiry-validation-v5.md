@@ -10,6 +10,10 @@ release remains **NO-GO**.
 - Accepted apply support evidence carries receipt-expiry validation through one
   verifier summary and records live-source revalidation after apply start and
   before mutation-capable work.
+- Apply-side receipt expiry validation now runs only after the authenticated
+  dry-run receipt signature has been validated. A client-forged expiry change
+  fails as `AUTH_RECEIPT_SIGNATURE_MISMATCH`, while a server-minted
+  signed-but-expired receipt continues to fail at `AUTH_RECEIPT_EXPIRED`.
 - Expired, missing, malformed, stale, and drifted receipt-expiry evidence is
   represented as blocked verifier cases with JSON parsing, receipt work,
   mutation-capable work, and release movement all held at zero.
