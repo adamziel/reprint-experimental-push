@@ -85,6 +85,7 @@ import {
 import {
   pluginOwnedRowDriverContractValidationEvidenceHash,
   pluginOwnedRowDriverContractHash,
+  normalizePluginOwnedRowDriverRowSchema,
 } from '../../src/plugin-driver-contracts.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -11595,6 +11596,9 @@ export function summarizeProductionPluginDriverBoundaryProof({
   const expectedContractValidationHash = contractValidationEvidence
     ? pluginOwnedRowDriverContractValidationEvidenceHash(contractValidationEvidence)
     : null;
+  const contractRowSchema = contractValidationEvidence?.rowSchema
+    ? normalizePluginOwnedRowDriverRowSchema(contractValidationEvidence.rowSchema).normalized
+    : null;
   const plannedMutationValue = mutation
     ? deserializeResourceValue(mutation.value)
     : null;
@@ -11624,9 +11628,22 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && !Array.isArray(driverPayloadValidationEvidence.rowIdentity)
       ? driverPayloadValidationEvidence.rowIdentity
       : null;
+  const driverPayloadSchemaValidationEvidence =
+    driverPayloadValidationEvidence?.schemaValidation
+    && typeof driverPayloadValidationEvidence.schemaValidation === 'object'
+    && !Array.isArray(driverPayloadValidationEvidence.schemaValidation)
+      ? driverPayloadValidationEvidence.schemaValidation
+      : null;
   const expectedDriverPayloadRowIdentity = mutation
     ? contractBoundRowIdentityEvidence({
       resource: mutation.resource,
+      value: plannedMutationValue,
+      action: mutation.action,
+    })
+    : null;
+  const expectedDriverPayloadSchemaValidation = contractRowSchema && mutation
+    ? contractBoundRowSchemaValidationEvidence({
+      rowSchema: contractRowSchema,
       value: plannedMutationValue,
       action: mutation.action,
     })
@@ -11669,6 +11686,13 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && Boolean(driverPayloadRowIdentityEvidence)
     && digest(driverPayloadRowIdentityEvidence) === digest(expectedDriverPayloadRowIdentity)
     && ['matched', 'not-required'].includes(driverPayloadRowIdentityEvidence.status);
+  const driverPayloadSchemaValidationMatchesExpected = !contractRowSchema
+    || (
+      Boolean(expectedDriverPayloadSchemaValidation)
+      && Boolean(driverPayloadSchemaValidationEvidence)
+      && digest(driverPayloadSchemaValidationEvidence) === digest(expectedDriverPayloadSchemaValidation)
+      && ['matched', 'not-required'].includes(driverPayloadSchemaValidationEvidence.status)
+    );
   const driverPayloadEvidenceAccepted = contractEvidenceAccepted
     && driverPayloadValidationEvidence?.schemaVersion === 1
     && driverPayloadValidationEvidence?.operation === 'plugin-driver-payload-validation'
@@ -11687,6 +11711,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && driverPayloadContractSupportsDeleteMatches
     && driverPayloadActionMatchesMutation
     && driverPayloadRowIdentityMatchesExpected
+    && driverPayloadSchemaValidationMatchesExpected
     && plannedPayloadOwnerMatchesExpected
     && driverPayloadValidationEvidence?.contractHash === contractHash
     && bareSha256Pattern.test(driverPayloadValidationEvidence?.contractHash || '')
@@ -11786,6 +11811,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
       payloadValueStateMatchesExpected: driverPayloadValueStateMatchesExpected,
       payloadActionMatchesMutation: driverPayloadActionMatchesMutation,
       payloadRowIdentityMatchesExpected: driverPayloadRowIdentityMatchesExpected,
+      payloadSchemaValidationMatchesExpected: driverPayloadSchemaValidationMatchesExpected,
       payloadOwnerMatchesExpected: plannedPayloadOwnerMatchesExpected,
       payloadContractSupportsDeleteMatches: driverPayloadContractSupportsDeleteMatches,
       contractValidation: contractValidationEvidence ? {
@@ -11798,6 +11824,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
         driver: contractValidationEvidence.driver || null,
         table: contractValidationEvidence.table || null,
         supportsDelete: contractValidationEvidence.supportsDelete === true,
+        rowSchemaHash: contractRowSchema ? digest(contractRowSchema) : null,
         contractHash: contractValidationEvidence.contractHash || null,
         rawValuesIncluded: contractValidationEvidence.rawValuesIncluded === true,
       } : null,
@@ -11822,6 +11849,20 @@ export function summarizeProductionPluginDriverBoundaryProof({
               field: field?.field || null,
               expected: field?.expected || null,
               observedHash: field?.observedHash || null,
+              matched: field?.matched === true,
+            }))
+            : [],
+        } : null,
+        schemaValidation: driverPayloadSchemaValidationEvidence ? {
+          schemaHash: driverPayloadSchemaValidationEvidence.schemaHash || null,
+          status: driverPayloadSchemaValidationEvidence.status || null,
+          fields: Array.isArray(driverPayloadSchemaValidationEvidence.fields)
+            ? driverPayloadSchemaValidationEvidence.fields.map((field) => ({
+              field: field?.field || null,
+              expectedType: field?.expectedType || null,
+              required: field?.required === true,
+              state: field?.state || null,
+              observedType: field?.observedType || null,
               matched: field?.matched === true,
             }))
             : [],
@@ -11984,6 +12025,76 @@ function contractBoundRowIdentityTokens(resourceId) {
     });
   }
   return tokens;
+}
+
+function contractBoundRowSchemaValidationEvidence({
+  rowSchema,
+  value,
+  action,
+} = {}) {
+  const normalized = normalizePluginOwnedRowDriverRowSchema(rowSchema).normalized;
+  const schemaHash = digest(normalized);
+  if (!normalized) {
+    return {
+      schemaHash,
+      status: 'unsupported',
+      fields: [],
+    };
+  }
+  if (action === 'delete' || value === ABSENT) {
+    return {
+      schemaHash,
+      status: 'not-required',
+      fields: [],
+    };
+  }
+  const valueIsObject = value && typeof value === 'object' && !Array.isArray(value);
+  const fields = normalized.fields.map((field) => {
+    const observedExists = valueIsObject && Object.prototype.hasOwnProperty.call(value, field.field);
+    const observed = observedExists ? value[field.field] : undefined;
+    const observedType = observedExists ? contractBoundRowSchemaValueType(observed) : null;
+    const matched = observedExists
+      ? observedType === field.type
+      : field.required !== true;
+    return {
+      field: field.field,
+      expectedType: field.type,
+      required: field.required === true,
+      state: observedExists ? 'present' : 'missing',
+      observedType,
+      matched,
+    };
+  });
+  return {
+    schemaHash,
+    status: fields.every((field) => field.matched) ? 'matched' : 'mismatch',
+    fields,
+  };
+}
+
+function contractBoundRowSchemaValueType(value) {
+  if (value === null) {
+    return 'null';
+  }
+  if (Array.isArray(value)) {
+    return 'array';
+  }
+  if (Number.isInteger(value)) {
+    return 'integer';
+  }
+  if (typeof value === 'number') {
+    return 'number';
+  }
+  if (typeof value === 'boolean') {
+    return 'boolean';
+  }
+  if (typeof value === 'string') {
+    return 'string';
+  }
+  if (typeof value === 'object') {
+    return 'object';
+  }
+  return typeof value;
 }
 
 export function summarizeArbitraryPluginFixturePackageReleaseVerifierEvidence({

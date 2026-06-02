@@ -40,6 +40,9 @@ export function normalizePluginOwnedRowDriverContract(entry, {
   const driver = entry.driver || entry.supportedDriver || entry.resourceDriver || null;
   const table = entry.table || entry.resource?.table || null;
   const scope = entry.evidenceScope || entry.releaseGateEvidenceScope || evidenceScope || 'local-candidate';
+  const rowSchemaResult = normalizePluginOwnedRowDriverRowSchema(
+    entry.rowSchema ?? nestedContract?.rowSchema ?? null,
+  );
 
   const issues = [];
   if (contractVersion !== PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION) {
@@ -114,6 +117,14 @@ export function normalizePluginOwnedRowDriverContract(entry, {
       observed: rawValuesIncluded.value,
     });
   }
+  if (!rowSchemaResult.valid) {
+    issues.push({
+      reasonCode: rowSchemaResult.reasonCode,
+      field: 'rowSchema',
+      required: rowSchemaResult.required,
+      observed: rowSchemaResult.observed,
+    });
+  }
 
   const accepted = issues.length === 0;
   const normalized = {
@@ -125,6 +136,7 @@ export function normalizePluginOwnedRowDriverContract(entry, {
     evidenceScope: scope,
     contractVersion,
     contractKind,
+    ...(rowSchemaResult.normalized ? { rowSchema: rowSchemaResult.normalized } : {}),
   };
   const contractHash = pluginOwnedRowDriverContractHash(normalized);
   const evidence = {
@@ -146,6 +158,7 @@ export function normalizePluginOwnedRowDriverContract(entry, {
     driver: driver || null,
     table: table || null,
     supportsDelete: entry.supportsDelete === true,
+    ...(rowSchemaResult.normalized ? { rowSchema: rowSchemaResult.normalized } : {}),
     contractHash,
   };
 
@@ -170,6 +183,7 @@ export function pluginOwnedRowDriverContractHash(contract) {
     driver: contract?.driver || null,
     table: contract?.table || null,
     supportsDelete: contract?.supportsDelete === true,
+    ...(contract?.rowSchema ? { rowSchema: normalizePluginOwnedRowDriverRowSchema(contract.rowSchema).normalized } : {}),
   });
 }
 
@@ -196,6 +210,7 @@ export function canonicalPluginOwnedRowDriverContractValidationEvidence(evidence
     driver: evidence.driver || null,
     table: evidence.table || null,
     supportsDelete: evidence.supportsDelete === true,
+    ...(evidence.rowSchema ? { rowSchema: normalizePluginOwnedRowDriverRowSchema(evidence.rowSchema).normalized } : {}),
     contractHash: pluginOwnedRowDriverContractHash(evidence),
   };
 }
@@ -230,6 +245,203 @@ function canonicalPluginOwnedRowDriverContractValidationIssue(issue) {
 function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
+
+export function normalizePluginOwnedRowDriverRowSchema(rowSchema) {
+  if (rowSchema === null || rowSchema === undefined) {
+    return { valid: true, normalized: null };
+  }
+  if (!rowSchema || typeof rowSchema !== 'object' || Array.isArray(rowSchema)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: 'object row schema',
+      observed: typeof rowSchema,
+    };
+  }
+  const fieldsSource = rowSchema.fields;
+  if (Array.isArray(fieldsSource)) {
+    return normalizePluginOwnedRowDriverRowSchemaFields(fieldsSource);
+  }
+  if (!fieldsSource || typeof fieldsSource !== 'object') {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: 'rowSchema.fields object',
+      observed: typeof fieldsSource,
+    };
+  }
+  const requiredSource = Array.isArray(rowSchema.required) ? rowSchema.required : [];
+  if (rowSchema.required !== undefined && !Array.isArray(rowSchema.required)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: 'rowSchema.required array',
+      observed: typeof rowSchema.required,
+    };
+  }
+  const required = [...new Set(requiredSource)];
+  if (!required.every(isNonEmptyString)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: 'non-empty required field names',
+      observed: 'invalid required field',
+    };
+  }
+  const fields = [];
+  for (const field of Object.keys(fieldsSource).sort()) {
+    if (!isNonEmptyString(field)) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+        required: 'non-empty field names',
+        observed: 'invalid field name',
+      };
+    }
+    const definition = fieldsSource[field];
+    const type = typeof definition === 'string'
+      ? definition
+      : definition && typeof definition === 'object' && !Array.isArray(definition)
+        ? definition.type
+        : null;
+    if (!SUPPORTED_ROW_SCHEMA_TYPES.has(type)) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA_TYPE',
+        required: Array.from(SUPPORTED_ROW_SCHEMA_TYPES).sort(),
+        observed: type ?? null,
+      };
+    }
+    fields.push({
+      field,
+      type,
+      required: required.includes(field) || definition?.required === true,
+    });
+  }
+  if (fields.length === 0) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: 'at least one schema field',
+      observed: 0,
+    };
+  }
+  const fieldNames = new Set(fields.map((field) => field.field));
+  for (const requiredField of required) {
+    if (!fieldNames.has(requiredField)) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+        required: 'required fields must be declared in rowSchema.fields',
+        observed: requiredField,
+      };
+    }
+  }
+  return {
+    valid: true,
+    normalized: {
+      schemaVersion: 1,
+      fields: fields.map((field) => ({
+        ...field,
+        required: field.required === true,
+      })),
+    },
+  };
+}
+
+function normalizePluginOwnedRowDriverRowSchemaFields(fieldsSource) {
+  const fields = [];
+  const seenFields = new Set();
+  for (const definition of fieldsSource) {
+    if (!definition || typeof definition !== 'object' || Array.isArray(definition)) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+        required: 'normalized rowSchema fields',
+        observed: typeof definition,
+      };
+    }
+    const field = definition.field;
+    const type = definition.type;
+    if (!isNonEmptyString(field)) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+        required: 'non-empty field names',
+        observed: field ?? null,
+      };
+    }
+    if (seenFields.has(field)) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+        required: 'unique field names',
+        observed: field,
+      };
+    }
+    seenFields.add(field);
+    if (!SUPPORTED_ROW_SCHEMA_TYPES.has(type)) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA_TYPE',
+        required: Array.from(SUPPORTED_ROW_SCHEMA_TYPES).sort(),
+        observed: type ?? null,
+      };
+    }
+    fields.push({
+      field,
+      type,
+      required: definition.required === true,
+    });
+  }
+  if (fields.length === 0) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA',
+      required: 'at least one schema field',
+      observed: 0,
+    };
+  }
+  fields.sort((left, right) => {
+    if (left.field < right.field) {
+      return -1;
+    }
+    if (left.field > right.field) {
+      return 1;
+    }
+    return 0;
+  });
+  return {
+    valid: true,
+    normalized: {
+      schemaVersion: 1,
+      fields,
+    },
+  };
+}
+
+const SUPPORTED_ROW_SCHEMA_TYPES = new Set([
+  'array',
+  'boolean',
+  'integer',
+  'null',
+  'number',
+  'object',
+  'string',
+]);
 
 function hasOwn(value, key) {
   return value && Object.prototype.hasOwnProperty.call(value, key);

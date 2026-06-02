@@ -34,8 +34,12 @@ Optional fields:
 - `table`: the expected WordPress table for row drivers.
 - `supportsDelete`: boolean delete capability. Missing or `false` means delete
   mutations refuse before apply.
+- `rowSchema`: optional contract metadata for schema-bound custom row drivers.
+  Version 1 supports required top-level row fields and field types:
+  `string`, `integer`, `number`, `boolean`, `object`, `array`, and `null`.
 - `contractHash`: stable hash of the declared resource key, owner, driver,
-  table, delete support, contract kind, and contract version.
+  table, delete support, contract kind, contract version, and optional
+  normalized row schema.
 - `dryRunValidation`: hash-only dry-run validation hook evidence.
 - `applyValidation`: hash-only apply validation hook evidence.
 - `evidenceScope` or `releaseGateEvidenceScope`: evidence classification.
@@ -52,6 +56,9 @@ that declares an explicit contract becomes strict:
 - missing `resourceKey`, `pluginOwner`, or `driver` refuses before mutation
 - malformed `supportsDelete` refuses before mutation
 - `rawValuesIncluded` values other than `false` refuse before mutation
+- malformed `rowSchema` objects or unsupported schema field types refuse before
+  mutation with `PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA` or
+  `PLUGIN_DRIVER_CONTRACT_INVALID_ROW_SCHEMA_TYPE`
 - accepted contracts emit `plugin-driver-contract-validation` evidence
 - accepted contracts must carry the expected `contractHash`, and apply
   recomputes it before trusting the evidence
@@ -103,11 +110,15 @@ shape. For custom row drivers outside the built-in driver set, apply requires:
   must carry `entry_id` equal to `7`; mismatches refuse with
   `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_ID_MISMATCH`, and unparseable row identity
   shapes refuse with `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_ID_UNSUPPORTED`,
+- present row payloads that satisfy the optional schema-bound row contract.
+  Missing required fields refuse with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_FIELD_MISSING`; wrong field types
+  refuse with `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_TYPE_MISMATCH`,
 - accepted `contract-bound-row-driver` payload validation evidence,
 - hash-only value and contract evidence, with `rawValuesIncluded: false`,
 - carried payload evidence that matches apply's recomputed mutation action,
-  value state/hash, row identity evidence, contract hash, and canonical
-  `contractValidationHash`.
+  value state/hash, row identity evidence, schema validation evidence when a
+  schema is declared, contract hash, and canonical `contractValidationHash`.
 
 Payload validation evidence now includes a hash-only `rowIdentity` object:
 
@@ -130,6 +141,32 @@ The verifier and apply path recompute this object from the mutation resource and
 planned payload. A forged ready plan that changes the payload's row id while
 keeping the resource key stable is rejected before mutation, even if the forged
 payload hash has been made internally consistent.
+
+Schema-bound contracts also emit a hash-only `schemaValidation` object when
+`rowSchema` is present:
+
+```json
+{
+  "schemaHash": "...",
+  "status": "matched",
+  "fields": [
+    {
+      "field": "payload",
+      "expectedType": "object",
+      "required": true,
+      "state": "present",
+      "observedType": "object",
+      "matched": true
+    }
+  ]
+}
+```
+
+The validation evidence reports field names, expected types, observed type
+classes, and match booleans. It does not copy raw plugin row values. The
+production-shaped RPP-0483 verifier now includes
+`payloadSchemaValidationMatchesExpected` and refuses proofs whose value hashes
+match but whose row body no longer satisfies the declared schema.
 
 Legacy fixture allowlists still work for focused tests, but generic production
 custom row drivers need the explicit contract path before the executor will

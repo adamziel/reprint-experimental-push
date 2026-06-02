@@ -5,6 +5,7 @@ import {
   pluginOwnedRowDriverContractValidationEvidenceHash,
   pluginOwnedRowDriverContractValidationEvidenceMatches,
   pluginOwnedRowDriverContractHash,
+  normalizePluginOwnedRowDriverRowSchema,
 } from './plugin-driver-contracts.js';
 
 export const INVALID_SERIALIZED_OPTION_PAYLOAD = 'INVALID_SERIALIZED_OPTION_PAYLOAD';
@@ -76,6 +77,12 @@ function validateContractBoundRowDriverPayload({
   const expectedDriver = contractValidationEvidence.driver || driver || null;
   const contractSupportsDelete = contractValidationEvidence.supportsDelete === true;
   const rowIdentity = contractBoundRowIdentityEvidence(resource, value, action);
+  const rowSchema = contractValidationEvidence.rowSchema
+    ? normalizePluginOwnedRowDriverRowSchema(contractValidationEvidence.rowSchema).normalized
+    : null;
+  const schemaValidation = rowSchema
+    ? contractBoundRowSchemaValidationEvidence(rowSchema, value, action)
+    : null;
   const issues = [];
 
   if (contractValidationEvidence.resourceKey !== resource?.key) {
@@ -196,6 +203,30 @@ function validateContractBoundRowDriverPayload({
       })),
     });
   }
+  if (schemaValidation?.status === 'unsupported') {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_UNSUPPORTED',
+      field: 'rowSchema',
+      expected: 'valid contract-bound row schema',
+      observed: schemaValidation.reason || null,
+    });
+  } else if (schemaValidation?.status === 'mismatch') {
+    const firstMismatch = schemaValidation.fields.find((field) => field.matched !== true) || null;
+    issues.push({
+      reasonCode: firstMismatch?.state === 'missing'
+        ? 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_FIELD_MISSING'
+        : 'PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_TYPE_MISMATCH',
+      field: firstMismatch?.field || 'rowSchema',
+      expected: firstMismatch ? {
+        type: firstMismatch.expectedType,
+        required: firstMismatch.required,
+      } : null,
+      observed: firstMismatch ? {
+        state: firstMismatch.state,
+        type: firstMismatch.observedType,
+      } : null,
+    });
+  }
 
   const accepted = issues.length === 0;
   const evidence = {
@@ -219,6 +250,7 @@ function validateContractBoundRowDriverPayload({
     contractSupportsDelete,
     contractHash: contractValidationEvidence.contractHash || null,
     rowIdentity,
+    ...(schemaValidation ? { schemaValidation } : {}),
     value: {
       state: value === ABSENT ? 'absent' : 'present',
       hash: digest(value),
@@ -236,6 +268,73 @@ function validateContractBoundRowDriverPayload({
     reason: 'Plugin-owned row driver contract-bound payload validation failed.',
     evidence,
   };
+}
+
+function contractBoundRowSchemaValidationEvidence(rowSchema, value, action) {
+  const normalized = normalizePluginOwnedRowDriverRowSchema(rowSchema).normalized;
+  const schemaHash = digest(normalized);
+  if (!normalized) {
+    return {
+      schemaHash,
+      status: 'unsupported',
+      reason: 'invalid schema',
+      fields: [],
+    };
+  }
+  if (action === 'delete' || value === ABSENT) {
+    return {
+      schemaHash,
+      status: 'not-required',
+      fields: [],
+    };
+  }
+  const valueIsObject = value && typeof value === 'object' && !Array.isArray(value);
+  const fields = normalized.fields.map((field) => {
+    const observedExists = valueIsObject && Object.prototype.hasOwnProperty.call(value, field.field);
+    const observed = observedExists ? value[field.field] : undefined;
+    const observedType = observedExists ? contractBoundRowSchemaValueType(observed) : null;
+    const matched = observedExists
+      ? observedType === field.type
+      : field.required !== true;
+    return {
+      field: field.field,
+      expectedType: field.type,
+      required: field.required === true,
+      state: observedExists ? 'present' : 'missing',
+      observedType,
+      matched,
+    };
+  });
+  return {
+    schemaHash,
+    status: fields.every((field) => field.matched) ? 'matched' : 'mismatch',
+    fields,
+  };
+}
+
+function contractBoundRowSchemaValueType(value) {
+  if (value === null) {
+    return 'null';
+  }
+  if (Array.isArray(value)) {
+    return 'array';
+  }
+  if (Number.isInteger(value)) {
+    return 'integer';
+  }
+  if (typeof value === 'number') {
+    return 'number';
+  }
+  if (typeof value === 'boolean') {
+    return 'boolean';
+  }
+  if (typeof value === 'string') {
+    return 'string';
+  }
+  if (typeof value === 'object') {
+    return 'object';
+  }
+  return typeof value;
 }
 
 function contractBoundRowIdentityEvidence(resource, value, action) {

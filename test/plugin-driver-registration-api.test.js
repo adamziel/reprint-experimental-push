@@ -357,6 +357,14 @@ reprint_push_register_plugin_owned_row_driver([
     'table' => 'wp_fixture_contract_rows',
     'pluginOwner' => 'fixture-contract-plugin',
     'supportsDelete' => true,
+    'rowSchema' => [
+        'required' => ['id', 'payload', '__pluginOwner'],
+        'fields' => [
+            'id' => 'integer',
+            'payload' => 'string',
+            '__pluginOwner' => 'string',
+        ],
+    ],
     'exportRowsCallback' => 'rpp_driver_api_export_rows',
     'applyRowCallback' => 'rpp_driver_api_apply_row',
     'validateMutationCallback' => 'rpp_driver_api_validate_mutation',
@@ -409,6 +417,14 @@ echo json_encode([
     driver: 'fixture-contract-driver',
     table: 'wp_fixture_contract_rows',
     supportsDelete: true,
+    rowSchema: {
+      schemaVersion: 1,
+      fields: [
+        { field: '__pluginOwner', type: 'string', required: true },
+        { field: 'id', type: 'integer', required: true },
+        { field: 'payload', type: 'string', required: true },
+      ],
+    },
   });
   assert.deepEqual(releaseStateContract, {
     contractVersion: 1,
@@ -635,4 +651,194 @@ echo json_encode([
   assert.equal(report.forgedResourceKey.ok, false);
   assert.equal(report.forgedResourceKey.error.message, 'Unsupported plugin-owned mutation contract for row:["wp_fixture_contract_bound_rows","id:8"]');
   assert.equal(JSON.stringify(report).includes('contract-bound-private-payload'), false);
+});
+
+test('registered plugin-owned row driver PHP validation accepts schema-bound evidence only when schema matches', () => {
+  const report = runPhpDriverProbe(`
+function rpp_schema_bound_policy(
+    string $resource_key,
+    string $table,
+    string $owner,
+    string $driver,
+    bool $supports_delete,
+    string $action,
+    $value,
+    array $row_schema
+): array {
+    $normalized_schema = reprint_push_normalize_plugin_owned_row_driver_row_schema($row_schema);
+    $contract_hash = reprint_push_plugin_owned_row_driver_contract_hash(
+        $resource_key,
+        $owner,
+        $driver,
+        $table,
+        $supports_delete,
+        $normalized_schema
+    );
+    $contract = [
+        'schemaVersion' => 1,
+        'operation' => 'plugin-driver-contract-validation',
+        'contractKind' => 'plugin-owned-row-driver',
+        'contractVersion' => 1,
+        'outcome' => 'accepted',
+        'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_ACCEPTED',
+        'issueCodes' => [],
+        'issues' => [],
+        'source' => 'plugin-driver-registration-api-schema-test',
+        'evidenceScope' => 'local-focused',
+        'rawValuesIncluded' => false,
+        'resourceKey' => $resource_key,
+        'pluginOwner' => $owner,
+        'driver' => $driver,
+        'table' => $table,
+        'supportsDelete' => $supports_delete,
+        'rowSchema' => $normalized_schema,
+        'contractHash' => $contract_hash,
+    ];
+    return [
+        'pluginOwner' => $owner,
+        'driver' => $driver,
+        'table' => $table,
+        'supportsDelete' => $supports_delete,
+        'contractValidationEvidence' => $contract,
+        'driverPayloadValidationEvidence' => [
+            'schemaVersion' => 1,
+            'operation' => 'plugin-driver-payload-validation',
+            'validator' => 'contract-bound-row-driver',
+            'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED',
+            'outcome' => 'accepted',
+            'issueCodes' => [],
+            'issues' => [],
+            'format' => 'hash-only',
+            'rawValuesIncluded' => false,
+            'resourceKey' => $resource_key,
+            'pluginOwner' => $owner,
+            'driver' => $driver,
+            'table' => $table,
+            'action' => $action,
+            'supportsDelete' => $supports_delete,
+            'contractSupportsDelete' => $supports_delete,
+            'contractHash' => $contract_hash,
+            'rowIdentity' => reprint_push_plugin_driver_payload_row_identity_evidence(
+                $resource_key,
+                $action,
+                ['exists' => $action !== 'delete', 'value' => $value]
+            ),
+            'schemaValidation' => reprint_push_plugin_driver_payload_row_schema_evidence(
+                $normalized_schema,
+                $action,
+                ['exists' => $action !== 'delete', 'value' => $value]
+            ),
+            'value' => [
+                'state' => $action === 'delete' ? 'absent' : 'present',
+                'hash' => $action === 'delete'
+                    ? hash('sha256', '"__REPRINT_PUSH_ABSENT__"')
+                    : hash('sha256', reprint_push_stable_json($value)),
+            ],
+            'contractValidationHash' => hash('sha256', reprint_push_stable_json($contract)),
+        ],
+    ];
+}
+reprint_push_register_plugin_owned_row_driver([
+    'driver' => 'fixture-schema-bound-driver',
+    'table' => 'wp_fixture_schema_bound_rows',
+    'pluginOwner' => 'fixture-schema-bound-plugin',
+    'supportsDelete' => false,
+    'rowSchema' => [
+        'required' => ['id', 'payload', '__pluginOwner'],
+        'fields' => [
+            'id' => 'integer',
+            'payload' => 'string',
+            '__pluginOwner' => 'string',
+        ],
+    ],
+    'exportRowsCallback' => 'rpp_driver_api_export_rows',
+    'applyRowCallback' => 'rpp_driver_api_apply_row',
+    'validateMutationCallback' => 'rpp_driver_api_validate_mutation',
+]);
+$resource_key = 'row:["wp_fixture_schema_bound_rows","id:7"]';
+$row_schema = [
+    'required' => ['id', 'payload', '__pluginOwner'],
+    'fields' => [
+        'id' => 'integer',
+        'payload' => 'string',
+        '__pluginOwner' => 'string',
+    ],
+];
+$value = [
+    'id' => 7,
+    'payload' => 'schema-bound-private-payload',
+    '__pluginOwner' => 'fixture-schema-bound-plugin',
+];
+$snapshot = [
+    'db' => [
+        'wp_fixture_schema_bound_rows' => [
+            'id:7' => [
+                'id' => 7,
+                '__pluginOwner' => 'fixture-schema-bound-plugin',
+            ],
+        ],
+    ],
+];
+$base_mutation = [
+    'id' => 'mutation-schema-bound',
+    'resourceKey' => $resource_key,
+    'resource' => ['type' => 'row', 'table' => 'wp_fixture_schema_bound_rows', 'id' => 'id:7'],
+    'action' => 'put',
+    'value' => ['value' => $value],
+    'pluginOwnedResource' => rpp_schema_bound_policy(
+        $resource_key,
+        'wp_fixture_schema_bound_rows',
+        'fixture-schema-bound-plugin',
+        'fixture-schema-bound-driver',
+        false,
+        'put',
+        $value,
+        $row_schema
+    ),
+];
+$forged_schema_payload = $base_mutation;
+$forged_schema_payload['value']['value']['payload'] = ['not' => 'a-string'];
+$forged_schema_payload['pluginOwnedResource'] = rpp_schema_bound_policy(
+    $resource_key,
+    'wp_fixture_schema_bound_rows',
+    'fixture-schema-bound-plugin',
+    'fixture-schema-bound-driver',
+    false,
+    'put',
+    $forged_schema_payload['value']['value'],
+    $row_schema
+);
+
+echo json_encode([
+    'accepted' => rpp_driver_api_capture(static function () use ($base_mutation, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($base_mutation, $snapshot);
+        return true;
+    }),
+    'forgedSchemaPayload' => rpp_driver_api_capture(static function () use ($forged_schema_payload, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($forged_schema_payload, $snapshot);
+        return true;
+    }),
+    'schemaValidation' => $forged_schema_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['schemaValidation'],
+]);
+`);
+
+  assert.deepEqual(report.accepted, { ok: true, value: true });
+  assert.equal(report.forgedSchemaPayload.ok, false);
+  assert.equal(
+    report.forgedSchemaPayload.error.message,
+    'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_schema_bound_rows","id:7"]',
+  );
+  assert.equal(report.schemaValidation.status, 'mismatch');
+  assert.deepEqual(
+    report.schemaValidation.fields.find((field) => field.field === 'payload'),
+    {
+      field: 'payload',
+      expectedType: 'string',
+      required: true,
+      state: 'present',
+      observedType: 'object',
+      matched: false,
+    },
+  );
+  assert.equal(JSON.stringify(report).includes('schema-bound-private-payload'), false);
 });
