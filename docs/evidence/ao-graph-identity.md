@@ -23,6 +23,14 @@ Lane: graph-identity
   block when the referenced `wp_users` row body does not carry the same primary
   `ID` as the target resource key. PHP snapshot contract metadata exports the
   same target-validation contract table as the JS planner.
+- Adds focused planner/apply evidence for `wp_links.link_owner` identity-map
+  rewrites. Link row IDs shaped as `link_id:<id>` stay stable while the
+  `link_owner` payload rewrites to the proven remote user target; apply refuses
+  forged `link_owner` payloads before mutation, and stale mapped user targets
+  remain blocked with hash-only graph evidence.
+- Adds generated harness evidence for `wp_links.link_owner` references: 20
+  deterministic support-only cases across all 10 tiers, split between ready
+  identity-map scalar rewrites and stale user drift blockers.
 - Extends contract-driven primary-row target validation to the remaining core
   graph targets for `wp_posts`, `wp_comments`, `wp_terms`,
   `wp_term_taxonomy`, `wp_blogs`, and `wp_site`. Same-plan target rows whose
@@ -113,6 +121,10 @@ RPP-0306 focused worker verification commands:
   — 3 subtests, 0 failures, including `wp_blogmeta.blog_id` payload and
   composite row-key rewrite, forged payload refusal, and stale mapped-target
   refusal before mutation.
+- `node --test test/link-owner-reference.test.js`
+  — 3 subtests, 0 failures, including `wp_links.link_owner` payload rewrite
+  with stable link row key, forged payload refusal, and stale mapped-target
+  refusal before mutation.
 - `node --test test/blog-site-id-reference.test.js`
   — 3 subtests, 0 failures, including `wp_blogs.site_id` payload rewrite with
   stable blog row key, forged payload refusal, and stale mapped-target refusal
@@ -121,20 +133,21 @@ RPP-0306 focused worker verification commands:
   — 3 subtests, 0 failures, including `wp_sitemeta.site_id` payload and
   composite row-key rewrite, forged payload refusal, and stale mapped-target
   refusal before mutation.
-- `node --test --test-name-pattern='blog site_id reference variant 3|RPP-0902' test/generated-push-harness.test.js`
-  — 2 subtests, 0 failures, including generated `wp_blogs.site_id` and
-  `wp_sitemeta.site_id` support-only cases with ready identity-map rewrites and
-  stale site blockers.
+- `node --test --test-name-pattern='link_owner reference variant 3|blog site_id reference variant 3|RPP-0902' test/generated-push-harness.test.js test/link-owner-reference.test.js`
+  — 4 subtests, 0 failures, including generated `wp_links.link_owner`,
+  `wp_blogs.site_id`, and `wp_sitemeta.site_id` support-only cases with ready
+  identity-map rewrites and stale target blockers.
 - `node --test --test-name-pattern=RPP-0902 test/generated-push-harness.test.js`
   — 1 subtest, 0 failures, including 20 generated `wp_sitemeta.site_id`
   support-only cases with ready identity-map row rewrites and stale site
   blockers.
 - `node --test test/generated-push-harness.test.js`
-  — 102 subtests, 0 failures, including generated multisite
-  `wp_blogs.site_id` coverage, RPP-0902 generated multisite
-  `wp_sitemeta.site_id` coverage and adjacent graph-identity generated proofs.
+  — 103 subtests, 0 failures, including generated `wp_links.link_owner`
+  coverage, generated multisite `wp_blogs.site_id` coverage, RPP-0902
+  generated multisite `wp_sitemeta.site_id` coverage and adjacent
+  graph-identity generated proofs.
 - `npm test`
-  — 3142 tests, 3131 passed, 0 failed, 11 skipped.
+  — 3146 tests, 3135 passed, 0 failed, 11 skipped.
 
 ## Remaining unmapped or fail-closed WordPress surfaces
 
@@ -159,6 +172,10 @@ RPP-0306 focused worker verification commands:
 - RPP-0319 / RPP-0320: cross-table create/reference batches can carry an importer/exporter identity map while preserving remote target rows and recording hash-only rewrite evidence.
 - RPP-0340: production importer/exporter identity-map proof covers immutable-base `pushIdentityMap` metadata, dependent row rewrites, stale-target fail-closed behavior, and hash-only provenance evidence.
 - RPP-0347 evidence note: generated comment user references include ready same-plan creates and stale user drift cases with hash-only blocker evidence.
+- Generated/focused user-target evidence: `wp_links.link_owner` references now
+  rewrite through explicit `wp_users` identity maps, preserving the
+  `link_id:<id>` row key while rebinding the payload, with apply-time forged
+  payload refusal and stale target refusal.
 - RPP-0901: `wp_blogmeta.blog_id` references now rewrite through explicit
   `wp_blogs` identity maps, including composite
   `blog_id:<id>:meta_key:<key>` row IDs, apply-time forged payload refusal,

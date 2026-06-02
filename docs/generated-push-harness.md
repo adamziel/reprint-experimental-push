@@ -92,9 +92,11 @@ The default generated run covers:
   hash-only stale-user blockers, `wp_posts.post_parent` page hierarchy
   variant-3 cases with ready identity-map rewrites and stale parent drift
   blockers, `wp_postmeta.post_id` variant-3 cases with ready identity-map row
-  rewrites and stale post drift blockers, multisite `wp_blogs.site_id`
-  variant-3 cases with ready identity-map scalar rewrites and stale site drift
-  blockers, multisite `wp_sitemeta.site_id` variant-3 cases with ready
+  rewrites and stale post drift blockers, `wp_links.link_owner` variant-3
+  cases with ready identity-map scalar rewrites and stale user drift blockers,
+  multisite `wp_blogs.site_id` variant-3 cases with ready identity-map scalar
+  rewrites and stale site drift blockers, multisite `wp_sitemeta.site_id`
+  variant-3 cases with ready
   identity-map row rewrites and stale site drift blockers,
   `wp_comments.comment_post_ID`
   variant-3 cases with ready identity-map rewrites and stale post drift
@@ -933,6 +935,17 @@ proven remote ID, and reject stale replay before mutation. Stale cases drift the
 base post remotely and require the dependent postmeta row to fail closed as
 `stale-wordpress-graph-identity` with hash-only target evidence. This remains
 local generated support evidence only; final release remains `NO-GO`.
+
+The `linkOwnerReferenceVariant3` target adds generated `wp_links.link_owner`
+references. The deterministic roster emits 20 support-only variant-3 target
+cases: 10 ready user identity-map rewrite cases and 10 stale user drift cases,
+with two cases in every tier. Ready cases map a local `wp_users` row to an
+equivalent remote user row, preserve that remote user, and rewrite the
+dependent `wp_links` row's `link_owner` to the proven remote ID without changing
+the `link_id:<id>` row key. Stale cases drift the base user remotely and require
+the dependent link row to fail closed as `stale-wordpress-graph-identity` with
+hash-only target evidence. This remains local generated support evidence only;
+final release remains `NO-GO`.
 
 The `blogSiteIdReferenceVariant3` target adds generated multisite
 `wp_blogs.site_id` references. The deterministic roster emits 20 support-only

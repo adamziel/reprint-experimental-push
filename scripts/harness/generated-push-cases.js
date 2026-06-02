@@ -553,6 +553,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'postmeta-post-id-reference-variant3',
     tag: 'postmeta-post-id-reference-v3',
   },
+  linkOwnerReferenceVariant3: {
+    family: 'link-owner-reference-variant3',
+    tag: 'link-owner-reference-v3',
+  },
   blogSiteIdReferenceVariant3: {
     family: 'blog-site-id-reference-variant3',
     tag: 'blog-site-id-reference-v3',
@@ -2251,6 +2255,15 @@ function buildGeneratedCase({ index, tier, rng }) {
     tags,
   });
 
+  addLinkOwnerReferenceVariant3Target({
+    family,
+    base,
+    local,
+    remote,
+    allocator,
+    tags,
+  });
+
   addBlogSiteIdReferenceVariant3Target({
     family,
     base,
@@ -2510,6 +2523,24 @@ function addPostmetaPostIdReferenceVariant3Target({
   }
 
   addPostmetaPostIdReferenceVariant3(base, local, remote, allocator, tags, { staleTarget });
+  tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
+}
+
+function addLinkOwnerReferenceVariant3Target({
+  family,
+  base,
+  local,
+  remote,
+  allocator,
+  tags,
+}) {
+  const readyTarget = family === 'same-plan-post-parent-graph';
+  const staleTarget = family === 'stale-post-author-graph';
+  if (!readyTarget && !staleTarget) {
+    return;
+  }
+
+  addLinkOwnerReferenceVariant3(base, local, remote, allocator, tags, { staleTarget });
   tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
 }
 
@@ -5296,6 +5327,76 @@ function addPostmetaPostIdReferenceVariant3(base, local, remote, allocator, tags
     tags.add('postmeta-post-id-reference-v3-stale');
     tags.add('postmeta-post-id-reference-v3-stale-target');
     tags.add('postmeta-post-id-reference-v3-non-ready');
+  }
+}
+
+function addLinkOwnerReferenceVariant3(base, local, remote, allocator, tags, { staleTarget }) {
+  const sourceUserId = allocator.graphId();
+  const linkId = allocator.graphId();
+  const sourceUserRowId = `ID:${sourceUserId}`;
+  const linkRowId = `link_id:${linkId}`;
+  const linkRow = {
+    link_id: linkId,
+    link_url: `https://rpp-link-owner-reference-${linkId}.example.test/private-link`,
+    link_name: `RPP link owner reference ${linkId}`,
+    link_owner: sourceUserId,
+    link_visible: 'Y',
+    link_rating: 0,
+  };
+
+  if (staleTarget) {
+    const userRow = {
+      ...makeUser(sourceUserId),
+      user_login: `rpp-link-owner-stale-user-${sourceUserId}`,
+      user_email: `rpp-link-owner-stale-user-${sourceUserId}@example.test`,
+      display_name: `RPP link owner stale user ${sourceUserId}`,
+    };
+
+    setRow(base, 'wp_users', sourceUserRowId, userRow);
+    setRow(local, 'wp_users', sourceUserRowId, userRow);
+    setRow(remote, 'wp_users', sourceUserRowId, {
+      ...userRow,
+      user_email: `remote-private-rpp-link-owner-stale-user-${sourceUserId}@example.test`,
+      display_name: `Remote stale link owner ${sourceUserId}`,
+    });
+    setRow(local, 'wp_links', linkRowId, linkRow);
+  } else {
+    const targetUserId = allocator.graphId();
+    const targetUserRowId = `ID:${targetUserId}`;
+    const userRow = {
+      ...makeUser(sourceUserId),
+      user_login: `rpp-link-owner-mapped-user-${sourceUserId}`,
+      user_email: `rpp-link-owner-mapped-user-${sourceUserId}@example.test`,
+      display_name: `RPP link owner mapped user ${sourceUserId}`,
+    };
+    const targetUserRow = {
+      ...userRow,
+      ID: targetUserId,
+    };
+
+    setRow(local, 'wp_users', sourceUserRowId, userRow);
+    setRow(remote, 'wp_users', targetUserRowId, targetUserRow);
+    addWordPressGraphIdentityMapRow(local, {
+      table: 'wp_users',
+      localId: sourceUserRowId,
+      remoteId: targetUserRowId,
+    });
+    setRow(local, 'wp_links', linkRowId, linkRow);
+
+    tags.add('link-owner-reference-v3-identity-map');
+    tags.add('link-owner-reference-v3-ready');
+  }
+
+  tags.add('link-owner-reference-v3');
+  tags.add('link-owner-reference-v3-hash-only');
+  tags.add('link-owner');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('link-owner-reference-v3-stale');
+    tags.add('link-owner-reference-v3-stale-target');
+    tags.add('link-owner-reference-v3-non-ready');
   }
 }
 

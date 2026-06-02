@@ -694,18 +694,18 @@ function assertGeneratedEvidence(evidence) {
   assert.equal(evidence.casesWithKeepRemote, 542);
   assert.equal(evidence.readyCasesWithKeepRemote, 293);
   assert.equal(evidence.nonReadyCasesWithKeepRemote, 249);
-  assert.equal(evidence.keepRemoteDecisionCount, 1735);
+  assert.equal(evidence.keepRemoteDecisionCount, 1755);
   assert.deepEqual(Object.keys(evidence.keepRemoteCaseTiers), ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
   assert.deepEqual(evidence.keepRemoteResourceTypes, {
     file: 316,
     plugin: 20,
-    row: 1399,
+    row: 1419,
   });
-  assert.deepEqual(evidence.keepRemoteLocalChanges, { unchanged: 1735 });
+  assert.deepEqual(evidence.keepRemoteLocalChanges, { unchanged: 1755 });
   assert.deepEqual(evidence.keepRemoteRemoteChanges, {
-    create: 594,
+    create: 604,
     delete: 20,
-    update: 1121,
+    update: 1131,
   });
   assert.match(evidence.caseProofHash, sha256EvidencePattern);
 }

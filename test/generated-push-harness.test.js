@@ -14578,6 +14578,243 @@ function assertPostmetaPostIdReferenceVariant3RawValuesAbsent(testCase, shape, e
   }
 }
 
+test('generated harness records link_owner reference variant 3 coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.linkOwnerReferenceVariant3;
+  const expectedPerTier = Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2]));
+
+  assert.ok(coverage, 'missing link_owner reference variant 3 target coverage');
+  assert.equal(coverage.family, 'link-owner-reference-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['link-owner-reference-v3']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { blocked: 10, ready: 10 });
+  assert.deepEqual(coverage.perTier, expectedPerTier);
+  assert.equal(report.summary.featureFamilies['link-owner-reference-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['link-owner-reference-v3-stale'], 10);
+  assert.equal(report.summary.featureFamilies['link-owner-reference-v3-non-ready'], 10);
+  assert.equal(report.summary.featureFamilies['link-owner-reference-v3-identity-map'], 10);
+
+  const targetCases = generatePushHarnessCases()
+    .filter((testCase) => testCase.tags.has('link-owner-reference-v3'));
+  const perTier = {};
+  const statuses = {};
+
+  assert.equal(targetCases.length, coverage.total);
+  for (const testCase of targetCases) {
+    const staleTarget = testCase.tags.has('link-owner-reference-v3-stale');
+    const result = validateGeneratedCase(testCase);
+    const plan = createGeneratedPlan(testCase);
+    const shape = linkOwnerReferenceVariant3Shape(testCase, { staleTarget });
+
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    assertLinkOwnerReferenceVariant3EvidenceRedacted(testCase, plan, shape);
+
+    if (staleTarget) {
+      assertLinkOwnerReferenceVariant3StaleCase({ testCase, result, plan, shape });
+      continue;
+    }
+
+    assertLinkOwnerReferenceVariant3ReadyCase({ testCase, result, plan, shape });
+  }
+
+  assert.deepEqual(sortNumericObject(perTier), coverage.perTier);
+  assert.deepEqual(sortStringObject(statuses), coverage.statuses);
+});
+
+function linkOwnerReferenceVariant3Shape(testCase, { staleTarget }) {
+  const linkRows = Object.entries(testCase.local.db.wp_links || {})
+    .filter(([, row]) => String(row.link_url || '').startsWith('https://rpp-link-owner-reference-'));
+
+  assert.equal(linkRows.length, 1, `${testCase.id} should include one generated link_owner row`);
+
+  const [linkRowId, linkRow] = linkRows[0];
+  const sourceUserId = Number(linkRow.link_owner);
+  const sourceUserRowId = `ID:${sourceUserId}`;
+  const sourceUser = testCase.local.db.wp_users?.[sourceUserRowId];
+  const mapEntry = (testCase.local.meta?.wordpressGraphIdentityMap?.rows || [])
+    .find((entry) => entry.table === 'wp_users' && entry.localId === sourceUserRowId);
+  const targetUserRowId = staleTarget ? sourceUserRowId : mapEntry?.remoteId;
+  const targetUserId = linkOwnerReferenceVariant3UserIdFromRowId(targetUserRowId);
+  const targetUser = testCase.remote.db.wp_users?.[targetUserRowId];
+
+  assert.equal(linkRowId, `link_id:${linkRow.link_id}`);
+  assert.ok(Number.isSafeInteger(sourceUserId), `${testCase.id} link_owner should be numeric`);
+  assert.ok(sourceUser, `${testCase.id} missing local source user ${sourceUserRowId}`);
+  assert.equal(sourceUser.ID, sourceUserId);
+  assert.ok(targetUser, `${testCase.id} missing remote target user ${targetUserRowId}`);
+  assert.equal(targetUser.ID, targetUserId);
+
+  if (staleTarget) {
+    assert.equal(mapEntry, undefined, `${testCase.id} stale target should not use an identity map`);
+    assert.deepEqual(
+      testCase.local.db.wp_users[sourceUserRowId],
+      testCase.base.db.wp_users[sourceUserRowId],
+      `${testCase.id} stale local source user should match base`,
+    );
+    assert.notDeepEqual(
+      testCase.remote.db.wp_users[sourceUserRowId],
+      testCase.base.db.wp_users[sourceUserRowId],
+      `${testCase.id} stale user target should drift remotely`,
+    );
+  } else {
+    assert.ok(mapEntry, `${testCase.id} ready target should carry a wp_users identity map`);
+    assert.equal(testCase.remote.db.wp_users?.[sourceUserRowId], undefined);
+    assert.equal(testCase.base.db.wp_users?.[sourceUserRowId], undefined);
+    assert.equal(testCase.base.db.wp_users?.[targetUserRowId], undefined);
+    assert.equal(sourceUser.user_login, targetUser.user_login);
+    assert.equal(sourceUser.user_email, targetUser.user_email);
+    assert.equal(sourceUser.display_name, targetUser.display_name);
+  }
+
+  return {
+    sourceUserId,
+    sourceUserRowId,
+    sourceUserResource: rowResource('wp_users', sourceUserRowId),
+    sourceUserResourceKey: rowResourceKey('wp_users', sourceUserRowId),
+    targetUserId,
+    targetUserRowId,
+    targetUserResource: rowResource('wp_users', targetUserRowId),
+    targetUserResourceKey: rowResourceKey('wp_users', targetUserRowId),
+    linkId: linkRow.link_id,
+    linkRowId,
+    linkResource: rowResource('wp_links', linkRowId),
+    linkResourceKey: rowResourceKey('wp_links', linkRowId),
+    rawValues: [
+      sourceUser.user_login,
+      sourceUser.user_email,
+      sourceUser.display_name,
+      targetUser.user_email,
+      targetUser.display_name,
+      linkRow.link_url,
+      linkRow.link_name,
+    ].filter(Boolean),
+  };
+}
+
+function assertLinkOwnerReferenceVariant3ReadyCase({ testCase, result, plan, shape }) {
+  assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+  assert.equal(result.status, 'ready', `${testCase.id} should validate as ready`);
+  assert.equal(result.applied, true, `${testCase.id} should apply`);
+  assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+  assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+  assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+  const sourceDecision = plan.decisions.find((decision) => decision.resourceKey === shape.sourceUserResourceKey);
+  const targetDecision = plan.decisions.find((decision) => decision.resourceKey === shape.targetUserResourceKey);
+  const linkMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === shape.linkResourceKey);
+  const linkPrecondition = plan.preconditions.find((precondition) =>
+    precondition.resourceKey === shape.linkResourceKey);
+
+  assert.equal(sourceDecision?.decision, 'map-local-identity-to-remote');
+  assert.equal(targetDecision?.decision, 'keep-remote');
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.sourceUserResourceKey),
+    false,
+    `${testCase.id} should not create the mapped local source user`,
+  );
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === shape.targetUserResourceKey),
+    false,
+    `${testCase.id} should preserve the remote target user`,
+  );
+  assert.ok(linkMutation, `${testCase.id} should plan the rewritten wp_links row`);
+  assert.ok(linkPrecondition, `${testCase.id} should precondition the rewritten wp_links row`);
+
+  const plannedLink = deserializeResourceValue(linkMutation.value);
+  const rewrite = linkMutation.wordpressGraphIdentity?.rewrites.find((entry) =>
+    entry.relationshipType === 'link-owner');
+  const applied = applyPlan(cloneJson(testCase.remote), plan);
+  const appliedHash = resourceHash(applied.site, shape.linkResource);
+
+  assert.ok(rewrite, `${testCase.id} should carry link-owner rewrite evidence`);
+  assert.equal(linkMutation.action, 'put');
+  assert.equal(linkMutation.changeKind, 'create');
+  assert.equal(plannedLink.link_id, shape.linkId);
+  assert.equal(plannedLink.link_owner, shape.targetUserId);
+  assert.equal(rewrite.relationshipKey, 'wp_links.link_owner');
+  assert.equal(rewrite.relationshipType, 'link-owner');
+  assert.equal(rewrite.field, 'link_owner');
+  assert.equal(rewrite.sourceResourceKey, shape.linkResourceKey);
+  assert.equal(rewrite.rewrittenResourceKey, shape.linkResourceKey);
+  assert.equal(rewrite.sourceTargetResourceKey, shape.sourceUserResourceKey);
+  assert.equal(rewrite.targetResourceKey, shape.targetUserResourceKey);
+  assert.equal(linkPrecondition.mutationId, linkMutation.id);
+  assert.equal(linkPrecondition.expectedHash, linkMutation.remoteBeforeHash);
+  assert.equal(appliedHash, linkMutation.localHash, `${testCase.id} did not apply the rewritten link hash`);
+  assert.equal(applied.site.db.wp_users[shape.sourceUserRowId], undefined);
+  assert.equal(applied.site.db.wp_users[shape.targetUserRowId].ID, shape.targetUserId);
+  assert.equal(applied.site.db.wp_links[shape.linkRowId].link_owner, shape.targetUserId);
+}
+
+function assertLinkOwnerReferenceVariant3StaleCase({ testCase, result, plan, shape }) {
+  assert.equal(plan.status, 'blocked', `${testCase.id} should plan as blocked`);
+  assert.equal(result.status, 'blocked', `${testCase.id} should validate as blocked`);
+  assert.equal(result.applied, false, `${testCase.id} stale link_owner graph should not apply`);
+  assert.equal(result.nonReadyRemoteUnchanged, true, `${testCase.id} stale graph should leave remote unchanged`);
+
+  const linkMutation = plan.mutations.find((mutation) => mutation.resourceKey === shape.linkResourceKey);
+  const blocker = plan.blockers.find((entry) =>
+    entry.resourceKey === shape.linkResourceKey
+    && entry.references?.some((reference) => reference.relationshipType === 'link-owner'));
+  const reference = blocker?.references.find((entry) => entry.relationshipType === 'link-owner');
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+
+  assert.equal(linkMutation, undefined, `${testCase.id} should not plan the stale wp_links row`);
+  assert.ok(blocker, `${testCase.id} should expose a link_owner graph blocker`);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.ok(reference, `${testCase.id} should include link_owner target evidence`);
+  assert.equal(reference.relationshipKey, 'wp_links.link_owner');
+  assert.equal(reference.relationshipType, 'link-owner');
+  assert.equal(reference.sourceResourceKey, shape.linkResourceKey);
+  assert.equal(reference.targetResourceKey, shape.sourceUserResourceKey);
+  assert.equal(reference.targetChange.localChange, 'unchanged');
+  assert.equal(reference.targetChange.remoteChange, 'update');
+  assert.ok(error instanceof PushPlanError, `${testCase.id} stale link_owner plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(digest(remoteBefore), remoteBeforeHash, `${testCase.id} stale refusal mutated remote`);
+}
+
+function assertLinkOwnerReferenceVariant3EvidenceRedacted(testCase, plan, shape) {
+  const redacted = redactEvidence({
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    tags: [...testCase.tags].sort(),
+    status: plan.status,
+    summary: plan.summary,
+    preconditions: plan.preconditions,
+    mutations: plan.mutations,
+    blockers: plan.blockers,
+    decisions: plan.decisions,
+    rawLinkOwnerProbe: {
+      value: {
+        localUser: testCase.local.db.wp_users?.[shape.sourceUserRowId],
+        remoteUser: testCase.remote.db.wp_users?.[shape.targetUserRowId],
+        link: testCase.local.db.wp_links?.[shape.linkRowId],
+      },
+    },
+  });
+  const serialized = JSON.stringify(redacted);
+
+  assert.ok(serialized.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} should redact raw link owner evidence`);
+  assert.match(serialized, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash-only values`);
+  for (const value of shape.rawValues) {
+    assert.equal(serialized.includes(String(value)), false, `${testCase.id} leaked raw link owner value ${value}`);
+  }
+}
+
+function linkOwnerReferenceVariant3UserIdFromRowId(rowId) {
+  const match = /^ID:(\d+)$/.exec(String(rowId || ''));
+  assert.ok(match, `invalid wp_users row id ${rowId}`);
+  return Number(match[1]);
+}
+
 test('generated harness records blog site_id reference variant 3 coverage', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.blogSiteIdReferenceVariant3;

@@ -4,6 +4,30 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Link Owner Graph Identity Rewrite
+
+- Last update: 2026-06-02 10:05 CEST +02:00.
+- Focused planner/apply evidence now covers `wp_links.link_owner` references
+  through explicit `wp_users` identity maps. The link row key remains
+  `link_id:<id>` while the serialized `link_owner` payload rewrites to the
+  proven remote user target.
+- Apply refuses forged ready plans that retain contract hashes but change the
+  rewritten `link_owner` payload before mutation with
+  `WORDPRESS_GRAPH_REWRITE_TARGET_VALUE_MISMATCH`.
+- Stale explicit maps whose remote user target no longer matches the local
+  source user remain blocked before mutation, and dependent link rows inherit
+  hash-only target evidence.
+- Generated harness coverage now includes 20 deterministic
+  `linkOwnerReferenceVariant3` support-only cases across all 10 tiers: 10 ready
+  identity-map scalar rewrites and 10 stale user drift blockers.
+- Verification: focused link-owner test passed with 3 subtests and 0 failures;
+  focused generated link/blog/sitemeta target run passed with 4 subtests and 0
+  failures.
+- Caveat: this proves explicit identity-map rewriting for the declared core
+  `wp_links.link_owner` scalar reference. It does not infer user identity, widen
+  custom/plugin link-table semantics, or make unsupported graph surfaces
+  generic.
+
 ## 2026-06-02 - Blogmeta Graph Identity Row-Key Rewrite
 
 - Last update: 2026-06-02 09:23 CEST +02:00.
@@ -6972,8 +6996,8 @@ linked implementation artifacts.
 - Keep-remote decision variant-3 generated proof: the current lane now checks
   `RPP-0255` with deterministic generated-harness support evidence over the
   existing `remoteOnlyPreservationVariant3` target. The proof scans all 620
-  generated cases, covers 1,735 `keep-remote` decisions across 542 cases, proves
-  each decision stays mutation-free and precondition-free, verifies 786 ready
+  generated cases, covers 1,755 `keep-remote` decisions across 542 cases, proves
+  each decision stays mutation-free and precondition-free, verifies 796 ready
   `keep-remote` decisions preserve remote state through apply, and verifies 249
   non-ready plans refuse with `PLAN_NOT_READY` without mutating the remote
   digest. Command:

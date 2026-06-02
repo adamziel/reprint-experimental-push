@@ -22,10 +22,10 @@ state.
   `remoteOnlyPreservationVariant3` target coverage: 9 ready target cases, one
   case in each tier 1 through 9.
 - The proof then scans all 620 deterministic generated harness cases and covers
-  1,735 `keep-remote` decisions across 542 cases.
-- Covered generated decision resources include 316 files, 20 plugins, and 1,399
-  rows. Remote change shapes are 594 creates, 20 deletes, and 1,121 updates.
-- Ready apply preservation is checked for 786 ready-plan `keep-remote`
+  1,755 `keep-remote` decisions across 542 cases.
+- Covered generated decision resources include 316 files, 20 plugins, and 1,419
+  rows. Remote change shapes are 604 creates, 20 deletes, and 1,131 updates.
+- Ready apply preservation is checked for 796 ready-plan `keep-remote`
   decisions. The 249 non-ready cases carrying `keep-remote` decisions are
   expected to refuse with `PLAN_NOT_READY` while the remote snapshot hash stays
   unchanged.
