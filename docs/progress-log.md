@@ -4,6 +4,29 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Proven-Only Graph Identity Map Promotion
+
+- Last update: 2026-06-02 09:05 CEST +02:00.
+- WordPress graph identity-map validation now separates all declared maps from
+  maps proven usable. Row equivalence may rewrite only the current candidate's
+  primary ID plus nested scalar references that point through already proven
+  usable maps.
+- The planner promotes identity maps with a fixed-point pass, so a valid child
+  map can appear before its valid parent map without becoming a false blocker.
+  A child map that depends on an invalid or missing parent remains blocked as
+  `stale-wordpress-graph-identity` and cannot launder the invalid nested map
+  into a ready decision.
+- New planner regressions cover both directions: order-independent valid
+  nested maps and invalid nested maps that cannot make another map usable.
+- Verification: `node --check src/planner.js`; focused identity-map planner
+  run with 11 subtests, 0 failures; broad graph/planner/snapshot/inventory run
+  with 169 subtests, 0 failures. See
+  [ao-graph-identity.md](evidence/ao-graph-identity.md).
+- Caveat: this closes a nested identity-map proof hole. It does not complete
+  arbitrary WordPress graph identity mapping, custom taxonomy reference
+  rewriting, plugin-provided graph extractors, or hosted production smoke/soak
+  evidence.
+
 ## 2026-06-02 - Plugin Row Driver Merge Policy Boundary
 
 - Last update: 2026-06-02 08:57 CEST +02:00.

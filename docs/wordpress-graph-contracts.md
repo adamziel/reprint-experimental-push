@@ -78,6 +78,13 @@ explicit identity map, it also records the normalized identity-map
 `contractHash`. Apply recomputes both contract hashes and rejects forged,
 missing, or unsupported rewrite evidence before any mutation.
 
+Identity-map equivalence is proven only against maps already promoted as usable.
+The candidate map may rewrite its own primary row ID during equivalence
+comparison, but nested scalar references inside that row must resolve through a
+separately proven map. The planner promotes maps with a fixed-point pass, so
+valid nested maps are not sensitive to exporter row order; an invalid nested map
+cannot make another map usable.
+
 Apply also checks that each rewritten scalar field in the serialized mutation
 payload equals the primary ID from the carried `targetResourceKey`. A mutation
 whose rewrite evidence points at one row while the payload writes a different

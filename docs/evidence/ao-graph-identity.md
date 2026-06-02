@@ -9,6 +9,8 @@ Lane: graph-identity
 - Rewrites dependent graph references to proven remote IDs, including page/post parent references, postmeta `post_id` composite row IDs, featured image `_thumbnail_id` attachment references, comment `comment_post_ID`, term relationship `object_id`/`term_taxonomy_id` composite row IDs, and termmeta `term_id`.
 - Requires featured image `_thumbnail_id` references to resolve to a `wp_posts` attachment row. A non-attachment target or an otherwise unsupported target surface stops as `stale-wordpress-graph-identity` with resource keys, reason class, state, and hashes only.
 - Keeps unsupported or ambiguous identity maps fail-closed with hash-only `stale-wordpress-graph-identity` blockers. Dependent rows that point at an unusable map inherit the target blocker instead of being planned.
+- Validates explicit identity maps against already proven nested maps only. The current candidate map may rewrite its own primary ID for row equivalence, but scalar references inside that row are rewritten only through maps already promoted as usable.
+- Promotes identity maps with a fixed-point proof pass so valid nested maps are not order-dependent. A child map listed before its valid parent map can become usable after the parent is proven, while a child map that depends on an invalid or missing parent remains blocked.
 - Adds fail-closed post GUID and `post_type` + `post_name` collision detection when a local post would duplicate a different remote post without an explicit proven identity map.
 - Extends graph mapping inventory output with machine-readable identity-map capabilities and collision guard surfaces.
 - Adds local-production verifier evidence for the core `post_tag` taxonomy surface: the planner proof records same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` resources for `row:["wp_term_taxonomy","term_taxonomy_id:72941"]`, and the release-evidence parser now fails closed unless that mutation remains `taxonomy: "post_tag"`, has a live precondition, appears in apply-time revalidation, and the post-apply snapshot matches the local target surface.
@@ -77,6 +79,14 @@ RPP-0306 focused worker verification commands:
 - `node --test --test-name-pattern 'primary graph targets|core primary graph targets|user-target|post author|commentmeta comment|featured image|serialized block|termmeta|term-relationship-taxonomy|postmeta-post' test/push-planner.test.js test/rpp-0307-comment-user-reference.test.js test/rpp-0308-commentmeta-comment-reference.test.js test/rpp-0322-featured-image-attachment-reference-v2.test.js test/rpp-0317-serialized-block-reference-detection.test.js test/rpp-0352-termmeta-term-reference-v3.test.js test/rpp-0354-term-relationship-taxonomy-reference-v3.test.js test/rpp-0364-postmeta-post-id-reference-v4.test.js`
   — 18 subtests, 0 failures, including malformed primary-row target refusal
   across post, comment, term, term-taxonomy, blog, and site graph targets.
+- `node --check src/planner.js` — passed for proven-only identity-map
+  promotion changes.
+- `node --test --test-name-pattern 'identity-map|identity map|invalid nested WordPress graph identity maps|valid nested WordPress graph identity maps|explicit WordPress graph identity-map' test/push-planner.test.js`
+  — 11 subtests, 0 failures, including order-independent nested-map
+  promotion and invalid nested-map refusal.
+- `node --test test/push-planner.test.js test/wordpress-graph-contracts.test.js test/playground-snapshot-lib.test.js test/graph-mapping-inventory.test.js`
+  — 169 subtests, 0 failures, including the full planner graph surface,
+  JS/PHP graph contract parity, snapshot gate coverage, and graph inventory.
 
 A full `npm test` run was attempted for broader signal, but unrelated existing failures appeared in authenticated HTTP push client and playground snapshot/plugin-driver tests before the run was stopped; the focused graph-identity checks above passed.
 

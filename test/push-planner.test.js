@@ -7064,6 +7064,145 @@ test('blocks explicit WordPress graph identity maps when the remote target is no
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('valid nested WordPress graph identity maps are proven independent of row order', () => {
+  const sourceChildResourceKey = 'row:["wp_posts","ID:9101"]';
+  const targetChildResourceKey = 'row:["wp_posts","ID:9301"]';
+  const sourceParentResourceKey = 'row:["wp_posts","ID:9201"]';
+  const targetParentResourceKey = 'row:["wp_posts","ID:9401"]';
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [
+        { table: 'wp_posts', localId: 'ID:9101', remoteId: 'ID:9301' },
+        { table: 'wp_posts', localId: 'ID:9201', remoteId: 'ID:9401' },
+      ],
+    },
+  };
+  local.db.wp_posts['ID:9201'] = {
+    ID: 9201,
+    post_title: 'nested-map-order-private-parent',
+    post_name: 'nested-map-order-parent',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  local.db.wp_posts['ID:9101'] = {
+    ID: 9101,
+    post_title: 'nested-map-order-private-child',
+    post_name: 'nested-map-order-child',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 9201,
+    post_author: 0,
+  };
+  remote.db.wp_posts['ID:9401'] = {
+    ID: 9401,
+    post_title: 'nested-map-order-private-parent',
+    post_name: 'nested-map-order-parent',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  remote.db.wp_posts['ID:9301'] = {
+    ID: 9301,
+    post_title: 'nested-map-order-private-child',
+    post_name: 'nested-map-order-child',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 9401,
+    post_author: 0,
+  };
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const childDecision = decisionFor(plan, sourceChildResourceKey);
+  const parentDecision = decisionFor(plan, sourceParentResourceKey);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(childDecision.decision, 'map-local-identity-to-remote');
+  assert.equal(childDecision.targetResourceKey, targetChildResourceKey);
+  assert.equal(parentDecision.decision, 'map-local-identity-to-remote');
+  assert.equal(parentDecision.targetResourceKey, targetParentResourceKey);
+  assert.equal(decisionFor(plan, targetChildResourceKey).decision, 'keep-remote');
+  assert.equal(decisionFor(plan, targetParentResourceKey).decision, 'keep-remote');
+  assert.equal(mutationFor(plan, sourceChildResourceKey), undefined);
+  assert.equal(mutationFor(plan, sourceParentResourceKey), undefined);
+  assert.equal(JSON.stringify(applyPlan(remote, plan).site), remoteBefore);
+});
+
+test('invalid nested WordPress graph identity maps cannot make another map usable', () => {
+  const sourceChildResourceKey = 'row:["wp_posts","ID:9101"]';
+  const targetChildResourceKey = 'row:["wp_posts","ID:9301"]';
+  const sourceParentResourceKey = 'row:["wp_posts","ID:9201"]';
+  const missingTargetParentResourceKey = 'row:["wp_posts","ID:9401"]';
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [
+        { table: 'wp_posts', localId: 'ID:9201', remoteId: 'ID:9401' },
+        { table: 'wp_posts', localId: 'ID:9101', remoteId: 'ID:9301' },
+      ],
+    },
+  };
+  local.db.wp_posts['ID:9201'] = {
+    ID: 9201,
+    post_title: 'nested-map-private-parent',
+    post_name: 'nested-map-parent',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  local.db.wp_posts['ID:9101'] = {
+    ID: 9101,
+    post_title: 'nested-map-private-child',
+    post_name: 'nested-map-child',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 9201,
+    post_author: 0,
+  };
+  remote.db.wp_posts['ID:9301'] = {
+    ID: 9301,
+    post_title: 'nested-map-private-child',
+    post_name: 'nested-map-child',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 9401,
+    post_author: 0,
+  };
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const childBlocker = plan.blockers.find((blocker) => blocker.resourceKey === sourceChildResourceKey);
+  const parentBlocker = plan.blockers.find((blocker) => blocker.resourceKey === sourceParentResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(decisionFor(plan, sourceChildResourceKey), undefined);
+  assert.equal(mutationFor(plan, sourceChildResourceKey), undefined);
+  assert.equal(mutationFor(plan, sourceParentResourceKey), undefined);
+  assert.ok(childBlocker, 'missing blocker for identity map that depends on invalid nested map');
+  assert.ok(parentBlocker, 'missing blocker for invalid nested identity map');
+  assert.match(childBlocker.reason, /not equivalent after identity rewriting/);
+  assert.match(parentBlocker.reason, /does not have a remote target row to preserve/);
+  assert.equal(decisionFor(plan, targetChildResourceKey).decision, 'keep-remote');
+  assert.equal(decisionFor(plan, missingTargetParentResourceKey), undefined);
+  assert.equal(planJson.includes('nested-map-private-parent'), false);
+  assert.equal(planJson.includes('nested-map-private-child'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
 test('blocks post GUID and slug collisions without an explicit graph identity map', () => {
   const sourcePostResourceKey = 'row:["wp_posts","ID:2001"]';
   const targetPostResourceKey = 'row:["wp_posts","ID:3001"]';
