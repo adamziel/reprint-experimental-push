@@ -292,6 +292,8 @@ function provenanceReason(code) {
       return 'Production-required release evidence must come from operator production provenance.';
     case 'SUBJECT_HASH_REQUIRED':
       return 'Release evidence provenance must include a subject hash.';
+    case 'SUBJECT_HASH_MISMATCH':
+      return 'Release evidence provenance subject hash does not match the checked release-gate evidence.';
     case 'ARTIFACT_PATH_RAW_URL':
       return 'Release evidence artifact references must be repository-relative paths, not raw URLs.';
     case 'ARTIFACT_PATH_SECRET_LIKE':

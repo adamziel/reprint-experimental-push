@@ -4,6 +4,23 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Release Evidence Provenance Subject Binding
+
+- Last update: 2026-06-02 06:15 CEST +02:00.
+- Release-gate provenance requirements now include an
+  `expectedSubjectHash` computed from the evaluated release-gate subject:
+  gate id, RPP id, title, category, status, code, reason, and redacted
+  evidence. Production-required provenance rows with arbitrary syntactically
+  valid `subjectHash` values now fail closed with `SUBJECT_HASH_MISMATCH`.
+- `check-release-gates` now keeps final evidence at `NO-GO` when a provenance
+  payload tries to shadow the generated requirement with a weaker duplicate or
+  a forged expected hash. Duplicate required-evidence declarations merge toward
+  the stricter generated subject binding.
+- RPP release-gate CLI coverage now derives passing provenance rows from the
+  same evaluated gate subjects the CLI validates, so positive tests no longer
+  rely on placeholder hashes. Final release remains `NO-GO` until real hosted
+  production evidence supplies matching, fresh, operator-scoped provenance.
+
 ## 2026-06-02 - Dry-Run Receipt Fallback Apply Revalidation Refusal
 
 - Last update: 2026-06-02 05:56 CEST +02:00.

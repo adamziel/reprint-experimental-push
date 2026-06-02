@@ -5,7 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { RELEASE_GATE_DEFINITIONS } from '../src/release-gates.js';
+import { RELEASE_GATE_DEFINITIONS, evaluateReleaseGates } from '../src/release-gates.js';
+import { releaseGateProvenanceRequirements } from '../src/release-evidence-provenance.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const scriptPath = path.join(repoRoot, 'scripts/release/check-release-gates.mjs');
@@ -156,11 +157,25 @@ function operatorProofProvenanceRows(overrides = {}) {
   return Object.keys(rowsById).sort().map((evidenceId) => rowsById[evidenceId]);
 }
 
-function releaseBoundaryProvenanceRows(overrides = {}) {
+function releaseBoundaryProvenanceRows(overrides = {}, options = {}) {
+  const scope = options.scope || 'final-release';
+  const env = options.env || releaseEnv();
+  const evidence = options.evidence || completeEvidence(scope);
+  const evaluation = evaluateReleaseGates({
+    env,
+    evidence,
+    scope,
+    packagedFallback: evidence.packagedFallback,
+    now: fixedNow,
+  });
+  const requirementsById = new Map(
+    releaseGateProvenanceRequirements(evaluation).map((requirement) => [requirement.evidenceId, requirement]),
+  );
   return RELEASE_GATE_DEFINITIONS
     .filter((gate) => releaseBoundaryProvenanceCategories.has(gate.category))
-    .map((gate, index) => {
+    .map((gate) => {
       const evidenceId = `release-gate:${gate.id}`;
+      const requirement = requirementsById.get(evidenceId);
       return {
         evidenceId,
         rppId: gate.rpp,
@@ -169,7 +184,7 @@ function releaseBoundaryProvenanceRows(overrides = {}) {
         observedAt: '2026-05-27T23:30:00.000Z',
         command: `node scripts/release/prove-${gate.id}.mjs`,
         status: gate.id === 'verify-release-failure-reason' ? 'checked-failed' : 'checked-passed',
-        subjectHash: `sha256:${String(index + 1).padStart(64, '0')}`,
+        subjectHash: requirement?.expectedSubjectHash || 'sha256:0000000000000000000000000000000000000000000000000000000000000000',
         operatorScope: 'final-release',
         productionRequired: true,
         ...(overrides[evidenceId] || {}),
@@ -293,6 +308,46 @@ test('release gate CLI keeps stale or local-only production-required provenance 
     total: 19,
     accepted: 17,
     rejected: 2,
+  });
+});
+
+test('release gate CLI rejects arbitrary provenance subject hashes even when final evidence passes', () => {
+  const evidenceFile = writeEvidence({
+    scope: 'final-release',
+    evidence: completeEvidence('final-release'),
+    releaseEvidenceProvenance: {
+      maxEvidenceAgeHours: 24,
+      requiredProductionEvidence: [
+        {
+          evidenceId: 'release-gate:source-url',
+          rppId: 'RPP-0001',
+          expectedSubjectHash: 'sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        },
+      ],
+      evidenceRows: releaseBoundaryProvenanceRows({
+        'release-gate:source-url': {
+          subjectHash: 'sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+        },
+      }),
+    },
+  });
+  const result = runGate(['--evidence-file', evidenceFile], releaseEnv());
+  const report = parseReport(result);
+  const provenanceBucket = report.missingProductionEvidenceBuckets.find((bucket) => bucket.bucket === 'provenance');
+
+  assert.equal(result.status, 1, result.stdout);
+  assert.equal(report.ok, false);
+  assert.equal(report.releaseStatus, 'NO-GO');
+  assert.equal(report.releaseMovement.allowed, true);
+  assert.equal(report.primaryFailureBucket, 'provenance');
+  assert.equal(report.primaryFailureCode, 'SUBJECT_HASH_MISMATCH');
+  assert.deepEqual(provenanceBucket.gates.map((gate) => [gate.id, gate.code]), [
+    ['release-gate:source-url', 'SUBJECT_HASH_MISMATCH'],
+  ]);
+  assert.deepEqual(report.releaseEvidenceProvenance.summary.productionRequired, {
+    total: 19,
+    accepted: 18,
+    rejected: 1,
   });
 });
 

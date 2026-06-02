@@ -7,13 +7,13 @@ Primary checklist evidence IDs: RPP-0017, RPP-0018, RPP-0019, RPP-0020
 ## What changed
 
 - Added `src/release-evidence-provenance.js`, a standalone deterministic validator for release evidence rows and artifacts.
-- Added `releaseGateProvenanceRequirements()`, a deterministic adapter that maps release-gate operator-proof gates to required production evidence IDs.
+- Added `releaseGateProvenanceRequirements()`, a deterministic adapter that maps release-boundary gates to required production evidence IDs and expected subject hashes.
 - Added `fixtures/protocol/push-release-evidence-provenance-contract.json`, a machine-readable contract with accepted and rejected cases.
 - Added `test/release-evidence-provenance.test.js` to pin fixture behavior, stable ordering, production-required counts, and reason-code ordering.
 - Wired `scripts/release/check-release-gates.mjs` to run the provenance validator before returning a release `GO`.
-- Added focused CLI coverage proving synthetic final-release JSON without provenance, stale provenance, and local-only production-required provenance remain release `NO-GO`.
+- Added focused CLI coverage proving synthetic final-release JSON without provenance, stale provenance, local-only production-required provenance, and mismatched subject hashes remain release `NO-GO`.
 
-This is intentionally **not wired into `src/release-gates.js` internals yet**. The central CLI now enforces provenance for the operator-proof release gates when `evaluateReleaseGates()` would otherwise allow release movement. That keeps the core gate evaluator stable while preventing the release CLI from treating synthetic final-release JSON as production-ready.
+This is intentionally **not wired into `src/release-gates.js` internals yet**. The central CLI now enforces provenance for release-boundary gates when `evaluateReleaseGates()` would otherwise allow release movement. That keeps the core gate evaluator stable while preventing the release CLI from treating synthetic final-release JSON as production-ready.
 
 ## Contract fields
 
@@ -28,7 +28,7 @@ Each evidence row is expected to carry:
 | `observedAt` | ISO timestamp for when the operator observed the evidence. |
 | `command` | Checked command that produced or verified the artifact. |
 | `status` | Must be a checked terminal status such as `checked-passed`, `checked-failed`, `checked-nonzero`, or `verified`. |
-| `subjectHash` | `sha256:<64 hex chars>` digest binding the evidence to the checked subject. |
+| `subjectHash` | `sha256:<64 hex chars>` digest binding the evidence to the checked subject. For release-gate requirements, it must match the expected hash of the evaluated gate subject. |
 | `operatorScope` | Scope of the operator run. Production-required rows must use a production scope such as `final-release`. |
 | `productionRequired` | Whether the row is required before release movement may be considered ready. |
 
@@ -41,6 +41,7 @@ The validator rejects rows with deterministic reason codes for the release-criti
 - `OBSERVED_AT_STALE` — the timestamp is older than the configured evidence age window.
 - `PRODUCTION_SOURCE_REQUIRED` — a production-required row used local/generated source provenance or non-production operator scope.
 - `SUBJECT_HASH_REQUIRED` — no subject digest binds the row to the checked subject.
+- `SUBJECT_HASH_MISMATCH` — the row's subject digest does not match the expected digest for the evaluated release-gate subject.
 - `ARTIFACT_PATH_RAW_URL` — the artifact reference is a raw URL instead of a repository artifact path.
 - `ARTIFACT_PATH_SECRET_LIKE` — the artifact reference looks like it embeds a token, password, API key, authorization value, or bearer credential.
 - `COMMAND_STATUS_UNCHECKED` — the command/status pair is missing or not a checked terminal status.
@@ -49,18 +50,13 @@ Additional malformed-field codes exist for invalid IDs, timestamps, hashes, or m
 
 ## Release-gate CLI handoff
 
-`scripts/release/check-release-gates.mjs` now imports the provenance validator. When the release gate evaluator reports `releaseMovement.allowed: true`, the CLI requires production provenance for these operator-proof gates:
+`scripts/release/check-release-gates.mjs` now imports the provenance validator. When the release gate evaluator reports `releaseMovement.allowed: true`, the CLI requires production provenance for release-boundary gates in the topology, boundary, auth, identity, route, recovery, and operator-proof categories. The generated `release-movement-summary` gate remains excluded because it is produced by the evaluator itself.
 
-| Gate | Required provenance ID |
-| --- | --- |
-| `tmux-status-marker` | `release-gate:tmux-status-marker` |
-| `progress-release-timestamp` | `release-gate:progress-release-timestamp` |
-| `agents-release-gates-row` | `release-gate:agents-release-gates-row` |
-| `verify-release-failure-reason` | `release-gate:verify-release-failure-reason` |
+Each generated requirement includes `expectedSubjectHash`, computed from the canonical evaluated gate subject: id, RPP id, title, category, status, code, reason, and redacted evidence. The release-gate evidence file may supply rows under `releaseEvidenceProvenance.evidenceRows`. If those rows are missing, stale, local-only, missing subject hashes, mismatched against the evaluated gate subject, raw URLs, secret-looking artifact references, or unchecked command statuses, the CLI exits nonzero with `releaseStatus: "NO-GO"` and a `provenance` bucket in `missingProductionEvidenceBuckets`.
 
-The release-gate evidence file may supply rows under `releaseEvidenceProvenance.evidenceRows`. If those rows are missing, stale, local-only, missing subject hashes, raw URLs, secret-looking artifact references, or unchecked command statuses, the CLI exits nonzero with `releaseStatus: "NO-GO"` and a `provenance` bucket in `missingProductionEvidenceBuckets`.
+Duplicate required-evidence declarations merge toward the stricter generated subject binding. A provenance payload cannot shadow a generated release-gate requirement by supplying the same evidence ID with a weaker or forged expected hash.
 
-This path is deliberately narrower than a full `src/release-gates.js` merge: it covers operator-supplied artifact evidence first and does not claim production readiness for topology, auth, route, or recovery gates beyond the existing release-gate evaluator.
+This path is deliberately narrower than a full `src/release-gates.js` merge: it covers release-boundary gate evidence at the CLI boundary and still does not claim live production readiness beyond the evidence supplied to the release-gate evaluator.
 
 ## Summary shape
 
@@ -93,10 +89,10 @@ This path is deliberately narrower than a full `src/release-gates.js` merge: it 
 
 | RPP item | Provenance evidence added |
 | --- | --- |
-| RPP-0017 | Tmux stdout marker rows require fresh operator-production source, checked command status, and subject hash; generated marker placeholders are rejected. |
+| RPP-0017 | Tmux stdout marker rows require fresh operator-production source, checked command status, and a subject hash matching the evaluated gate subject; generated marker placeholders are rejected. |
 | RPP-0018 | Progress timestamp rows reject missing or stale `observedAt` values and distinguish local candidate evidence from production-required evidence. |
 | RPP-0019 | `.agents/RELEASE_GATES.md` row artifacts reject local/generated placeholders, raw URL artifact references, and token-looking artifact values. |
-| RPP-0020 | `verify:release` evidence accepts checked nonzero proof only when a subject hash is present, and rejects missing-hash rows. |
+| RPP-0020 | `verify:release` evidence accepts checked nonzero proof only when a subject hash is present and bound to the evaluated gate subject, and rejects missing-hash rows. |
 
 ## Focused verification
 

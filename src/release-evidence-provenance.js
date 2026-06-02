@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 const VALID_SUBJECT_HASH_PATTERN = /^sha256:[a-f0-9]{64}$/i;
 const DEFAULT_MAX_EVIDENCE_AGE_HOURS = 24;
 const FUTURE_CLOCK_SKEW_MS = 60_000;
@@ -13,6 +15,7 @@ export const RELEASE_EVIDENCE_PROVENANCE_REASON_CODES = deepFreeze({
   productionSourceRequired: 'PRODUCTION_SOURCE_REQUIRED',
   subjectHashRequired: 'SUBJECT_HASH_REQUIRED',
   subjectHashInvalid: 'SUBJECT_HASH_INVALID',
+  subjectHashMismatch: 'SUBJECT_HASH_MISMATCH',
   artifactPathRequired: 'ARTIFACT_PATH_REQUIRED',
   artifactPathRawUrl: 'ARTIFACT_PATH_RAW_URL',
   artifactPathSecretLike: 'ARTIFACT_PATH_SECRET_LIKE',
@@ -78,6 +81,7 @@ const REASON_CODE_ORDER = Object.freeze([
   RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.productionSourceRequired,
   RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.subjectHashRequired,
   RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.subjectHashInvalid,
+  RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.subjectHashMismatch,
   RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.artifactPathRequired,
   RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.artifactPathRawUrl,
   RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.artifactPathSecretLike,
@@ -117,10 +121,17 @@ export function validateReleaseEvidenceProvenance(input = {}, options = {}) {
       ...arrayValue(firstDefined(options.productionRequiredEvidenceIds, input?.productionRequiredEvidenceIds)),
     ]),
     productionRequiredRppIds: stringSet([
-      ...requiredProductionEvidence.map((requirement) => requirement.rppId),
+      ...requiredProductionEvidence
+        .filter((requirement) => requirement.requirementScope === 'rpp-id')
+        .map((requirement) => requirement.rppId),
       ...arrayValue(firstDefined(options.productionRequiredRppIds, input?.productionRequiredRppIds)),
     ]),
   };
+  context.requirementByEvidenceId = requirementMap(requiredProductionEvidence, 'evidenceId');
+  context.requirementByRppId = requirementMap(
+    requiredProductionEvidence.filter((requirement) => requirement.requirementScope === 'rpp-id'),
+    'rppId',
+  );
 
   const rowResults = [
     ...rows.map((row, index) => validateProvenanceRow(row, index, context)),
@@ -185,9 +196,31 @@ export function releaseGateProvenanceRequirements(evaluationOrGates, options = {
       rppId: normalizeString(gate.rpp),
       gateId: normalizeString(gate.id),
       title: normalizeString(gate.title),
+      expectedSubjectHash: releaseGateProvenanceSubjectHash(gate),
       productionRequired: true,
     }))
     .sort((left, right) => compareStrings(left.rppId, right.rppId) || compareStrings(left.evidenceId, right.evidenceId)));
+}
+
+export function releaseGateProvenanceSubject(gate) {
+  return deepFreeze({
+    schemaVersion: 1,
+    subjectType: 'release-gate-evidence',
+    gate: {
+      id: normalizeString(gate?.id),
+      rpp: normalizeString(gate?.rpp),
+      title: normalizeString(gate?.title),
+      category: normalizeString(gate?.category),
+      status: normalizeString(gate?.status),
+      code: normalizeString(gate?.code),
+      reason: normalizeString(gate?.reason),
+      evidence: normalizeSubjectValue(gate?.evidence || {}),
+    },
+  });
+}
+
+export function releaseGateProvenanceSubjectHash(gate) {
+  return sha256EvidenceHash(releaseGateProvenanceSubject(gate));
 }
 
 function validateProvenanceRow(row, index, context) {
@@ -195,6 +228,9 @@ function validateProvenanceRow(row, index, context) {
   const productionRequired = normalized.productionRequired
     || context.productionRequiredEvidenceIds.has(normalized.evidenceId)
     || context.productionRequiredRppIds.has(normalized.rppId);
+  const requiredEvidence = context.requirementByEvidenceId.get(normalized.evidenceId)
+    || context.requirementByRppId.get(normalized.rppId)
+    || null;
   const reasonCodes = [];
 
   if (!normalized.evidenceId) {
@@ -215,6 +251,12 @@ function validateProvenanceRow(row, index, context) {
     reasonCodes.push(RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.subjectHashRequired);
   } else if (!VALID_SUBJECT_HASH_PATTERN.test(normalized.subjectHash)) {
     reasonCodes.push(RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.subjectHashInvalid);
+  } else if (
+    requiredEvidence?.expectedSubjectHash
+    && VALID_SUBJECT_HASH_PATTERN.test(requiredEvidence.expectedSubjectHash)
+    && normalized.subjectHash.toLowerCase() !== requiredEvidence.expectedSubjectHash.toLowerCase()
+  ) {
+    reasonCodes.push(RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.subjectHashMismatch);
   }
 
   validateArtifactValues(normalized.artifactValues, reasonCodes);
@@ -363,6 +405,8 @@ function productionEvidenceRequirements(input, options) {
     const key = requirement.evidenceId || `rpp:${requirement.rppId}`;
     if (!byKey.has(key)) {
       byKey.set(key, requirement);
+    } else {
+      byKey.set(key, mergeProductionEvidenceRequirement(byKey.get(key), requirement));
     }
   }
   return [...byKey.values()].sort(
@@ -382,6 +426,8 @@ function appendProductionEvidenceRequirements(requirements, value) {
     requirements.push({
       evidenceId,
       rppId: rppIdFromEvidenceId(evidenceId),
+      expectedSubjectHash: '',
+      requirementScope: 'evidence-id',
       productionRequired: true,
     });
     return;
@@ -403,9 +449,37 @@ function appendProductionEvidenceRequirements(requirements, value) {
       rppId,
       gateId: normalizeString(value.gateId),
       title: normalizeString(value.title),
+      expectedSubjectHash: normalizeString(firstDefined(value.expectedSubjectHash, value.expected_subject_hash)),
+      requirementScope: evidenceId ? 'evidence-id' : 'rpp-id',
       productionRequired: true,
     });
   }
+}
+
+function mergeProductionEvidenceRequirement(left, right) {
+  return {
+    evidenceId: right.evidenceId || left.evidenceId,
+    rppId: right.rppId || left.rppId,
+    gateId: right.gateId || left.gateId,
+    title: right.title || left.title,
+    expectedSubjectHash: right.expectedSubjectHash || left.expectedSubjectHash,
+    requirementScope: right.requirementScope === 'rpp-id' || left.requirementScope === 'rpp-id'
+      ? 'rpp-id'
+      : 'evidence-id',
+    productionRequired: true,
+  };
+}
+
+function requirementMap(requirements, key) {
+  const byKey = new Map();
+  for (const requirement of requirements) {
+    const value = normalizeString(requirement[key]);
+    if (!value || byKey.has(value)) {
+      continue;
+    }
+    byKey.set(value, requirement);
+  }
+  return byKey;
 }
 
 function artifactValuesForRow(row) {
@@ -532,6 +606,32 @@ function normalizeBoolean(value) {
     }
   }
   return false;
+}
+
+function sha256EvidenceHash(value) {
+  return `sha256:${createHash('sha256').update(stableJson(value), 'utf8').digest('hex')}`;
+}
+
+function stableJson(value) {
+  return JSON.stringify(normalizeSubjectValue(value));
+}
+
+function normalizeSubjectValue(value) {
+  if (Array.isArray(value)) {
+    return value.map((entry) => normalizeSubjectValue(entry));
+  }
+  if (isObject(value)) {
+    const normalized = {};
+    for (const key of Object.keys(value).sort()) {
+      const entry = value[key];
+      if (entry === undefined) {
+        continue;
+      }
+      normalized[key] = normalizeSubjectValue(entry);
+    }
+    return normalized;
+  }
+  return value;
 }
 
 function firstDefined(...values) {

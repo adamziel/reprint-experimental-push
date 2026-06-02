@@ -1473,15 +1473,25 @@ The production ladder is fixed:
    live evidence before every batch and again at the storage boundary. Dry-run
    and apply are separate remote operations, and apply must not trust the
    dry-run receipt as a lock, a lease, or a substitute for fresh live
-   evidence. Apply-time revalidation is mandatory, explicit apply-side
-   evidence; receipt-derived precondition hashes are fallback diagnostics and
-   do not satisfy the production release proof.
+   evidence. Apply-time revalidation is mandatory. It must be explicit
+   apply-side evidence; receipt-derived precondition hashes are fallback
+   diagnostics and do not satisfy the production release proof.
 5. `push_journal` records durable evidence and never authorizes a write.
 6. `push_recover inspect` reads the journal and fresh live hashes before any
    mutating repair. Inspect is read-only and does not authorize mutation.
 7. `push_recover auto|finish|rollback` may mutate only after inspect proves
    the action safe with fresh live evidence and the same auth floor as the
    write path.
+
+Release-gate provenance is bound to the checked release-gate subject, not just
+to a row label. For each production-required release-gate provenance row, the
+expected `subjectHash` is the SHA-256 digest of the canonical evaluated gate
+subject: gate id, RPP id, title, category, status, code, reason, and redacted
+evidence. A fresh operator-scoped provenance row with an arbitrary valid hash
+does not satisfy release movement; it fails closed with
+`SUBJECT_HASH_MISMATCH`. Duplicate required-evidence declarations merge toward
+the stricter generated subject binding, so an evidence payload cannot shadow
+the release-gate requirement with a weaker duplicate.
 
 The pull-to-push handoff is explicit in the machine-readable proof:
 

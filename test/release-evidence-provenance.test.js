@@ -7,6 +7,7 @@ import {
   RELEASE_EVIDENCE_PROVENANCE_CONTRACT,
   RELEASE_EVIDENCE_PROVENANCE_REASON_CODES,
   releaseGateProvenanceRequirements,
+  releaseGateProvenanceSubjectHash,
   validateReleaseEvidenceProvenance,
 } from '../src/release-evidence-provenance.js';
 
@@ -23,6 +24,17 @@ function validateFixture(evidenceRows = fixture.evidenceRows) {
     ...fixture,
     evidenceRows,
   });
+}
+
+function expectedReleaseGateRequirement(gate) {
+  return {
+    evidenceId: `release-gate:${gate.id}`,
+    rppId: gate.rpp,
+    gateId: gate.id,
+    title: gate.title,
+    expectedSubjectHash: releaseGateProvenanceSubjectHash(gate),
+    productionRequired: true,
+  };
 }
 
 test('provenance contract exposes the required release evidence fields and checked statuses', () => {
@@ -128,6 +140,79 @@ test('complete fresh operator production evidence is release ready', () => {
   });
 });
 
+test('production-required provenance rejects subject hashes that do not match the required gate subject', () => {
+  const gate = {
+    id: 'tmux-status-marker',
+    rpp: 'RPP-0017',
+    title: 'tmux stdout proof status marker',
+    category: 'operator-proof',
+    status: 'passed',
+    code: 'OK',
+    reason: 'tmux stdout proof status marker is backed by final release evidence.',
+    evidence: {
+      required: 'final bracketed stdout status marker',
+      observed: '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=OK]',
+      scope: 'final-release',
+      requiredScope: 'final-release',
+    },
+  };
+  const requirement = expectedReleaseGateRequirement(gate);
+  const validRow = {
+    evidenceId: requirement.evidenceId,
+    rppId: requirement.rppId,
+    sourceKind: 'operator-production',
+    artifactPath: 'docs/evidence/release/tmux-status-marker.ndjson',
+    observedAt: '2026-05-28T10:30:00.000Z',
+    command: 'tmux capture-pane -pt release-gates',
+    status: 'checked-passed',
+    subjectHash: requirement.expectedSubjectHash,
+    operatorScope: 'final-release',
+  };
+  const mismatchSummary = validateReleaseEvidenceProvenance({
+    referenceNow: fixture.referenceNow,
+    maxEvidenceAgeHours: fixture.maxEvidenceAgeHours,
+    requiredProductionEvidence: [requirement],
+    evidenceRows: [
+      {
+        ...validRow,
+        subjectHash: 'sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+      },
+    ],
+  });
+
+  assert.equal(mismatchSummary.ok, false);
+  assert.equal(mismatchSummary.releaseReady, false);
+  assert.deepEqual(mismatchSummary.rejectedEvidence, [
+    {
+      evidenceId: 'release-gate:tmux-status-marker',
+      rppId: 'RPP-0017',
+      productionRequired: true,
+      reasonCodes: [RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.subjectHashMismatch],
+    },
+  ]);
+  assert.deepEqual(mismatchSummary.productionRequired, {
+    total: 1,
+    accepted: 0,
+    rejected: 1,
+  });
+
+  const matchedSummary = validateReleaseEvidenceProvenance({
+    referenceNow: fixture.referenceNow,
+    maxEvidenceAgeHours: fixture.maxEvidenceAgeHours,
+    requiredProductionEvidence: [requirement],
+    evidenceRows: [validRow],
+  });
+
+  assert.equal(matchedSummary.ok, true);
+  assert.equal(matchedSummary.releaseReady, true);
+  assert.deepEqual(matchedSummary.acceptedEvidenceIds, ['release-gate:tmux-status-marker']);
+  assert.deepEqual(matchedSummary.productionRequired, {
+    total: 1,
+    accepted: 1,
+    rejected: 0,
+  });
+});
+
 test('multi-failure placeholder rows keep reason code order deterministic', () => {
   const summary = validateReleaseEvidenceProvenance({
     referenceNow: fixture.referenceNow,
@@ -211,124 +296,81 @@ test('missing required production evidence rows fail closed with deterministic s
 });
 
 test('release gate provenance adapter selects release-boundary gates in stable RPP order', () => {
-  const requirements = releaseGateProvenanceRequirements({
-    gates: [
-      {
-        id: 'progress-release-timestamp',
-        rpp: 'RPP-0018',
-        title: 'progress.html release timestamp',
-        category: 'operator-proof',
-      },
-      {
-        id: 'source-url',
-        rpp: 'RPP-0001',
-        title: 'REPRINT_PUSH_SOURCE_URL gate',
-        category: 'topology',
-      },
-      {
-        id: 'application-password-binding',
-        rpp: 'RPP-0008',
-        title: 'Application Password credential binding',
-        category: 'auth',
-      },
-      {
-        id: 'preflight-route-identity',
-        rpp: 'RPP-0011',
-        title: 'Preflight route identity proof',
-        category: 'route',
-      },
-      {
-        id: 'journal-route-read-only',
-        rpp: 'RPP-0014',
-        title: 'Journal route read-only proof',
-        category: 'recovery',
-      },
-      {
-        id: 'release-movement-summary',
-        rpp: 'RPP-0016',
-        title: 'releaseMovement allowed/denied summary',
-        category: 'summary',
-      },
-      {
-        id: 'tmux-status-marker',
-        rpp: 'RPP-0017',
-        title: 'tmux stdout proof status marker',
-        category: 'operator-proof',
-      },
-    ],
-  });
+  const gates = [
+    {
+      id: 'progress-release-timestamp',
+      rpp: 'RPP-0018',
+      title: 'progress.html release timestamp',
+      category: 'operator-proof',
+    },
+    {
+      id: 'source-url',
+      rpp: 'RPP-0001',
+      title: 'REPRINT_PUSH_SOURCE_URL gate',
+      category: 'topology',
+    },
+    {
+      id: 'application-password-binding',
+      rpp: 'RPP-0008',
+      title: 'Application Password credential binding',
+      category: 'auth',
+    },
+    {
+      id: 'preflight-route-identity',
+      rpp: 'RPP-0011',
+      title: 'Preflight route identity proof',
+      category: 'route',
+    },
+    {
+      id: 'journal-route-read-only',
+      rpp: 'RPP-0014',
+      title: 'Journal route read-only proof',
+      category: 'recovery',
+    },
+    {
+      id: 'release-movement-summary',
+      rpp: 'RPP-0016',
+      title: 'releaseMovement allowed/denied summary',
+      category: 'summary',
+    },
+    {
+      id: 'tmux-status-marker',
+      rpp: 'RPP-0017',
+      title: 'tmux stdout proof status marker',
+      category: 'operator-proof',
+    },
+  ];
+  const gatesById = new Map(gates.map((gate) => [gate.id, gate]));
+  const requirements = releaseGateProvenanceRequirements({ gates });
 
   assert.deepEqual(requirements, [
-    {
-      evidenceId: 'release-gate:source-url',
-      rppId: 'RPP-0001',
-      gateId: 'source-url',
-      title: 'REPRINT_PUSH_SOURCE_URL gate',
-      productionRequired: true,
-    },
-    {
-      evidenceId: 'release-gate:application-password-binding',
-      rppId: 'RPP-0008',
-      gateId: 'application-password-binding',
-      title: 'Application Password credential binding',
-      productionRequired: true,
-    },
-    {
-      evidenceId: 'release-gate:preflight-route-identity',
-      rppId: 'RPP-0011',
-      gateId: 'preflight-route-identity',
-      title: 'Preflight route identity proof',
-      productionRequired: true,
-    },
-    {
-      evidenceId: 'release-gate:journal-route-read-only',
-      rppId: 'RPP-0014',
-      gateId: 'journal-route-read-only',
-      title: 'Journal route read-only proof',
-      productionRequired: true,
-    },
-    {
-      evidenceId: 'release-gate:tmux-status-marker',
-      rppId: 'RPP-0017',
-      gateId: 'tmux-status-marker',
-      title: 'tmux stdout proof status marker',
-      productionRequired: true,
-    },
-    {
-      evidenceId: 'release-gate:progress-release-timestamp',
-      rppId: 'RPP-0018',
-      gateId: 'progress-release-timestamp',
-      title: 'progress.html release timestamp',
-      productionRequired: true,
-    },
+    expectedReleaseGateRequirement(gatesById.get('source-url')),
+    expectedReleaseGateRequirement(gatesById.get('application-password-binding')),
+    expectedReleaseGateRequirement(gatesById.get('preflight-route-identity')),
+    expectedReleaseGateRequirement(gatesById.get('journal-route-read-only')),
+    expectedReleaseGateRequirement(gatesById.get('tmux-status-marker')),
+    expectedReleaseGateRequirement(gatesById.get('progress-release-timestamp')),
   ]);
 });
 
 test('release gate provenance adapter can still select one explicit category', () => {
-  const requirements = releaseGateProvenanceRequirements({
-    gates: [
-      {
-        id: 'source-url',
-        rpp: 'RPP-0001',
-        title: 'REPRINT_PUSH_SOURCE_URL gate',
-        category: 'topology',
-      },
-      {
-        id: 'tmux-status-marker',
-        rpp: 'RPP-0017',
-        title: 'tmux stdout proof status marker',
-        category: 'operator-proof',
-      },
-    ],
-  }, { category: 'operator-proof' });
+  const gates = [
+    {
+      id: 'source-url',
+      rpp: 'RPP-0001',
+      title: 'REPRINT_PUSH_SOURCE_URL gate',
+      category: 'topology',
+    },
+    {
+      id: 'tmux-status-marker',
+      rpp: 'RPP-0017',
+      title: 'tmux stdout proof status marker',
+      category: 'operator-proof',
+    },
+  ];
+  const requirements = releaseGateProvenanceRequirements({ gates }, { category: 'operator-proof' });
 
   assert.deepEqual(requirements, [
-    {
-      evidenceId: 'release-gate:tmux-status-marker',
-      rppId: 'RPP-0017',
-      gateId: 'tmux-status-marker',
-      title: 'tmux stdout proof status marker',
-      productionRequired: true,
-    },
+    expectedReleaseGateRequirement(gates[1]),
   ]);
 });
