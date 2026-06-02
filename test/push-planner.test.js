@@ -6572,6 +6572,12 @@ test('explicit WordPress graph identity-map contract carries accepted proof thro
   const forgedMissingIdentityPlan = cloneJson(plan);
   const forgedMissingIdentityRemote = cloneJson(remote);
   const forgedMissingIdentityRemoteBefore = JSON.stringify(forgedMissingIdentityRemote);
+  const forgedMissingSourcePlan = cloneJson(plan);
+  const forgedMissingSourceRemote = cloneJson(remote);
+  const forgedMissingSourceRemoteBefore = JSON.stringify(forgedMissingSourceRemote);
+  const forgedMissingRewrittenPlan = cloneJson(plan);
+  const forgedMissingRewrittenRemote = cloneJson(remote);
+  const forgedMissingRewrittenRemoteBefore = JSON.stringify(forgedMissingRewrittenRemote);
   const forgedPayloadPlan = cloneJson(plan);
   const forgedPayloadRemote = cloneJson(remote);
   const forgedPayloadRemoteBefore = JSON.stringify(forgedPayloadRemote);
@@ -6651,6 +6657,38 @@ test('explicit WordPress graph identity-map contract carries accepted proof thro
   assert.equal(forgedMissingIdentityIssue.sourceTargetResourceKey, sourcePostResourceKey);
   assert.equal(forgedMissingIdentityIssue.targetResourceKey, targetPostResourceKey);
   assert.equal(JSON.stringify(forgedMissingIdentityRemote), forgedMissingIdentityRemoteBefore);
+
+  const forgedMissingSourceRewrite = mutationFor(forgedMissingSourcePlan, childPostResourceKey)
+    .wordpressGraphIdentity.rewrites[0];
+  delete forgedMissingSourceRewrite.sourceResourceKey;
+  const forgedMissingSourceError = captureError(() =>
+    applyPlan(forgedMissingSourceRemote, forgedMissingSourcePlan));
+  const forgedMissingSourceIssue = forgedMissingSourceError.details.issues.find((issue) =>
+    issue.code === 'WORDPRESS_GRAPH_REWRITE_SOURCE_RESOURCE_MISMATCH');
+
+  assert.ok(forgedMissingSourceError instanceof PushPlanError);
+  assert.equal(forgedMissingSourceError.code, 'PLAN_INVARIANT_VIOLATION');
+  assert.equal(forgedMissingSourceIssue.resourceKey, childPostResourceKey);
+  assert.equal(forgedMissingSourceIssue.relationshipType, 'post-parent');
+  assert.equal(forgedMissingSourceIssue.expectedSourceResourceKey, childPostResourceKey);
+  assert.equal(forgedMissingSourceIssue.observedSourceResourceKey, null);
+  assert.equal(JSON.stringify(forgedMissingSourceRemote), forgedMissingSourceRemoteBefore);
+
+  const forgedMissingRewrittenRewrite = mutationFor(forgedMissingRewrittenPlan, childPostResourceKey)
+    .wordpressGraphIdentity.rewrites[0];
+  delete forgedMissingRewrittenRewrite.rewrittenResourceKey;
+  const forgedMissingRewrittenError = captureError(() =>
+    applyPlan(forgedMissingRewrittenRemote, forgedMissingRewrittenPlan));
+  const forgedMissingRewrittenIssue = forgedMissingRewrittenError.details.issues.find((issue) =>
+    issue.code === 'WORDPRESS_GRAPH_REWRITE_RESOURCE_KEY_MISMATCH');
+
+  assert.ok(forgedMissingRewrittenError instanceof PushPlanError);
+  assert.equal(forgedMissingRewrittenError.code, 'PLAN_INVARIANT_VIOLATION');
+  assert.equal(forgedMissingRewrittenIssue.resourceKey, childPostResourceKey);
+  assert.equal(forgedMissingRewrittenIssue.relationshipType, 'post-parent');
+  assert.equal(forgedMissingRewrittenIssue.expectedResourceKey, childPostResourceKey);
+  assert.equal(forgedMissingRewrittenIssue.observedResourceKey, null);
+  assert.equal(JSON.stringify(forgedMissingRewrittenRemote), forgedMissingRewrittenRemoteBefore);
 
   const forgedPayloadMutation = mutationFor(forgedPayloadPlan, childPostResourceKey);
   const forgedPayloadValue = deserializeMutationValue(forgedPayloadMutation);

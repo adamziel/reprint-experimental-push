@@ -2603,25 +2603,24 @@ function wordpressGraphRewriteEnvelopeIssues(mutation, decisions = []) {
         observedHash: hashEvidenceForDetails(rewrite.relationshipContractHash),
       });
     }
-    if (rewrite.rewrittenResourceKey && rewrite.rewrittenResourceKey !== mutation.resourceKey) {
+    if (rewrite.rewrittenResourceKey !== mutation.resourceKey) {
       issues.push({
         ...issueBase,
         code: 'WORDPRESS_GRAPH_REWRITE_RESOURCE_KEY_MISMATCH',
         expectedResourceKey: mutation.resourceKey || null,
-        observedResourceKey: rewrite.rewrittenResourceKey,
+        observedResourceKey: rewrite.rewrittenResourceKey || null,
       });
     }
     const expectedSourceResourceKey = identity.sourceResourceKey || mutation.resourceKey || null;
     if (
       expectedSourceResourceKey
-      && rewrite.sourceResourceKey
       && rewrite.sourceResourceKey !== expectedSourceResourceKey
     ) {
       issues.push({
         ...issueBase,
         code: 'WORDPRESS_GRAPH_REWRITE_SOURCE_RESOURCE_MISMATCH',
         expectedSourceResourceKey,
-        observedSourceResourceKey: rewrite.sourceResourceKey,
+        observedSourceResourceKey: rewrite.sourceResourceKey || null,
       });
     }
     if (
