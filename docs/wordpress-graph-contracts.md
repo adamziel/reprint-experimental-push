@@ -81,8 +81,17 @@ observed ID evidence.
 Legacy identity maps still normalize for existing local coverage, but an entry
 that declares `contractKind: "wordpress-graph-identity-map"` is strict:
 unsupported contract versions, missing or unsupported contract kinds,
-`rawValuesIncluded` values other than `false`, missing row resources, or
-self-maps fail closed before rewrite.
+`rawValuesIncluded` values other than `false`, missing row resources,
+self-maps, unsupported table surfaces, or cross-surface source/target pairs
+fail closed before rewrite.
+
+Accepted explicit identity-map contracts are also mandatory rewrite evidence.
+When a ready plan carries a `map-local-identity-to-remote` decision with
+accepted contract validation evidence, each dependent graph rewrite must carry
+the matching `identityMapContractHash` and
+`identityMapContractValidationHash`, and its `targetResourceKey` must match the
+decision target. Apply rejects stripped or mismatched rewrite-side contract
+evidence before mutation.
 
 Otherwise the mutation is blocked before apply with
 `stale-wordpress-graph-identity` and
@@ -153,12 +162,14 @@ normalized to:
 
 The exporter does not infer maps from slugs, GUIDs, or row contents. If no
 explicit map is supplied, no identity map is exported. Malformed contract rows,
-raw-value rows, self-maps, unsupported versions/kinds, and cross-surface maps
-fail closed before snapshot export. If a row supplies `contractHash`, it must
-match the normalized source/target identity-map contract; mismatches fail closed
-with `WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_HASH_MISMATCH` in JS planning and
-with a snapshot export refusal in PHP. Planner/apply still perform the stronger
-equivalence, staleness, relationship contract, and pre-mutation checks.
+raw-value rows, self-maps, unsupported versions/kinds, unsupported table
+surfaces, and cross-surface maps fail closed before snapshot export and JS
+planning. If a row supplies `contractHash`, it must match the normalized
+source/target identity-map contract; mismatches fail closed with
+`WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_HASH_MISMATCH` in JS planning and with a
+snapshot export refusal in PHP. Planner/apply still perform the stronger
+equivalence, staleness, relationship contract, rewrite evidence, and
+pre-mutation checks.
 
 Future graph support should extend the contract first, add refusal tests for
 unsupported shapes, and only then add positive rewrite or same-plan support.

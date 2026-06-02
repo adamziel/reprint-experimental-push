@@ -6569,6 +6569,9 @@ test('explicit WordPress graph identity-map contract carries accepted proof thro
   const forgedIdentityPlan = cloneJson(plan);
   const forgedIdentityRemote = cloneJson(remote);
   const forgedIdentityRemoteBefore = JSON.stringify(forgedIdentityRemote);
+  const forgedMissingIdentityPlan = cloneJson(plan);
+  const forgedMissingIdentityRemote = cloneJson(remote);
+  const forgedMissingIdentityRemoteBefore = JSON.stringify(forgedMissingIdentityRemote);
   const forgedPayloadPlan = cloneJson(plan);
   const forgedPayloadRemote = cloneJson(remote);
   const forgedPayloadRemoteBefore = JSON.stringify(forgedPayloadRemote);
@@ -6631,6 +6634,23 @@ test('explicit WordPress graph identity-map contract carries accepted proof thro
   assert.equal(forgedIdentityIssue.resourceKey, childPostResourceKey);
   assert.equal(forgedIdentityIssue.relationshipType, 'post-parent');
   assert.equal(JSON.stringify(forgedIdentityRemote), forgedIdentityRemoteBefore);
+
+  const forgedMissingIdentityRewrite = mutationFor(forgedMissingIdentityPlan, childPostResourceKey)
+    .wordpressGraphIdentity.rewrites[0];
+  delete forgedMissingIdentityRewrite.identityMapContractHash;
+  delete forgedMissingIdentityRewrite.identityMapContractValidationHash;
+  const forgedMissingIdentityError = captureError(() =>
+    applyPlan(forgedMissingIdentityRemote, forgedMissingIdentityPlan));
+  const forgedMissingIdentityIssue = forgedMissingIdentityError.details.issues.find((issue) =>
+    issue.code === 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_CONTRACT_EVIDENCE_MISSING');
+
+  assert.ok(forgedMissingIdentityError instanceof PushPlanError);
+  assert.equal(forgedMissingIdentityError.code, 'PLAN_INVARIANT_VIOLATION');
+  assert.equal(forgedMissingIdentityIssue.resourceKey, childPostResourceKey);
+  assert.equal(forgedMissingIdentityIssue.relationshipType, 'post-parent');
+  assert.equal(forgedMissingIdentityIssue.sourceTargetResourceKey, sourcePostResourceKey);
+  assert.equal(forgedMissingIdentityIssue.targetResourceKey, targetPostResourceKey);
+  assert.equal(JSON.stringify(forgedMissingIdentityRemote), forgedMissingIdentityRemoteBefore);
 
   const forgedPayloadMutation = mutationFor(forgedPayloadPlan, childPostResourceKey);
   const forgedPayloadValue = deserializeMutationValue(forgedPayloadMutation);
@@ -6866,6 +6886,32 @@ test('malformed explicit WordPress graph identity-map contract rows fail closed 
       expectedSourceResourceKey: changedPostResourceKey,
       expectedTargetResourceKey: remoteTargetResourceKey,
       privateTitle: 'graph-contract-missing-kind-private-title',
+    },
+    {
+      name: 'unsupported identity-map table surface',
+      row: {
+        contractVersion: 1,
+        contractKind: 'wordpress-graph-identity-map',
+        sourceResourceKey: 'row:["wp_links","link_id:2301"]',
+        targetResourceKey: 'row:["wp_links","link_id:3301"]',
+      },
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_UNSUPPORTED_TABLE_SURFACE',
+      expectedSourceResourceKey: 'row:["wp_links","link_id:2301"]',
+      expectedTargetResourceKey: 'row:["wp_links","link_id:3301"]',
+      privateTitle: 'graph-contract-unsupported-table-private-title',
+    },
+    {
+      name: 'cross-surface identity-map contract',
+      row: {
+        contractVersion: 1,
+        contractKind: 'wordpress-graph-identity-map',
+        sourceResourceKey: changedPostResourceKey,
+        targetResourceKey: 'row:["wp_users","ID:3301"]',
+      },
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_CROSS_SURFACE',
+      expectedSourceResourceKey: changedPostResourceKey,
+      expectedTargetResourceKey: 'row:["wp_users","ID:3301"]',
+      privateTitle: 'graph-contract-cross-surface-private-title',
     },
   ];
 

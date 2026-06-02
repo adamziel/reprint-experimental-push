@@ -4,6 +4,32 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Graph Identity Map Contract Guards
+
+- Last update: 2026-06-02 07:43 CEST +02:00.
+- Explicit WordPress graph identity-map contracts now fail closed when their
+  source/target tables are outside the supported identity-map suffix allowlist
+  or when the source and target are different graph surfaces. The JS planner
+  now records precise hash-only contract refusals:
+  `WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_UNSUPPORTED_TABLE_SURFACE` and
+  `WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_CROSS_SURFACE`.
+- Apply-time graph rewrite validation now treats accepted identity-map contract
+  evidence on the corresponding `map-local-identity-to-remote` decision as
+  mandatory rewrite evidence. Forged ready plans that strip
+  `identityMapContractHash` and `identityMapContractValidationHash` now fail
+  before mutation with
+  `WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_CONTRACT_EVIDENCE_MISSING`; mismatched
+  decision target or decision-bound hashes are also refused before mutation.
+- Verification: focused explicit identity-map and malformed-contract tests
+  passed, JS syntax checks passed for `src/apply.js` and
+  `src/wordpress-graph-contracts.js`, and the adjacent planner/graph suite
+  passed 155/155:
+  `node --test test/wordpress-graph-contracts.test.js test/push-planner.test.js`.
+- Caveat: this hardens explicit graph identity-map contract acceptance and
+  apply-side rewrite evidence. It does not complete generic WordPress graph
+  identity mapping, arbitrary serialized reference rewriting, or production
+  hosted graph proof beyond the current stable fixtures.
+
 ## 2026-06-02 - Packaged Source Mutation Guards
 
 - Last update: 2026-06-02 07:36 CEST +02:00.

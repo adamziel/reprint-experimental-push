@@ -2012,7 +2012,7 @@ function validateReadyPlanEnvelope(plan) {
       }
     }
 
-    issues.push(...wordpressGraphRewriteEnvelopeIssues(mutation));
+    issues.push(...wordpressGraphRewriteEnvelopeIssues(mutation, decisions));
   }
 
   for (const precondition of preconditions) {
@@ -2127,7 +2127,7 @@ function validateReadyPlanEnvelope(plan) {
   }
 }
 
-function wordpressGraphRewriteEnvelopeIssues(mutation) {
+function wordpressGraphRewriteEnvelopeIssues(mutation, decisions = []) {
   const identity = mutation.wordpressGraphIdentity;
   if (!identity) {
     return [];
@@ -2263,6 +2263,48 @@ function wordpressGraphRewriteEnvelopeIssues(mutation) {
         });
       }
     }
+    const identityMapDecision = wordpressGraphIdentityMapDecisionForRewrite(rewrite, decisions);
+    const identityMapContractEvidence = identityMapDecision?.identityMapContractValidationEvidence || null;
+    if (identityMapContractEvidence) {
+      const expectedIdentityMapContractHash = identityMapContractEvidence.contractHash || null;
+      const expectedIdentityMapContractValidationHash = digest(identityMapContractEvidence);
+      if (
+        rewrite.identityMapContractHash === undefined
+        || rewrite.identityMapContractValidationHash === undefined
+      ) {
+        issues.push({
+          ...issueBase,
+          code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_CONTRACT_EVIDENCE_MISSING',
+          sourceTargetResourceKey: rewrite.sourceTargetResourceKey || null,
+          targetResourceKey: rewrite.targetResourceKey || null,
+        });
+      } else {
+        if (rewrite.identityMapContractHash !== expectedIdentityMapContractHash) {
+          issues.push({
+            ...issueBase,
+            code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_DECISION_CONTRACT_HASH_MISMATCH',
+            expectedHash: hashEvidenceForDetails(expectedIdentityMapContractHash),
+            observedHash: hashEvidenceForDetails(rewrite.identityMapContractHash),
+          });
+        }
+        if (rewrite.identityMapContractValidationHash !== expectedIdentityMapContractValidationHash) {
+          issues.push({
+            ...issueBase,
+            code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_DECISION_CONTRACT_VALIDATION_HASH_MISMATCH',
+            expectedHash: expectedIdentityMapContractValidationHash,
+            observedHash: hashEvidenceForDetails(rewrite.identityMapContractValidationHash),
+          });
+        }
+      }
+      if (rewrite.targetResourceKey !== identityMapDecision.targetResourceKey) {
+        issues.push({
+          ...issueBase,
+          code: 'WORDPRESS_GRAPH_REWRITE_IDENTITY_MAP_DECISION_TARGET_MISMATCH',
+          expectedTargetResourceKey: identityMapDecision.targetResourceKey || null,
+          observedTargetResourceKey: rewrite.targetResourceKey || null,
+        });
+      }
+    }
 
     const targetResource = parseWordPressGraphRowResourceKey(rewrite.targetResourceKey);
     if (!targetResource) {
@@ -2292,6 +2334,15 @@ function wordpressGraphRewriteEnvelopeIssues(mutation) {
   }
 
   return issues;
+}
+
+function wordpressGraphIdentityMapDecisionForRewrite(rewrite, decisions) {
+  if (!rewrite?.sourceTargetResourceKey || !Array.isArray(decisions)) {
+    return null;
+  }
+  return decisions.find((decision) =>
+    decision?.decision === 'map-local-identity-to-remote'
+    && decision.resourceKey === rewrite.sourceTargetResourceKey) || null;
 }
 
 function wordpressGraphRewriteTargetPrimaryValue(targetResource) {

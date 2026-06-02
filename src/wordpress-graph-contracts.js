@@ -67,6 +67,10 @@ export const SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES = Object.free
   'blogs',
 ]);
 
+const SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIX_SET = new Set(
+  SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES,
+);
+
 export const WORDPRESS_GRAPH_IDENTITY_FAIL_CLOSED_COLLISION_SURFACES = Object.freeze([
   'wp_posts.guid',
   'wp_posts.post_type+post_name',
@@ -389,6 +393,32 @@ export function normalizeWordPressGraphIdentityMapContract(entry, {
       observed: targetResource.key,
     });
   }
+  if (sourceResource?.type === 'row' && targetResource?.type === 'row') {
+    const sourceSuffix = wordpressGraphTableSuffix(sourceResource.table);
+    const targetSuffix = wordpressGraphTableSuffix(targetResource.table);
+    const sourceSupported = SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIX_SET.has(sourceSuffix);
+    const targetSupported = SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIX_SET.has(targetSuffix);
+    if (!sourceSupported || !targetSupported) {
+      issues.push({
+        reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_UNSUPPORTED_TABLE_SURFACE',
+        field: !sourceSupported ? 'sourceTable' : 'targetTable',
+        required: [...SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES],
+        observed: {
+          sourceTable: sourceResource.table,
+          sourceSuffix,
+          targetTable: targetResource.table,
+          targetSuffix,
+        },
+      });
+    } else if (sourceSuffix !== targetSuffix) {
+      issues.push({
+        reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_CROSS_SURFACE',
+        field: 'targetTable',
+        required: sourceSuffix,
+        observed: targetSuffix,
+      });
+    }
+  }
   const expectedContractHash = sourceResource && targetResource
     ? wordpressGraphIdentityMapContractHash({ sourceResource, targetResource })
     : null;
@@ -492,6 +522,14 @@ function parseRowResourceKey(resourceKey) {
     return null;
   }
   return null;
+}
+
+function wordpressGraphTableSuffix(table) {
+  if (!isNonEmptyString(table)) {
+    return null;
+  }
+  return WORDPRESS_GRAPH_TABLE_SUFFIXES.find((suffix) =>
+    table === `wp_${suffix}` || table.endsWith(`_${suffix}`)) || null;
 }
 
 function graphRelationshipContract({
