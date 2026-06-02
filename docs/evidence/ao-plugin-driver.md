@@ -96,6 +96,14 @@ The same focused slice adds merge-policy conflict evidence for accepted
 conflicts, but now carry hash-only policy evidence bound to the contract hash
 and base/local/remote row hashes.
 
+The generated harness now adds `pluginOwnedReferenceFieldVariant3` coverage for
+the same contract boundary beyond fixture-scoped allowlists: 20 deterministic
+cases across all 10 tiers, split between accepted `forms-reference-row`
+mutations and blocked `stale-plugin-driver-reference-target` refusals when the
+declared `payload.post_id -> wp_posts.ID` target is absent on remote. Ready
+cases also refuse apply-time target drift with
+`INVALID_PLUGIN_DRIVER_REFERENCE_TARGET`.
+
 Focused verification:
 
 ```sh
@@ -103,6 +111,7 @@ php -l scripts/playground/snapshot-lib.php
 node --test test/plugin-driver-contract.test.js
 node --test test/plugin-driver-registration-api.test.js test/playground-snapshot-lib.test.js
 node --test test/plugin-driver-contract.test.js test/plugin-driver-registration-api.test.js test/playground-snapshot-lib.test.js test/production-plugin-package-scenarios.test.js test/rpp-0441-driver-registration-api-v3.test.js test/rpp-0481-driver-registration-api-release-verifier-v5.test.js test/rpp-0483-custom-table-allowlist-release-verifier-v5.test.js
+node --test --test-name-pattern='plugin-owned reference-field' test/generated-push-harness.test.js
 ```
 
 ## Driver Apply Validation Hook

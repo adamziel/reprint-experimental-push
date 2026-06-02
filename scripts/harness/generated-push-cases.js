@@ -505,6 +505,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'plugin-owned-custom-table-changes-release-verifier-v5',
     tag: 'plugin-owned-custom-table-changes-release-verifier-v5',
   },
+  pluginOwnedReferenceFieldVariant3: {
+    family: 'plugin-owned-reference-field-variant3',
+    tag: 'plugin-owned-reference-field-v3',
+  },
   pluginOwnedResourceRefusalVariant3: {
     family: 'plugin-owned-resource-refusal-variant3',
     tag: 'plugin-owned-resource-refusal-v3',
@@ -2366,6 +2370,15 @@ function buildGeneratedCase({ index, tier, rng }) {
     tags,
   });
 
+  addPluginOwnedReferenceFieldVariant3Target({
+    family,
+    base,
+    local,
+    remote,
+    allocator,
+    tags,
+  });
+
   const complexityScore = enumerateResources(base, local, remote).length
     + (local.pushIntents?.length || 0) * 10
     + tags.size;
@@ -2719,6 +2732,24 @@ function addPostAuthorGraphVariant3Target({
   }
 
   addPostAuthorGraphVariant3(base, local, remote, allocator, tags, { staleTarget });
+  tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
+}
+
+function addPluginOwnedReferenceFieldVariant3Target({
+  family,
+  base,
+  local,
+  remote,
+  allocator,
+  tags,
+}) {
+  const readyTarget = family === 'same-plan-post-parent-graph';
+  const staleTarget = family === 'stale-post-author-graph';
+  if (!readyTarget && !staleTarget) {
+    return;
+  }
+
+  addPluginOwnedReferenceFieldVariant3(base, local, remote, allocator, tags, { staleTarget });
   tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
 }
 
@@ -4784,6 +4815,85 @@ function addPluginOwnedCustomTableChanges(base, local, remote, allocator, tags, 
   tags.add('forms-lab-supported');
   tags.add('plugin-owned-supported');
   tags.add('remote-preserve');
+}
+
+function addPluginOwnedReferenceFieldVariant3(base, local, remote, allocator, tags, { staleTarget }) {
+  const entryId = allocator.formsLabId();
+  const postId = allocator.graphId();
+  const rowId = `entry_id:${entryId}`;
+  const postRowId = `ID:${postId}`;
+  const table = 'wp_forms_contract_rows';
+  const driver = 'forms-reference-row';
+  const resourceKey = rowKey(table, rowId);
+  const referenceTarget = makePost(postId, `AO plugin reference target ${postId}`, {
+    post_name: `ao-plugin-reference-target-${postId}`,
+    post_content: `ao-plugin-reference-target-private-${postId}`,
+  });
+  const baseRow = {
+    entry_id: entryId,
+    payload: {
+      owner: 'forms',
+      generatedHarnessVariant: 'ao-plugin-reference-field-v3',
+      mode: 'base',
+      post_id: postId,
+      privateToken: `ao-plugin-reference-private-base-${entryId}`,
+    },
+    updated_marker: `base-${entryId}`,
+    __pluginOwner: 'forms',
+  };
+
+  setRow(base, 'wp_posts', postRowId, referenceTarget);
+  setRow(local, 'wp_posts', postRowId, referenceTarget);
+  if (!staleTarget) {
+    setRow(remote, 'wp_posts', postRowId, referenceTarget);
+  }
+
+  setRow(base, table, rowId, baseRow);
+  setRow(remote, table, rowId, baseRow);
+  setRow(local, table, rowId, {
+    ...baseRow,
+    payload: {
+      ...baseRow.payload,
+      mode: 'local',
+      privateToken: `ao-plugin-reference-private-local-${allocator.next()}`,
+    },
+    updated_marker: `local-${allocator.next()}`,
+  });
+  allowPluginOwned(local, resourceKey, 'forms', driver, {
+    contractVersion: 1,
+    contractKind: 'plugin-owned-row-driver',
+    table,
+    supportsDelete: false,
+    evidenceScope: 'local-generated-model',
+    rowSchema: {
+      required: ['entry_id', 'payload', 'updated_marker', '__pluginOwner'],
+      fields: {
+        entry_id: 'integer',
+        payload: 'object',
+        updated_marker: 'string',
+        __pluginOwner: 'string',
+      },
+    },
+    referenceFields: {
+      fields: [
+        {
+          path: 'payload.post_id',
+          targetTable: 'wp_posts',
+          targetIdField: 'ID',
+          required: true,
+        },
+      ],
+    },
+  });
+
+  tags.add('plugin-owned-reference-field-v3');
+  tags.add(staleTarget ? 'plugin-owned-reference-field-v3-stale' : 'plugin-owned-reference-field-v3-ready');
+  if (staleTarget) {
+    tags.add('plugin-owned-reference-field-v3-non-ready');
+  }
+  tags.add('plugin-owned-reference-field-v3-hash-only');
+  tags.add('plugin-owned-reference-field-v3-update');
+  tags.add('plugin-owned-supported');
 }
 
 function addWpCommentsCommentmetaGraph(local, remote, allocator, tags, { staleTarget, base = null }) {

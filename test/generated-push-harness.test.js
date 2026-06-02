@@ -21,6 +21,7 @@ import {
 } from '../scripts/harness/generated-push-cases.js';
 import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 import { createPushPlan } from '../src/planner.js';
+import { pluginOwnedRowDriverContractHash } from '../src/plugin-driver-contracts.js';
 import { deserializeResourceValue, enumerateResources, getResource, resourceHash, setResource } from '../src/resources.js';
 import { ABSENT, digest } from '../src/stable-json.js';
 
@@ -12249,6 +12250,701 @@ test('RPP-0175 plugin-owned custom-table changes variant 4 records surface and i
   assert.equal(evidenceText.includes('generated-rpp-0135'), false, 'variant 4 evidence leaked custom-table slug');
   assert.equal(evidenceText.includes('Remote preserved custom table note'), false, 'variant 4 evidence leaked remote-only file contents');
 });
+
+test('AO generated harness records plugin-owned reference-field row-driver contract coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.pluginOwnedReferenceFieldVariant3;
+
+  assert.ok(coverage, 'missing plugin-owned reference-field target coverage');
+  assert.equal(coverage.family, 'plugin-owned-reference-field-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['plugin-owned-reference-field-v3']);
+  assert.equal(coverage.total, 20);
+  assert.equal(coverage.statuses.ready, 10);
+  assert.equal(coverage.statuses.blocked, 10);
+  assert.equal(nonReadyTargetCount(coverage), 10);
+  assert.equal(report.summary.featureFamilies['plugin-owned-reference-field-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['plugin-owned-reference-field-v3-stale'], 10);
+  assert.equal(report.summary.featureFamilies['plugin-owned-reference-field-v3-non-ready'], 10);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const summaryEvidence = JSON.stringify(report);
+  assert.equal(summaryEvidence.includes('ao-plugin-reference-private'), false, 'summary leaked plugin reference private token');
+  assert.equal(summaryEvidence.includes('privateToken'), false, 'summary leaked plugin reference private key');
+  assert.equal(summaryEvidence.includes('ao-plugin-reference-target-private'), false, 'summary leaked plugin reference target body');
+
+  const firstEvidence = generatedPluginOwnedReferenceFieldVariant3Evidence(coverage);
+  const replayEvidence = generatedPluginOwnedReferenceFieldVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=plugin-owned reference-field test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'reference-field evidence changed between runs');
+  assert.equal(firstEvidence.target, 'pluginOwnedReferenceFieldVariant3');
+  assert.equal(firstEvidence.family, 'plugin-owned-reference-field-variant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.variant),
+    ['ready', 'stale-target-missing'],
+  );
+
+  const [readyCase, staleCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.status, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.contract.contractKind, 'plugin-owned-row-driver');
+  assert.equal(readyCase.contract.contractAccepted, true);
+  assert.equal(readyCase.payload.validator, 'contract-bound-row-driver');
+  assert.equal(readyCase.payload.referenceValidationStatus, 'matched');
+  assert.equal(readyCase.targetValidation.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED');
+  assert.equal(readyCase.targetValidation.fieldReasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ACCEPTED');
+  assert.equal(readyCase.targetValidation.targetStable, true);
+  assert.equal(readyCase.targetValidation.targetRemotePresent, true);
+  assert.equal(readyCase.targetValidation.targetPrimaryMatched, true);
+  assert.equal(readyCase.tableMutation.action, 'put');
+  assert.equal(readyCase.tableMutation.changeKind, 'update');
+  assert.equal(readyCase.tableMutation.driver, 'forms-reference-row');
+  assert.equal(readyCase.tableMutation.plannedPrecondition, true);
+  assert.equal(readyCase.tableMutation.appliedHash, readyCase.surface.row.localHash);
+  assert.equal(readyCase.referenceTargetDriftRefusal.code, 'INVALID_PLUGIN_DRIVER_REFERENCE_TARGET');
+  assert.equal(
+    readyCase.referenceTargetDriftRefusal.reasonCode,
+    'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_MISMATCH',
+  );
+  assert.equal(
+    readyCase.referenceTargetDriftRefusal.remoteBeforeHash,
+    readyCase.referenceTargetDriftRefusal.remoteAfterHash,
+  );
+
+  assert.equal(staleCase.status, 'blocked');
+  assert.equal(staleCase.applied, false);
+  assert.equal(staleCase.blocker.class, 'stale-plugin-driver-reference-target');
+  assert.equal(staleCase.blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT');
+  assert.equal(staleCase.blocker.plannedMutation, false);
+  assert.equal(staleCase.blocker.targetRemotePresent, false);
+  assert.equal(staleCase.blocker.targetStable, false);
+  assert.equal(staleCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(staleCase.refusal.remoteBeforeHash, staleCase.refusal.remoteAfterHash);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('ao-plugin-reference-private'), false, 'reference-field evidence leaked private token');
+  assert.equal(evidenceText.includes('privateToken'), false, 'reference-field evidence leaked private key');
+  assert.equal(evidenceText.includes('ao-plugin-reference-target-private'), false, 'reference-field evidence leaked target body');
+  assert.equal(evidenceText.includes('AO plugin reference target'), false, 'reference-field evidence leaked target title');
+});
+
+function generatedPluginOwnedReferenceFieldVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('plugin-owned-reference-field-v3')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedPluginOwnedReferenceFieldVariant3CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'stale-target-missing';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'reference-field target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'reference-field target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'reference-field target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'reference-field target should select one ready case');
+  assert.ok(selectedCases.has('stale-target-missing'), 'reference-field target should select one stale target-missing case');
+
+  return {
+    target: 'pluginOwnedReferenceFieldVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('stale-target-missing'),
+    ],
+  };
+}
+
+function generatedPluginOwnedReferenceFieldVariant3CaseEvidence(testCase, result) {
+  const staleTarget = testCase.tags.has('plugin-owned-reference-field-v3-stale');
+  assert.equal(
+    testCase.tags.has('plugin-owned-reference-field-v3-ready'),
+    !staleTarget,
+    `${testCase.id} should carry exactly one reference-field ready/stale tag`,
+  );
+  assert.equal(
+    testCase.tags.has('plugin-owned-reference-field-v3-non-ready'),
+    staleTarget,
+    `${testCase.id} should tag stale reference-field cases as non-ready`,
+  );
+  assert.equal(
+    result.status === 'ready',
+    !staleTarget,
+    `${testCase.id} reference-field status should match ready/stale tag`,
+  );
+  assert.equal(testCase.family, staleTarget ? 'stale-post-author-graph' : 'same-plan-post-parent-graph');
+
+  const shape = pluginOwnedReferenceFieldVariant3Shape(testCase, { staleTarget });
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const carrier = pluginOwnedReferenceFieldVariant3EvidenceCarrier({ testCase, plan, shape, staleTarget });
+  const surface = pluginOwnedReferenceFieldVariant3SurfaceEvidence(testCase, shape);
+  const contract = pluginOwnedReferenceFieldVariant3ContractEvidence(carrier.contractValidationEvidence, shape);
+  const payload = pluginOwnedReferenceFieldVariant3PayloadEvidence(carrier.driverPayloadValidationEvidence, shape);
+  const targetValidation = pluginOwnedReferenceFieldVariant3TargetEvidence(
+    carrier.referenceTargetValidationEvidence,
+    shape,
+    { staleTarget },
+  );
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant: staleTarget ? 'stale-target-missing' : 'ready',
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    surface,
+    contract,
+    payload,
+    targetValidation,
+  };
+
+  assertPluginOwnedReferenceFieldVariant3EvidenceRedacted(testCase, shape);
+
+  if (!staleTarget) {
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(result.status, 'ready', `${testCase.id} should validate as ready`);
+    assert.equal(result.applied, true, `${testCase.id} should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const tableMutation = pluginOwnedReferenceFieldVariant3ReadyMutationEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+    const referenceTargetDriftRefusal = pluginOwnedReferenceFieldVariant3TargetDriftRefusal({
+      testCase,
+      plan,
+      shape,
+    });
+
+    return {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      staleReplayRejected: result.staleReplayRejected,
+      staleReplayRejectionCode: result.staleReplayRejectionCode,
+      staleReplayRemoteUnchanged: result.staleReplayRemoteUnchanged,
+      tableMutation,
+      referenceTargetDriftRefusal,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        contract,
+        payload,
+        targetValidation,
+        tableMutation,
+        referenceTargetDriftRefusal,
+      })}`,
+    };
+  }
+
+  assert.equal(plan.status, 'blocked', `${testCase.id} should plan as blocked`);
+  assert.equal(result.status, 'blocked', `${testCase.id} should validate as blocked`);
+  assert.equal(result.applied, false, `${testCase.id} blocked reference-field case should not apply`);
+  assert.equal(result.nonReadyRemoteUnchanged, true, `${testCase.id} blocked reference-field case should leave remote unchanged`);
+
+  const blocker = pluginOwnedReferenceFieldVariant3BlockerEvidence({ testCase, plan, shape });
+  const refusal = pluginOwnedReferenceFieldVariant3RefusalEvidence(testCase, plan);
+
+  return {
+    ...commonEvidence,
+    applied: result.applied,
+    blocker,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      contract,
+      payload,
+      targetValidation,
+      blocker,
+      refusal,
+    })}`,
+  };
+}
+
+function pluginOwnedReferenceFieldVariant3Shape(testCase, { staleTarget }) {
+  const rows = Object.entries(testCase.local.db.wp_forms_contract_rows || {})
+    .filter(([, row]) => row.payload?.generatedHarnessVariant === 'ao-plugin-reference-field-v3');
+
+  assert.equal(rows.length, 1, `${testCase.id} should carry one generated reference-field plugin row`);
+  const [rowId, localRow] = rows[0];
+  const baseRow = testCase.base.db.wp_forms_contract_rows?.[rowId];
+  const remoteRow = testCase.remote.db.wp_forms_contract_rows?.[rowId];
+  const resourceKey = generatedRowResourceKey('wp_forms_contract_rows', rowId);
+  const policy = testCase.local.meta.pluginOwnedResources.allowedResources
+    .find((entry) => entry.resourceKey === resourceKey);
+  const postId = localRow.payload?.post_id;
+  const targetRowId = `ID:${postId}`;
+  const targetResourceKey = generatedRowResourceKey('wp_posts', targetRowId);
+  const targetBaseRow = testCase.base.db.wp_posts?.[targetRowId];
+  const targetLocalRow = testCase.local.db.wp_posts?.[targetRowId];
+  const targetRemoteRow = testCase.remote.db.wp_posts?.[targetRowId] ?? ABSENT;
+
+  assert.ok(baseRow, `${testCase.id} should seed the reference-field row in base`);
+  assert.ok(remoteRow, `${testCase.id} should seed the reference-field row in remote`);
+  assert.ok(policy, `${testCase.id} should allowlist the exact reference-field row`);
+  assert.match(rowId, /^entry_id:\d+$/, `${testCase.id} should use deterministic entry_id rows`);
+  assert.equal(localRow.entry_id, Number(rowId.slice('entry_id:'.length)));
+  assert.equal(baseRow.entry_id, localRow.entry_id);
+  assert.equal(remoteRow.entry_id, localRow.entry_id);
+  assert.equal(localRow.__pluginOwner, 'forms');
+  assert.equal(baseRow.__pluginOwner, 'forms');
+  assert.equal(remoteRow.__pluginOwner, 'forms');
+  assert.equal(localRow.payload.owner, 'forms');
+  assert.equal(baseRow.payload.owner, 'forms');
+  assert.equal(remoteRow.payload.owner, 'forms');
+  assert.equal(localRow.payload.mode, 'local');
+  assert.equal(baseRow.payload.mode, 'base');
+  assert.equal(remoteRow.payload.mode, 'base');
+  assert.equal(Number.isInteger(postId), true, `${testCase.id} should carry an integer post_id reference`);
+  assert.ok(postId > 0, `${testCase.id} should carry a positive post_id reference`);
+  assert.equal(baseRow.payload.post_id, postId);
+  assert.equal(remoteRow.payload.post_id, postId);
+  assert.ok(targetBaseRow, `${testCase.id} should seed the target post in base`);
+  assert.ok(targetLocalRow, `${testCase.id} should seed the target post in local`);
+  assert.equal(targetBaseRow.ID, postId);
+  assert.equal(targetLocalRow.ID, postId);
+  assert.equal(targetRemoteRow === ABSENT, staleTarget, `${testCase.id} target remote presence should match stale tag`);
+  if (!staleTarget) {
+    assert.equal(targetRemoteRow.ID, postId);
+  }
+  assert.equal(policy.pluginOwner, 'forms');
+  assert.equal(policy.driver, 'forms-reference-row');
+  assert.equal(policy.table, 'wp_forms_contract_rows');
+  assert.equal(policy.contractKind, 'plugin-owned-row-driver');
+  assert.equal(policy.supportsDelete, false);
+
+  return {
+    rowId,
+    resourceKey,
+    baseRow,
+    localRow,
+    remoteRow,
+    policy,
+    postId,
+    targetRowId,
+    targetResourceKey,
+    targetBaseRow,
+    targetLocalRow,
+    targetRemoteRow,
+    privateValues: [
+      baseRow.payload.privateToken,
+      localRow.payload.privateToken,
+      remoteRow.payload.privateToken,
+      targetBaseRow.post_title,
+      targetBaseRow.post_name,
+      targetBaseRow.post_content,
+      targetLocalRow.post_title,
+      targetLocalRow.post_name,
+      targetLocalRow.post_content,
+      targetRemoteRow !== ABSENT ? targetRemoteRow.post_title : null,
+      targetRemoteRow !== ABSENT ? targetRemoteRow.post_name : null,
+      targetRemoteRow !== ABSENT ? targetRemoteRow.post_content : null,
+    ].filter(Boolean),
+  };
+}
+
+function pluginOwnedReferenceFieldVariant3EvidenceCarrier({ testCase, plan, shape, staleTarget }) {
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === shape.resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === shape.resourceKey);
+
+  if (staleTarget) {
+    assert.equal(mutation, undefined, `${testCase.id} should not plan a stale reference-field mutation`);
+    assert.ok(blocker, `${testCase.id} should carry a stale reference-field blocker`);
+    return blocker;
+  }
+
+  assert.ok(mutation, `${testCase.id} should plan a ready reference-field mutation`);
+  assert.equal(blocker, undefined, `${testCase.id} should not block the ready reference-field mutation`);
+  return mutation.pluginOwnedResource;
+}
+
+function pluginOwnedReferenceFieldVariant3SurfaceEvidence(testCase, shape) {
+  const row = rowResource('wp_forms_contract_rows', shape.rowId);
+  const target = rowResource('wp_posts', shape.targetRowId);
+
+  return {
+    row: {
+      resourceKey: row.key,
+      table: row.table,
+      baseHash: resourceHash(testCase.base, row),
+      localHash: resourceHash(testCase.local, row),
+      remoteHash: resourceHash(testCase.remote, row),
+      rowIdHash: `sha256:${digest(shape.rowId)}`,
+      localMarkerHash: `sha256:${digest(shape.localRow.updated_marker)}`,
+    },
+    target: {
+      resourceKey: target.key,
+      table: target.table,
+      baseHash: resourceHash(testCase.base, target),
+      localHash: resourceHash(testCase.local, target),
+      remoteHash: resourceHash(testCase.remote, target),
+      rowIdHash: `sha256:${digest(shape.targetRowId)}`,
+    },
+    owner: 'forms',
+    driver: 'forms-reference-row',
+    referencePath: 'payload.post_id',
+  };
+}
+
+function pluginOwnedReferenceFieldVariant3ContractEvidence(contractEvidence, shape) {
+  assert.equal(contractEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_ACCEPTED');
+  assert.equal(contractEvidence.outcome, 'accepted');
+  assert.equal(contractEvidence.rawValuesIncluded, false);
+  assert.equal(contractEvidence.contractKind, 'plugin-owned-row-driver');
+  assert.equal(contractEvidence.contractVersion, 1);
+  assert.equal(contractEvidence.resourceKey, shape.resourceKey);
+  assert.equal(contractEvidence.pluginOwner, 'forms');
+  assert.equal(contractEvidence.driver, 'forms-reference-row');
+  assert.equal(contractEvidence.table, 'wp_forms_contract_rows');
+  assert.equal(contractEvidence.supportsDelete, false);
+  assert.equal(contractEvidence.contractHash, pluginOwnedRowDriverContractHash(contractEvidence));
+  assert.deepEqual(contractEvidence.referenceFields.fields, [
+    {
+      path: 'payload.post_id',
+      targetTable: 'wp_posts',
+      targetIdField: 'ID',
+      scalarType: 'positive-integer',
+      required: true,
+    },
+  ]);
+
+  return {
+    contractKind: contractEvidence.contractKind,
+    contractVersion: contractEvidence.contractVersion,
+    contractAccepted: true,
+    resourceKey: contractEvidence.resourceKey,
+    pluginOwner: contractEvidence.pluginOwner,
+    driver: contractEvidence.driver,
+    table: contractEvidence.table,
+    supportsDelete: contractEvidence.supportsDelete,
+    contractHash: contractEvidence.contractHash,
+    referenceFieldsHash: `sha256:${digest(contractEvidence.referenceFields)}`,
+  };
+}
+
+function pluginOwnedReferenceFieldVariant3PayloadEvidence(payloadEvidence, shape) {
+  const referenceValidation = payloadEvidence.referenceValidation;
+  const reference = referenceValidation.fields[0];
+
+  assert.equal(payloadEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED');
+  assert.equal(payloadEvidence.outcome, 'accepted');
+  assert.equal(payloadEvidence.validator, 'contract-bound-row-driver');
+  assert.equal(payloadEvidence.rawValuesIncluded, false);
+  assert.equal(payloadEvidence.resourceKey, shape.resourceKey);
+  assert.equal(payloadEvidence.pluginOwner, 'forms');
+  assert.equal(payloadEvidence.driver, 'forms-reference-row');
+  assert.equal(payloadEvidence.table, 'wp_forms_contract_rows');
+  assert.equal(payloadEvidence.action, 'put');
+  assert.equal(payloadEvidence.supportsDelete, false);
+  assert.equal(payloadEvidence.rowIdentity.status, 'matched');
+  assert.equal(payloadEvidence.schemaValidation.status, 'matched');
+  assert.equal(referenceValidation.status, 'matched');
+  assert.equal(reference.path, 'payload.post_id');
+  assert.equal(reference.targetTable, 'wp_posts');
+  assert.equal(reference.targetIdField, 'ID');
+  assert.equal(reference.scalarType, 'positive-integer');
+  assert.equal(reference.required, true);
+  assert.equal(reference.state, 'present');
+  assert.equal(reference.observedType, 'integer');
+  assert.equal(reference.observedHash, digest(String(shape.postId)));
+  assert.equal(reference.targetResourceKey, shape.targetResourceKey);
+  assert.equal(reference.matched, true);
+
+  return {
+    validator: payloadEvidence.validator,
+    reasonCode: payloadEvidence.reasonCode,
+    referenceValidationStatus: referenceValidation.status,
+    referenceTargetResourceKey: reference.targetResourceKey,
+    referenceFieldsHash: referenceValidation.referenceFieldsHash,
+    payloadValidationHash: `sha256:${digest(payloadEvidence)}`,
+  };
+}
+
+function pluginOwnedReferenceFieldVariant3TargetEvidence(targetEvidence, shape, { staleTarget }) {
+  const field = targetEvidence.fields[0];
+
+  assert.equal(targetEvidence.validator, 'contract-bound-row-driver-reference-targets');
+  assert.equal(targetEvidence.rawValuesIncluded, false);
+  assert.equal(targetEvidence.resourceKey, shape.resourceKey);
+  assert.equal(targetEvidence.pluginOwner, 'forms');
+  assert.equal(targetEvidence.driver, 'forms-reference-row');
+  assert.equal(targetEvidence.table, 'wp_forms_contract_rows');
+  assert.equal(targetEvidence.referenceFieldCount, 1);
+  assert.equal(field.path, 'payload.post_id');
+  assert.equal(field.targetResourceKey, shape.targetResourceKey);
+  assert.equal(field.targetPrimaryRow.targetIdField, 'ID');
+  assert.equal(field.targetPrimaryRow.expectedHash, digest(String(shape.postId)));
+  assert.equal(field.targetRemotePresent, !staleTarget);
+  assert.equal(field.targetStable, !staleTarget);
+
+  if (staleTarget) {
+    assert.equal(targetEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT');
+    assert.equal(targetEvidence.outcome, 'refused-before-mutation');
+    assert.equal(field.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT');
+    assert.equal(field.targetChange.remoteChange, 'delete');
+    assert.equal(field.targetPrimaryRow.matched, false);
+  } else {
+    assert.equal(targetEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED');
+    assert.equal(targetEvidence.outcome, 'accepted');
+    assert.equal(field.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ACCEPTED');
+    assert.equal(field.targetChange.remoteChange, 'unchanged');
+    assert.equal(field.targetPrimaryRow.matched, true);
+  }
+
+  return {
+    reasonCode: targetEvidence.reasonCode,
+    fieldReasonCode: field.reasonCode,
+    targetResourceKey: field.targetResourceKey,
+    targetRemotePresent: field.targetRemotePresent,
+    targetStable: field.targetStable,
+    targetPrimaryMatched: field.targetPrimaryRow.matched,
+    targetRemoteHash: field.targetRemoteHash,
+    targetValidationHash: `sha256:${digest(targetEvidence)}`,
+  };
+}
+
+function pluginOwnedReferenceFieldVariant3ReadyMutationEvidence({ testCase, plan, applied, shape }) {
+  const resource = rowResource('wp_forms_contract_rows', shape.rowId);
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === resource.key);
+  const precondition = plan.preconditions.find((entry) => entry.resourceKey === resource.key);
+  const localHash = resourceHash(testCase.local, resource);
+  const appliedHash = resourceHash(applied.site, resource);
+  const plannedValue = deserializeResourceValue(mutation.value);
+
+  assert.ok(mutation, `${testCase.id} should plan the reference-field mutation`);
+  assert.ok(precondition, `${testCase.id} should precondition the reference-field mutation`);
+  assert.deepEqual(plannedValue, shape.localRow);
+  assert.equal(mutation.action, 'put');
+  assert.equal(mutation.changeKind, 'update');
+  assert.equal(mutation.pluginOwnedResource?.pluginOwner, 'forms');
+  assert.equal(mutation.pluginOwnedResource?.driver, 'forms-reference-row');
+  assert.equal(mutation.pluginOwnedResource?.table, 'wp_forms_contract_rows');
+  assert.equal(mutation.pluginOwnedResource?.supportsDelete, false);
+  assert.equal(mutation.pluginOwnedResource?.ownerContextRequired, true);
+  assert.equal(mutation.pluginOwnedResource?.auditEvidence?.format, 'hash-only');
+  assert.equal(mutation.pluginOwnedResource?.auditEvidence?.rawValuesIncluded, false);
+  assert.equal(mutation.pluginOwnedResource?.driverAuditEvidence?.rawValuesIncluded, false);
+  assert.equal(mutation.pluginOwnedResource?.contractValidationEvidence?.rawValuesIncluded, false);
+  assert.equal(mutation.pluginOwnedResource?.driverPayloadValidationEvidence?.rawValuesIncluded, false);
+  assert.equal(mutation.pluginOwnedResource?.referenceTargetValidationEvidence?.rawValuesIncluded, false);
+  assert.equal(precondition.mutationId, mutation.id);
+  assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+  assert.equal(appliedHash, localHash, `${testCase.id} did not apply the local reference-field row hash`);
+
+  return {
+    resourceKey: resource.key,
+    action: mutation.action,
+    changeKind: mutation.changeKind,
+    pluginOwner: mutation.pluginOwnedResource.pluginOwner,
+    driver: mutation.pluginOwnedResource.driver,
+    table: mutation.pluginOwnedResource.table,
+    supportsDelete: mutation.pluginOwnedResource.supportsDelete,
+    ownerContextRequired: mutation.pluginOwnedResource.ownerContextRequired,
+    localHash,
+    remoteBeforeHash: mutation.remoteBeforeHash,
+    preconditionExpectedHash: precondition.expectedHash,
+    appliedHash,
+    plannedMutation: true,
+    plannedPrecondition: true,
+    contractHash: mutation.pluginOwnedResource.contractValidationEvidence.contractHash,
+    driverPayloadValidationHash: `sha256:${digest(mutation.pluginOwnedResource.driverPayloadValidationEvidence)}`,
+    referenceTargetValidationHash: `sha256:${digest(mutation.pluginOwnedResource.referenceTargetValidationEvidence)}`,
+    mutationHash: `sha256:${digest({
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      pluginOwner: mutation.pluginOwnedResource.pluginOwner,
+      driver: mutation.pluginOwnedResource.driver,
+      localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+    })}`,
+  };
+}
+
+function pluginOwnedReferenceFieldVariant3TargetDriftRefusal({ testCase, plan, shape }) {
+  const driftedRemote = cloneJson(testCase.remote);
+  driftedRemote.db.wp_posts[shape.targetRowId] = {
+    ...driftedRemote.db.wp_posts[shape.targetRowId],
+    post_title: `remote drifted plugin reference target ${shape.postId}`,
+  };
+  const remoteBeforeHash = digest(driftedRemote);
+  const error = captureError(() => applyPlan(driftedRemote, plan));
+  const remoteAfterHash = digest(driftedRemote);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} target drift should fail before mutation`);
+  assert.equal(error.code, 'INVALID_PLUGIN_DRIVER_REFERENCE_TARGET');
+  assert.equal(error.details.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_MISMATCH');
+  assert.equal(
+    error.details.applyValidationEvidence.referenceTargetValidationEvidence.fields[0].targetResourceKey,
+    shape.targetResourceKey,
+  );
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} target drift refusal mutated remote`);
+
+  return {
+    code: error.code,
+    reasonCode: error.details.reasonCode,
+    remoteBeforeHash,
+    remoteAfterHash,
+    detailsHash: `sha256:${digest(error.details)}`,
+  };
+}
+
+function pluginOwnedReferenceFieldVariant3BlockerEvidence({ testCase, plan, shape }) {
+  const resource = rowResource('wp_forms_contract_rows', shape.rowId);
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === resource.key);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resource.key);
+  const targetEvidence = blocker?.referenceTargetValidationEvidence;
+  const field = targetEvidence?.fields?.[0];
+
+  assert.equal(mutation, undefined, `${testCase.id} should not plan the stale reference-field row`);
+  assert.ok(blocker, `${testCase.id} should carry reference-field blocker evidence`);
+  assert.equal(blocker.class, 'stale-plugin-driver-reference-target');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.driver, 'forms-reference-row');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT');
+  assert.equal(blocker.driverPayloadValidationEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED');
+  assert.equal(targetEvidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT');
+  assert.equal(targetEvidence.outcome, 'refused-before-mutation');
+  assert.equal(field.targetResourceKey, shape.targetResourceKey);
+  assert.equal(field.targetRemotePresent, false);
+  assert.equal(field.targetStable, false);
+
+  return {
+    resourceKey: resource.key,
+    class: blocker.class,
+    reasonCode: blocker.reasonCode,
+    pluginOwner: blocker.pluginOwner,
+    driver: blocker.driver,
+    targetResourceKey: field.targetResourceKey,
+    targetRemotePresent: field.targetRemotePresent,
+    targetStable: field.targetStable,
+    plannedMutation: false,
+    blockerHash: `sha256:${digest({
+      resourceKey: blocker.resourceKey,
+      class: blocker.class,
+      reasonCode: blocker.reasonCode,
+      pluginOwner: blocker.pluginOwner,
+      driver: blocker.driver,
+      targetEvidenceHash: digest(targetEvidence),
+    })}`,
+  };
+}
+
+function pluginOwnedReferenceFieldVariant3RefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} blocked plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} blocked refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
+}
+
+function assertPluginOwnedReferenceFieldVariant3EvidenceRedacted(testCase, shape) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === shape.resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === shape.resourceKey);
+  const redacted = redactEvidence({
+    status: plan.status,
+    mutations: mutation ? [{
+      resourceKey: mutation.resourceKey,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+      change: mutation.change,
+      pluginOwnedResource: mutation.pluginOwnedResource,
+      value: mutation.value,
+    }] : [],
+    blockers: blocker ? [blocker] : [],
+    rawReferenceFieldProbe: {
+      value: {
+        baseRow: shape.baseRow,
+        localRow: shape.localRow,
+        remoteRow: shape.remoteRow,
+        targetBaseRow: shape.targetBaseRow,
+        targetLocalRow: shape.targetLocalRow,
+        targetRemoteRow: shape.targetRemoteRow === ABSENT ? null : shape.targetRemoteRow,
+      },
+    },
+  });
+  const redactedJson = JSON.stringify(redacted);
+
+  assert.ok(redactedJson.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} should redact raw reference-field evidence`);
+  assert.match(redactedJson, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash-only values`);
+  for (const value of shape.privateValues) {
+    assert.equal(redactedJson.includes(String(value)), false, `${testCase.id} leaked raw reference-field value ${value}`);
+  }
+}
 
 function generatedPluginOwnedCustomTableChangesVariant3Evidence(targetCoverage) {
   const perTier = {};

@@ -52,8 +52,8 @@ Observed generated aggregate:
   "blockedCasesWithMutations": 64,
   "totalPlannedMutations": 715,
   "totalPlannedPreconditions": 715,
-  "variant3BlockedCases": 27,
-  "variant3BlockedCasesWithMutations": 23,
+  "variant3BlockedCases": 37,
+  "variant3BlockedCasesWithMutations": 32,
   "perTier": {
     "0": 13,
     "1": 12,
@@ -67,22 +67,23 @@ Observed generated aggregate:
     "9": 4
   },
   "variant3PerTier": {
-    "0": 5,
-    "1": 6,
-    "2": 3,
-    "3": 2,
-    "4": 3,
-    "5": 2,
-    "6": 1,
-    "7": 2,
-    "8": 1,
-    "9": 2
+    "0": 6,
+    "1": 7,
+    "2": 4,
+    "3": 3,
+    "4": 4,
+    "5": 3,
+    "6": 2,
+    "7": 3,
+    "8": 2,
+    "9": 3
   },
   "blockerClasses": {
     "atomic-group-blocker-propagation": 4,
     "missing-plugin-dependency": 2,
+    "stale-plugin-driver-reference-target": 10,
     "stale-plugin-owner-context": 13,
-    "stale-wordpress-graph-identity": 59,
+    "stale-wordpress-graph-identity": 179,
     "unsupported-plugin-owned-resource": 27
   }
 }

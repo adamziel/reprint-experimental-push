@@ -58,7 +58,7 @@ Generated-harness aggregate:
   "blockedCasesWithMutations": 64,
   "totalPlannedMutations": 715,
   "totalPlannedPreconditions": 715,
-  "totalBlockers": 115,
+  "totalBlockers": 235,
   "totalAtomicGroups": 2,
   "totalAppliedMutations": 0,
   "totalDurableJournalEvents": 0,
@@ -69,7 +69,8 @@ Generated-harness aggregate:
 ```
 
 The generated sweep covered blocked cases in tiers 0 through 9 and included
-`unsupported-plugin-owned-resource`, `stale-wordpress-graph-identity`, and
+`unsupported-plugin-owned-resource`, `stale-wordpress-graph-identity`,
+`stale-plugin-driver-reference-target`, and
 `atomic-group-blocker-propagation` blocker classes.
 
 ## Focused verification observed locally

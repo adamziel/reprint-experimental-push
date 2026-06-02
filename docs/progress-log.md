@@ -104,6 +104,36 @@ linked implementation artifacts.
   domains or paths, and it does not widen unsupported plugin-owned graph
   surfaces.
 
+## 2026-06-02 - Generated Plugin Reference-Field Contract Coverage
+
+- Last update: 2026-06-02 15:28 CEST +02:00.
+- Added `pluginOwnedReferenceFieldVariant3` generated target coverage for
+  explicit plugin-owned row-driver contracts beyond fixture-scoped custom-table
+  allowlists. The deterministic roster now has 20 cases across all 10 tiers:
+  10 ready `forms-reference-row` mutations and 10 blocked stale-target refusals.
+- Each generated row declares `contractKind: "plugin-owned-row-driver"`, a row
+  schema, and `referenceFields` binding `payload.post_id` to `wp_posts.ID`.
+  Ready cases carry accepted contract, payload, and reference-target evidence,
+  apply with live-remote preconditions, and refuse apply-time target drift with
+  `INVALID_PLUGIN_DRIVER_REFERENCE_TARGET`.
+- Stale cases emit no plugin row mutation and block as
+  `stale-plugin-driver-reference-target` with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT`; blocked plans
+  still refuse apply with `PLAN_NOT_READY` before mutation.
+- Verification: `node --check` passed for the generator and generated harness
+  test, and
+  `node --test --test-name-pattern='plugin-owned reference-field' test/generated-push-harness.test.js`
+  passed with 1 subtest and 0 failures. Adjacent blocked-plan refusal tests
+  passed with 3 subtests and 0 failures. The new blocked row-driver cases add
+  10 decision-only keep-remote proofs, so RPP-0255/RPP-0295 aggregate evidence
+  now records 1,805 keep-remote decisions. The full repository
+  `node --test` suite exited 0 after the aggregate refresh. See
+  [ao-plugin-driver-reference-fields.md](evidence/ao-plugin-driver-reference-fields.md).
+- Caveat: this proves declared reference-field target validation and
+  conservative refusal in generated local/model cases. It does not implement
+  arbitrary plugin graph extraction or reference rewriting for undeclared plugin
+  payloads.
+
 ## 2026-06-02 - Plugin Row Driver Reference Field Contracts
 
 - Last update: 2026-06-02 09:19 CEST +02:00.
