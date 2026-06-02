@@ -320,9 +320,10 @@ Known remaining integration work includes:
   protocol; the production-shaped route already expires receipts and binds them
   to the route/exporter contract.
 - Full large file streaming integration: production-shaped routes now expose
-  signed chunk manifest validation and bounded raw chunk staging, but manifest
-  finalization, staged-byte receipt verification, and apply consumption remain
-  release work.
+  signed chunk manifest validation, bounded raw chunk staging, durable
+  receipt-backed manifest finalization, staged-byte verification, and terminal
+  rejected-row replay. Apply consumption of finalized chunks and true streaming
+  request bodies remain release work.
 - MySQL and SQLite transaction-boundary proof for all durable write surfaces.
 - Production storage-level compare-and-swap or locking around final target
   writes.

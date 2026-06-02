@@ -58,6 +58,7 @@ const summary = {
   dryRun: {},
   apply: {},
   crossRouteReceipt: {},
+  chunkManifest: {},
   replay: {},
   conflict: {},
   journal: {},
@@ -231,6 +232,144 @@ try {
     assert.equal(crossRouteFailureRows.filter((entry) => entry.event === 'apply-started').length, 0);
     assert.equal(crossRouteFailureRows.filter((entry) => entry.event === 'mutation-applied').length, 0);
 
+    const chunkPlanId = 'production-shaped-chunk-finalizer';
+    const chunkResourceKey = 'file:wp-content/uploads/reprint-push/chunk-finalizer.bin';
+    const chunkResource = {
+      type: 'file',
+      path: 'wp-content/uploads/reprint-push/chunk-finalizer.bin',
+    };
+    const chunkBodies = [
+      Buffer.from('abcde', 'utf8'),
+      Buffer.from('fghij', 'utf8'),
+    ];
+    const assembledChunkBody = Buffer.concat(chunkBodies);
+    const chunkSizeBytes = chunkBodies[0].byteLength;
+    const localResourceHash = `sha256:${sha256Bytes(assembledChunkBody)}`;
+    const chunkEntries = chunkBodies.map((body, index) => ({
+      chunkIndex: index,
+      offsetBytes: index * chunkSizeBytes,
+      sizeBytes: body.byteLength,
+      chunkDigest: `sha256:${sha256Bytes(body)}`,
+      receiptKey: `production-shaped-chunk-finalizer-receipt-${index}`,
+      idempotencyKey: `production-shaped-chunk-upload-${index}`,
+    }));
+    const chunkManifest = {
+      planId: chunkPlanId,
+      resourceKey: chunkResourceKey,
+      resource: chunkResource,
+      fileBytes: assembledChunkBody.byteLength,
+      chunkSizeBytes,
+      localResourceHash,
+      assembledHash: `sha256:${sha256Bytes(assembledChunkBody)}`,
+      entries: chunkEntries,
+    };
+    const chunkManifestHash = `sha256:${digest(chunkManifest)}`;
+    const chunkUploads = [];
+    for (const [index, body] of chunkBodies.entries()) {
+      const upload = await client.signedChunkUpload(body, {
+        session,
+        idempotencyKey: chunkEntries[index].idempotencyKey,
+        planId: chunkPlanId,
+        resourceKey: chunkResourceKey,
+        localResourceHash,
+        manifestHash: chunkManifestHash,
+        chunkIndex: index,
+        offsetBytes: chunkEntries[index].offsetBytes,
+      });
+      assert.equal(upload.status, 200);
+      assert.equal(upload.body.ok, true);
+      assert.equal(upload.body.code, 'CHUNK_UPLOAD_ACCEPTED');
+      assert.equal(upload.body.chunkReceipt.manifestHash, chunkManifestHash);
+      assert.equal(upload.body.chunkReceipt.chunkDigest, chunkEntries[index].chunkDigest);
+      assert.equal(upload.body.chunkReceipt.storageVisibility, 'private-plan-staging');
+      assert.equal(upload.body.chunkReceipt.canonicalVisible, false);
+      assert.equal(upload.body.chunkReceipt.rawValuesIncluded, false);
+      assertBareSha256(upload.body.chunkReceipt.stagingRootHash, 'chunk upload staging root hash');
+      assertBareSha256(upload.body.chunkReceipt.stagingPathHash, 'chunk upload staging path hash');
+      assert.equal(JSON.stringify(upload.body).includes(body.toString('utf8')), false, 'chunk upload leaked raw bytes');
+      chunkUploads.push(upload);
+    }
+    await assertCurrentSurface(client, snapshots.base, 'chunk uploads must only stage private bytes');
+
+    const chunkManifestResponse = await client.signedPost('/chunk-manifest', {
+      manifest: chunkManifest,
+    }, {
+      session,
+      idempotencyKey: 'production-shaped-chunk-manifest-finalize',
+    });
+    assert.equal(chunkManifestResponse.status, 200);
+    assert.equal(chunkManifestResponse.body.ok, true);
+    assert.equal(chunkManifestResponse.body.code, 'CHUNK_MANIFEST_FINALIZED');
+    assert.equal(chunkManifestResponse.body.mode, 'chunk-manifest');
+    assert.equal(chunkManifestResponse.body.mutationAttempted, false);
+    assert.equal(chunkManifestResponse.body.chunkManifest.manifestHash, chunkManifestHash);
+    assert.equal(chunkManifestResponse.body.chunkManifestFinalization.manifestHash, chunkManifestHash);
+    assert.equal(chunkManifestResponse.body.chunkManifestFinalization.assembledHash, chunkManifest.assembledHash);
+    assert.equal(chunkManifestResponse.body.chunkManifestFinalization.chunkCount, chunkEntries.length);
+    assert.equal(chunkManifestResponse.body.chunkManifestFinalization.receiptCount, chunkEntries.length);
+    assert.equal(chunkManifestResponse.body.chunkManifestFinalization.coveredBytes, assembledChunkBody.byteLength);
+    assert.equal(chunkManifestResponse.body.chunkManifestFinalization.durableRecordType, 'chunk-manifest-finalized');
+    assert.equal(chunkManifestResponse.body.chunkManifestFinalization.canonicalVisible, false);
+    assert.equal(chunkManifestResponse.body.chunkManifestFinalization.rawValuesIncluded, false);
+    assert.match(chunkManifestResponse.body.chunkManifestFinalization.finalizationHash, /^sha256:[a-f0-9]{64}$/);
+    assert.equal(chunkManifestResponse.body.idempotency.freshFinalizationWork, true);
+    assert.equal(chunkManifestResponse.body.journal.event, 'chunk-manifest-finalized');
+    const serializedFinalizedManifest = JSON.stringify(chunkManifestResponse.body);
+    assert.equal(serializedFinalizedManifest.includes('production-shaped-chunk-finalizer-receipt'), false);
+    assert.equal(serializedFinalizedManifest.includes('production-shaped-chunk-upload-0'), false);
+    assert.equal(serializedFinalizedManifest.includes('abcde'), false);
+    assert.equal(serializedFinalizedManifest.includes('fghij'), false);
+    assert.doesNotMatch(serializedFinalizedManifest, /\/tmp\/|\/wordpress\/|\/home\/claude\//);
+    await assertCurrentSurface(client, snapshots.base, 'chunk manifest finalization must not write canonical file');
+
+    const chunkManifestReplay = await client.signedPost('/chunk-manifest', {
+      manifest: chunkManifest,
+    }, {
+      session,
+      idempotencyKey: 'production-shaped-chunk-manifest-finalize',
+    });
+    assert.equal(chunkManifestReplay.status, 200);
+    assert.equal(chunkManifestReplay.body.ok, true);
+    assert.equal(chunkManifestReplay.body.code, 'CHUNK_MANIFEST_ALREADY_FINALIZED');
+    assert.equal(chunkManifestReplay.body.idempotency.replayed, true);
+    assert.equal(chunkManifestReplay.body.idempotency.freshFinalizationWork, false);
+
+    const missingReceiptManifest = JSON.parse(JSON.stringify(chunkManifest));
+    missingReceiptManifest.entries[1].idempotencyKey = 'production-shaped-chunk-upload-missing-receipt';
+    const missingReceipt = await client.signedPost('/chunk-manifest', {
+      manifest: missingReceiptManifest,
+    }, {
+      session,
+      idempotencyKey: 'production-shaped-chunk-manifest-missing-receipt',
+    });
+    assert.equal(missingReceipt.status, 409);
+    assert.equal(missingReceipt.body.ok, false);
+    assert.equal(missingReceipt.body.code, 'CHUNK_MANIFEST_FINALIZE_FAILED');
+    assert.equal(missingReceipt.body.mode, 'chunk-manifest');
+    assert.equal(missingReceipt.body.mutationAttempted, false);
+    assert.equal(missingReceipt.body.idempotency.replayed, false);
+    assert.equal(missingReceipt.body.idempotency.inProgress, false);
+    assert.equal(missingReceipt.body.idempotency.freshFinalizationWork, false);
+    assert.equal(missingReceipt.body.journal.event, 'chunk-manifest-rejected');
+    const serializedRejectedManifest = JSON.stringify(missingReceipt.body);
+    assert.equal(serializedRejectedManifest.includes('production-shaped-chunk-upload-missing-receipt'), false);
+    assert.equal(serializedRejectedManifest.includes('abcde'), false);
+    assert.equal(serializedRejectedManifest.includes('fghij'), false);
+
+    const missingReceiptReplay = await client.signedPost('/chunk-manifest', {
+      manifest: missingReceiptManifest,
+    }, {
+      session,
+      idempotencyKey: 'production-shaped-chunk-manifest-missing-receipt',
+    });
+    assert.equal(missingReceiptReplay.status, 409);
+    assert.equal(missingReceiptReplay.body.ok, false);
+    assert.equal(missingReceiptReplay.body.code, 'CHUNK_MANIFEST_FINALIZE_FAILED');
+    assert.equal(missingReceiptReplay.body.idempotency.replayed, true);
+    assert.equal(missingReceiptReplay.body.idempotency.inProgress, false);
+    assert.equal(missingReceiptReplay.body.journal.event, 'chunk-manifest-rejected');
+    await assertCurrentSurface(client, snapshots.base, 'rejected chunk manifest must not mutate canonical source');
+
     const applyBody = { plan: readyPlan, receipt: dryRun.body.receipt };
     const apply = await client.signedPost('/apply', applyBody, {
       session,
@@ -318,6 +457,9 @@ try {
     assert.ok(entries.some((entry) => entry.event === 'apply-committed'), 'DB journal missing apply-committed');
     assert.ok(entries.some((entry) => entry.event === 'apply-replayed'), 'DB journal missing apply-replayed');
     assert.ok(entries.some((entry) => entry.event === 'idempotency-key-conflict'), 'DB journal missing idempotency-key-conflict');
+    assert.ok(entries.some((entry) => entry.event === 'chunk-receipt'), 'DB journal missing chunk-receipt');
+    assert.ok(entries.some((entry) => entry.event === 'chunk-manifest-finalized'), 'DB journal missing chunk-manifest-finalized');
+    assert.ok(entries.some((entry) => entry.event === 'chunk-manifest-rejected'), 'DB journal missing chunk-manifest-rejected');
     assert.equal(countJournalEvents(entries, 'mutation-applied'), mutationEventsBeforeConflict);
     assert.equal(countJournalEvents(entries, 'apply-started'), applyStartedBeforeConflict);
     assert.equal(countJournalEvents(entries, 'idempotency-opened'), idempotencyOpenedBeforeConflict);
@@ -369,6 +511,19 @@ try {
       fallbackReceiptOnProductionStatus: fallbackMismatchReceiptOnApply.status,
       fallbackReceiptOnProductionCode: fallbackMismatchReceiptOnApply.body.code,
       dbMutationRowsBeforeValidApply: crossRouteFailureRows.filter((entry) => entry.event === 'mutation-applied').length,
+    };
+    summary.chunkManifest = {
+      uploadCodes: chunkUploads.map((upload) => upload.body.code),
+      manifestHash: chunkManifestHash,
+      finalizedCode: chunkManifestResponse.body.code,
+      replayCode: chunkManifestReplay.body.code,
+      receiptCount: chunkManifestResponse.body.chunkManifestFinalization.receiptCount,
+      durableRecordType: chunkManifestResponse.body.chunkManifestFinalization.durableRecordType,
+      missingReceiptStatus: missingReceipt.status,
+      missingReceiptCode: missingReceipt.body.code,
+      missingReceiptReplayCode: missingReceiptReplay.body.code,
+      rejectedJournalEvent: missingReceipt.body.journal.event,
+      finalizedJournalEvent: chunkManifestResponse.body.journal.event,
     };
     summary.replay = {
       replayed: replay.body.idempotency.replayed,
@@ -535,6 +690,10 @@ function assertHash(value, label) {
 
 function sha256(value) {
   return crypto.createHash('sha256').update(String(value)).digest('hex');
+}
+
+function sha256Bytes(value) {
+  return crypto.createHash('sha256').update(value).digest('hex');
 }
 
 function exportSnapshot(name, blueprintPath) {

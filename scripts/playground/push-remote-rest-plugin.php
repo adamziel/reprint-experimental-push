@@ -628,6 +628,7 @@ function reprint_push_lab_rest_authenticated_chunk_manifest(WP_REST_Request $req
     try {
         $payload = reprint_push_lab_rest_json_payload($request);
         $result = reprint_push_protocol_validate_chunk_manifest_payload($payload);
+        $result = reprint_push_lab_rest_finalize_chunk_manifest($payload, $result, $request);
         $result = reprint_push_lab_rest_attach_authenticated_response_evidence($result, $request);
     } catch (Reprint_Push_Protocol_Error $error) {
         $result = $error->result;
@@ -646,6 +647,510 @@ function reprint_push_lab_rest_authenticated_chunk_manifest(WP_REST_Request $req
     }
 
     return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_finalize_chunk_manifest(array $payload, array $validated, WP_REST_Request $request): array
+{
+    $manifest = reprint_push_lab_rest_chunk_manifest_from_payload($payload);
+    $manifest_evidence = isset($validated['chunkManifest']) && is_array($validated['chunkManifest'])
+        ? $validated['chunkManifest']
+        : [];
+    $manifest_hash = (string) ($manifest_evidence['manifestHash'] ?? '');
+    if ($manifest_hash === '') {
+        reprint_push_lab_rest_chunk_manifest_finalize_fail('Chunk manifest finalization requires manifest hash evidence.');
+    }
+
+    $signed_request = reprint_push_lab_rest_signed_request_evidence($request);
+    $context = reprint_push_lab_rest_chunk_manifest_journal_context($manifest, $manifest_hash, $signed_request);
+    $existing_finalized = reprint_push_lab_rest_db_journal_public_event_row_for_key_request(
+        $context['idempotencyKeyHash'],
+        $context['requestHash'],
+        'chunk-manifest-finalized'
+    );
+    if (is_array($existing_finalized)) {
+        return reprint_push_lab_rest_chunk_manifest_replay_result($existing_finalized);
+    }
+    $existing_rejected = reprint_push_lab_rest_db_journal_public_event_row_for_key_request(
+        $context['idempotencyKeyHash'],
+        $context['requestHash'],
+        'chunk-manifest-rejected'
+    );
+    if (is_array($existing_rejected)) {
+        return reprint_push_lab_rest_chunk_manifest_replay_rejected_result($existing_rejected);
+    }
+
+    if (reprint_push_lab_db_journal_key_has_different_request($context['idempotencyKeyHash'], $context['requestHash'])) {
+        return reprint_push_lab_rest_chunk_manifest_idempotency_conflict_result($context);
+    }
+
+    $claim = reprint_push_lab_db_journal_try_open_idempotency($context);
+    if (($claim['opened'] ?? false) !== true) {
+        $claim_entry = is_array($claim['entry'] ?? null) ? $claim['entry'] : [];
+        if ((string) ($claim_entry['requestHash'] ?? '') !== $context['requestHash']) {
+            return reprint_push_lab_rest_chunk_manifest_idempotency_conflict_result($context);
+        }
+
+        $existing_finalized = reprint_push_lab_rest_db_journal_public_event_row_for_key_request(
+            $context['idempotencyKeyHash'],
+            $context['requestHash'],
+            'chunk-manifest-finalized'
+        );
+        if (is_array($existing_finalized)) {
+            return reprint_push_lab_rest_chunk_manifest_replay_result($existing_finalized);
+        }
+        $existing_rejected = reprint_push_lab_rest_db_journal_public_event_row_for_key_request(
+            $context['idempotencyKeyHash'],
+            $context['requestHash'],
+            'chunk-manifest-rejected'
+        );
+        if (is_array($existing_rejected)) {
+            return reprint_push_lab_rest_chunk_manifest_replay_rejected_result($existing_rejected);
+        }
+
+        return reprint_push_lab_rest_chunk_manifest_in_progress_result($context, $claim_entry);
+    }
+
+    $claim_entry = is_array($claim['entry'] ?? null) ? $claim['entry'] : [];
+    try {
+        $assembled_context = hash_init('sha256');
+        $entry_receipts = [];
+        $staged_path_hashes = [];
+        $covered_bytes = 0;
+        foreach (array_values($manifest['entries']) as $index => $entry) {
+            $verified_entry = reprint_push_lab_rest_verify_chunk_manifest_entry(
+                $manifest,
+                $entry,
+                $index,
+                $manifest_hash,
+                $assembled_context
+            );
+            $entry_receipts[] = $verified_entry['receipt'];
+            $staged_path_hashes[] = (string) $verified_entry['stagingPathHash'];
+            $covered_bytes += (int) $verified_entry['sizeBytes'];
+        }
+
+        $assembled_hash = 'sha256:' . hash_final($assembled_context);
+        if (!hash_equals((string) $manifest['assembledHash'], $assembled_hash)) {
+            reprint_push_lab_rest_chunk_manifest_finalize_fail('Chunk manifest assembledHash does not match staged chunk bytes.');
+        }
+    } catch (Reprint_Push_Protocol_Error $error) {
+        return reprint_push_lab_rest_chunk_manifest_rejected_result($context, $claim_entry, $error->result);
+    }
+
+    $finalization = [
+        'schemaVersion' => 1,
+        'type' => 'chunk-manifest-finalization',
+        'status' => 'finalized',
+        'mode' => 'chunk-manifest',
+        'manifestHash' => $manifest_hash,
+        'manifestEvidenceHash' => (string) ($manifest_evidence['manifestEvidenceHash'] ?? ''),
+        'planIdHash' => hash('sha256', (string) $manifest['planId']),
+        'resourceKey' => (string) $manifest['resourceKey'],
+        'resourceKeyHash' => hash('sha256', (string) $manifest['resourceKey']),
+        'localResourceHash' => (string) $manifest['localResourceHash'],
+        'assembledHash' => $assembled_hash,
+        'chunkCount' => count($entry_receipts),
+        'receiptCount' => count($entry_receipts),
+        'coveredBytes' => $covered_bytes,
+        'expectedBytes' => (int) $manifest['fileBytes'],
+        'receiptDigest' => 'sha256:' . hash('sha256', reprint_push_stable_json($entry_receipts)),
+        'stagedPathDigest' => 'sha256:' . hash('sha256', reprint_push_stable_json($staged_path_hashes)),
+        'durableRecordType' => 'chunk-manifest-finalized',
+        'canonicalVisible' => false,
+        'rawValuesIncluded' => false,
+        'mutationAttempted' => false,
+    ];
+    $finalization['finalizationHash'] = 'sha256:' . hash('sha256', reprint_push_stable_json($finalization));
+
+    $result = $validated;
+    $result['code'] = 'CHUNK_MANIFEST_FINALIZED';
+    $result['mutationAttempted'] = false;
+    $result['chunkManifestFinalization'] = $finalization;
+    $result['idempotency'] = [
+        'replayed' => false,
+        'conflict' => false,
+        'inProgress' => false,
+        'freshMutationWork' => false,
+        'freshFinalizationWork' => true,
+        'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+        'requestHash' => $context['requestHash'],
+        'claimSequence' => (int) ($claim_entry['sequence'] ?? 0),
+    ];
+
+    $journal_entry = reprint_push_lab_db_journal_append_event('chunk-manifest-finalized', $context + [
+        'receiptHash' => substr((string) $finalization['finalizationHash'], 7),
+        'result' => [
+            'chunkManifestFinalization' => $finalization,
+            'idempotency' => $result['idempotency'],
+        ],
+        'resourceHashEvidence' => [
+            'manifestHash' => $manifest_hash,
+            'resourceKey' => (string) $manifest['resourceKey'],
+            'resourceKeyHash' => hash('sha256', (string) $manifest['resourceKey']),
+            'localResourceHash' => (string) $manifest['localResourceHash'],
+            'assembledHash' => $assembled_hash,
+            'receiptDigest' => $finalization['receiptDigest'],
+            'stagedPathDigest' => $finalization['stagedPathDigest'],
+            'chunkCount' => count($entry_receipts),
+            'coveredBytes' => $covered_bytes,
+            'canonicalVisible' => false,
+            'rawValuesIncluded' => false,
+        ],
+    ]);
+
+    $result['journal'] = [
+        'event' => 'chunk-manifest-finalized',
+        'sequence' => (int) ($journal_entry['sequence'] ?? 0),
+        'resultHash' => (string) ($journal_entry['resultHash'] ?? ''),
+        'resourceHashEvidence' => $journal_entry['resourceHashEvidence'] ?? null,
+    ];
+    return $result;
+}
+
+function reprint_push_lab_rest_chunk_manifest_from_payload(array $payload): array
+{
+    return isset($payload['manifest']) && is_array($payload['manifest'])
+        ? $payload['manifest']
+        : $payload;
+}
+
+function reprint_push_lab_rest_chunk_manifest_journal_context(
+    array $manifest,
+    string $manifest_hash,
+    array $signed_request
+): array {
+    $idempotency_key_hash = (string) ($signed_request['request']['idempotencyKeyHash'] ?? '');
+    if ($idempotency_key_hash === '') {
+        reprint_push_lab_rest_chunk_manifest_finalize_fail('Chunk manifest finalization requires signed idempotency evidence.');
+    }
+    $resource_key = (string) $manifest['resourceKey'];
+    $request_hash = hash('sha256', reprint_push_stable_json([
+        'mode' => 'chunk-manifest',
+        'manifestHash' => $manifest_hash,
+        'planIdHash' => hash('sha256', (string) $manifest['planId']),
+        'resourceKeyHash' => hash('sha256', $resource_key),
+        'localResourceHash' => (string) $manifest['localResourceHash'],
+        'assembledHash' => (string) $manifest['assembledHash'],
+        'contentHash' => (string) ($signed_request['contentHash'] ?? ''),
+        'canonicalRequestHash' => (string) ($signed_request['request']['canonicalHash'] ?? ''),
+    ]));
+
+    return [
+        'idempotencyKeyHash' => $idempotency_key_hash,
+        'requestHash' => $request_hash,
+        'planHash' => hash('sha256', (string) $manifest['planId']),
+        'manifestHash' => $manifest_hash,
+        'receiptHash' => substr($manifest_hash, 7),
+        'planFingerprint' => hash('sha256', reprint_push_stable_json([
+            'mode' => 'chunk-manifest',
+            'manifestHash' => $manifest_hash,
+            'resourceKeyHash' => hash('sha256', $resource_key),
+            'localResourceHash' => (string) $manifest['localResourceHash'],
+            'chunkCount' => count((array) $manifest['entries']),
+        ])),
+        'mutationCount' => 0,
+        'appliedCount' => 0,
+    ];
+}
+
+function reprint_push_lab_rest_verify_chunk_manifest_entry(
+    array $manifest,
+    array $entry,
+    int $index,
+    string $manifest_hash,
+    $assembled_context
+): array {
+    $receipt = reprint_push_lab_rest_find_chunk_manifest_receipt($manifest, $entry, $index, $manifest_hash);
+    if (!is_array($receipt)) {
+        reprint_push_lab_rest_chunk_manifest_finalize_fail('Chunk manifest entry is missing a matching durable chunk receipt.');
+    }
+
+    $staging = reprint_push_lab_rest_chunk_upload_staging_descriptor([
+        'planId' => (string) $manifest['planId'],
+        'resourceKey' => (string) $manifest['resourceKey'],
+        'localResourceHash' => (string) $manifest['localResourceHash'],
+        'chunkIndex' => (int) $entry['chunkIndex'],
+        'chunkDigest' => (string) $entry['chunkDigest'],
+    ]);
+    if (!is_file((string) $staging['path'])) {
+        reprint_push_lab_rest_chunk_manifest_finalize_fail('Chunk manifest entry is missing staged chunk bytes.');
+    }
+    $actual_size = filesize((string) $staging['path']);
+    if ($actual_size !== (int) $entry['sizeBytes']) {
+        reprint_push_lab_rest_chunk_manifest_finalize_fail('Chunk manifest staged chunk size does not match the manifest entry.');
+    }
+    $actual_digest = 'sha256:' . hash_file('sha256', (string) $staging['path']);
+    if (!hash_equals((string) $entry['chunkDigest'], $actual_digest)) {
+        reprint_push_lab_rest_chunk_manifest_finalize_fail('Chunk manifest staged chunk digest does not match the manifest entry.');
+    }
+    $receipt_path_hash = (string) ($receipt['stagingPathHash'] ?? '');
+    if ($receipt_path_hash !== '' && !hash_equals((string) $staging['pathHash'], $receipt_path_hash)) {
+        reprint_push_lab_rest_chunk_manifest_finalize_fail('Chunk manifest staged chunk path evidence does not match its durable receipt.');
+    }
+    $receipt_root_hash = (string) ($receipt['stagingRootHash'] ?? '');
+    if ($receipt_root_hash !== '' && !hash_equals((string) $staging['rootHash'], $receipt_root_hash)) {
+        reprint_push_lab_rest_chunk_manifest_finalize_fail('Chunk manifest staged chunk root evidence does not match its durable receipt.');
+    }
+    if ((string) ($receipt['storageVisibility'] ?? '') !== 'private-plan-staging') {
+        reprint_push_lab_rest_chunk_manifest_finalize_fail('Chunk manifest durable receipt storage visibility is not private staging.');
+    }
+    if (!hash_update_file($assembled_context, (string) $staging['path'])) {
+        reprint_push_lab_rest_chunk_manifest_finalize_fail('Chunk manifest staged chunk bytes could not be read for assembled hash verification.');
+    }
+
+    return [
+        'receipt' => [
+            'chunkIndex' => $index,
+            'idempotencyKeyHash' => hash('sha256', (string) $entry['idempotencyKey']),
+            'receiptKeyHash' => hash('sha256', (string) $entry['receiptKey']),
+            'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+            'receiptSequence' => (int) ($receipt['sequence'] ?? 0),
+            'chunkDigest' => (string) $entry['chunkDigest'],
+            'offsetBytes' => (int) $entry['offsetBytes'],
+            'sizeBytes' => (int) $entry['sizeBytes'],
+            'stagingPathHash' => (string) $staging['pathHash'],
+            'canonicalVisible' => false,
+        ],
+        'stagingPathHash' => (string) $staging['pathHash'],
+        'sizeBytes' => (int) $entry['sizeBytes'],
+    ];
+}
+
+function reprint_push_lab_rest_find_chunk_manifest_receipt(
+    array $manifest,
+    array $entry,
+    int $index,
+    string $manifest_hash
+): ?array {
+    $idempotency_key_hash = hash('sha256', (string) $entry['idempotencyKey']);
+    $plan_hash = hash('sha256', (string) $manifest['planId']);
+    $rows = array_reverse(reprint_push_lab_db_journal_rows_for_key($idempotency_key_hash));
+    foreach ($rows as $row) {
+        if ((string) ($row['event'] ?? '') !== 'chunk-receipt') {
+            continue;
+        }
+        $public_row = reprint_push_lab_db_journal_public_row($row);
+        $evidence = isset($public_row['resourceHashEvidence']) && is_array($public_row['resourceHashEvidence'])
+            ? $public_row['resourceHashEvidence']
+            : [];
+        $chunk_receipt = isset($public_row['result']['chunkReceipt']) && is_array($public_row['result']['chunkReceipt'])
+            ? $public_row['result']['chunkReceipt']
+            : [];
+        if ((string) ($public_row['idempotencyKeyHash'] ?? '') !== $idempotency_key_hash
+            || (string) ($public_row['planHash'] ?? '') !== $plan_hash
+            || (string) ($evidence['resourceKey'] ?? '') !== (string) $manifest['resourceKey']
+            || (string) ($evidence['localResourceHash'] ?? '') !== (string) $manifest['localResourceHash']
+            || (string) ($evidence['manifestHash'] ?? '') !== $manifest_hash
+            || (int) ($evidence['chunkIndex'] ?? -1) !== $index
+            || (int) ($evidence['offsetBytes'] ?? -1) !== (int) $entry['offsetBytes']
+            || (int) ($evidence['sizeBytes'] ?? -1) !== (int) $entry['sizeBytes']
+            || (string) ($evidence['chunkDigest'] ?? '') !== (string) $entry['chunkDigest']
+            || ($evidence['canonicalVisible'] ?? null) !== false
+            || ($evidence['rawValuesIncluded'] ?? null) !== false
+            || (string) ($evidence['storageVisibility'] ?? '') !== 'private-plan-staging'
+            || (string) ($chunk_receipt['planIdHash'] ?? '') !== $plan_hash
+            || (string) ($chunk_receipt['resourceKey'] ?? '') !== (string) $manifest['resourceKey']
+            || (string) ($chunk_receipt['localResourceHash'] ?? '') !== (string) $manifest['localResourceHash']
+            || (string) ($chunk_receipt['manifestHash'] ?? '') !== $manifest_hash
+            || (int) ($chunk_receipt['chunkIndex'] ?? -1) !== $index
+            || (int) ($chunk_receipt['offsetBytes'] ?? -1) !== (int) $entry['offsetBytes']
+            || (int) ($chunk_receipt['sizeBytes'] ?? -1) !== (int) $entry['sizeBytes']
+            || (string) ($chunk_receipt['chunkDigest'] ?? '') !== (string) $entry['chunkDigest']
+            || ($chunk_receipt['canonicalVisible'] ?? null) !== false
+            || ($chunk_receipt['rawValuesIncluded'] ?? null) !== false
+            || (string) ($chunk_receipt['storageVisibility'] ?? '') !== 'private-plan-staging'
+        ) {
+            continue;
+        }
+
+        $public_receipt_hash = (string) ($public_row['receiptHash'] ?? '');
+        $receipt_hash = isset($chunk_receipt['receiptHash'])
+            ? (string) $chunk_receipt['receiptHash']
+            : ($public_receipt_hash !== ''
+                ? (strpos($public_receipt_hash, 'sha256:') === 0 ? $public_receipt_hash : 'sha256:' . $public_receipt_hash)
+                : '');
+
+        return [
+            'sequence' => (int) ($public_row['sequence'] ?? 0),
+            'receiptHash' => $receipt_hash,
+            'stagingPathHash' => (string) ($evidence['stagingPathHash'] ?? ''),
+            'stagingRootHash' => (string) ($evidence['stagingRootHash'] ?? ''),
+            'storageVisibility' => (string) ($evidence['storageVisibility'] ?? ''),
+        ];
+    }
+    return null;
+}
+
+function reprint_push_lab_rest_chunk_manifest_replay_result(array $row): array
+{
+    $result = isset($row['result']) && is_array($row['result']) ? $row['result'] : [];
+    $finalization = isset($result['chunkManifestFinalization']) && is_array($result['chunkManifestFinalization'])
+        ? $result['chunkManifestFinalization']
+        : [];
+
+    return [
+        'ok' => true,
+        'code' => 'CHUNK_MANIFEST_ALREADY_FINALIZED',
+        'mode' => 'chunk-manifest',
+        'mutationAttempted' => false,
+        'chunkManifestFinalization' => $finalization,
+        'idempotency' => [
+            'replayed' => true,
+            'conflict' => false,
+            'inProgress' => false,
+            'freshMutationWork' => false,
+            'freshFinalizationWork' => false,
+            'idempotencyKeyHash' => (string) ($row['idempotencyKeyHash'] ?? ''),
+            'requestHash' => (string) ($row['requestHash'] ?? ''),
+            'finalizedSequence' => (int) ($row['sequence'] ?? 0),
+        ],
+        'journal' => reprint_push_lab_rest_db_journal_evidence($row),
+    ];
+}
+
+function reprint_push_lab_rest_chunk_manifest_replay_rejected_result(array $row): array
+{
+    $result = isset($row['result']) && is_array($row['result']) ? $row['result'] : [];
+    if (!is_array($result) || count($result) === 0) {
+        $result = [
+            'ok' => false,
+            'code' => (string) ($row['errorCode'] ?? 'CHUNK_MANIFEST_FINALIZE_FAILED'),
+            'mode' => 'chunk-manifest',
+            'mutationAttempted' => false,
+        ];
+    }
+    $result['ok'] = false;
+    $result['mode'] = 'chunk-manifest';
+    $result['mutationAttempted'] = false;
+    $result['idempotency'] = [
+        'replayed' => true,
+        'conflict' => false,
+        'inProgress' => false,
+        'freshMutationWork' => false,
+        'freshFinalizationWork' => false,
+        'idempotencyKeyHash' => (string) ($row['idempotencyKeyHash'] ?? ''),
+        'requestHash' => (string) ($row['requestHash'] ?? ''),
+        'rejectedSequence' => (int) ($row['sequence'] ?? 0),
+    ];
+    $result['journal'] = reprint_push_lab_rest_db_journal_evidence($row);
+    return $result;
+}
+
+function reprint_push_lab_rest_chunk_manifest_rejected_result(array $context, array $claim_entry, array $result): array
+{
+    $result['ok'] = false;
+    $result['mode'] = 'chunk-manifest';
+    $result['mutationAttempted'] = false;
+    $result['idempotency'] = [
+        'replayed' => false,
+        'conflict' => false,
+        'inProgress' => false,
+        'freshMutationWork' => false,
+        'freshFinalizationWork' => false,
+        'idempotencyKeyHash' => (string) ($context['idempotencyKeyHash'] ?? ''),
+        'requestHash' => (string) ($context['requestHash'] ?? ''),
+        'claimSequence' => (int) ($claim_entry['sequence'] ?? 0),
+    ];
+    $rejected_entry = reprint_push_lab_db_journal_append_event('chunk-manifest-rejected', $context + [
+        'errorCode' => (string) ($result['code'] ?? 'CHUNK_MANIFEST_FINALIZE_FAILED'),
+        'result' => $result,
+        'resourceHashEvidence' => [
+            'manifestHash' => (string) ($context['manifestHash'] ?? ''),
+            'requestHash' => (string) ($context['requestHash'] ?? ''),
+            'canonicalVisible' => false,
+            'rawValuesIncluded' => false,
+        ],
+    ]);
+    $result['journal'] = reprint_push_lab_rest_db_journal_evidence($rejected_entry);
+    return $result;
+}
+
+function reprint_push_lab_rest_chunk_manifest_idempotency_conflict_result(array $context): array
+{
+    $conflict_result = [
+        'ok' => false,
+        'code' => 'IDEMPOTENCY_KEY_CONFLICT',
+        'message' => 'Idempotency key was already used for a different canonical chunk manifest request.',
+        'mode' => 'chunk-manifest',
+        'mutationAttempted' => false,
+        'idempotency' => [
+            'replayed' => false,
+            'conflict' => true,
+            'inProgress' => false,
+            'freshMutationWork' => false,
+            'freshFinalizationWork' => false,
+            'idempotencyKeyHash' => (string) ($context['idempotencyKeyHash'] ?? ''),
+            'requestHash' => (string) ($context['requestHash'] ?? ''),
+        ],
+    ];
+    $conflict_entry = reprint_push_lab_db_journal_append_event('chunk-manifest-idempotency-key-conflict', $context + [
+        'errorCode' => 'IDEMPOTENCY_KEY_CONFLICT',
+        'result' => $conflict_result,
+        'resourceHashEvidence' => [
+            'idempotencyConflict' => $conflict_result['idempotency'],
+        ],
+    ]);
+    $conflict_result['journal'] = reprint_push_lab_rest_db_journal_evidence($conflict_entry);
+    return $conflict_result;
+}
+
+function reprint_push_lab_rest_chunk_manifest_in_progress_result(array $context, array $claim_entry): array
+{
+    $in_progress_result = [
+        'ok' => false,
+        'code' => 'IDEMPOTENCY_KEY_IN_PROGRESS',
+        'message' => 'A chunk manifest finalization for this idempotency key is already in progress. Retry the same canonical request.',
+        'mode' => 'chunk-manifest',
+        'mutationAttempted' => false,
+        'idempotency' => [
+            'replayed' => false,
+            'conflict' => false,
+            'inProgress' => true,
+            'freshMutationWork' => false,
+            'freshFinalizationWork' => false,
+            'idempotencyKeyHash' => (string) ($context['idempotencyKeyHash'] ?? ''),
+            'requestHash' => (string) ($context['requestHash'] ?? ''),
+            'claimSequence' => (int) ($claim_entry['sequence'] ?? 0),
+        ],
+    ];
+    $in_progress_entry = reprint_push_lab_db_journal_append_event('chunk-manifest-idempotency-in-progress', $context + [
+        'errorCode' => 'IDEMPOTENCY_KEY_IN_PROGRESS',
+        'result' => $in_progress_result,
+        'resourceHashEvidence' => [
+            'claimCursor' => 'db-journal:' . (int) ($claim_entry['sequence'] ?? 0),
+            'requestHash' => (string) ($context['requestHash'] ?? ''),
+        ],
+    ]);
+    $in_progress_result['journal'] = reprint_push_lab_rest_db_journal_evidence($in_progress_entry);
+    return $in_progress_result;
+}
+
+function reprint_push_lab_rest_chunk_manifest_finalize_fail(string $message): void
+{
+    reprint_push_protocol_fail([
+        'ok' => false,
+        'code' => 'CHUNK_MANIFEST_FINALIZE_FAILED',
+        'message' => $message,
+        'mode' => 'chunk-manifest',
+        'mutationAttempted' => false,
+    ]);
+}
+
+function reprint_push_lab_rest_db_journal_public_event_row_for_key_request(
+    string $idempotency_key_hash,
+    string $request_hash,
+    string $event
+): ?array {
+    $rows = array_reverse(reprint_push_lab_db_journal_rows_for_key($idempotency_key_hash));
+    foreach ($rows as $row) {
+        if ((string) ($row['event'] ?? '') !== $event) {
+            continue;
+        }
+        if ((string) ($row['request_hash'] ?? '') === $request_hash) {
+            return reprint_push_lab_db_journal_public_row($row);
+        }
+    }
+    return null;
 }
 
 function reprint_push_lab_rest_authenticated_chunk_upload(WP_REST_Request $request): WP_REST_Response
@@ -1141,22 +1646,14 @@ function reprint_push_lab_rest_chunk_upload_rejected_result(array $context, arra
 
 function reprint_push_lab_rest_store_chunk_upload(array $chunk): array
 {
-    $scope_hash = hash('sha256', reprint_push_stable_json([
-        'planId' => (string) $chunk['planId'],
-        'resourceKey' => (string) $chunk['resourceKey'],
-        'localResourceHash' => (string) $chunk['localResourceHash'],
-    ]));
-    $root = reprint_push_lab_rest_chunk_upload_staging_root();
-    $staging_root = $root . '/' . substr($scope_hash, 0, 32);
+    $staging = reprint_push_lab_rest_chunk_upload_staging_descriptor($chunk);
+    $staging_root = (string) $staging['stagingRoot'];
     if (!is_dir($staging_root) && !wp_mkdir_p($staging_root)) {
         reprint_push_lab_rest_chunk_upload_fail('Chunk upload staging directory could not be created.');
     }
     reprint_push_lab_rest_write_chunk_staging_guards($staging_root);
 
-    $chunk_index = (int) $chunk['chunkIndex'];
-    $chunk_digest = (string) $chunk['chunkDigest'];
-    $file_name = sprintf('%08d', $chunk_index) . '-' . substr($chunk_digest, 7, 16) . '.chunk';
-    $staging_path = $staging_root . '/' . $file_name;
+    $staging_path = (string) $staging['path'];
     $raw_body = (string) $chunk['rawBody'];
     $written = file_put_contents($staging_path, $raw_body, LOCK_EX);
     if ($written !== strlen($raw_body)) {
@@ -1164,8 +1661,34 @@ function reprint_push_lab_rest_store_chunk_upload(array $chunk): array
     }
 
     return [
-        'ref' => 'chunk:' . substr(hash('sha256', $staging_path), 0, 32),
+        'ref' => (string) $staging['ref'],
+        'rootHash' => (string) $staging['rootHash'],
+        'pathHash' => (string) $staging['pathHash'],
+        'visibility' => (string) $staging['visibility'],
+    ];
+}
+
+function reprint_push_lab_rest_chunk_upload_staging_descriptor(array $chunk): array
+{
+    $scope_hash = hash('sha256', reprint_push_stable_json([
+        'planId' => (string) $chunk['planId'],
+        'resourceKey' => (string) $chunk['resourceKey'],
+        'localResourceHash' => (string) $chunk['localResourceHash'],
+    ]));
+    $root = reprint_push_lab_rest_chunk_upload_staging_root();
+    $staging_root = $root . '/' . substr($scope_hash, 0, 32);
+    $chunk_index = (int) $chunk['chunkIndex'];
+    $chunk_digest = (string) $chunk['chunkDigest'];
+    $file_name = sprintf('%08d', $chunk_index) . '-' . substr($chunk_digest, 7, 16) . '.chunk';
+    $staging_path = $staging_root . '/' . $file_name;
+
+    return [
+        'root' => $root,
         'rootHash' => hash('sha256', $root),
+        'scopeHash' => $scope_hash,
+        'stagingRoot' => $staging_root,
+        'path' => $staging_path,
+        'ref' => 'chunk:' . substr(hash('sha256', $staging_path), 0, 32),
         'pathHash' => hash('sha256', $staging_path),
         'visibility' => 'private-plan-staging',
     ];
@@ -6098,6 +6621,7 @@ function reprint_push_lab_rest_status_for_result(array $result): int
             return 400;
         case 'IDEMPOTENCY_KEY_CONFLICT':
         case 'IDEMPOTENCY_KEY_IN_PROGRESS':
+        case 'CHUNK_MANIFEST_FINALIZE_FAILED':
         case 'RECOVERY_BLOCKED':
         case 'RECOVERY_MUTATE_INSPECT_BLOCKED':
             return 409;

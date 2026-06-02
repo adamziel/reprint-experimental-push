@@ -1645,10 +1645,12 @@ function reprint_push_protocol_validate_chunk_manifest_payload(array $payload): 
         reprint_push_protocol_chunk_manifest_fail('Chunk manifest byte ranges must cover the full file.');
     }
 
+    $manifest_hash = 'sha256:' . hash('sha256', reprint_push_stable_json($manifest));
     $manifest_evidence = [
         'schemaVersion' => 1,
         'mode' => 'chunk-manifest',
         'status' => 'accepted',
+        'manifestHash' => $manifest_hash,
         'planIdHash' => hash('sha256', $plan_id),
         'resourceKey' => $resource_key,
         'resourceHash' => hash('sha256', reprint_push_stable_json($resource)),

@@ -159,6 +159,7 @@ test('chunk manifest protocol accepts only contiguous hash-only file transfer ma
   assert.equal(report.valid.chunkManifest.byteRangeCoverage.coveredBytes, 6);
   assert.equal(report.valid.chunkManifest.rawValuesIncluded, false);
   assert.match(report.valid.chunkManifest.entryDigest, sha256EvidencePattern);
+  assert.match(report.valid.chunkManifest.manifestHash, sha256EvidencePattern);
   assert.match(report.valid.chunkManifest.manifestEvidenceHash, sha256EvidencePattern);
   assert.equal(report.valid.chunkManifest.entries.every((entry) => entry.canonicalVisible === false), true);
   assert.equal(JSON.stringify(report.valid).includes('receipt-secret'), false);
@@ -179,11 +180,16 @@ test('chunk manifest protocol accepts only contiguous hash-only file transfer ma
   assert.equal(report.unboundedPath.message, 'Chunk manifest file resource path must be a bounded wp-content relative path.');
 });
 
-test('REST plugin exposes signed chunk manifest routes without apply-capable work', () => {
+test('REST plugin exposes signed receipt-backed chunk manifest finalization without apply-capable work', () => {
   const callback = functionBody(restSource, 'reprint_push_lab_rest_authenticated_chunk_manifest');
+  const finalizer = functionBody(restSource, 'reprint_push_lab_rest_finalize_chunk_manifest');
+  const verifyEntry = functionBody(restSource, 'reprint_push_lab_rest_verify_chunk_manifest_entry');
+  const findReceipt = functionBody(restSource, 'reprint_push_lab_rest_find_chunk_manifest_receipt');
+  const rejectedResult = functionBody(restSource, 'reprint_push_lab_rest_chunk_manifest_rejected_result');
   const uploadCallback = functionBody(restSource, 'reprint_push_lab_rest_authenticated_chunk_upload');
   const uploadResponse = functionBody(restSource, 'reprint_push_lab_rest_chunk_upload_response');
   const uploadStore = functionBody(restSource, 'reprint_push_lab_rest_store_chunk_upload');
+  const uploadDescriptor = functionBody(restSource, 'reprint_push_lab_rest_chunk_upload_staging_descriptor');
 
   assert.match(restSource, /'\/authenticated\/chunk-manifest'/);
   assert.match(restSource, /'\/push\/chunk-manifest'/);
@@ -191,9 +197,34 @@ test('REST plugin exposes signed chunk manifest routes without apply-capable wor
   assert.match(restSource, /'\/push\/chunks'/);
   assert.match(callback, /reprint_push_lab_rest_require_signed_request\(\$request, 'chunk-manifest'\)/);
   assert.match(callback, /reprint_push_protocol_validate_chunk_manifest_payload\(\$payload\)/);
+  assert.match(callback, /reprint_push_lab_rest_finalize_chunk_manifest\(\$payload, \$result, \$request\)/);
   assert.match(callback, /reprint_push_lab_rest_attach_authenticated_response_evidence\(\$result, \$request\)/);
   assert.match(callback, /'mutationAttempted'\s*=>\s*false/);
   assert.doesNotMatch(callback, /reprint_push_lab_rest_apply_with_db_journal|reprint_push_protocol_run_payload|reprint_push_apply_mutation/);
+  assert.match(finalizer, /reprint_push_lab_db_journal_try_open_idempotency/);
+  assert.match(finalizer, /reprint_push_lab_rest_db_journal_public_event_row_for_key_request/);
+  assert.match(finalizer, /chunk-manifest-finalized/);
+  assert.match(finalizer, /chunk-manifest-rejected/);
+  assert.match(finalizer, /hash_final\(\$assembled_context\)/);
+  assert.match(finalizer, /CHUNK_MANIFEST_FINALIZED/);
+  assert.match(finalizer, /'freshFinalizationWork'\s*=>\s*true/);
+  assert.doesNotMatch(finalizer, /reprint_push_lab_rest_apply_with_db_journal|reprint_push_protocol_run_payload|reprint_push_apply_mutation/);
+  assert.match(verifyEntry, /reprint_push_lab_rest_find_chunk_manifest_receipt/);
+  assert.match(verifyEntry, /reprint_push_lab_rest_chunk_upload_staging_descriptor/);
+  assert.match(verifyEntry, /is_file/);
+  assert.match(verifyEntry, /filesize/);
+  assert.match(verifyEntry, /hash_file\('sha256'/);
+  assert.match(verifyEntry, /hash_update_file\(\$assembled_context/);
+  assert.match(verifyEntry, /stagingRootHash/);
+  assert.match(verifyEntry, /private-plan-staging/);
+  assert.match(findReceipt, /reprint_push_lab_db_journal_rows_for_key/);
+  assert.match(findReceipt, /reprint_push_lab_db_journal_public_row/);
+  assert.match(findReceipt, /chunk-receipt/);
+  assert.match(findReceipt, /resourceHashEvidence/);
+  assert.match(findReceipt, /storageVisibility/);
+  assert.match(findReceipt, /private-plan-staging/);
+  assert.match(rejectedResult, /reprint_push_lab_db_journal_append_event\('chunk-manifest-rejected'/);
+  assert.match(rejectedResult, /'rawValuesIncluded'\s*=>\s*false/);
   assert.match(uploadCallback, /reprint_push_lab_rest_require_signed_request\(\$request, 'chunk-upload'\)/);
   assert.doesNotMatch(uploadCallback, /reprint_push_lab_rest_json_payload/);
   assert.match(uploadResponse, /\$raw_body\s*=\s*\(string\) \$request->get_body\(\)/);
@@ -207,7 +238,7 @@ test('REST plugin exposes signed chunk manifest routes without apply-capable wor
   assert.match(uploadResponse, /reprint_push_lab_rest_chunk_upload_in_progress_result/);
   assert.match(uploadResponse, /reprint_push_lab_rest_chunk_upload_rejected_result/);
   assert.match(uploadResponse, /reprint_push_lab_rest_store_chunk_upload/);
-  assert.match(uploadStore, /reprint_push_lab_rest_chunk_upload_staging_root/);
+  assert.match(uploadDescriptor, /reprint_push_lab_rest_chunk_upload_staging_root/);
   assert.match(restSource, /WP_CONTENT_DIR/);
   assert.match(restSource, /reprint-push-private\/chunks/);
   assert.match(restSource, /private-plan-staging/);
@@ -215,14 +246,21 @@ test('REST plugin exposes signed chunk manifest routes without apply-capable wor
   assert.match(restSource, /reprint_push_lab_rest_chunk_upload_signed_metadata/);
   assert.match(restSource, /X-Reprint-Push-Metadata-Hash/);
   assert.match(restSource, /SIGNED_METADATA_HASH_MISMATCH/);
+  assert.match(restSource, /CHUNK_MANIFEST_FINALIZE_FAILED/);
+  assert.match(restSource, /CHUNK_MANIFEST_ALREADY_FINALIZED/);
   assert.match(restSource, /CHUNK_UPLOAD_ALREADY_ACCEPTED/);
+  assert.match(restSource, /chunk-manifest-idempotency-key-conflict/);
+  assert.match(restSource, /chunk-manifest-idempotency-in-progress/);
   assert.match(restSource, /reprint_push_lab_rest_chunk_upload_replay_rejected_result/);
   assert.match(restSource, /chunk-idempotency-key-conflict/);
   assert.match(restSource, /chunk-idempotency-in-progress/);
   assert.match(restSource, /chunk-rejected/);
   assert.match(restSource, /case 'INVALID_CHUNK_MANIFEST':/);
+  assert.match(restSource, /case 'CHUNK_MANIFEST_FINALIZE_FAILED':/);
   assert.match(restSource, /case 'INVALID_CHUNK_UPLOAD':/);
   assert.match(restSource, /case 'SIGNED_METADATA_HASH_MISMATCH':/);
+  assert.match(uploadStore, /reprint_push_lab_rest_chunk_upload_staging_descriptor/);
+  assert.match(uploadDescriptor, /private-plan-staging/);
   assert.match(uploadStore, /file_put_contents\(\$staging_path, \$raw_body, LOCK_EX\)/);
   assert.match(uploadResponse, /reprint_push_lab_db_journal_append_event\('chunk-receipt'/);
   assert.match(uploadResponse, /'rawValuesIncluded'\s*=>\s*false/);
