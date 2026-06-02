@@ -6,6 +6,7 @@ import {
   pluginOwnedRowDriverContractValidationEvidenceMatches,
   pluginOwnedRowDriverContractHash,
   normalizePluginOwnedRowDriverRowSchema,
+  normalizePluginOwnedRowDriverReferenceFields,
 } from './plugin-driver-contracts.js';
 
 export const INVALID_SERIALIZED_OPTION_PAYLOAD = 'INVALID_SERIALIZED_OPTION_PAYLOAD';
@@ -82,6 +83,12 @@ function validateContractBoundRowDriverPayload({
     : null;
   const schemaValidation = rowSchema
     ? contractBoundRowSchemaValidationEvidence(rowSchema, value, action)
+    : null;
+  const referenceFields = contractValidationEvidence.referenceFields
+    ? normalizePluginOwnedRowDriverReferenceFields(contractValidationEvidence.referenceFields).normalized
+    : null;
+  const referenceValidation = referenceFields
+    ? contractBoundReferenceFieldValidationEvidence(referenceFields, value, action)
     : null;
   const issues = [];
 
@@ -236,6 +243,33 @@ function validateContractBoundRowDriverPayload({
       } : null,
     });
   }
+  if (referenceValidation?.status === 'unsupported') {
+    issues.push({
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELDS_UNSUPPORTED',
+      field: 'referenceFields',
+      expected: 'valid contract-bound reference field declarations',
+      observed: referenceValidation.reason || null,
+    });
+  } else if (referenceValidation?.status === 'mismatch') {
+    const firstMismatch = referenceValidation.fields.find((field) => field.matched !== true) || null;
+    issues.push({
+      reasonCode: firstMismatch?.state === 'missing'
+        ? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_MISSING'
+        : 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_INVALID',
+      field: firstMismatch?.path || 'referenceFields',
+      expected: firstMismatch ? {
+        scalarType: firstMismatch.scalarType,
+        targetTable: firstMismatch.targetTable,
+        targetIdField: firstMismatch.targetIdField,
+        required: firstMismatch.required,
+      } : null,
+      observed: firstMismatch ? {
+        state: firstMismatch.state,
+        type: firstMismatch.observedType,
+        ...(firstMismatch.observedHash ? { hash: firstMismatch.observedHash } : {}),
+      } : null,
+    });
+  }
 
   const accepted = issues.length === 0;
   const evidence = {
@@ -260,6 +294,7 @@ function validateContractBoundRowDriverPayload({
     contractHash: contractValidationEvidence.contractHash || null,
     rowIdentity,
     ...(schemaValidation ? { schemaValidation } : {}),
+    ...(referenceValidation ? { referenceValidation } : {}),
     value: {
       state: value === ABSENT ? 'absent' : 'present',
       hash: digest(value),
@@ -277,6 +312,102 @@ function validateContractBoundRowDriverPayload({
     reason: 'Plugin-owned row driver contract-bound payload validation failed.',
     evidence,
   };
+}
+
+function contractBoundReferenceFieldValidationEvidence(referenceFields, value, action) {
+  const normalized = normalizePluginOwnedRowDriverReferenceFields(referenceFields).normalized;
+  const referenceFieldsHash = digest(normalized);
+  if (!normalized) {
+    return {
+      referenceFieldsHash,
+      status: 'unsupported',
+      reason: 'invalid reference fields',
+      fields: [],
+    };
+  }
+  if (action === 'delete' || value === ABSENT) {
+    return {
+      referenceFieldsHash,
+      status: 'not-required',
+      fields: [],
+    };
+  }
+  const fields = normalized.fields.map((field) =>
+    contractBoundReferenceFieldEvidence(field, value));
+  return {
+    referenceFieldsHash,
+    status: fields.every((field) => field.matched) ? 'matched' : 'mismatch',
+    fields,
+  };
+}
+
+function contractBoundReferenceFieldEvidence(field, value) {
+  const resolved = resolveContractBoundReferencePath(value, field.path);
+  if (!resolved.exists) {
+    return {
+      path: field.path,
+      targetTable: field.targetTable,
+      targetIdField: field.targetIdField,
+      scalarType: field.scalarType,
+      required: field.required === true,
+      state: 'missing',
+      observedType: null,
+      matched: field.required !== true,
+    };
+  }
+
+  const targetId = normalizeReferencePositiveInteger(resolved.value);
+  const observedType = contractBoundRowSchemaValueType(resolved.value);
+  if (targetId === null) {
+    return {
+      path: field.path,
+      targetTable: field.targetTable,
+      targetIdField: field.targetIdField,
+      scalarType: field.scalarType,
+      required: field.required === true,
+      state: 'invalid',
+      observedType,
+      observedHash: digest(String(resolved.value)),
+      matched: false,
+    };
+  }
+
+  return {
+    path: field.path,
+    targetTable: field.targetTable,
+    targetIdField: field.targetIdField,
+    scalarType: field.scalarType,
+    required: field.required === true,
+    state: 'present',
+    observedType,
+    observedHash: digest(String(resolved.value)),
+    targetResourceKey: `row:${JSON.stringify([field.targetTable, `${field.targetIdField}:${targetId}`])}`,
+    matched: true,
+  };
+}
+
+function resolveContractBoundReferencePath(value, path) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { exists: false, value: undefined };
+  }
+  let cursor = value;
+  for (const segment of path.split('.')) {
+    if (!cursor || typeof cursor !== 'object' || Array.isArray(cursor) || !Object.prototype.hasOwnProperty.call(cursor, segment)) {
+      return { exists: false, value: undefined };
+    }
+    cursor = cursor[segment];
+  }
+  return { exists: true, value: cursor };
+}
+
+function normalizeReferencePositiveInteger(value) {
+  if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+    return value;
+  }
+  if (typeof value === 'string' && /^[1-9]\d*$/.test(value)) {
+    return Number.parseInt(value, 10);
+  }
+  return null;
 }
 
 function contractBoundRowSchemaValidationEvidence(rowSchema, value, action) {

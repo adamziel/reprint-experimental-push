@@ -4,6 +4,7 @@ import { applyPlan } from '../src/apply.js';
 import { createPushPlan } from '../src/planner.js';
 import {
   normalizePluginOwnedRowDriverMergePolicy,
+  normalizePluginOwnedRowDriverReferenceFields,
   normalizePluginOwnedRowDriverRowSchema,
   pluginOwnedRowDriverContractValidationEvidenceHash,
   pluginOwnedRowDriverContractHash,
@@ -142,6 +143,31 @@ function constrainedSchemaBoundCustomTableContract(extra = {}) {
   });
 }
 
+function referenceBoundCustomTableContract(extra = {}) {
+  return explicitCustomTableContract({
+    rowSchema: {
+      required: ['entry_id', 'payload', 'updated_marker', '__pluginOwner'],
+      fields: {
+        entry_id: 'integer',
+        payload: 'object',
+        updated_marker: 'string',
+        __pluginOwner: 'string',
+      },
+    },
+    referenceFields: {
+      fields: [
+        {
+          path: 'payload.post_id',
+          targetTable: 'wp_posts',
+          targetIdField: 'ID',
+          required: true,
+        },
+      ],
+    },
+    ...extra,
+  });
+}
+
 const normalizedCustomTableRowSchema = Object.freeze({
   schemaVersion: 1,
   fields: [
@@ -212,6 +238,20 @@ const normalizedRefuseOnConflictMergePolicy = Object.freeze({
   schemaVersion: 1,
   strategy: 'refuse-on-conflict',
   conflictResolution: 'preserve-remote-and-stop',
+  rawValuesIncluded: false,
+});
+
+const normalizedReferenceFields = Object.freeze({
+  schemaVersion: 1,
+  fields: [
+    {
+      path: 'payload.post_id',
+      targetTable: 'wp_posts',
+      targetIdField: 'ID',
+      scalarType: 'positive-integer',
+      required: true,
+    },
+  ],
   rawValuesIncluded: false,
 });
 
@@ -361,6 +401,67 @@ test('plugin row driver merge policy normalization is hash-bound and conservativ
   assert.equal(unsupportedPolicy.observed, 'unsupported-strategy');
   assert.equal(rawPolicy.valid, false);
   assert.equal(rawPolicy.reasonCode, 'PLUGIN_DRIVER_CONTRACT_MERGE_POLICY_RAW_VALUES_INCLUDED');
+});
+
+test('plugin row driver reference fields are hash-bound and conservative', () => {
+  const objectReferenceContract = referenceBoundCustomTableContract();
+  const normalizedReferenceContract = referenceBoundCustomTableContract({
+    referenceFields: normalizedReferenceFields,
+  });
+  const reorderedReferenceContract = referenceBoundCustomTableContract({
+    referenceFields: {
+      rawValuesIncluded: false,
+      fields: [
+        {
+          targetIdField: 'ID',
+          required: true,
+          targetTable: 'wp_posts',
+          path: 'payload.post_id',
+        },
+      ],
+    },
+  });
+  const unsupportedType = normalizePluginOwnedRowDriverReferenceFields({
+    fields: [
+      {
+        path: 'payload.post_id',
+        targetTable: 'wp_posts',
+        targetIdField: 'ID',
+        scalarType: 'uuid',
+      },
+    ],
+  });
+  const rawReferences = normalizePluginOwnedRowDriverReferenceFields({
+    rawValuesIncluded: true,
+    fields: [
+      {
+        path: 'payload.post_id',
+        targetTable: 'wp_posts',
+        targetIdField: 'ID',
+      },
+    ],
+  });
+
+  assert.deepEqual(
+    normalizePluginOwnedRowDriverReferenceFields(objectReferenceContract.referenceFields).normalized,
+    normalizedReferenceFields,
+  );
+  assert.deepEqual(
+    normalizePluginOwnedRowDriverReferenceFields(normalizedReferenceFields).normalized,
+    normalizedReferenceFields,
+  );
+  assert.equal(
+    pluginOwnedRowDriverContractHash(objectReferenceContract),
+    pluginOwnedRowDriverContractHash(normalizedReferenceContract),
+  );
+  assert.equal(
+    pluginOwnedRowDriverContractHash(objectReferenceContract),
+    pluginOwnedRowDriverContractHash(reorderedReferenceContract),
+  );
+  assert.equal(unsupportedType.valid, false);
+  assert.equal(unsupportedType.reasonCode, 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_FIELD_TYPE');
+  assert.equal(rawReferences.valid, false);
+  assert.equal(rawReferences.reasonCode, 'PLUGIN_DRIVER_CONTRACT_REFERENCE_FIELDS_RAW_VALUES_INCLUDED');
 });
 
 test('invalid schema constraints fail closed before becoming contracts', () => {
@@ -519,6 +620,70 @@ test('explicit custom row driver contract carries contract-bound validator evide
   assert.equal(evidenceJson.includes('local-contract-custom-secret'), false);
 });
 
+test('reference-bound custom row driver carries hash-only reference evidence through apply', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-reference-contract', secret: 'base-reference-secret', post_id: 2 },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-reference-contract';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-reference-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(referenceBoundCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const contractEvidence = mutation.pluginOwnedResource.contractValidationEvidence;
+  const payloadEvidence = mutation.pluginOwnedResource.driverPayloadValidationEvidence;
+  const result = applyPlan(remote, plan);
+  const evidenceJson = JSON.stringify({
+    mutation: mutation.pluginOwnedResource,
+    journal: result.journal,
+  });
+
+  assert.equal(plan.status, 'ready');
+  assert.deepEqual(contractEvidence.referenceFields, normalizedReferenceFields);
+  assert.equal(
+    contractEvidence.contractHash,
+    pluginOwnedRowDriverContractHash(contractEvidence),
+  );
+  assert.deepEqual(payloadEvidence.referenceValidation, {
+    referenceFieldsHash: digest(normalizedReferenceFields),
+    status: 'matched',
+    fields: [
+      {
+        path: 'payload.post_id',
+        targetTable: 'wp_posts',
+        targetIdField: 'ID',
+        scalarType: 'positive-integer',
+        required: true,
+        state: 'present',
+        observedType: 'integer',
+        observedHash: digest('2'),
+        targetResourceKey: 'row:["wp_posts","ID:2"]',
+        matched: true,
+      },
+    ],
+  });
+  assert.equal(
+    payloadEvidence.contractValidationHash,
+    pluginOwnedRowDriverContractValidationEvidenceHash(contractEvidence),
+  );
+  assert.equal(result.appliedMutations, 1);
+  assert.equal(result.site.db.wp_forms_contract_rows['entry_id:7'].payload.mode, 'local-reference-contract');
+  assert.equal(evidenceJson.includes('base-reference-secret'), false);
+  assert.equal(evidenceJson.includes('local-reference-secret'), false);
+});
+
 test('explicit custom row driver merge policy is carried and bound through apply', () => {
   const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
   const base = baseSite();
@@ -563,6 +728,63 @@ test('explicit custom row driver merge policy is carried and bound through apply
   assert.equal(result.site.db.wp_forms_contract_rows['entry_id:7'].payload.mode, 'local-merge-policy');
   assert.equal(evidenceJson.includes('base-merge-policy-secret'), false);
   assert.equal(evidenceJson.includes('local-merge-policy-secret'), false);
+});
+
+test('explicit custom row driver merge policy records hash-only refusal evidence on conflicts', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-merge-conflict', secret: 'base-merge-conflict-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-merge-conflict';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-merge-conflict-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(explicitCustomTableContract({
+      mergePolicy: 'refuse-on-conflict',
+    })),
+  };
+  const remote = cloneJson(base);
+  remote.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'remote-merge-conflict';
+  remote.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'remote-merge-conflict-secret';
+  remote.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'remote';
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === resourceKey);
+  const evidence = conflict.pluginDriverMergePolicyConflictEvidence;
+  let error;
+  try {
+    applyPlan(remote, plan);
+  } catch (caught) {
+    error = caught;
+  }
+  const conflictJson = JSON.stringify(conflict);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(conflict.class, 'plugin-data-conflict');
+  assert.equal(conflict.resolutionPolicy, 'preserve-remote-and-stop');
+  assert.equal(evidence.operation, 'plugin-driver-merge-policy-validation');
+  assert.equal(evidence.reasonCode, 'PLUGIN_DRIVER_MERGE_POLICY_REFUSE_ON_CONFLICT');
+  assert.equal(evidence.outcome, 'refused-before-mutation');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.deepEqual(evidence.mergePolicy, normalizedRefuseOnConflictMergePolicy);
+  assert.match(evidence.contractHash, /^[a-f0-9]{64}$/);
+  assert.match(evidence.contractValidationHash, /^[a-f0-9]{64}$/);
+  assert.match(evidence.conflictHash, /^[a-f0-9]{64}$/);
+  assert.equal(error?.code, 'PLAN_NOT_READY');
+  assert.equal(error.details.status, 'conflict');
+  assert.equal(conflictJson.includes('base-merge-conflict-secret'), false);
+  assert.equal(conflictJson.includes('local-merge-conflict-secret'), false);
+  assert.equal(conflictJson.includes('remote-merge-conflict-secret'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
 test('contract-bound custom row driver blocks present payloads without owner markers', () => {
@@ -653,6 +875,61 @@ test('contract-bound custom row driver blocks payload row ids that do not match 
   });
   assert.equal(JSON.stringify(blocker).includes('base-contract-row-id-secret'), false);
   assert.equal(JSON.stringify(blocker).includes('local-contract-row-id-secret'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('reference-bound custom row driver blocks invalid reference fields without raw values', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const privateReference = 'local-reference-field-secret';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-reference-invalid', secret: 'base-reference-invalid-secret', post_id: 2 },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-reference-invalid';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-reference-invalid-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.post_id = privateReference;
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(referenceBoundCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const evidence = blocker.driverPayloadValidationEvidence;
+  const mismatch = evidence.referenceValidation.fields[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'invalid-plugin-driver-payload');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_INVALID');
+  assert.equal(evidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_INVALID');
+  assert.equal(evidence.outcome, 'refused-before-mutation');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(evidence.referenceValidation.status, 'mismatch');
+  assert.deepEqual(mismatch, {
+    path: 'payload.post_id',
+    targetTable: 'wp_posts',
+    targetIdField: 'ID',
+    scalarType: 'positive-integer',
+    required: true,
+    state: 'invalid',
+    observedType: 'string',
+    observedHash: digest(privateReference),
+    matched: false,
+  });
+  assert.equal(blockerJson.includes(privateReference), false);
+  assert.equal(blockerJson.includes('base-reference-invalid-secret'), false);
+  assert.equal(blockerJson.includes('local-reference-invalid-secret'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
@@ -1457,6 +1734,69 @@ test('apply refuses forged custom row driver payloads with mismatched row ids be
   });
   assert.equal(JSON.stringify(error.details).includes('base-contract-apply-row-id-secret'), false);
   assert.equal(JSON.stringify(error.details).includes('local-contract-apply-row-id-secret'), false);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('apply refuses forged reference-bound custom row driver payloads before mutation', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-reference-apply', secret: 'base-reference-apply-secret', post_id: 2 },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-reference-apply';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-reference-apply-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(referenceBoundCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const forgedPlan = cloneJson(plan);
+  const mutation = mutationFor(forgedPlan, resourceKey);
+  const forgedValue = mutation.value.value;
+  forgedValue.payload.post_id = 0;
+  mutation.localHash = digest(forgedValue);
+  mutation.pluginOwnedResource.driverPayloadValidationEvidence.value.hash = digest(forgedValue);
+
+  let error;
+  try {
+    applyPlan(remote, forgedPlan);
+  } catch (caught) {
+    error = caught;
+  }
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(error?.code, 'INVALID_PLUGIN_DRIVER_PAYLOAD');
+  assert.equal(error.details.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_INVALID');
+  assert.equal(error.details.resourceKey, resourceKey);
+  assert.equal(error.details.pluginOwner, 'forms');
+  assert.equal(error.details.driver, 'forms-contract-row');
+  assert.deepEqual(error.details.applyValidationEvidence.driverPayloadValidationEvidence.referenceValidation, {
+    referenceFieldsHash: digest(normalizedReferenceFields),
+    status: 'mismatch',
+    fields: [
+      {
+        path: 'payload.post_id',
+        targetTable: 'wp_posts',
+        targetIdField: 'ID',
+        scalarType: 'positive-integer',
+        required: true,
+        state: 'invalid',
+        observedType: 'integer',
+        observedHash: digest('0'),
+        matched: false,
+      },
+    ],
+  });
+  assert.equal(JSON.stringify(error.details).includes('base-reference-apply-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('local-reference-apply-secret'), false);
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 

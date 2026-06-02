@@ -471,7 +471,10 @@ function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
                 $driver_name,
                 !empty($driver['supportsDelete']),
                 is_array($driver['rowSchema'] ?? null) ? $driver['rowSchema'] : null,
-                $driver['mergePolicy'] ?? null
+                $driver['mergePolicy'] ?? null,
+                is_array($driver['referenceFields'] ?? ($driver['rowReferences'] ?? null))
+                    ? ($driver['referenceFields'] ?? $driver['rowReferences'])
+                    : null
             );
         }
     }
@@ -492,7 +495,8 @@ function reprint_push_plugin_owned_row_driver_policy_entry(
     string $driver,
     bool $supports_delete,
     ?array $row_schema = null,
-    $merge_policy = null
+    $merge_policy = null,
+    ?array $reference_fields = null
 ): array {
     $resource_key = 'row:' . wp_json_encode([$table, $row_id], JSON_UNESCAPED_SLASHES);
     $normalized_schema = $row_schema !== null
@@ -500,6 +504,9 @@ function reprint_push_plugin_owned_row_driver_policy_entry(
         : null;
     $normalized_merge_policy = $merge_policy !== null
         ? reprint_push_normalize_plugin_owned_row_driver_merge_policy($merge_policy)
+        : null;
+    $normalized_reference_fields = $reference_fields !== null
+        ? reprint_push_normalize_plugin_owned_row_driver_reference_fields($reference_fields)
         : null;
     $entry = [
         'contractVersion' => REPRINT_PUSH_PLUGIN_OWNED_ROW_DRIVER_CONTRACT_VERSION,
@@ -516,6 +523,9 @@ function reprint_push_plugin_owned_row_driver_policy_entry(
     if ($normalized_merge_policy !== null) {
         $entry['mergePolicy'] = $normalized_merge_policy;
     }
+    if ($normalized_reference_fields !== null) {
+        $entry['referenceFields'] = $normalized_reference_fields;
+    }
     $entry['contractHash'] = reprint_push_plugin_owned_row_driver_contract_hash(
         $resource_key,
         $plugin_owner,
@@ -523,7 +533,8 @@ function reprint_push_plugin_owned_row_driver_policy_entry(
         $table,
         $supports_delete,
         $normalized_schema,
-        $normalized_merge_policy
+        $normalized_merge_policy,
+        $normalized_reference_fields
     );
     return $entry;
 }
@@ -535,7 +546,8 @@ function reprint_push_plugin_owned_row_driver_contract_hash(
     string $table,
     bool $supports_delete,
     ?array $row_schema = null,
-    $merge_policy = null
+    $merge_policy = null,
+    ?array $reference_fields = null
 ): string {
     $contract = [
         'schemaVersion' => 1,
@@ -552,6 +564,9 @@ function reprint_push_plugin_owned_row_driver_contract_hash(
     }
     if ($merge_policy !== null) {
         $contract['mergePolicy'] = reprint_push_normalize_plugin_owned_row_driver_merge_policy($merge_policy);
+    }
+    if ($reference_fields !== null) {
+        $contract['referenceFields'] = reprint_push_normalize_plugin_owned_row_driver_reference_fields($reference_fields);
     }
     return hash('sha256', reprint_push_stable_json($contract));
 }
@@ -579,6 +594,88 @@ function reprint_push_normalize_plugin_owned_row_driver_merge_policy($merge_poli
         'conflictResolution' => 'preserve-remote-and-stop',
         'rawValuesIncluded' => false,
     ];
+}
+
+function reprint_push_normalize_plugin_owned_row_driver_reference_fields(array $reference_fields): array
+{
+    if (array_key_exists('rawValuesIncluded', $reference_fields) && $reference_fields['rawValuesIncluded'] !== false) {
+        throw new RuntimeException('Plugin-owned row driver referenceFields must not include raw values.');
+    }
+    $fields_source = $reference_fields['fields'] ?? ($reference_fields['references'] ?? null);
+    if (!is_array($fields_source) || !array_is_list($fields_source)) {
+        throw new RuntimeException('Plugin-owned row driver referenceFields.fields must be an array.');
+    }
+    if (count($fields_source) === 0) {
+        throw new RuntimeException('Plugin-owned row driver referenceFields must declare at least one field.');
+    }
+
+    $fields = [];
+    $seen_paths = [];
+    foreach ($fields_source as $definition) {
+        $field = reprint_push_normalize_plugin_owned_row_driver_reference_field($definition);
+        $path = (string) $field['path'];
+        if (isset($seen_paths[$path])) {
+            throw new RuntimeException('Plugin-owned row driver referenceFields paths must be unique.');
+        }
+        $seen_paths[$path] = true;
+        $fields[] = $field;
+    }
+    usort($fields, static function (array $left, array $right): int {
+        return strcmp((string) $left['path'], (string) $right['path']);
+    });
+
+    return [
+        'schemaVersion' => 1,
+        'fields' => $fields,
+        'rawValuesIncluded' => false,
+    ];
+}
+
+function reprint_push_normalize_plugin_owned_row_driver_reference_field($definition): array
+{
+    if (!is_array($definition) || array_is_list($definition)) {
+        throw new RuntimeException('Plugin-owned row driver reference field must be an object.');
+    }
+    if (array_key_exists('rawValuesIncluded', $definition) && $definition['rawValuesIncluded'] !== false) {
+        throw new RuntimeException('Plugin-owned row driver referenceFields must not include raw values.');
+    }
+    $path = (string) ($definition['path'] ?? ($definition['field'] ?? ''));
+    $target_table = (string) ($definition['targetTable'] ?? ($definition['table'] ?? ''));
+    $target_id_field = (string) ($definition['targetIdField'] ?? ($definition['targetField'] ?? ''));
+    $scalar_type = (string) ($definition['scalarType'] ?? ($definition['type'] ?? 'positive-integer'));
+    if (!reprint_push_is_plugin_owned_reference_field_path($path)) {
+        throw new RuntimeException('Plugin-owned row driver reference field path is invalid.');
+    }
+    if ($target_table === '') {
+        throw new RuntimeException('Plugin-owned row driver reference field targetTable is required.');
+    }
+    if ($target_id_field === '') {
+        throw new RuntimeException('Plugin-owned row driver reference field targetIdField is required.');
+    }
+    if ($scalar_type !== 'positive-integer') {
+        throw new RuntimeException('Unsupported plugin-owned row driver reference field type.');
+    }
+
+    return [
+        'path' => $path,
+        'targetTable' => $target_table,
+        'targetIdField' => $target_id_field,
+        'scalarType' => 'positive-integer',
+        'required' => ($definition['required'] ?? true) !== false,
+    ];
+}
+
+function reprint_push_is_plugin_owned_reference_field_path(string $path): bool
+{
+    if ($path === '') {
+        return false;
+    }
+    foreach (explode('.', $path) as $segment) {
+        if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $segment)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function reprint_push_normalize_plugin_owned_row_driver_row_schema($row_schema): array
@@ -3109,6 +3206,13 @@ function reprint_push_normalize_plugin_owned_row_driver(array $driver, ?string $
     if (array_key_exists('mergePolicy', $driver)) {
         $normalized['mergePolicy'] = reprint_push_normalize_plugin_owned_row_driver_merge_policy($driver['mergePolicy']);
     }
+    if (array_key_exists('referenceFields', $driver) || array_key_exists('rowReferences', $driver)) {
+        $reference_fields = $driver['referenceFields'] ?? $driver['rowReferences'];
+        if (!is_array($reference_fields)) {
+            throw new RuntimeException('Plugin-owned row driver referenceFields must be an object.');
+        }
+        $normalized['referenceFields'] = reprint_push_normalize_plugin_owned_row_driver_reference_fields($reference_fields);
+    }
     return $normalized;
 }
 
@@ -3812,6 +3916,9 @@ function reprint_push_plugin_driver_contract_evidence_accepted(
     if (array_key_exists('mergePolicy', $evidence)) {
         $expected_keys[] = 'mergePolicy';
     }
+    if (array_key_exists('referenceFields', $evidence)) {
+        $expected_keys[] = 'referenceFields';
+    }
     if (!reprint_push_array_has_exact_keys($evidence, $expected_keys)) {
         return false;
     }
@@ -3843,6 +3950,20 @@ function reprint_push_plugin_driver_contract_evidence_accepted(
             return false;
         }
     }
+    $reference_fields = null;
+    if (array_key_exists('referenceFields', $evidence)) {
+        if (!is_array($evidence['referenceFields'] ?? null)) {
+            return false;
+        }
+        try {
+            $reference_fields = reprint_push_normalize_plugin_owned_row_driver_reference_fields($evidence['referenceFields']);
+        } catch (Throwable $error) {
+            return false;
+        }
+        if ($evidence['referenceFields'] !== $reference_fields) {
+            return false;
+        }
+    }
     return ($evidence['reasonCode'] ?? null) === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
         && ($evidence['schemaVersion'] ?? null) === 1
         && ($evidence['operation'] ?? null) === 'plugin-driver-contract-validation'
@@ -3868,7 +3989,8 @@ function reprint_push_plugin_driver_contract_evidence_accepted(
             $table,
             $supports_delete,
             $row_schema,
-            $merge_policy
+            $merge_policy,
+            $reference_fields
         );
 }
 
@@ -3920,6 +4042,18 @@ function reprint_push_plugin_driver_payload_evidence_accepted(
         }
         $expected_payload_keys[] = 'schemaValidation';
     }
+    $contract_reference_fields = null;
+    if (array_key_exists('referenceFields', $contract)) {
+        if (!is_array($contract['referenceFields'] ?? null)) {
+            return false;
+        }
+        try {
+            $contract_reference_fields = reprint_push_normalize_plugin_owned_row_driver_reference_fields($contract['referenceFields']);
+        } catch (Throwable $error) {
+            return false;
+        }
+        $expected_payload_keys[] = 'referenceValidation';
+    }
     if (!reprint_push_array_has_exact_keys($evidence, $expected_payload_keys)) {
         return false;
     }
@@ -3953,6 +4087,22 @@ function reprint_push_plugin_driver_payload_evidence_accepted(
         if (!reprint_push_plugin_driver_payload_row_schema_evidence_matches(
             $schema_validation_evidence,
             $expected_schema_validation
+        )) {
+            return false;
+        }
+    }
+    if ($contract_reference_fields !== null) {
+        $reference_validation_evidence = is_array($evidence['referenceValidation'] ?? null)
+            ? $evidence['referenceValidation']
+            : [];
+        $expected_reference_validation = reprint_push_plugin_driver_payload_reference_fields_evidence(
+            $contract_reference_fields,
+            $action,
+            $planned
+        );
+        if (!reprint_push_plugin_driver_payload_reference_fields_evidence_matches(
+            $reference_validation_evidence,
+            $expected_reference_validation
         )) {
             return false;
         }
@@ -4285,6 +4435,141 @@ function reprint_push_plugin_driver_payload_row_schema_evidence_matches(
         }
         if (!is_array($field)
             || !reprint_push_array_has_exact_keys($field, $expected_keys)) {
+            return false;
+        }
+    }
+    return $evidence === $expected
+        && in_array($evidence['status'], ['matched', 'not-required'], true);
+}
+
+function reprint_push_plugin_driver_payload_reference_fields_evidence(
+    array $reference_fields,
+    string $action,
+    array $planned
+): array {
+    $normalized = reprint_push_normalize_plugin_owned_row_driver_reference_fields($reference_fields);
+    $reference_fields_hash = hash('sha256', reprint_push_stable_json($normalized));
+    if ($action === 'delete' || empty($planned['exists'])) {
+        return [
+            'referenceFieldsHash' => $reference_fields_hash,
+            'status' => 'not-required',
+            'fields' => [],
+        ];
+    }
+
+    $value = is_array($planned['value'] ?? null) ? $planned['value'] : [];
+    $fields = [];
+    foreach ($normalized['fields'] as $field) {
+        $fields[] = reprint_push_plugin_driver_payload_reference_field_evidence($field, $value);
+    }
+
+    $matched = true;
+    foreach ($fields as $field) {
+        if (empty($field['matched'])) {
+            $matched = false;
+            break;
+        }
+    }
+
+    return [
+        'referenceFieldsHash' => $reference_fields_hash,
+        'status' => $matched ? 'matched' : 'mismatch',
+        'fields' => $fields,
+    ];
+}
+
+function reprint_push_plugin_driver_payload_reference_field_evidence(array $field, array $value): array
+{
+    $resolved = reprint_push_plugin_driver_payload_reference_path_value($value, (string) $field['path']);
+    if (empty($resolved['exists'])) {
+        return [
+            'path' => (string) $field['path'],
+            'targetTable' => (string) $field['targetTable'],
+            'targetIdField' => (string) $field['targetIdField'],
+            'scalarType' => (string) $field['scalarType'],
+            'required' => !empty($field['required']),
+            'state' => 'missing',
+            'observedType' => null,
+            'matched' => empty($field['required']),
+        ];
+    }
+
+    $observed = $resolved['value'];
+    $target_id = reprint_push_normalize_plugin_driver_reference_positive_integer($observed);
+    $evidence = [
+        'path' => (string) $field['path'],
+        'targetTable' => (string) $field['targetTable'],
+        'targetIdField' => (string) $field['targetIdField'],
+        'scalarType' => (string) $field['scalarType'],
+        'required' => !empty($field['required']),
+        'state' => $target_id === null ? 'invalid' : 'present',
+        'observedType' => reprint_push_plugin_driver_payload_row_schema_value_type($observed),
+        'observedHash' => hash('sha256', reprint_push_stable_json((string) $observed)),
+        'matched' => $target_id !== null,
+    ];
+    if ($target_id !== null) {
+        $evidence['targetResourceKey'] = 'row:' . wp_json_encode([
+            (string) $field['targetTable'],
+            (string) $field['targetIdField'] . ':' . $target_id,
+        ], JSON_UNESCAPED_SLASHES);
+    }
+    return $evidence;
+}
+
+function reprint_push_plugin_driver_payload_reference_path_value(array $value, string $path): array
+{
+    $cursor = $value;
+    foreach (explode('.', $path) as $segment) {
+        if (!is_array($cursor) || array_is_list($cursor) || !array_key_exists($segment, $cursor)) {
+            return ['exists' => false, 'value' => null];
+        }
+        $cursor = $cursor[$segment];
+    }
+    return ['exists' => true, 'value' => $cursor];
+}
+
+function reprint_push_normalize_plugin_driver_reference_positive_integer($value): ?int
+{
+    if (is_int($value) && $value > 0) {
+        return $value;
+    }
+    if (is_string($value) && preg_match('/^[1-9][0-9]*$/', $value)) {
+        return (int) $value;
+    }
+    return null;
+}
+
+function reprint_push_plugin_driver_payload_reference_fields_evidence_matches(
+    array $evidence,
+    array $expected
+): bool {
+    if (!reprint_push_array_has_exact_keys($evidence, ['referenceFieldsHash', 'status', 'fields'])) {
+        return false;
+    }
+    if (!is_array($evidence['fields'] ?? null)) {
+        return false;
+    }
+    foreach ($evidence['fields'] as $field) {
+        if (!is_array($field)) {
+            return false;
+        }
+        $expected_keys = [
+            'path',
+            'targetTable',
+            'targetIdField',
+            'scalarType',
+            'required',
+            'state',
+            'observedType',
+            'matched',
+        ];
+        if (array_key_exists('observedHash', $field)) {
+            $expected_keys[] = 'observedHash';
+        }
+        if (array_key_exists('targetResourceKey', $field)) {
+            $expected_keys[] = 'targetResourceKey';
+        }
+        if (!reprint_push_array_has_exact_keys($field, $expected_keys)) {
             return false;
         }
     }

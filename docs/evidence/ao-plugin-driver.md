@@ -81,6 +81,30 @@ npm run test:playground:production-plugin-driver-verifier-guards
 This remains a runtime evidence exactness guard. It does not broaden arbitrary
 plugin support or make fixture-scoped custom-table validation production-ready.
 
+## Contract-bound reference fields
+
+Plugin-owned row driver contracts can now declare hash-bound
+`referenceFields` for positive-integer scalar references such as
+`payload.post_id -> wp_posts.ID`. Planner and apply emit/recompute
+`referenceValidation` evidence for accepted contracts, refuse missing or
+invalid reference fields before mutation, and keep the evidence hash-only. The
+PHP registered-driver path exports normalized `referenceFields`, includes them
+in contract hashes, and validates exact reference-bound payload evidence.
+
+The same focused slice adds merge-policy conflict evidence for accepted
+`refuse-on-conflict` contracts: direct local/remote plugin row conflicts remain
+conflicts, but now carry hash-only policy evidence bound to the contract hash
+and base/local/remote row hashes.
+
+Focused verification:
+
+```sh
+php -l scripts/playground/snapshot-lib.php
+node --test test/plugin-driver-contract.test.js
+node --test test/plugin-driver-registration-api.test.js test/playground-snapshot-lib.test.js
+node --test test/plugin-driver-contract.test.js test/plugin-driver-registration-api.test.js test/playground-snapshot-lib.test.js test/production-plugin-package-scenarios.test.js test/rpp-0441-driver-registration-api-v3.test.js test/rpp-0481-driver-registration-api-release-verifier-v5.test.js test/rpp-0483-custom-table-allowlist-release-verifier-v5.test.js
+```
+
 ## Driver Apply Validation Hook
 
 RPP-0438 adds focused support-only evidence for the apply-time plugin-driver

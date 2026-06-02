@@ -798,6 +798,7 @@ function redactedPluginDriverContractValidationEvidence(evidence) {
     table: evidence.table || null,
     supportsDelete: evidence.supportsDelete === true,
     ...(evidence.mergePolicy ? { mergePolicy: evidence.mergePolicy } : {}),
+    ...(evidence.referenceFields ? { referenceFields: evidence.referenceFields } : {}),
     contractHash: evidence.contractHash || null,
   };
 }

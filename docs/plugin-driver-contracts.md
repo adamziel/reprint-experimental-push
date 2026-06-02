@@ -45,9 +45,15 @@ Optional fields:
   drivers. Version 1 supports only `refuse-on-conflict`, normalized to a
   hash-bound object with `conflictResolution: "preserve-remote-and-stop"` and
   `rawValuesIncluded: false`.
+- `referenceFields`: optional metadata for plugin-owned row fields that carry
+  scalar references to WordPress rows. Version 1 supports only dot-separated
+  field paths whose values are positive integers, with an explicit
+  `targetTable`, `targetIdField`, optional `required`, and
+  `rawValuesIncluded: false`.
 - `contractHash`: stable hash of the declared resource key, owner, driver,
   table, delete support, contract kind, contract version, optional normalized
-  row schema, and optional normalized merge policy.
+  row schema, optional normalized merge policy, and optional normalized
+  reference fields.
 - `dryRunValidation`: hash-only dry-run validation hook evidence.
 - `applyValidation`: hash-only apply validation hook evidence.
 - `evidenceScope` or `releaseGateEvidenceScope`: evidence classification.
@@ -75,6 +81,12 @@ that declares an explicit contract becomes strict:
   `PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_MERGE_POLICY`,
   `PLUGIN_DRIVER_CONTRACT_INVALID_MERGE_POLICY`, or
   `PLUGIN_DRIVER_CONTRACT_MERGE_POLICY_RAW_VALUES_INCLUDED`
+- malformed reference-field declarations, unsupported reference scalar types,
+  or reference-field declarations that claim raw values refuse before mutation
+  with `PLUGIN_DRIVER_CONTRACT_INVALID_REFERENCE_FIELDS`,
+  `PLUGIN_DRIVER_CONTRACT_INVALID_REFERENCE_FIELD`,
+  `PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_FIELD_TYPE`, or
+  `PLUGIN_DRIVER_CONTRACT_REFERENCE_FIELDS_RAW_VALUES_INCLUDED`
 - accepted contracts emit `plugin-driver-contract-validation` evidence
 - accepted contracts must carry the expected `contractHash`, and apply
   recomputes it before trusting the evidence
@@ -105,6 +117,7 @@ Registered PHP row drivers are exported with:
 - `table`
 - boolean `supportsDelete`
 - optional normalized `mergePolicy`
+- optional normalized `referenceFields`
 
 The built-in `reprint-push-release-state` row driver and registered custom row
 drivers use the same policy-entry shape. Contract entries are metadata only and
@@ -135,17 +148,30 @@ shape. For custom row drivers outside the built-in driver set, apply requires:
   `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_UNEXPECTED_FIELD`; scalar `const` or
   `enum` mismatches refuse with
   `PLUGIN_DRIVER_CONTRACT_BOUND_ROW_SCHEMA_CONSTRAINT_MISMATCH`,
+- present row payloads that satisfy the optional reference-field contract.
+  Missing required reference paths refuse with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_MISSING`; non-positive or
+  non-integer reference values refuse with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_INVALID`,
 - accepted `contract-bound-row-driver` payload validation evidence,
 - hash-only value and contract evidence, with `rawValuesIncluded: false`,
 - carried payload evidence that matches apply's recomputed mutation action,
   value state/hash, row identity evidence, schema validation evidence when a
-  schema is declared, contract hash, and canonical `contractValidationHash`.
+  schema is declared, reference validation evidence when reference fields are
+  declared, contract hash, and canonical `contractValidationHash`.
 
 If a contract declares `mergePolicy`, planner carries the normalized policy
 into the mutation envelope and apply recomputes the accepted contract hash and
 requires the mutation-side policy to match it exactly. A forged ready plan that
 changes or drops the merge policy refuses before mutation with
 `PLUGIN_DRIVER_CONTRACT_BOUND_MERGE_POLICY_MISMATCH`.
+
+For direct local/remote conflicts on a plugin-owned row whose accepted contract
+declares `mergePolicy: "refuse-on-conflict"`, planner keeps the plan in
+`conflict` status and records hash-only
+`plugin-driver-merge-policy-validation` evidence. That evidence binds the
+refusal to the accepted contract hash, canonical contract-validation hash,
+normalized merge policy, and base/local/remote row hashes.
 
 Payload validation evidence now includes a hash-only `rowIdentity` object:
 
@@ -212,6 +238,35 @@ The production-shaped RPP-0483 verifier now includes
 `payloadSchemaValidationMatchesExpected`, exact payload evidence shape checks,
 and allowlist row-schema/contract-hash binding; it refuses proofs whose value
 hashes match but whose row body no longer satisfies the declared schema.
+
+Reference-field contracts emit a hash-only `referenceValidation` object when
+`referenceFields` is present:
+
+```json
+{
+  "referenceFieldsHash": "...",
+  "status": "matched",
+  "fields": [
+    {
+      "path": "payload.post_id",
+      "targetTable": "wp_posts",
+      "targetIdField": "ID",
+      "scalarType": "positive-integer",
+      "required": true,
+      "state": "present",
+      "observedType": "integer",
+      "observedHash": "...",
+      "targetResourceKey": "row:[\"wp_posts\",\"ID:2\"]",
+      "matched": true
+    }
+  ]
+}
+```
+
+This is a validator boundary, not a generic plugin graph rewriter. It proves
+declared reference fields are shaped and hash-bound before mutation; production
+graph rewrites for arbitrary plugin payloads still need explicit extractor and
+rewriter contracts.
 
 Legacy fixture allowlists still work for focused tests, but generic production
 custom row drivers need the explicit contract path before the executor will

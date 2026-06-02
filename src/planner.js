@@ -12,6 +12,7 @@ import { serializedOptionValidationEvidenceForRows } from './serialized-option-v
 import {
   PLUGIN_DRIVER_CONTRACT_KIND,
   PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+  PLUGIN_DRIVER_REFUSE_ON_CONFLICT_MERGE_POLICY,
   normalizePluginOwnedRowDriverContract,
   pluginOwnedRowDriverContractValidationEvidenceMatches,
   pluginOwnedRowDriverContractHash,
@@ -475,6 +476,9 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
       continue;
     }
 
+    const pluginOwnedConflictSupport = owner && isPluginOwnedDataResource(resource, owner)
+      ? pluginOwnedResourcePolicy.supportFor(resource, owner)
+      : null;
     addConflict(plan, {
       resource,
       reason: 'Local and remote both changed this resource after the pull base.',
@@ -486,6 +490,14 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
       localHash,
       remoteHash,
       owner,
+      pluginDriverMergePolicyConflictEvidence: pluginDriverMergePolicyConflictEvidence({
+        resource,
+        owner,
+        support: pluginOwnedConflictSupport,
+        baseHash,
+        localHash,
+        remoteHash,
+      }),
     });
   }
 
@@ -1140,6 +1152,51 @@ function pluginOwnedDriverDecisionAuditEvidence({
       localHash,
       remoteHash,
     },
+  };
+}
+
+function pluginDriverMergePolicyConflictEvidence({
+  resource,
+  owner,
+  support,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  const contract = support?.contractValidationEvidence || null;
+  const mergePolicy = support?.mergePolicy || contract?.mergePolicy || null;
+  if (
+    !contract
+    || contract.reasonCode !== 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
+    || mergePolicy?.strategy !== PLUGIN_DRIVER_REFUSE_ON_CONFLICT_MERGE_POLICY
+  ) {
+    return null;
+  }
+
+  return {
+    schemaVersion: 1,
+    operation: 'plugin-driver-merge-policy-validation',
+    reasonCode: 'PLUGIN_DRIVER_MERGE_POLICY_REFUSE_ON_CONFLICT',
+    outcome: 'refused-before-mutation',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: support.driver || contract.driver || null,
+    table: support.table || contract.table || resource.table || null,
+    mergePolicy,
+    contractHash: contract.contractHash || null,
+    contractValidationHash: digest(contract),
+    baseHash,
+    localHash,
+    remoteHash,
+    conflictHash: digest({
+      resourceKey: resource.key,
+      baseHash,
+      localHash,
+      remoteHash,
+      mergePolicy,
+    }),
   };
 }
 
@@ -3975,6 +4032,7 @@ function addConflict(plan, {
   className = conflictClass(resource, owner),
   relatedResource = null,
   relatedChange = null,
+  pluginDriverMergePolicyConflictEvidence = null,
 }) {
   plan.conflicts.push({
     id: `conflict-${plan.conflicts.length + 1}`,
@@ -3999,6 +4057,9 @@ function addConflict(plan, {
     relatedResource,
     relatedResourceKey: relatedResource?.key,
     relatedChange,
+    ...(pluginDriverMergePolicyConflictEvidence
+      ? { pluginDriverMergePolicyConflictEvidence }
+      : {}),
   });
 }
 

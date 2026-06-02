@@ -47,6 +47,13 @@ export function normalizePluginOwnedRowDriverContract(entry, {
   const mergePolicyResult = normalizePluginOwnedRowDriverMergePolicy(
     entry.mergePolicy ?? nestedContract?.mergePolicy ?? null,
   );
+  const referenceFieldsResult = normalizePluginOwnedRowDriverReferenceFields(
+    entry.referenceFields
+      ?? entry.rowReferences
+      ?? nestedContract?.referenceFields
+      ?? nestedContract?.rowReferences
+      ?? null,
+  );
 
   const issues = [];
   if (contractVersion !== PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION) {
@@ -137,6 +144,14 @@ export function normalizePluginOwnedRowDriverContract(entry, {
       observed: mergePolicyResult.observed,
     });
   }
+  if (!referenceFieldsResult.valid) {
+    issues.push({
+      reasonCode: referenceFieldsResult.reasonCode,
+      field: 'referenceFields',
+      required: referenceFieldsResult.required,
+      observed: referenceFieldsResult.observed,
+    });
+  }
 
   const accepted = issues.length === 0;
   const normalized = {
@@ -150,6 +165,7 @@ export function normalizePluginOwnedRowDriverContract(entry, {
     contractKind,
     ...(rowSchemaResult.normalized ? { rowSchema: rowSchemaResult.normalized } : {}),
     ...(mergePolicyResult.normalized ? { mergePolicy: mergePolicyResult.normalized } : {}),
+    ...(referenceFieldsResult.normalized ? { referenceFields: referenceFieldsResult.normalized } : {}),
   };
   const contractHash = pluginOwnedRowDriverContractHash(normalized);
   const evidence = {
@@ -173,6 +189,7 @@ export function normalizePluginOwnedRowDriverContract(entry, {
     supportsDelete: entry.supportsDelete === true,
     ...(rowSchemaResult.normalized ? { rowSchema: rowSchemaResult.normalized } : {}),
     ...(mergePolicyResult.normalized ? { mergePolicy: mergePolicyResult.normalized } : {}),
+    ...(referenceFieldsResult.normalized ? { referenceFields: referenceFieldsResult.normalized } : {}),
     contractHash,
   };
 
@@ -199,6 +216,11 @@ export function pluginOwnedRowDriverContractHash(contract) {
     supportsDelete: contract?.supportsDelete === true,
     ...(contract?.rowSchema ? { rowSchema: normalizePluginOwnedRowDriverRowSchema(contract.rowSchema).normalized } : {}),
     ...(contract?.mergePolicy ? { mergePolicy: normalizePluginOwnedRowDriverMergePolicy(contract.mergePolicy).normalized } : {}),
+    ...(contract?.referenceFields || contract?.rowReferences ? {
+      referenceFields: normalizePluginOwnedRowDriverReferenceFields(
+        contract.referenceFields ?? contract.rowReferences,
+      ).normalized,
+    } : {}),
   });
 }
 
@@ -227,6 +249,7 @@ export function canonicalPluginOwnedRowDriverContractValidationEvidence(evidence
     supportsDelete: evidence.supportsDelete === true,
     ...(evidence.rowSchema ? { rowSchema: normalizePluginOwnedRowDriverRowSchema(evidence.rowSchema).normalized } : {}),
     ...(evidence.mergePolicy ? { mergePolicy: normalizePluginOwnedRowDriverMergePolicy(evidence.mergePolicy).normalized } : {}),
+    ...(evidence.referenceFields ? { referenceFields: normalizePluginOwnedRowDriverReferenceFields(evidence.referenceFields).normalized } : {}),
     contractHash: pluginOwnedRowDriverContractHash(evidence),
   };
 }
@@ -313,6 +336,167 @@ export function normalizePluginOwnedRowDriverMergePolicy(mergePolicy) {
       rawValuesIncluded: false,
     },
   };
+}
+
+export function normalizePluginOwnedRowDriverReferenceFields(referenceFields) {
+  if (referenceFields === null || referenceFields === undefined) {
+    return { valid: true, normalized: null };
+  }
+  if (!referenceFields || typeof referenceFields !== 'object' || Array.isArray(referenceFields)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_REFERENCE_FIELDS',
+      required: 'referenceFields object',
+      observed: Array.isArray(referenceFields) ? 'array' : typeof referenceFields,
+    };
+  }
+  if (
+    hasOwn(referenceFields, 'rawValuesIncluded')
+    && referenceFields.rawValuesIncluded !== false
+  ) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_REFERENCE_FIELDS_RAW_VALUES_INCLUDED',
+      required: false,
+      observed: true,
+    };
+  }
+
+  const definitions = Array.isArray(referenceFields.fields)
+    ? referenceFields.fields
+    : Array.isArray(referenceFields.references)
+      ? referenceFields.references
+      : null;
+  if (!definitions) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_REFERENCE_FIELDS',
+      required: 'referenceFields.fields array',
+      observed: typeof referenceFields.fields,
+    };
+  }
+  if (definitions.length === 0) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_REFERENCE_FIELDS',
+      required: 'at least one reference field',
+      observed: 0,
+    };
+  }
+
+  const fields = [];
+  const seenPaths = new Set();
+  for (const definition of definitions) {
+    const normalized = normalizePluginOwnedRowDriverReferenceField(definition);
+    if (!normalized.valid) {
+      return normalized;
+    }
+    if (seenPaths.has(normalized.normalized.path)) {
+      return {
+        valid: false,
+        normalized: null,
+        reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_REFERENCE_FIELDS',
+        required: 'unique reference field paths',
+        observed: normalized.normalized.path,
+      };
+    }
+    seenPaths.add(normalized.normalized.path);
+    fields.push(normalized.normalized);
+  }
+
+  fields.sort((left, right) => left.path.localeCompare(right.path));
+  return {
+    valid: true,
+    normalized: {
+      schemaVersion: 1,
+      fields,
+      rawValuesIncluded: false,
+    },
+  };
+}
+
+function normalizePluginOwnedRowDriverReferenceField(definition) {
+  if (!definition || typeof definition !== 'object' || Array.isArray(definition)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_REFERENCE_FIELD',
+      required: 'reference field object',
+      observed: Array.isArray(definition) ? 'array' : typeof definition,
+    };
+  }
+  const path = definition.path || definition.field || null;
+  const targetTable = definition.targetTable || definition.table || null;
+  const targetIdField = definition.targetIdField || definition.targetField || null;
+  const scalarType = definition.scalarType || definition.type || 'positive-integer';
+  if (!isReferenceFieldPath(path)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_REFERENCE_FIELD',
+      required: 'dot-separated identifier path',
+      observed: path ?? null,
+    };
+  }
+  if (!isNonEmptyString(targetTable)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_REFERENCE_FIELD',
+      required: 'targetTable',
+      observed: targetTable ?? null,
+    };
+  }
+  if (!isNonEmptyString(targetIdField)) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_INVALID_REFERENCE_FIELD',
+      required: 'targetIdField',
+      observed: targetIdField ?? null,
+    };
+  }
+  if (scalarType !== 'positive-integer') {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_FIELD_TYPE',
+      required: 'positive-integer',
+      observed: scalarType ?? null,
+    };
+  }
+  if (
+    hasOwn(definition, 'rawValuesIncluded')
+    && definition.rawValuesIncluded !== false
+  ) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_REFERENCE_FIELDS_RAW_VALUES_INCLUDED',
+      required: false,
+      observed: true,
+    };
+  }
+
+  return {
+    valid: true,
+    normalized: {
+      path,
+      targetTable,
+      targetIdField,
+      scalarType,
+      required: definition.required !== false,
+    },
+  };
+}
+
+function isReferenceFieldPath(path) {
+  return isNonEmptyString(path)
+    && path.split('.').every((segment) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(segment));
 }
 
 function isNonEmptyString(value) {

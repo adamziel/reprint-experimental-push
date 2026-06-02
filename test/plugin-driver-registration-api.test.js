@@ -365,6 +365,17 @@ reprint_push_register_plugin_owned_row_driver([
         'strategy' => 'refuse-on-conflict',
         'rawValuesIncluded' => false,
     ],
+    'referenceFields' => [
+        'rawValuesIncluded' => false,
+        'fields' => [
+            [
+                'path' => 'payload.post_id',
+                'targetTable' => 'wp_posts',
+                'targetIdField' => 'ID',
+                'required' => true,
+            ],
+        ],
+    ],
     'rowSchema' => [
         'required' => ['id', 'payload', '__pluginOwner'],
         'fields' => [
@@ -474,6 +485,19 @@ echo json_encode([
           ],
         },
       ],
+    },
+    referenceFields: {
+      schemaVersion: 1,
+      fields: [
+        {
+          path: 'payload.post_id',
+          targetTable: 'wp_posts',
+          targetIdField: 'ID',
+          scalarType: 'positive-integer',
+          required: true,
+        },
+      ],
+      rawValuesIncluded: false,
     },
   });
   assert.deepEqual(releaseStateContract, {
@@ -978,3 +1002,250 @@ $forged_schema_payload['value']['value']['payload']['private_note'] = 'schema-bo
 	  assert.equal(JSON.stringify(report).includes('schema-bound-private-forged-mode'), false);
 	  assert.equal(JSON.stringify(report).includes('schema-bound-private-payload'), false);
 	});
+
+test('registered plugin-owned row driver PHP validation accepts reference-bound evidence only when references match', () => {
+  const report = runPhpDriverProbe(`
+function rpp_reference_bound_policy(
+    string $resource_key,
+    string $table,
+    string $owner,
+    string $driver,
+    bool $supports_delete,
+    string $action,
+    $value,
+    array $reference_fields
+): array {
+    $normalized_references = reprint_push_normalize_plugin_owned_row_driver_reference_fields($reference_fields);
+    $contract_hash = reprint_push_plugin_owned_row_driver_contract_hash(
+        $resource_key,
+        $owner,
+        $driver,
+        $table,
+        $supports_delete,
+        null,
+        null,
+        $normalized_references
+    );
+    $contract = [
+        'schemaVersion' => 1,
+        'operation' => 'plugin-driver-contract-validation',
+        'contractKind' => 'plugin-owned-row-driver',
+        'contractVersion' => 1,
+        'outcome' => 'accepted',
+        'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_ACCEPTED',
+        'issueCodes' => [],
+        'issues' => [],
+        'source' => 'plugin-driver-registration-api-reference-test',
+        'evidenceScope' => 'local-focused',
+        'rawValuesIncluded' => false,
+        'resourceKey' => $resource_key,
+        'pluginOwner' => $owner,
+        'driver' => $driver,
+        'table' => $table,
+        'supportsDelete' => $supports_delete,
+        'referenceFields' => $normalized_references,
+        'contractHash' => $contract_hash,
+    ];
+    return [
+        'pluginOwner' => $owner,
+        'driver' => $driver,
+        'table' => $table,
+        'supportsDelete' => $supports_delete,
+        'contractValidationEvidence' => $contract,
+        'driverPayloadValidationEvidence' => [
+            'schemaVersion' => 1,
+            'operation' => 'plugin-driver-payload-validation',
+            'validator' => 'contract-bound-row-driver',
+            'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED',
+            'outcome' => 'accepted',
+            'issueCodes' => [],
+            'issues' => [],
+            'format' => 'hash-only',
+            'rawValuesIncluded' => false,
+            'resourceKey' => $resource_key,
+            'pluginOwner' => $owner,
+            'driver' => $driver,
+            'table' => $table,
+            'action' => $action,
+            'supportsDelete' => $supports_delete,
+            'contractSupportsDelete' => $supports_delete,
+            'contractHash' => $contract_hash,
+            'rowIdentity' => reprint_push_plugin_driver_payload_row_identity_evidence(
+                $resource_key,
+                $action,
+                ['exists' => $action !== 'delete', 'value' => $value]
+            ),
+            'referenceValidation' => reprint_push_plugin_driver_payload_reference_fields_evidence(
+                $normalized_references,
+                $action,
+                ['exists' => $action !== 'delete', 'value' => $value]
+            ),
+            'value' => [
+                'state' => $action === 'delete' ? 'absent' : 'present',
+                'hash' => $action === 'delete'
+                    ? hash('sha256', '"__REPRINT_PUSH_ABSENT__"')
+                    : hash('sha256', reprint_push_stable_json($value)),
+            ],
+            'contractValidationHash' => hash('sha256', reprint_push_stable_json($contract)),
+        ],
+    ];
+}
+reprint_push_register_plugin_owned_row_driver([
+    'driver' => 'fixture-reference-bound-driver',
+    'table' => 'wp_fixture_reference_bound_rows',
+    'pluginOwner' => 'fixture-reference-bound-plugin',
+    'supportsDelete' => false,
+    'referenceFields' => [
+        'fields' => [
+            [
+                'path' => 'payload.post_id',
+                'targetTable' => 'wp_posts',
+                'targetIdField' => 'ID',
+                'required' => true,
+            ],
+        ],
+    ],
+    'exportRowsCallback' => 'rpp_driver_api_export_rows',
+    'applyRowCallback' => 'rpp_driver_api_apply_row',
+    'validateMutationCallback' => 'rpp_driver_api_validate_mutation',
+]);
+$resource_key = 'row:["wp_fixture_reference_bound_rows","id:7"]';
+$reference_fields = [
+    'fields' => [
+        [
+            'path' => 'payload.post_id',
+            'targetTable' => 'wp_posts',
+            'targetIdField' => 'ID',
+            'required' => true,
+        ],
+    ],
+];
+$value = [
+    'id' => 7,
+    'payload' => [
+        'post_id' => 2,
+        'secret' => 'reference-bound-private-payload',
+    ],
+    '__pluginOwner' => 'fixture-reference-bound-plugin',
+];
+$snapshot = [
+    'db' => [
+        'wp_fixture_reference_bound_rows' => [
+            'id:7' => [
+                'id' => 7,
+                '__pluginOwner' => 'fixture-reference-bound-plugin',
+            ],
+        ],
+    ],
+];
+$base_mutation = [
+    'id' => 'mutation-reference-bound',
+    'resourceKey' => $resource_key,
+    'resource' => ['type' => 'row', 'table' => 'wp_fixture_reference_bound_rows', 'id' => 'id:7'],
+    'action' => 'put',
+    'value' => ['value' => $value],
+    'pluginOwnedResource' => rpp_reference_bound_policy(
+        $resource_key,
+        'wp_fixture_reference_bound_rows',
+        'fixture-reference-bound-plugin',
+        'fixture-reference-bound-driver',
+        false,
+        'put',
+        $value,
+        $reference_fields
+    ),
+];
+$missing_reference_validation = $base_mutation;
+unset($missing_reference_validation['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation']);
+$forged_reference_validation = $base_mutation;
+$forged_reference_validation['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation']['fields'][0]['targetResourceKey'] = 'row:["wp_posts","ID:3"]';
+$forged_reference_value = $base_mutation;
+$forged_reference_value['value']['value']['payload']['post_id'] = 0;
+$forged_reference_value['pluginOwnedResource'] = rpp_reference_bound_policy(
+    $resource_key,
+    'wp_fixture_reference_bound_rows',
+    'fixture-reference-bound-plugin',
+    'fixture-reference-bound-driver',
+    false,
+    'put',
+    $forged_reference_value['value']['value'],
+    $reference_fields
+);
+
+echo json_encode([
+    'accepted' => rpp_driver_api_capture(static function () use ($base_mutation, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($base_mutation, $snapshot);
+        return true;
+    }),
+    'missingReferenceValidation' => rpp_driver_api_capture(static function () use ($missing_reference_validation, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($missing_reference_validation, $snapshot);
+        return true;
+    }),
+    'forgedReferenceValidation' => rpp_driver_api_capture(static function () use ($forged_reference_validation, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($forged_reference_validation, $snapshot);
+        return true;
+    }),
+    'forgedReferenceValue' => rpp_driver_api_capture(static function () use ($forged_reference_value, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($forged_reference_value, $snapshot);
+        return true;
+    }),
+    'referenceValidation' => $base_mutation['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation'],
+    'forgedValueReferenceValidation' => $forged_reference_value['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation'],
+    'normalizedReferences' => $base_mutation['pluginOwnedResource']['contractValidationEvidence']['referenceFields'],
+]);
+`);
+
+  assert.deepEqual(report.accepted, { ok: true, value: true });
+  assert.equal(report.missingReferenceValidation.ok, false);
+  assert.equal(report.forgedReferenceValidation.ok, false);
+  assert.equal(report.forgedReferenceValue.ok, false);
+  assert.equal(
+    report.missingReferenceValidation.error.message,
+    'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
+  );
+  assert.equal(
+    report.forgedReferenceValidation.error.message,
+    'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
+  );
+  assert.equal(
+    report.forgedReferenceValue.error.message,
+    'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
+  );
+  assert.deepEqual(report.normalizedReferences, {
+    schemaVersion: 1,
+    fields: [
+      {
+        path: 'payload.post_id',
+        targetTable: 'wp_posts',
+        targetIdField: 'ID',
+        scalarType: 'positive-integer',
+        required: true,
+      },
+    ],
+    rawValuesIncluded: false,
+  });
+  assert.deepEqual(report.referenceValidation.fields[0], {
+    path: 'payload.post_id',
+    targetTable: 'wp_posts',
+    targetIdField: 'ID',
+    scalarType: 'positive-integer',
+    required: true,
+    state: 'present',
+    observedType: 'integer',
+    observedHash: digest('2'),
+    matched: true,
+    targetResourceKey: 'row:["wp_posts","ID:2"]',
+  });
+  assert.deepEqual(report.forgedValueReferenceValidation.fields[0], {
+    path: 'payload.post_id',
+    targetTable: 'wp_posts',
+    targetIdField: 'ID',
+    scalarType: 'positive-integer',
+    required: true,
+    state: 'invalid',
+    observedType: 'integer',
+    observedHash: digest('0'),
+    matched: false,
+  });
+  assert.equal(JSON.stringify(report).includes('reference-bound-private-payload'), false);
+});

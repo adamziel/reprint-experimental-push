@@ -4,6 +4,35 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Plugin Row Driver Reference Field Contracts
+
+- Last update: 2026-06-02 09:19 CEST +02:00.
+- Plugin-owned row driver contracts can now declare normalized
+  `referenceFields` for positive-integer scalar references at declared
+  dot-separated row paths. The normalized reference-field declaration is
+  included in the plugin row-driver contract hash and canonical contract
+  evidence.
+- Planner and apply now emit/recompute hash-only `referenceValidation`
+  evidence for accepted contracts. Missing required paths and invalid
+  reference values fail closed before mutation with
+  `PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_MISSING` or
+  `PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_FIELD_INVALID`.
+- PHP registered-driver snapshot export now emits normalized
+  `referenceFields`, includes them in exported contract hashes, and validates
+  exact reference-bound payload evidence for registered drivers.
+- Accepted `refuse-on-conflict` plugin row-driver contracts now also produce
+  hash-only merge-policy evidence on direct local/remote conflicts. The plan
+  remains a conflict and cannot apply; the new evidence binds the conservative
+  refusal to the accepted contract and base/local/remote hashes.
+- Verification: JS/PHP syntax checks passed; full plugin-driver contract tests
+  passed; PHP registration/snapshot parity tests passed; the adjacent
+  plugin-driver bundle passed with 95 tests/subtests and 0 failures. See
+  [ao-plugin-driver-reference-fields.md](evidence/ao-plugin-driver-reference-fields.md).
+- Caveat: this is a reference-field validator and conservative conflict
+  evidence boundary. It does not implement arbitrary plugin graph extraction,
+  plugin payload rewriting, semantic plugin merging, plugin-owned files, or
+  activation/update side-effect recovery.
+
 ## 2026-06-02 - Proven-Only Graph Identity Map Promotion
 
 - Last update: 2026-06-02 09:05 CEST +02:00.
