@@ -565,6 +565,27 @@ function pluginOwnedReferenceTargetEvidenceIssue({
   driver,
   remote,
 }) {
+  if (!hasExactKeys(carried, [
+    'schemaVersion',
+    'operation',
+    'validator',
+    'reasonCode',
+    'outcome',
+    'format',
+    'rawValuesIncluded',
+    'resourceKey',
+    'pluginOwner',
+    'driver',
+    'table',
+    'contractHash',
+    'contractValidationHash',
+    'payloadValidationHash',
+    'referenceValidationHash',
+    'referenceFieldCount',
+    'fields',
+  ])) {
+    return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_EVIDENCE_INVALID';
+  }
   if (
     carried.schemaVersion !== 1
     || carried.operation !== 'plugin-driver-reference-target-validation'
@@ -597,7 +618,9 @@ function pluginOwnedReferenceTargetEvidenceIssue({
 
   const expectedFields = pluginOwnedReferenceTargetExpectedFields(referenceValidation);
   const carriedFields = Array.isArray(carried.fields) ? carried.fields : null;
-  if (!carriedFields || carriedFields.length !== expectedFields.length) {
+  if (!carriedFields
+    || carriedFields.length !== expectedFields.length
+    || carried.referenceFieldCount !== expectedFields.length) {
     return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
   }
   for (const expectedField of expectedFields) {
@@ -608,10 +631,46 @@ function pluginOwnedReferenceTargetEvidenceIssue({
       return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
     }
     if (carriedField.targetResourceKey === null) {
-      if (carriedField.targetStable !== true || carriedField.required === true) {
+      if (!hasExactKeys(carriedField, [
+        'path',
+        'targetTable',
+        'targetIdField',
+        'scalarType',
+        'required',
+        'state',
+        'observedType',
+        'observedHash',
+        'targetResourceKey',
+        'targetStable',
+        'reasonCode',
+      ])
+        || carriedField.targetStable !== true
+        || carriedField.required === true
+        || carriedField.reasonCode !== 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_NOT_REQUIRED') {
         return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
       }
       continue;
+    }
+    if (!hasExactKeys(carriedField, [
+      'path',
+      'targetTable',
+      'targetIdField',
+      'scalarType',
+      'required',
+      'state',
+      'observedType',
+      'observedHash',
+      'targetResourceKey',
+      'targetResource',
+      'targetBaseHash',
+      'targetLocalHash',
+      'targetRemoteHash',
+      'targetRemotePresent',
+      'targetStable',
+      'reasonCode',
+      'targetChange',
+    ])) {
+      return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
     }
     if (carriedField.targetStable !== true || carriedField.targetRemotePresent !== true) {
       return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_UNPROVEN';
@@ -619,6 +678,9 @@ function pluginOwnedReferenceTargetEvidenceIssue({
     const targetResource = parseWordPressGraphRowResourceKey(carriedField.targetResourceKey);
     if (!targetResource) {
       return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_UNPARSEABLE';
+    }
+    if (!referenceTargetResourceEvidenceMatches(carriedField.targetResource, targetResource)) {
+      return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
     }
     const actualRemoteHash = resourceHash(remote, {
       type: 'row',
@@ -629,9 +691,48 @@ function pluginOwnedReferenceTargetEvidenceIssue({
     if (actualRemoteHash !== carriedField.targetRemoteHash) {
       return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_MISMATCH';
     }
+    if (!referenceTargetChangeEvidenceMatches(carriedField.targetChange, actualRemoteHash)) {
+      return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
+    }
   }
 
   return null;
+}
+
+function hasExactKeys(value, keys) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+  const actual = Object.keys(value).sort();
+  const expected = [...keys].sort();
+  return actual.length === expected.length
+    && actual.every((key, index) => key === expected[index]);
+}
+
+function referenceTargetResourceEvidenceMatches(evidence, targetResource) {
+  return hasExactKeys(evidence, ['type', 'key', 'table', 'id'])
+    && evidence.type === 'row'
+    && evidence.key === targetResource.key
+    && evidence.table === targetResource.table
+    && evidence.id === targetResource.id;
+}
+
+function referenceTargetChangeEvidenceMatches(evidence, actualRemoteHash) {
+  if (!hasExactKeys(evidence, ['localChange', 'remoteChange', 'base', 'local', 'remote'])
+    || typeof evidence.localChange !== 'string'
+    || typeof evidence.remoteChange !== 'string') {
+    return false;
+  }
+  for (const key of ['base', 'local', 'remote']) {
+    const value = evidence[key];
+    if (!hasExactKeys(value, ['state', 'hash'])
+      || !['present', 'absent'].includes(value.state)
+      || !SHA256_HEX_PATTERN.test(value.hash || '')) {
+      return false;
+    }
+  }
+  return evidence.remote.state === 'present'
+    && evidence.remote.hash === actualRemoteHash;
 }
 
 function pluginOwnedReferenceTargetExpectedFields(referenceValidation) {

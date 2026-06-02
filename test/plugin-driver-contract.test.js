@@ -866,6 +866,100 @@ test('reference-bound custom row driver revalidates target rows at apply time', 
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
+test('apply refuses surplus reference target evidence before mutation', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const rawSentinel = 'reference-target-surplus-raw-secret';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-reference-surplus-target', secret: 'base-reference-surplus-target-secret', post_id: 2 },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  addStablePost(base, 2, 'base reference surplus target');
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-reference-surplus-target';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-reference-surplus-target-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(referenceBoundCustomTableContract()),
+  };
+  const remote = cloneJson(base);
+  const plan = planFor(base, local, remote);
+
+  for (const variant of [
+    {
+      label: 'top-level',
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_EVIDENCE_INVALID',
+      mutate(mutation) {
+        mutation.pluginOwnedResource.referenceTargetValidationEvidence.unexpectedRawPayload = rawSentinel;
+      },
+    },
+    {
+      label: 'field',
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH',
+      mutate(mutation) {
+        mutation.pluginOwnedResource.referenceTargetValidationEvidence.fields[0].unexpectedRawPayload = rawSentinel;
+      },
+    },
+    {
+      label: 'field-count',
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH',
+      mutate(mutation) {
+        mutation.pluginOwnedResource.referenceTargetValidationEvidence.referenceFieldCount = 99;
+      },
+    },
+    {
+      label: 'targetChange',
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH',
+      mutate(mutation) {
+        mutation.pluginOwnedResource.referenceTargetValidationEvidence.fields[0].targetChange.remote.unexpectedRawPayload = rawSentinel;
+      },
+    },
+  ]) {
+    const remoteForVariant = cloneJson(remote);
+    const remoteBefore = JSON.stringify(remoteForVariant);
+    const forgedPlan = cloneJson(plan);
+    const mutation = mutationFor(forgedPlan, resourceKey);
+    variant.mutate(mutation);
+
+    let error;
+    try {
+      applyPlan(remoteForVariant, forgedPlan);
+    } catch (caught) {
+      error = caught;
+    }
+
+    assert.equal(plan.status, 'ready', variant.label);
+    assert.equal(error?.code, 'INVALID_PLUGIN_DRIVER_REFERENCE_TARGET', variant.label);
+    assert.equal(error.details.reasonCode, variant.reasonCode, variant.label);
+    assert.equal(error.details.resourceKey, resourceKey, variant.label);
+    assert.equal(error.details.pluginOwner, 'forms', variant.label);
+    assert.equal(error.details.driver, 'forms-contract-row', variant.label);
+    assert.equal(
+      error.details.applyValidationEvidence.referenceTargetValidationEvidence.reasonCode,
+      variant.reasonCode,
+      variant.label,
+    );
+    assert.equal(
+      error.details.applyValidationEvidence.referenceTargetValidationEvidence.outcome,
+      'refused-before-mutation',
+      variant.label,
+    );
+    assert.equal(
+      error.details.applyValidationEvidence.referenceTargetValidationEvidence.rawValuesIncluded,
+      false,
+      variant.label,
+    );
+    assert.equal(JSON.stringify(error.details).includes(rawSentinel), false, variant.label);
+    assert.equal(JSON.stringify(error.details).includes('base-reference-surplus-target-secret'), false, variant.label);
+    assert.equal(JSON.stringify(error.details).includes('local-reference-surplus-target-secret'), false, variant.label);
+    assert.equal(JSON.stringify(remoteForVariant), remoteBefore, variant.label);
+  }
+});
+
 test('reference-bound custom row driver blocks identity-mapped source targets until rewritten', () => {
   const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
   const sourcePostKey = 'row:["wp_posts","ID:2"]';
