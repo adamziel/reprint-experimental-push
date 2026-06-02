@@ -699,12 +699,16 @@ function reprint_push_normalize_wordpress_graph_identity_map_row($entry): array
         throw new RuntimeException('Unsupported WordPress graph identity map row.');
     }
 
+    $declares_contract = array_key_exists('contractVersion', $entry)
+        || array_key_exists('schemaVersion', $entry)
+        || array_key_exists('contractKind', $entry)
+        || array_key_exists('kind', $entry);
     $provided_version = $entry['contractVersion'] ?? $entry['schemaVersion'] ?? null;
     if ($provided_version !== null && (int) $provided_version !== REPRINT_PUSH_WORDPRESS_GRAPH_CONTRACT_SCHEMA_VERSION) {
         throw new RuntimeException('Unsupported WordPress graph identity map contract version.');
     }
     $provided_kind = $entry['contractKind'] ?? $entry['kind'] ?? null;
-    if ($provided_kind !== null && (string) $provided_kind !== REPRINT_PUSH_WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND) {
+    if ($declares_contract && ($provided_kind === null || (string) $provided_kind !== REPRINT_PUSH_WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND)) {
         throw new RuntimeException('Unsupported WordPress graph identity map contract kind.');
     }
     if (array_key_exists('rawValuesIncluded', $entry) && $entry['rawValuesIncluded'] !== false) {

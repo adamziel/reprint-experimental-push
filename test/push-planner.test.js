@@ -6745,6 +6745,114 @@ test('raw-value explicit WordPress graph identity-map contract fails closed befo
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
+test('malformed explicit WordPress graph identity-map contract rows fail closed before mutation', () => {
+  const changedPostResourceKey = 'row:["wp_posts","ID:2301"]';
+  const remoteTargetResourceKey = 'row:["wp_posts","ID:3301"]';
+  const cases = [
+    {
+      name: 'missing target resource',
+      row: {
+        contractVersion: 1,
+        contractKind: 'wordpress-graph-identity-map',
+        sourceResourceKey: changedPostResourceKey,
+      },
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_MISSING_TARGET_RESOURCE',
+      expectedSourceResourceKey: changedPostResourceKey,
+      expectedTargetResourceKey: null,
+      privateTitle: 'graph-contract-missing-target-private-title',
+    },
+    {
+      name: 'malformed source resource',
+      row: {
+        contractVersion: 1,
+        contractKind: 'wordpress-graph-identity-map',
+        sourceResourceKey: 'post:2301',
+        targetResourceKey: remoteTargetResourceKey,
+      },
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_MISSING_SOURCE_RESOURCE',
+      expectedSourceResourceKey: 'post:2301',
+      expectedTargetResourceKey: remoteTargetResourceKey,
+      privateTitle: 'graph-contract-malformed-source-private-title',
+    },
+    {
+      name: 'self map',
+      row: {
+        contractVersion: 1,
+        contractKind: 'wordpress-graph-identity-map',
+        sourceResourceKey: changedPostResourceKey,
+        targetResourceKey: changedPostResourceKey,
+      },
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_SELF_MAPPING',
+      expectedSourceResourceKey: changedPostResourceKey,
+      expectedTargetResourceKey: changedPostResourceKey,
+      privateTitle: 'graph-contract-self-map-private-title',
+    },
+    {
+      name: 'missing kind',
+      row: {
+        contractVersion: 1,
+        sourceResourceKey: changedPostResourceKey,
+        targetResourceKey: remoteTargetResourceKey,
+      },
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_MISSING_KIND',
+      expectedSourceResourceKey: changedPostResourceKey,
+      expectedTargetResourceKey: remoteTargetResourceKey,
+      privateTitle: 'graph-contract-missing-kind-private-title',
+    },
+  ];
+
+  for (const testCase of cases) {
+    const base = baseSite();
+    const local = cloneJson(base);
+    const remote = cloneJson(base);
+    local.meta = {
+      wordpressGraphIdentityMap: {
+        rows: [testCase.row],
+      },
+    };
+    local.db.wp_posts['ID:2301'] = {
+      ID: 2301,
+      post_title: testCase.privateTitle,
+      post_name: `graph-contract-${testCase.name.replaceAll(' ', '-')}`,
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 0,
+      post_author: 0,
+    };
+    remote.db.wp_posts['ID:3301'] = {
+      ID: 3301,
+      post_title: testCase.privateTitle,
+      post_name: `graph-contract-${testCase.name.replaceAll(' ', '-')}`,
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 0,
+      post_author: 0,
+    };
+    const remoteBefore = JSON.stringify(remote);
+
+    const plan = planFor(base, local, remote);
+    const blocker = plan.blockers.find((entry) => entry.reasonCode === testCase.reasonCode);
+    const evidence = blocker?.contractValidationEvidence;
+    const planJson = JSON.stringify(plan);
+
+    assert.equal(plan.status, 'blocked', testCase.name);
+    assert.equal(plan.mutations.length, 0, testCase.name);
+    assert.equal(mutationFor(plan, changedPostResourceKey), undefined, testCase.name);
+    assert.ok(blocker, testCase.name);
+    assert.equal(blocker.class, 'stale-wordpress-graph-identity', testCase.name);
+    assert.match(blocker.reason, /invalid explicit graph identity-map contract/, testCase.name);
+    assert.equal(evidence.outcome, 'refused-before-mutation', testCase.name);
+    assert.equal(evidence.reasonCode, testCase.reasonCode, testCase.name);
+    assert.ok(evidence.issueCodes.includes(testCase.reasonCode), testCase.name);
+    assert.equal(evidence.rawValuesIncluded, false, testCase.name);
+    assert.equal(evidence.sourceResourceKey, testCase.expectedSourceResourceKey, testCase.name);
+    assert.equal(evidence.targetResourceKey, testCase.expectedTargetResourceKey, testCase.name);
+    assert.equal(planJson.includes(testCase.privateTitle), false, testCase.name);
+    assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/, testCase.name);
+    assert.equal(JSON.stringify(remote), remoteBefore, testCase.name);
+  }
+});
+
 test('RPP-0306 proves stable comment parent thread targets before planning child replies', () => {
   const parentCommentResourceKey = 'row:["wp_comments","comment_ID:31"]';
   const childCommentResourceKey = 'row:["wp_comments","comment_ID:32"]';

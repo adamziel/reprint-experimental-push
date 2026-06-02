@@ -275,12 +275,15 @@ export function normalizeWordPressGraphIdentityMapContract(entry, {
     return { explicit: false, valid: true, evidence: null };
   }
 
+  const nestedContract = entry.contract && typeof entry.contract === 'object' && !Array.isArray(entry.contract)
+    ? entry.contract
+    : null;
   const explicit = hasOwn(entry, 'contractVersion')
     || hasOwn(entry, 'schemaVersion')
     || hasOwn(entry, 'contractKind')
     || entry.kind === WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND
-    || entry.contract?.kind === WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND
-    || hasOwn(entry.contract || {}, 'schemaVersion');
+    || nestedContract?.kind === WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND
+    || hasOwn(nestedContract || {}, 'schemaVersion');
 
   if (!explicit) {
     return { explicit: false, valid: true, evidence: null };
@@ -288,12 +291,12 @@ export function normalizeWordPressGraphIdentityMapContract(entry, {
 
   const contractVersion = entry.contractVersion
     ?? entry.schemaVersion
-    ?? entry.contract?.schemaVersion
+    ?? nestedContract?.schemaVersion
     ?? null;
   const contractKind = entry.contractKind
     ?? entry.kind
-    ?? entry.contract?.kind
-    ?? WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND;
+    ?? nestedContract?.kind
+    ?? null;
   const sourceResourceKey = sourceResource?.key
     || entry.sourceResourceKey
     || entry.localResourceKey
@@ -314,7 +317,14 @@ export function normalizeWordPressGraphIdentityMapContract(entry, {
       observed: contractVersion ?? null,
     });
   }
-  if (contractKind !== WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND) {
+  if (!isNonEmptyString(contractKind)) {
+    issues.push({
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_MISSING_KIND',
+      field: 'contractKind',
+      required: WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND,
+      observed: contractKind ?? null,
+    });
+  } else if (contractKind !== WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_KIND) {
     issues.push({
       reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_UNSUPPORTED_KIND',
       field: 'contractKind',
@@ -328,6 +338,14 @@ export function normalizeWordPressGraphIdentityMapContract(entry, {
       field: 'rawValuesIncluded',
       required: false,
       observed: entry.rawValuesIncluded,
+    });
+  }
+  if (hasOwn(nestedContract, 'rawValuesIncluded') && nestedContract.rawValuesIncluded !== false) {
+    issues.push({
+      reasonCode: 'WORDPRESS_GRAPH_IDENTITY_MAP_CONTRACT_RAW_VALUES_INCLUDED',
+      field: 'contract.rawValuesIncluded',
+      required: false,
+      observed: nestedContract.rawValuesIncluded,
     });
   }
   if (!sourceResource || sourceResource.type !== 'row') {
@@ -372,8 +390,8 @@ export function normalizeWordPressGraphIdentityMapContract(entry, {
       issues,
       source,
       rawValuesIncluded: false,
-      sourceResourceKey: sourceResource?.key || null,
-      targetResourceKey: targetResource?.key || null,
+      sourceResourceKey: sourceResourceKey || null,
+      targetResourceKey: targetResourceKey || null,
       sourceTable: sourceResource?.table || null,
       targetTable: targetResource?.table || null,
       sourceId: sourceResource?.id || null,
@@ -411,4 +429,8 @@ function graphRelationshipContract({
 
 function hasOwn(value, key) {
   return value && Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
 }

@@ -432,6 +432,13 @@ echo json_encode([
                 'contractKind' => 'wrong-contract',
             ],
         ]),
+        'missingKind' => rpp_graph_identity_capture([
+            [
+                'sourceResourceKey' => 'row:["wp_posts","ID:2001"]',
+                'targetResourceKey' => 'row:["wp_posts","ID:3001"]',
+                'contractVersion' => 1,
+            ],
+        ]),
         'rawValues' => rpp_graph_identity_capture([
             [
                 'sourceResourceKey' => 'row:["wp_posts","ID:2001"]',
@@ -592,6 +599,7 @@ test('snapshot library exports only explicit WordPress graph identity-map contra
     {
       unsupportedVersion: false,
       unsupportedKind: false,
+      missingKind: false,
       rawValues: false,
       selfMap: false,
       crossSurface: false,

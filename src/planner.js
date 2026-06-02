@@ -135,6 +135,24 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
       continue;
     }
 
+    const invalidGraphIdentityMapContract = wordpressGraphGlobalInvalidIdentityMapContractSupport(
+      wordpressGraphIdentityMap,
+      sourceResource,
+    );
+    if (sourceLocalHash !== sourceBaseHash && invalidGraphIdentityMapContract) {
+      addWordPressGraphIdentityBlocker(plan, {
+        resource: sourceResource,
+        support: invalidGraphIdentityMapContract,
+        baseValue: sourceBaseValue,
+        localValue: sourceLocalValue,
+        remoteValue: sourceRemoteValue,
+        baseHash: sourceBaseHash,
+        localHash: sourceLocalHash,
+        remoteHash: sourceRemoteHash,
+      });
+      continue;
+    }
+
     const graphIdentityCollision = wordpressGraphIdentityMap.collisionsByResourceKey.get(sourceResource.key);
     if (sourceLocalHash !== sourceBaseHash && graphIdentityCollision) {
       addWordPressGraphIdentityBlocker(plan, {
@@ -1837,6 +1855,7 @@ function buildWordPressGraphIdentityMap({ base, local, remote }) {
     bySourceKey: new Map(),
     byTargetKey: new Map(),
     collisionsByResourceKey: new Map(),
+    invalidContractSupports: [],
   };
 
   const entries = [
@@ -1844,15 +1863,18 @@ function buildWordPressGraphIdentityMap({ base, local, remote }) {
     ...wordpressGraphIdentityMapEntriesFromSnapshot(local, 'local-snapshot.meta'),
     ...wordpressGraphIdentityMapEntriesFromSnapshot(remote, 'remote-snapshot.meta'),
   ];
-  const sourceCounts = countBy(entries, (entry) => entry.sourceResource.key);
-  const targetCounts = countBy(entries, (entry) => entry.targetResource.key);
-  for (const entry of entries) {
+  const countableEntries = entries.filter((entry) => entry.sourceResource?.key && entry.targetResource?.key);
+  const sourceCounts = countBy(countableEntries, (entry) => entry.sourceResource.key);
+  const targetCounts = countBy(countableEntries, (entry) => entry.targetResource.key);
+  for (const entry of countableEntries) {
     identityMap.bySourceKey.set(entry.sourceResource.key, entry);
   }
   identityMap.byTargetKey = new Map();
 
   for (const entry of entries) {
-    const duplicateSupport = duplicateWordPressGraphIdentityMapSupport(entry, sourceCounts, targetCounts);
+    const duplicateSupport = isRefusedWordPressGraphIdentityMapContract(entry)
+      ? null
+      : duplicateWordPressGraphIdentityMapSupport(entry, sourceCounts, targetCounts);
     const support = duplicateSupport || validateWordPressGraphIdentityMapEntry(entry, {
       base,
       local,
@@ -1863,15 +1885,23 @@ function buildWordPressGraphIdentityMap({ base, local, remote }) {
       ...entry,
       usable: support.supported,
       support,
-      sourceBaseHash: resourceHash(base, entry.sourceResource),
-      sourceLocalHash: resourceHash(local, entry.sourceResource),
-      sourceRemoteHash: resourceHash(remote, entry.sourceResource),
-      targetBaseHash: resourceHash(base, entry.targetResource),
-      targetLocalHash: resourceHash(local, entry.targetResource),
-      targetRemoteHash: resourceHash(remote, entry.targetResource),
+      sourceBaseHash: entry.sourceResource ? resourceHash(base, entry.sourceResource) : null,
+      sourceLocalHash: entry.sourceResource ? resourceHash(local, entry.sourceResource) : null,
+      sourceRemoteHash: entry.sourceResource ? resourceHash(remote, entry.sourceResource) : null,
+      targetBaseHash: entry.targetResource ? resourceHash(base, entry.targetResource) : null,
+      targetLocalHash: entry.targetResource ? resourceHash(local, entry.targetResource) : null,
+      targetRemoteHash: entry.targetResource ? resourceHash(remote, entry.targetResource) : null,
     };
     identityMap.entries.push(mapping);
-    identityMap.bySourceKey.set(mapping.sourceResource.key, mapping);
+    if (isRefusedWordPressGraphIdentityMapContract(mapping)) {
+      identityMap.invalidContractSupports.push(mapping.support);
+    }
+    if (mapping.sourceResource?.key) {
+      identityMap.bySourceKey.set(mapping.sourceResource.key, mapping);
+    }
+    if (!mapping.targetResource?.key) {
+      continue;
+    }
     if (!identityMap.byTargetKey.has(mapping.targetResource.key)) {
       identityMap.byTargetKey.set(mapping.targetResource.key, []);
     }
@@ -1961,6 +1991,11 @@ function normalizeWordPressGraphIdentityMapEntry(entry, source) {
     entry.table || entry.targetTable || entry.remoteTable || entry.toTable,
     entry.remoteId || entry.targetId || entry.toId,
   );
+  const contract = normalizeWordPressGraphIdentityMapContract(entry, {
+    source,
+    sourceResource,
+    targetResource,
+  });
   if (
     !sourceResource
     || !targetResource
@@ -1968,6 +2003,14 @@ function normalizeWordPressGraphIdentityMapEntry(entry, source) {
     || targetResource.type !== 'row'
     || sourceResource.key === targetResource.key
   ) {
+    if (contract.explicit) {
+      return {
+        source,
+        sourceResource,
+        targetResource,
+        contractValidationEvidence: contract.evidence,
+      };
+    }
     return null;
   }
   const sourcePrimaryValue = wordpressGraphResourcePrimaryInteger(sourceResource);
@@ -1975,11 +2018,6 @@ function normalizeWordPressGraphIdentityMapEntry(entry, source) {
   if (sourcePrimaryValue == null || targetPrimaryValue == null) {
     return null;
   }
-  const contract = normalizeWordPressGraphIdentityMapContract(entry, {
-    source,
-    sourceResource,
-    targetResource,
-  });
   return {
     source,
     sourceResource,
@@ -2065,8 +2103,12 @@ function duplicateWordPressGraphIdentityMapSupport(entry, sourceCounts, targetCo
   };
 }
 
+function isRefusedWordPressGraphIdentityMapContract(entry) {
+  return entry.contractValidationEvidence?.outcome === 'refused-before-mutation';
+}
+
 function validateWordPressGraphIdentityMapEntry(entry, { base, local, remote, identityMap }) {
-  if (entry.contractValidationEvidence?.outcome === 'refused-before-mutation') {
+  if (isRefusedWordPressGraphIdentityMapContract(entry)) {
     return wordpressGraphIdentityMapUnsupported(
       entry,
       'declares an invalid explicit graph identity-map contract',
@@ -2129,7 +2171,7 @@ function wordpressGraphIdentityMapUnsupported(entry, reason, extra = {}) {
     ...(extra.contractValidationEvidence
       ? { contractValidationEvidence: extra.contractValidationEvidence }
       : {}),
-    reason: `WordPress graph identity map for ${entry.sourceResource.key} ${reason}.`,
+    reason: `WordPress graph identity map ${wordpressGraphIdentityMapEntryLabel(entry)} ${reason}.`,
     references: [
       wordpressGraphIdentityMapReferenceEvidence(entry, {
         className: 'unsupported-wordpress-graph-identity-map',
@@ -2142,14 +2184,18 @@ function wordpressGraphIdentityMapUnsupported(entry, reason, extra = {}) {
   };
 }
 
+function wordpressGraphIdentityMapEntryLabel(entry) {
+  return entry.sourceResource?.key ? `for ${entry.sourceResource.key}` : `at ${entry.source}`;
+}
+
 function wordpressGraphIdentityMapReferenceEvidence(entry, extra = {}) {
   return {
     relationshipKey: 'wordpress-identity-map.target',
     relationshipType: 'identity-map-target',
-    sourceResourceKey: entry.sourceResource.key,
-    targetResourceKey: entry.targetResource.key,
-    targetTable: entry.targetResource.table,
-    targetId: entry.targetResource.id,
+    sourceResourceKey: entry.sourceResource?.key || entry.contractValidationEvidence?.sourceResourceKey || null,
+    targetResourceKey: entry.targetResource?.key || entry.contractValidationEvidence?.targetResourceKey || null,
+    targetTable: entry.targetResource?.table || entry.contractValidationEvidence?.targetTable || null,
+    targetId: entry.targetResource?.id || entry.contractValidationEvidence?.targetId || null,
     identityMapSource: entry.source,
     ...extra,
   };
@@ -2412,6 +2458,10 @@ function wordpressGraphResourceSupport({
   if (mappedIdentity && !mappedIdentity.usable) {
     return mappedIdentity.support;
   }
+  const invalidIdentityMapContract = wordpressGraphGlobalInvalidIdentityMapContractSupport(identityMap, resource);
+  if (invalidIdentityMapContract) {
+    return invalidIdentityMapContract;
+  }
 
   const surfaceSupport = wordpressGraphSurfaceSupport(resource, localValue);
   if (!surfaceSupport.supported) {
@@ -2448,6 +2498,17 @@ function wordpressGraphResourceSupport({
     reason: `WordPress graph mutation ${resource.key} references graph identities without proven identity mapping or reference rewriting.`,
     references: unsafeReferences,
   };
+}
+
+function wordpressGraphGlobalInvalidIdentityMapContractSupport(identityMap, resource) {
+  if (
+    !identityMap?.invalidContractSupports?.length
+    || resource.type !== 'row'
+    || !wordpressGraphTableSuffix(resource.table)
+  ) {
+    return null;
+  }
+  return identityMap.invalidContractSupports[0];
 }
 
 function wordpressGraphSurfaceSupport(resource, value) {
