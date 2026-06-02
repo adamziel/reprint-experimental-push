@@ -1194,6 +1194,35 @@ function rpp_reference_target_evidence(
         $target_current = reprint_push_get_resource($snapshot, $target_resource);
         $target_hash = reprint_push_hash_resource($snapshot, $target_resource);
         $target_present = ($target_current['exists'] ?? false) === true;
+        $target_id_field = $field['targetIdField'] ?? null;
+        $target_primary_id = null;
+        if (is_string($target_id_field)
+            && preg_match('/^' . preg_quote($target_id_field, '/') . ':([1-9][0-9]*)$/', $target_id, $matches)) {
+            $target_primary_id = (int) $matches[1];
+        }
+        $target_value = $target_current['value'] ?? null;
+        $observed_exists = is_array($target_value)
+            && !array_is_list($target_value)
+            && is_string($target_id_field)
+            && array_key_exists($target_id_field, $target_value);
+        $observed = $observed_exists ? $target_value[$target_id_field] : null;
+        $observed_primary_id = $observed_exists
+            ? reprint_push_normalize_plugin_driver_reference_positive_integer($observed)
+            : null;
+        $target_primary_row = [
+            'targetIdField' => is_string($target_id_field) ? $target_id_field : null,
+            'expectedHash' => $target_primary_id === null
+                ? null
+                : hash('sha256', reprint_push_stable_json((string) $target_primary_id)),
+            'observedType' => $observed_exists
+                ? reprint_push_plugin_driver_payload_row_schema_value_type($observed)
+                : null,
+            'observedHash' => $observed_exists
+                ? hash('sha256', reprint_push_stable_json((string) $observed))
+                : null,
+            'matched' => $target_primary_id !== null && $observed_primary_id === $target_primary_id,
+        ];
+        $target_stable = $target_present && $target_primary_row['matched'];
         $fields[] = array_merge($target_field, [
             'targetResource' => [
                 'type' => 'row',
@@ -1201,14 +1230,17 @@ function rpp_reference_target_evidence(
                 'table' => $target_table,
                 'id' => $target_id,
             ],
+            'targetPrimaryRow' => $target_primary_row,
             'targetBaseHash' => $target_hash,
             'targetLocalHash' => $target_hash,
             'targetRemoteHash' => $target_hash,
             'targetRemotePresent' => $target_present,
-            'targetStable' => $target_present,
-            'reasonCode' => $target_present
+            'targetStable' => $target_stable,
+            'reasonCode' => $target_stable
                 ? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ACCEPTED'
-                : 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT',
+                : ($target_present
+                    ? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ROW_ID_MISMATCH'
+                    : 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT'),
             'targetChange' => [
                 'localChange' => 'unchanged',
                 'remoteChange' => 'unchanged',
@@ -1218,12 +1250,19 @@ function rpp_reference_target_evidence(
             ],
         ]);
     }
+    $failed_fields = array_filter($fields, static function (array $field): bool {
+        return ($field['targetStable'] ?? false) !== true;
+    });
+    $accepted = count($failed_fields) === 0;
+    $first_failed_field = $accepted ? null : array_values($failed_fields)[0];
     return [
         'schemaVersion' => 1,
         'operation' => 'plugin-driver-reference-target-validation',
         'validator' => 'contract-bound-row-driver-reference-targets',
-        'reasonCode' => 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED',
-        'outcome' => 'accepted',
+        'reasonCode' => $accepted
+            ? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED'
+            : ($first_failed_field['reasonCode'] ?? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_UNPROVEN'),
+        'outcome' => $accepted ? 'accepted' : 'refused-before-mutation',
         'format' => 'hash-only',
         'rawValuesIncluded' => false,
         'resourceKey' => $resource_key,
@@ -1359,6 +1398,20 @@ $surplus_reference_target_change = $base_mutation;
 $surplus_reference_target_change['pluginOwnedResource']['referenceTargetValidationEvidence']['fields'][0]['targetChange']['remote']['unexpectedRawPayload'] = 'reference-bound-private-payload';
 $drifted_reference_target_snapshot = $snapshot;
 $drifted_reference_target_snapshot['db']['wp_posts']['ID:2']['post_title'] = 'reference target changed after dry run';
+$malformed_reference_target_snapshot = $snapshot;
+$malformed_reference_target_snapshot['db']['wp_posts']['ID:2']['ID'] = 999;
+$malformed_reference_target_validation = $base_mutation;
+$malformed_reference_target_validation['pluginOwnedResource'] = rpp_reference_bound_policy(
+    $resource_key,
+    'wp_fixture_reference_bound_rows',
+    'fixture-reference-bound-plugin',
+    'fixture-reference-bound-driver',
+    false,
+    'put',
+    $value,
+    $reference_fields,
+    $malformed_reference_target_snapshot
+);
 $missing_reference_validation = $base_mutation;
 unset($missing_reference_validation['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation']);
 $forged_reference_validation = $base_mutation;
@@ -1410,6 +1463,10 @@ echo json_encode([
         reprint_push_assert_supported_plugin_owned_mutation($base_mutation, $drifted_reference_target_snapshot);
         return true;
     }),
+    'malformedReferenceTargetValidation' => rpp_driver_api_capture(static function () use ($malformed_reference_target_validation, $malformed_reference_target_snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($malformed_reference_target_validation, $malformed_reference_target_snapshot);
+        return true;
+    }),
     'missingReferenceValidation' => rpp_driver_api_capture(static function () use ($missing_reference_validation, $snapshot): bool {
         reprint_push_assert_supported_plugin_owned_mutation($missing_reference_validation, $snapshot);
         return true;
@@ -1424,6 +1481,7 @@ echo json_encode([
     }),
     'referenceValidation' => $base_mutation['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation'],
     'referenceTargetValidation' => $base_mutation['pluginOwnedResource']['referenceTargetValidationEvidence'],
+    'malformedReferenceTargetValidationEvidence' => $malformed_reference_target_validation['pluginOwnedResource']['referenceTargetValidationEvidence'],
     'optionalReferenceValidation' => $optional_missing_reference_mutation['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation'],
     'optionalReferenceTargetValidation' => $optional_missing_reference_mutation['pluginOwnedResource']['referenceTargetValidationEvidence'],
     'forgedValueReferenceValidation' => $forged_reference_value['pluginOwnedResource']['driverPayloadValidationEvidence']['referenceValidation'],
@@ -1440,6 +1498,7 @@ echo json_encode([
   assert.equal(report.surplusReferenceTargetField.ok, false);
   assert.equal(report.surplusReferenceTargetChange.ok, false);
   assert.equal(report.driftedReferenceTargetValidation.ok, false);
+  assert.equal(report.malformedReferenceTargetValidation.ok, false);
   assert.equal(report.missingReferenceValidation.ok, false);
   assert.equal(report.forgedReferenceValidation.ok, false);
   assert.equal(report.forgedReferenceValue.ok, false);
@@ -1465,6 +1524,10 @@ echo json_encode([
   );
   assert.equal(
     report.driftedReferenceTargetValidation.error.message,
+    'Unsupported plugin-owned mutation reference target evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
+  );
+  assert.equal(
+    report.malformedReferenceTargetValidation.error.message,
     'Unsupported plugin-owned mutation reference target evidence for row:["wp_fixture_reference_bound_rows","id:7"]',
   );
   assert.equal(
@@ -1534,6 +1597,13 @@ echo json_encode([
   assert.equal(report.referenceTargetValidation.fields[0].targetResourceKey, 'row:["wp_posts","ID:2"]');
   assert.equal(report.referenceTargetValidation.fields[0].targetRemotePresent, true);
   assert.equal(report.referenceTargetValidation.fields[0].targetStable, true);
+  assert.deepEqual(report.referenceTargetValidation.fields[0].targetPrimaryRow, {
+    targetIdField: 'ID',
+    expectedHash: digest('2'),
+    observedType: 'integer',
+    observedHash: digest('2'),
+    matched: true,
+  });
   assert.equal(report.referenceTargetValidation.fields[0].targetRemoteHash, digest({
     ID: 2,
     post_status: 'publish',
@@ -1570,6 +1640,19 @@ echo json_encode([
         post_type: 'post',
       }),
     },
+  });
+  assert.equal(
+    report.malformedReferenceTargetValidationEvidence.reasonCode,
+    'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ROW_ID_MISMATCH',
+  );
+  assert.equal(report.malformedReferenceTargetValidationEvidence.outcome, 'refused-before-mutation');
+  assert.equal(report.malformedReferenceTargetValidationEvidence.fields[0].targetStable, false);
+  assert.deepEqual(report.malformedReferenceTargetValidationEvidence.fields[0].targetPrimaryRow, {
+    targetIdField: 'ID',
+    expectedHash: digest('2'),
+    observedType: 'integer',
+    observedHash: digest('999'),
+    matched: false,
   });
   assert.equal(report.optionalReferenceTargetValidation.reasonCode, 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGETS_ACCEPTED');
   assert.equal(report.optionalReferenceTargetValidation.outcome, 'accepted');

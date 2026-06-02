@@ -518,12 +518,12 @@ function normalizePluginOwnedRowDriverReferenceField(definition) {
   };
 }
 
-function pluginDriverReferenceTargetPrimaryIdField(table) {
+export function pluginDriverReferenceTargetPrimaryIdField(table) {
   const suffix = pluginDriverReferenceTargetTableSuffix(table);
   return suffix ? PLUGIN_DRIVER_REFERENCE_TARGET_PRIMARY_ID_FIELDS[suffix] : null;
 }
 
-function pluginDriverReferenceTargetTableSuffix(table) {
+export function pluginDriverReferenceTargetTableSuffix(table) {
   if (!isNonEmptyString(table)) {
     return null;
   }

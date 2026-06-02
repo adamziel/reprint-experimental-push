@@ -273,10 +273,19 @@ primary-row target constraint:
 ```
 
 This is a validator boundary, not a generic plugin graph rewriter. It proves
-declared reference fields are shaped and hash-bound before mutation; production
-graph rewrites for arbitrary plugin payloads still need explicit extractor and
-rewriter contracts. Plugin-owned reference fields cannot point at arbitrary
-plugin or custom tables merely because a target row exists and is hash-stable.
+declared reference fields are shaped and hash-bound before mutation. The
+separate `referenceTargetValidationEvidence` proof must also show each target
+row is present, hash-stable against the live remote graph, and internally
+consistent with its primary row key. For example, a reference to
+`row:["wp_posts","ID:2"]` is refused unless the live target row body has an
+`ID` value that normalizes to `2`; a hash-stable row stored under `ID:2` with
+body `ID:999` fails closed with
+`PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ROW_ID_MISMATCH`.
+
+Production graph rewrites for arbitrary plugin payloads still need explicit
+extractor and rewriter contracts. Plugin-owned reference fields cannot point at
+arbitrary plugin or custom tables merely because a target row exists and is
+hash-stable.
 
 Legacy fixture allowlists still work for focused tests, but generic production
 custom row drivers need the explicit contract path before the executor will

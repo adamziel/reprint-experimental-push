@@ -13,6 +13,7 @@ import {
   PLUGIN_DRIVER_CONTRACT_KIND,
   PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
   PLUGIN_DRIVER_REFUSE_ON_CONFLICT_MERGE_POLICY,
+  pluginDriverReferenceTargetPrimaryIdField,
   normalizePluginOwnedRowDriverContract,
   pluginOwnedRowDriverContractValidationEvidenceHash,
   pluginOwnedRowDriverContractValidationEvidenceMatches,
@@ -3951,12 +3952,15 @@ function pluginOwnedReferenceTargetFieldEvidence({
   const targetLocalHash = resourceHash(local, targetResource);
   const targetRemoteHash = resourceHash(remote, targetResource);
   const targetRemotePresent = remoteValue !== ABSENT;
+  const targetPrimaryRow = pluginOwnedReferenceTargetPrimaryRowEvidence(targetResource, remoteValue);
   const targetStable = targetRemotePresent
+    && targetPrimaryRow.matched === true
     && (targetRemoteHash === targetBaseHash || targetLocalHash === targetRemoteHash);
 
   return {
     ...baseEvidence,
     targetResource: targetResourceEvidence(targetResource),
+    targetPrimaryRow,
     targetBaseHash,
     targetLocalHash,
     targetRemoteHash,
@@ -3965,7 +3969,9 @@ function pluginOwnedReferenceTargetFieldEvidence({
     reasonCode: targetStable
       ? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ACCEPTED'
       : targetRemotePresent
-        ? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_UNPROVEN'
+        ? targetPrimaryRow.matched === true
+          ? 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_UNPROVEN'
+          : 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ROW_ID_MISMATCH'
         : 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_ABSENT',
     targetChange: changeEvidence(
       targetResource,
@@ -3977,6 +3983,47 @@ function pluginOwnedReferenceTargetFieldEvidence({
       targetRemoteHash,
     ),
   };
+}
+
+function pluginOwnedReferenceTargetPrimaryRowEvidence(targetResource, targetValue) {
+  const targetIdField = pluginDriverReferenceTargetPrimaryIdField(targetResource?.table);
+  const expectedPrimaryId = pluginOwnedReferenceTargetPrimaryId(targetResource, targetIdField);
+  const targetValueIsObject = targetValue && targetValue !== ABSENT && typeof targetValue === 'object' && !Array.isArray(targetValue);
+  const observed = targetValueIsObject && targetIdField
+    ? targetValue[targetIdField]
+    : undefined;
+  const observedPrimaryId = normalizePositiveInteger(observed);
+  return {
+    targetIdField: targetIdField || null,
+    expectedHash: expectedPrimaryId === null ? null : digest(String(expectedPrimaryId)),
+    observedType: pluginOwnedReferenceTargetValueType(observed),
+    observedHash: observed === undefined ? null : digest(String(observed)),
+    matched: expectedPrimaryId !== null && observedPrimaryId === expectedPrimaryId,
+  };
+}
+
+function pluginOwnedReferenceTargetPrimaryId(targetResource, targetIdField) {
+  if (!targetIdField || !targetResource?.id) {
+    return null;
+  }
+  const match = new RegExp(`^${escapeRegExp(targetIdField)}:([1-9]\\d*)$`).exec(targetResource.id);
+  return match ? Number.parseInt(match[1], 10) : null;
+}
+
+function pluginOwnedReferenceTargetValueType(value) {
+  if (value === undefined) {
+    return null;
+  }
+  if (value === null) {
+    return 'null';
+  }
+  if (Array.isArray(value)) {
+    return 'array';
+  }
+  if (Number.isInteger(value)) {
+    return 'integer';
+  }
+  return typeof value;
 }
 
 function targetResourceEvidence(resource) {

@@ -4895,6 +4895,7 @@ function reprint_push_plugin_driver_reference_target_field_evidence_accepted(
         'observedHash',
         'targetResourceKey',
         'targetResource',
+        'targetPrimaryRow',
         'targetBaseHash',
         'targetLocalHash',
         'targetRemoteHash',
@@ -4937,12 +4938,102 @@ function reprint_push_plugin_driver_reference_target_field_evidence_accepted(
     if (($current['exists'] ?? false) !== true) {
         return false;
     }
+    if (!reprint_push_plugin_driver_reference_target_primary_row_evidence_accepted(
+        $field['targetPrimaryRow'] ?? null,
+        $target_table,
+        $target_id,
+        $current['value'] ?? null
+    )) {
+        return false;
+    }
     $current_hash = reprint_push_hash_resource($snapshot, $target_resource);
     return ($field['targetRemoteHash'] ?? null) === $current_hash
+        && ($field['targetBaseHash'] ?? null) === ($field['targetChange']['base']['hash'] ?? null)
+        && ($field['targetLocalHash'] ?? null) === ($field['targetChange']['local']['hash'] ?? null)
+        && ($field['targetRemoteHash'] ?? null) === ($field['targetChange']['remote']['hash'] ?? null)
         && reprint_push_plugin_driver_reference_target_change_evidence_accepted(
             $field['targetChange'] ?? null,
             $current_hash
         );
+}
+
+function reprint_push_plugin_driver_reference_target_primary_row_evidence_accepted(
+    $evidence,
+    string $target_table,
+    string $target_id,
+    $current_value
+): bool {
+    if (!is_array($evidence)
+        || !reprint_push_array_has_exact_keys($evidence, [
+            'targetIdField',
+            'expectedHash',
+            'observedType',
+            'observedHash',
+            'matched',
+        ])) {
+        return false;
+    }
+    $target_id_field = reprint_push_plugin_driver_reference_target_primary_id_field($target_table);
+    $expected_primary_id = reprint_push_plugin_driver_reference_target_primary_id(
+        $target_id,
+        $target_id_field
+    );
+    $observed_exists = is_array($current_value)
+        && !array_is_list($current_value)
+        && $target_id_field !== null
+        && array_key_exists($target_id_field, $current_value);
+    $observed = $observed_exists ? $current_value[$target_id_field] : null;
+    $observed_primary_id = $observed_exists
+        ? reprint_push_normalize_plugin_driver_reference_positive_integer($observed)
+        : null;
+    return ($evidence['targetIdField'] ?? null) === $target_id_field
+        && ($evidence['expectedHash'] ?? null) === (
+            $expected_primary_id === null
+                ? null
+                : hash('sha256', reprint_push_stable_json((string) $expected_primary_id))
+        )
+        && ($evidence['observedType'] ?? null) === (
+            $observed_exists
+                ? reprint_push_plugin_driver_payload_row_schema_value_type($observed)
+                : null
+        )
+        && ($evidence['observedHash'] ?? null) === (
+            $observed_exists
+                ? hash('sha256', reprint_push_stable_json((string) $observed))
+                : null
+        )
+        && ($evidence['matched'] ?? null) === true
+        && $expected_primary_id !== null
+        && $observed_primary_id === $expected_primary_id;
+}
+
+function reprint_push_plugin_driver_reference_target_primary_id_field(string $target_table): ?string
+{
+    $suffix = reprint_push_wordpress_graph_table_suffix($target_table);
+    $fields = [
+        'posts' => 'ID',
+        'users' => 'ID',
+        'comments' => 'comment_ID',
+        'terms' => 'term_id',
+        'term_taxonomy' => 'term_taxonomy_id',
+        'blogs' => 'blog_id',
+        'site' => 'id',
+    ];
+    return $suffix !== null ? ($fields[$suffix] ?? null) : null;
+}
+
+function reprint_push_plugin_driver_reference_target_primary_id(
+    string $target_id,
+    ?string $target_id_field
+): ?int {
+    if ($target_id_field === null) {
+        return null;
+    }
+    $pattern = '/^' . preg_quote($target_id_field, '/') . ':([1-9][0-9]*)$/';
+    if (!preg_match($pattern, $target_id, $matches)) {
+        return null;
+    }
+    return (int) $matches[1];
 }
 
 function reprint_push_plugin_driver_reference_target_change_evidence_accepted(

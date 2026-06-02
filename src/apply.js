@@ -19,6 +19,7 @@ import {
 import {
   PLUGIN_DRIVER_CONTRACT_KIND,
   PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION,
+  pluginDriverReferenceTargetPrimaryIdField,
   pluginOwnedRowDriverContractValidationEvidenceHash,
   pluginOwnedRowDriverContractValidationEvidenceMatches,
   pluginOwnedRowDriverContractHash,
@@ -682,6 +683,7 @@ function pluginOwnedReferenceTargetEvidenceIssue({
       'observedHash',
       'targetResourceKey',
       'targetResource',
+      'targetPrimaryRow',
       'targetBaseHash',
       'targetLocalHash',
       'targetRemoteHash',
@@ -702,6 +704,19 @@ function pluginOwnedReferenceTargetEvidenceIssue({
     if (!referenceTargetResourceEvidenceMatches(carriedField.targetResource, targetResource)) {
       return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
     }
+    const actualRemoteValue = getResource(remote, {
+      type: 'row',
+      table: targetResource.table,
+      id: targetResource.id,
+      key: targetResource.key,
+    });
+    if (!referenceTargetPrimaryRowEvidenceMatches(
+      carriedField.targetPrimaryRow,
+      targetResource,
+      actualRemoteValue,
+    )) {
+      return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_ROW_ID_MISMATCH';
+    }
     const actualRemoteHash = resourceHash(remote, {
       type: 'row',
       table: targetResource.table,
@@ -710,6 +725,13 @@ function pluginOwnedReferenceTargetEvidenceIssue({
     });
     if (actualRemoteHash !== carriedField.targetRemoteHash) {
       return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_REMOTE_MISMATCH';
+    }
+    if (
+      carriedField.targetBaseHash !== carriedField.targetChange?.base?.hash
+      || carriedField.targetLocalHash !== carriedField.targetChange?.local?.hash
+      || carriedField.targetRemoteHash !== carriedField.targetChange?.remote?.hash
+    ) {
+      return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
     }
     if (!referenceTargetChangeEvidenceMatches(carriedField.targetChange, actualRemoteHash)) {
       return 'PLUGIN_DRIVER_CONTRACT_BOUND_REFERENCE_TARGET_FIELD_MISMATCH';
@@ -735,6 +757,63 @@ function referenceTargetResourceEvidenceMatches(evidence, targetResource) {
     && evidence.key === targetResource.key
     && evidence.table === targetResource.table
     && evidence.id === targetResource.id;
+}
+
+function referenceTargetPrimaryRowEvidenceMatches(evidence, targetResource, actualRemoteValue) {
+  if (!hasExactKeys(evidence, ['targetIdField', 'expectedHash', 'observedType', 'observedHash', 'matched'])) {
+    return false;
+  }
+  const targetIdField = pluginDriverReferenceTargetPrimaryIdField(targetResource?.table);
+  const expectedPrimaryId = referenceTargetPrimaryId(targetResource, targetIdField);
+  const observed = actualRemoteValue && actualRemoteValue !== ABSENT && typeof actualRemoteValue === 'object' && !Array.isArray(actualRemoteValue)
+    ? actualRemoteValue[targetIdField]
+    : undefined;
+  const observedPrimaryId = normalizePositiveInteger(observed);
+  return evidence.targetIdField === (targetIdField || null)
+    && evidence.expectedHash === (expectedPrimaryId === null ? null : digest(String(expectedPrimaryId)))
+    && evidence.observedType === referenceTargetValueType(observed)
+    && evidence.observedHash === (observed === undefined ? null : digest(String(observed)))
+    && evidence.matched === true
+    && expectedPrimaryId !== null
+    && observedPrimaryId === expectedPrimaryId;
+}
+
+function referenceTargetPrimaryId(targetResource, targetIdField) {
+  if (!targetIdField || !targetResource?.id) {
+    return null;
+  }
+  const match = new RegExp(`^${escapeRegExp(targetIdField)}:([1-9]\\d*)$`).exec(targetResource.id);
+  return match ? Number.parseInt(match[1], 10) : null;
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function normalizePositiveInteger(value) {
+  if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+    return value;
+  }
+  if (typeof value === 'string' && /^[1-9]\d*$/.test(value)) {
+    return Number.parseInt(value, 10);
+  }
+  return null;
+}
+
+function referenceTargetValueType(value) {
+  if (value === undefined) {
+    return null;
+  }
+  if (value === null) {
+    return 'null';
+  }
+  if (Array.isArray(value)) {
+    return 'array';
+  }
+  if (Number.isInteger(value)) {
+    return 'integer';
+  }
+  return typeof value;
 }
 
 function referenceTargetChangeEvidenceMatches(evidence, actualRemoteHash) {
@@ -816,6 +895,7 @@ function pluginOwnedReferenceTargetApplyFieldEvidence(carried, remote) {
       targetResourceKey: field.targetResourceKey || null,
       targetRemoteHash: field.targetRemoteHash || null,
       actualRemoteHash,
+      targetPrimaryRow: field.targetPrimaryRow || null,
       targetStable: field.targetStable === true,
       targetRemotePresent: field.targetRemotePresent === true,
       reasonCode: field.reasonCode || null,
