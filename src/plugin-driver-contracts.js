@@ -3,6 +3,15 @@ import { digest } from './stable-json.js';
 export const PLUGIN_DRIVER_CONTRACT_SCHEMA_VERSION = 1;
 export const PLUGIN_DRIVER_CONTRACT_KIND = 'plugin-owned-row-driver';
 export const PLUGIN_DRIVER_REFUSE_ON_CONFLICT_MERGE_POLICY = 'refuse-on-conflict';
+export const PLUGIN_DRIVER_REFERENCE_TARGET_PRIMARY_ID_FIELDS = Object.freeze({
+  posts: 'ID',
+  users: 'ID',
+  comments: 'comment_ID',
+  terms: 'term_id',
+  term_taxonomy: 'term_taxonomy_id',
+  blogs: 'blog_id',
+  site: 'id',
+});
 
 export function normalizePluginOwnedRowDriverContract(entry, {
   source = null,
@@ -460,6 +469,21 @@ function normalizePluginOwnedRowDriverReferenceField(definition) {
       observed: targetIdField ?? null,
     };
   }
+  const expectedTargetIdField = pluginDriverReferenceTargetPrimaryIdField(targetTable);
+  if (!expectedTargetIdField || targetIdField !== expectedTargetIdField) {
+    return {
+      valid: false,
+      normalized: null,
+      reasonCode: 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_TARGET',
+      required: expectedTargetIdField
+        ? { targetTable, targetIdField: expectedTargetIdField }
+        : {
+          targetTableSuffixes: Object.keys(PLUGIN_DRIVER_REFERENCE_TARGET_PRIMARY_ID_FIELDS),
+          targetIdFields: PLUGIN_DRIVER_REFERENCE_TARGET_PRIMARY_ID_FIELDS,
+        },
+      observed: { targetTable, targetIdField },
+    };
+  }
   if (scalarType !== 'positive-integer') {
     return {
       valid: false,
@@ -492,6 +516,19 @@ function normalizePluginOwnedRowDriverReferenceField(definition) {
       required: definition.required !== false,
     },
   };
+}
+
+function pluginDriverReferenceTargetPrimaryIdField(table) {
+  const suffix = pluginDriverReferenceTargetTableSuffix(table);
+  return suffix ? PLUGIN_DRIVER_REFERENCE_TARGET_PRIMARY_ID_FIELDS[suffix] : null;
+}
+
+function pluginDriverReferenceTargetTableSuffix(table) {
+  if (!isNonEmptyString(table)) {
+    return null;
+  }
+  return Object.keys(PLUGIN_DRIVER_REFERENCE_TARGET_PRIMARY_ID_FIELDS)
+    .find((suffix) => table === `wp_${suffix}` || table.endsWith(`_${suffix}`)) || null;
 }
 
 function isReferenceFieldPath(path) {

@@ -187,6 +187,44 @@ $results['missingValidateCallback'] = rpp_driver_api_capture(static function ():
         'applyRowCallback' => 'rpp_driver_api_apply_row',
     ]);
 });
+$results['unsupportedReferenceTarget'] = rpp_driver_api_capture(static function (): array {
+    return reprint_push_register_plugin_owned_row_driver([
+        'driver' => 'fixture-driver-api-unsupported-reference-target',
+        'table' => 'wp_fixture_driver_api_unsupported_reference_target',
+        'pluginOwner' => 'fixture-plugin',
+        'referenceFields' => [
+            'fields' => [
+                [
+                    'path' => 'payload.private_id',
+                    'targetTable' => 'wp_plugin_private_rows',
+                    'targetIdField' => 'private_id',
+                ],
+            ],
+        ],
+        'exportRowsCallback' => 'rpp_driver_api_export_rows',
+        'applyRowCallback' => 'rpp_driver_api_apply_row',
+        'validateMutationCallback' => 'rpp_driver_api_validate_mutation',
+    ]);
+});
+$results['unsupportedReferenceTargetId'] = rpp_driver_api_capture(static function (): array {
+    return reprint_push_register_plugin_owned_row_driver([
+        'driver' => 'fixture-driver-api-unsupported-reference-target-id',
+        'table' => 'wp_fixture_driver_api_unsupported_reference_target_id',
+        'pluginOwner' => 'fixture-plugin',
+        'referenceFields' => [
+            'fields' => [
+                [
+                    'path' => 'payload.post_id',
+                    'targetTable' => 'wp_posts',
+                    'targetIdField' => 'post_id',
+                ],
+            ],
+        ],
+        'exportRowsCallback' => 'rpp_driver_api_export_rows',
+        'applyRowCallback' => 'rpp_driver_api_apply_row',
+        'validateMutationCallback' => 'rpp_driver_api_validate_mutation',
+    ]);
+});
 $results['registeredNamesAfterFailures'] = array_keys(reprint_push_registered_plugin_owned_row_drivers());
 echo json_encode($results);
 `);
@@ -199,6 +237,10 @@ echo json_encode($results);
   assert.match(report.duplicateBuiltinTable.error.message, /^duplicate table mapping for table: wp_reprint_push_release_state$/);
   assert.equal(report.missingValidateCallback.ok, false);
   assert.match(report.missingValidateCallback.error.message, /^missing validateMutationCallback for driver: fixture-driver-api-missing-validate$/);
+  assert.equal(report.unsupportedReferenceTarget.ok, false);
+  assert.equal(report.unsupportedReferenceTarget.error.message, 'Unsupported plugin-owned row driver reference target.');
+  assert.equal(report.unsupportedReferenceTargetId.ok, false);
+  assert.equal(report.unsupportedReferenceTargetId.error.message, 'Unsupported plugin-owned row driver reference target.');
   assert.deepEqual(report.registeredNamesAfterFailures, [
     'reprint-push-release-state',
     'fixture-driver-api',

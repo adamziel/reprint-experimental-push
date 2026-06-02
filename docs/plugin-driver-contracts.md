@@ -49,7 +49,12 @@ Optional fields:
   scalar references to WordPress rows. Version 1 supports only dot-separated
   field paths whose values are positive integers, with an explicit
   `targetTable`, `targetIdField`, optional `required`, and
-  `rawValuesIncluded: false`.
+  `rawValuesIncluded: false`. Targets are limited to known WordPress graph
+  primary-row pairs: `wp_posts/ID`, `wp_users/ID`,
+  `wp_comments/comment_ID`, `wp_terms/term_id`,
+  `wp_term_taxonomy/term_taxonomy_id`, `wp_blogs/blog_id`, and
+  `wp_site/id`. Site table prefixes may vary, but the resolved table suffix
+  and primary ID field must match one of those pairs.
 - `contractHash`: stable hash of the declared resource key, owner, driver,
   table, delete support, contract kind, contract version, optional normalized
   row schema, optional normalized merge policy, and optional normalized
@@ -82,10 +87,12 @@ that declares an explicit contract becomes strict:
   `PLUGIN_DRIVER_CONTRACT_INVALID_MERGE_POLICY`, or
   `PLUGIN_DRIVER_CONTRACT_MERGE_POLICY_RAW_VALUES_INCLUDED`
 - malformed reference-field declarations, unsupported reference scalar types,
-  or reference-field declarations that claim raw values refuse before mutation
+  unsupported target tables or mismatched target primary ID fields, or
+  reference-field declarations that claim raw values refuse before mutation
   with `PLUGIN_DRIVER_CONTRACT_INVALID_REFERENCE_FIELDS`,
   `PLUGIN_DRIVER_CONTRACT_INVALID_REFERENCE_FIELD`,
-  `PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_FIELD_TYPE`, or
+  `PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_FIELD_TYPE`,
+  `PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_TARGET`, or
   `PLUGIN_DRIVER_CONTRACT_REFERENCE_FIELDS_RAW_VALUES_INCLUDED`
 - accepted contracts emit `plugin-driver-contract-validation` evidence
 - accepted contracts must carry the expected `contractHash`, and apply
@@ -240,7 +247,9 @@ and allowlist row-schema/contract-hash binding; it refuses proofs whose value
 hashes match but whose row body no longer satisfies the declared schema.
 
 Reference-field contracts emit a hash-only `referenceValidation` object when
-`referenceFields` is present:
+`referenceFields` is present. The `targetResourceKey` is derived only after
+the declared `targetTable` and `targetIdField` pass the WordPress graph
+primary-row target constraint:
 
 ```json
 {
@@ -266,7 +275,8 @@ Reference-field contracts emit a hash-only `referenceValidation` object when
 This is a validator boundary, not a generic plugin graph rewriter. It proves
 declared reference fields are shaped and hash-bound before mutation; production
 graph rewrites for arbitrary plugin payloads still need explicit extractor and
-rewriter contracts.
+rewriter contracts. Plugin-owned reference fields cannot point at arbitrary
+plugin or custom tables merely because a target row exists and is hash-stable.
 
 Legacy fixture allowlists still work for focused tests, but generic production
 custom row drivers need the explicit contract path before the executor will

@@ -72,6 +72,14 @@ primary ID as the target resource key. Malformed same-plan targets stop as
 `stale-wordpress-graph-identity` even when the source row and target hash
 evidence are otherwise internally consistent.
 
+Plugin row-driver `referenceFields` use the same primary-row target boundary
+for target declarations. A plugin contract may declare scalar references only
+to supported WordPress graph primary IDs such as `wp_posts/ID`,
+`wp_comments/comment_ID`, `wp_users/ID`, `wp_terms/term_id`,
+`wp_term_taxonomy/term_taxonomy_id`, `wp_blogs/blog_id`, and `wp_site/id`.
+Arbitrary plugin or custom table targets remain unsupported until a separate
+extractor/rewriter contract can prove their graph semantics.
+
 When planner rewrites a scalar graph reference, the mutation records the
 relationship contract kind, version, and hash. For rewrites backed by an
 explicit identity map, it also records the normalized identity-map

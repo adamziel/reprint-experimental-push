@@ -776,6 +776,10 @@ function reprint_push_normalize_plugin_owned_row_driver_reference_field($definit
     if ($target_id_field === '') {
         throw new RuntimeException('Plugin-owned row driver reference field targetIdField is required.');
     }
+    $expected_target_id_field = reprint_push_plugin_owned_reference_target_primary_id_field($target_table);
+    if ($expected_target_id_field === null || $target_id_field !== $expected_target_id_field) {
+        throw new RuntimeException('Unsupported plugin-owned row driver reference target.');
+    }
     if ($scalar_type !== 'positive-integer') {
         throw new RuntimeException('Unsupported plugin-owned row driver reference field type.');
     }
@@ -787,6 +791,25 @@ function reprint_push_normalize_plugin_owned_row_driver_reference_field($definit
         'scalarType' => 'positive-integer',
         'required' => ($definition['required'] ?? true) !== false,
     ];
+}
+
+function reprint_push_plugin_owned_reference_target_primary_id_field(string $table): ?string
+{
+    $target_fields = [
+        'posts' => 'ID',
+        'users' => 'ID',
+        'comments' => 'comment_ID',
+        'terms' => 'term_id',
+        'term_taxonomy' => 'term_taxonomy_id',
+        'blogs' => 'blog_id',
+        'site' => 'id',
+    ];
+    foreach ($target_fields as $suffix => $id_field) {
+        if ($table === 'wp_' . $suffix || str_ends_with($table, '_' . $suffix)) {
+            return $id_field;
+        }
+    }
+    return null;
 }
 
 function reprint_push_is_plugin_owned_reference_field_path(string $path): bool

@@ -488,6 +488,24 @@ test('plugin row driver reference fields are hash-bound and conservative', () =>
       },
     ],
   });
+  const unsupportedTarget = normalizePluginOwnedRowDriverReferenceFields({
+    fields: [
+      {
+        path: 'payload.private_id',
+        targetTable: 'wp_plugin_private_rows',
+        targetIdField: 'private_id',
+      },
+    ],
+  });
+  const unsupportedTargetId = normalizePluginOwnedRowDriverReferenceFields({
+    fields: [
+      {
+        path: 'payload.post_id',
+        targetTable: 'wp_posts',
+        targetIdField: 'post_id',
+      },
+    ],
+  });
   const rawReferences = normalizePluginOwnedRowDriverReferenceFields({
     rawValuesIncluded: true,
     fields: [
@@ -517,6 +535,10 @@ test('plugin row driver reference fields are hash-bound and conservative', () =>
   );
   assert.equal(unsupportedType.valid, false);
   assert.equal(unsupportedType.reasonCode, 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_FIELD_TYPE');
+  assert.equal(unsupportedTarget.valid, false);
+  assert.equal(unsupportedTarget.reasonCode, 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_TARGET');
+  assert.equal(unsupportedTargetId.valid, false);
+  assert.equal(unsupportedTargetId.reasonCode, 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_TARGET');
   assert.equal(rawReferences.valid, false);
   assert.equal(rawReferences.reasonCode, 'PLUGIN_DRIVER_CONTRACT_REFERENCE_FIELDS_RAW_VALUES_INCLUDED');
 });
@@ -1442,6 +1464,85 @@ test('reference-bound custom row driver blocks invalid reference fields without 
   assert.equal(blockerJson.includes(privateReference), false);
   assert.equal(blockerJson.includes('base-reference-invalid-secret'), false);
   assert.equal(blockerJson.includes('local-reference-invalid-secret'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
+test('reference-bound custom row driver rejects arbitrary custom reference targets before mutation', () => {
+  const resourceKey = 'row:["wp_forms_contract_rows","entry_id:7"]';
+  const base = baseSite();
+  base.db.wp_forms_contract_rows = {
+    'entry_id:7': {
+      entry_id: 7,
+      payload: { mode: 'base-private-reference-target', secret: 'base-private-reference-target-secret', private_id: 42 },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  base.db.wp_plugin_private_rows = {
+    'private_id:42': {
+      private_id: 42,
+      private_value: 'private-reference-target-row',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.mode = 'local-private-reference-target';
+  local.db.wp_forms_contract_rows['entry_id:7'].payload.secret = 'local-private-reference-target-secret';
+  local.db.wp_forms_contract_rows['entry_id:7'].updated_marker = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(referenceBoundCustomTableContract({
+      referenceFields: {
+        fields: [
+          {
+            path: 'payload.private_id',
+            targetTable: 'wp_plugin_private_rows',
+            targetIdField: 'private_id',
+            required: true,
+          },
+        ],
+      },
+    })),
+  };
+  const remote = cloneJson(base);
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const evidence = blocker.contractValidationEvidence;
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'invalid-plugin-driver-contract');
+  assert.equal(blocker.reasonCode, 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_TARGET');
+  assert.equal(evidence.reasonCode, 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_TARGET');
+  assert.equal(evidence.outcome, 'refused-before-mutation');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.deepEqual(evidence.issueCodes, ['PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_TARGET']);
+  assert.deepEqual(evidence.issues[0], {
+    reasonCode: 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_REFERENCE_TARGET',
+    field: 'referenceFields',
+    required: {
+      targetTableSuffixes: ['posts', 'users', 'comments', 'terms', 'term_taxonomy', 'blogs', 'site'],
+      targetIdFields: {
+        posts: 'ID',
+        users: 'ID',
+        comments: 'comment_ID',
+        terms: 'term_id',
+        term_taxonomy: 'term_taxonomy_id',
+        blogs: 'blog_id',
+        site: 'id',
+      },
+    },
+    observed: {
+      targetTable: 'wp_plugin_private_rows',
+      targetIdField: 'private_id',
+    },
+  });
+  assert.equal(blockerJson.includes('base-private-reference-target-secret'), false);
+  assert.equal(blockerJson.includes('local-private-reference-target-secret'), false);
+  assert.equal(blockerJson.includes('private-reference-target-row'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply a blocked plan/);
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
