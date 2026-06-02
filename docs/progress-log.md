@@ -4,6 +4,28 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Contract-Driven User Graph Target Validation
+
+- Last update: 2026-06-02 08:35 CEST +02:00.
+- WordPress graph relationship contracts now declare `valid-user-row` target
+  validation for `wp_posts.post_author`, `wp_links.link_owner`, and
+  `wp_usermeta.user_id`, matching the existing `wp_comments.user_id` contract.
+- Planner target validation now dispatches from the relationship contract
+  instead of hardcoding individual relationship names. User-target references
+  block as `stale-wordpress-graph-identity` when the referenced `wp_users` row
+  body does not carry the primary `ID` named by the target resource key.
+- PHP snapshot graph contract metadata exports the same `valid-user-row`
+  target-validation declarations, preserving JS/PHP contract parity for
+  production-shaped snapshot exports.
+- Focused coverage now proves malformed user-target rows fail closed for
+  `post-author`, `usermeta-user`, and `link-owner`, while adjacent
+  comment-user, commentmeta-comment, featured-image, and serialized-block
+  target validation behavior remains green. The snapshot library parity test
+  also passed with the updated contract table.
+- Caveat: this hardens core user-target references. It does not complete broad
+  WordPress graph identity mapping, arbitrary serialized reference rewriting,
+  or production hosted graph proof beyond the current stable fixtures.
+
 ## 2026-06-02 - Hash-Constrained Plugin Row Schema Contracts
 
 - Last update: 2026-06-02 08:28 CEST +02:00.

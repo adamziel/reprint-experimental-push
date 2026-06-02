@@ -65,6 +65,13 @@ one of these paths:
 - the relationship contract allows scalar rewriting and the identity map is
   usable
 
+Relationship contracts also define target validation. Version 1 validates
+`valid-user-row` references for `wp_comments.user_id`, `wp_posts.post_author`,
+`wp_links.link_owner`, and `wp_usermeta.user_id` by checking that the referenced
+`wp_users` row body carries the same primary `ID` as the target resource key.
+Malformed user targets stop as `stale-wordpress-graph-identity` even when the
+source row and target hash evidence are otherwise internally consistent.
+
 When planner rewrites a scalar graph reference, the mutation records the
 relationship contract kind, version, and hash. For rewrites backed by an
 explicit identity map, it also records the normalized identity-map

@@ -807,14 +807,14 @@ function reprint_push_wordpress_graph_relationship_contracts(): array
         reprint_push_wordpress_graph_relationship_contract('comment-parent', 'comments', ['comment_parent'], 'comments'),
         reprint_push_wordpress_graph_relationship_contract('comment-user', 'comments', ['user_id'], 'users', true, 'valid-user-row'),
         reprint_push_wordpress_graph_relationship_contract('commentmeta-comment', 'commentmeta', ['comment_id'], 'comments', true, 'valid-comment-row'),
-        reprint_push_wordpress_graph_relationship_contract('link-owner', 'links', ['link_owner'], 'users'),
+        reprint_push_wordpress_graph_relationship_contract('link-owner', 'links', ['link_owner'], 'users', true, 'valid-user-row'),
         reprint_push_wordpress_graph_relationship_contract('blog-site', 'blogs', ['site_id'], 'site'),
         reprint_push_wordpress_graph_relationship_contract('blogmeta-blog', 'blogmeta', ['blog_id'], 'blogs'),
         reprint_push_wordpress_graph_relationship_contract('blog-version-blog', 'blog_versions', ['blog_id'], 'blogs'),
         reprint_push_wordpress_graph_relationship_contract('sitemeta-site', 'sitemeta', ['site_id'], 'site'),
         reprint_push_wordpress_graph_relationship_contract('registration-log-blog', 'registration_log', ['blog_id'], 'blogs'),
         reprint_push_wordpress_graph_relationship_contract('post-parent', 'posts', ['post_parent'], 'posts'),
-        reprint_push_wordpress_graph_relationship_contract('post-author', 'posts', ['post_author'], 'users'),
+        reprint_push_wordpress_graph_relationship_contract('post-author', 'posts', ['post_author'], 'users', true, 'valid-user-row'),
         reprint_push_wordpress_graph_relationship_contract('postmeta-post', 'postmeta', ['post_id'], 'posts'),
         reprint_push_wordpress_graph_relationship_contract('serialized-block-attachment', 'posts', ['post_content', 'post_excerpt'], 'posts', false, 'post-type:attachment'),
         reprint_push_wordpress_graph_relationship_contract('serialized-block-post', 'posts', ['post_content', 'post_excerpt'], 'posts', false),
@@ -825,7 +825,7 @@ function reprint_push_wordpress_graph_relationship_contracts(): array
         reprint_push_wordpress_graph_relationship_contract('term-taxonomy-term', 'term_taxonomy', ['term_id'], 'terms'),
         reprint_push_wordpress_graph_relationship_contract('term-taxonomy-parent', 'term_taxonomy', ['parent'], 'terms'),
         reprint_push_wordpress_graph_relationship_contract('termmeta-term', 'termmeta', ['term_id'], 'terms'),
-        reprint_push_wordpress_graph_relationship_contract('usermeta-user', 'usermeta', ['user_id'], 'users'),
+        reprint_push_wordpress_graph_relationship_contract('usermeta-user', 'usermeta', ['user_id'], 'users', true, 'valid-user-row'),
     ];
 }
 

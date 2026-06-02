@@ -108,6 +108,7 @@ export const WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS = Object.freeze([
     sourceSuffix: 'links',
     sourceField: 'link_owner',
     targetSuffix: 'users',
+    targetValidation: 'valid-user-row',
   }),
   graphRelationshipContract({
     relationshipType: 'blog-site',
@@ -150,6 +151,7 @@ export const WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS = Object.freeze([
     sourceSuffix: 'posts',
     sourceField: 'post_author',
     targetSuffix: 'users',
+    targetValidation: 'valid-user-row',
   }),
   graphRelationshipContract({
     relationshipType: 'postmeta-post',
@@ -223,6 +225,7 @@ export const WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS = Object.freeze([
     sourceSuffix: 'usermeta',
     sourceField: 'user_id',
     targetSuffix: 'users',
+    targetValidation: 'valid-user-row',
   }),
 ]);
 

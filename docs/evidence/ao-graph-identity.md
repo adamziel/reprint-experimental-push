@@ -1,6 +1,6 @@
 # AO graph identity evidence
 
-Date: 2026-05-29
+Date: 2026-06-02
 Lane: graph-identity
 
 ## Implemented evidence
@@ -15,6 +15,12 @@ Lane: graph-identity
 - Adds a local-production proof for importer/exporter `pushIdentityMap` metadata carried by the immutable base package: exported local source rows map to imported remote targets, dependent child post and postmeta rows rewrite to the remote target, stale imported targets fail closed, and evidence records only map/provenance hashes, resource keys, and rewrite hashes.
 - Adds generated-harness target coverage for `wp_posts.post_author` references: same-plan user/post creates remain ready with stale replay rejection, while posts that reference a remotely drifted user fail closed as `stale-wordpress-graph-identity` with hash-only target evidence.
 - Adds generated-harness evidence for `wp_comments.user_id` author references: same-plan user/comment creates remain ready with stale replay rejection, while a comment that points at a remotely drifted user fails closed as `stale-wordpress-graph-identity` with hash-only target evidence.
+- Makes user-target validation contract-driven for `wp_comments.user_id`,
+  `wp_posts.post_author`, `wp_links.link_owner`, and `wp_usermeta.user_id`.
+  These relationships now declare `targetValidation: "valid-user-row"` and
+  block when the referenced `wp_users` row body does not carry the same primary
+  `ID` as the target resource key. PHP snapshot contract metadata exports the
+  same target-validation contract table as the JS planner.
 - Adds RPP-0306 focused planner evidence for `wp_comments.comment_parent` thread references: stable parent comment targets remain ready without identity rewriting, explicit comment identity-map targets rewrite child replies to the proven remote parent ID, and drifted remote parent comments fail closed with hash-only target evidence.
 - Adds apply-time rewrite payload binding: each scalar rewrite envelope must
   match the serialized mutation field value and the carried target resource
@@ -50,6 +56,18 @@ RPP-0306 focused worker verification commands:
 - `node --test --test-name-pattern 'same-plan comment|comment parent|comment_parent|comment-parent|RPP-0306' test/push-planner.test.js` — 4 subtests, 0 failures. The broader focused run covers stable parent proof, explicit identity-map parent rewrite, same-plan parent/child closure, and fail-closed stale remote parent evidence.
 - `node --test --test-name-pattern 'explicit WordPress graph identity-map contract carries accepted proof' test/push-planner.test.js` — 1 subtest, 0 failures. The focused explicit identity-map proof now includes a forged payload variant that recomputes the mutation hash but changes the rewritten `post_parent`; apply rejects it before mutation.
 - `node --test test/push-planner.test.js test/wordpress-graph-contracts.test.js test/playground-snapshot-lib.test.js test/rpp-0400-importer-exporter-identity-map-release-verifier-v5.test.js` — 168 subtests, 0 failures, including rewrite payload target binding and the production importer/exporter identity-map verifier.
+- `node --test test/wordpress-graph-contracts.test.js` — 4 subtests, 0
+  failures, including the explicit `valid-user-row` target-validation contract
+  check.
+- `node --test test/wordpress-graph-contracts.test.js test/playground-snapshot-lib.test.js`
+  — 11 subtests, 0 failures, including JS/PHP graph contract parity.
+- `node --test test/push-planner.test.js test/wordpress-graph-contracts.test.js`
+  — 157 subtests, 0 failures, including the full planner graph surface and
+  contract inventory checks.
+- `node --test --test-name-pattern 'user-target|post author|usermeta|link-owner|comment user|commentmeta comment|featured image|serialized block' test/push-planner.test.js test/rpp-0307-comment-user-reference.test.js test/rpp-0308-commentmeta-comment-reference.test.js test/rpp-0322-featured-image-attachment-reference-v2.test.js test/rpp-0317-serialized-block-reference-detection.test.js`
+  — 14 subtests, 0 failures, including malformed user-target row refusal for
+  `post-author`, `usermeta-user`, and `link-owner` plus adjacent target
+  validation regressions.
 
 A full `npm test` run was attempted for broader signal, but unrelated existing failures appeared in authenticated HTTP push client and playground snapshot/plugin-driver tests before the run was stopped; the focused graph-identity checks above passed.
 

@@ -7634,6 +7634,77 @@ test('blocks post author and usermeta references when the remote user target div
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks user-target graph references when the target row body does not match the resource id', () => {
+  const postResourceKey = 'row:["wp_posts","ID:2"]';
+  const usermetaResourceKey = 'row:["wp_usermeta","meta_id:61"]';
+  const linkResourceKey = 'row:["wp_links","link_id:8"]';
+  const targetUserResourceKey = 'row:["wp_users","ID:7"]';
+  const base = baseSite();
+  base.db.wp_users = {
+    'ID:7': {
+      ID: 7,
+      user_login: 'base-private-valid-user',
+      user_email: 'base-private-valid-user@example.test',
+      display_name: 'Base Private Valid User',
+    },
+  };
+  base.db.wp_usermeta = {};
+  base.db.wp_links = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_users['ID:7'] = {
+    ID: 8,
+    user_login: 'local-private-wrong-user-id',
+    user_email: 'local-private-wrong-user@example.test',
+    display_name: 'Local Private Wrong User',
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local private malformed user post',
+    post_status: 'draft',
+    post_author: 7,
+  };
+  local.db.wp_usermeta['meta_id:61'] = {
+    meta_id: 61,
+    user_id: 7,
+    meta_key: 'nickname',
+    meta_value: 'local-private-malformed-user-usermeta',
+  };
+  local.db.wp_links['link_id:8'] = {
+    link_id: 8,
+    link_url: 'https://example.test/local-private-malformed-user-link',
+    link_name: 'Local Private Malformed User Link',
+    link_owner: 7,
+  };
+
+  const plan = planFor(base, local, remote);
+  const blockersByResource = new Map(plan.blockers.map((blocker) => [blocker.resourceKey, blocker]));
+  const blockersJson = JSON.stringify(plan.blockers);
+
+  assert.equal(plan.status, 'blocked');
+  for (const [resourceKey, relationshipType] of [
+    [postResourceKey, 'post-author'],
+    [usermetaResourceKey, 'usermeta-user'],
+    [linkResourceKey, 'link-owner'],
+  ]) {
+    const blocker = blockersByResource.get(resourceKey);
+    const reference = blocker?.references.find((entry) => entry.relationshipType === relationshipType);
+
+    assert.equal(mutationFor(plan, resourceKey), undefined);
+    assert.ok(reference, `missing ${relationshipType} target validation evidence`);
+    assert.equal(reference.targetResourceKey, targetUserResourceKey);
+    assert.equal(reference.targetSupport.supported, false);
+    assert.equal(reference.targetSupport.className, 'stale-wordpress-graph-identity');
+    assert.match(reference.targetSupport.reason, /not a valid wp_users row/);
+  }
+  assert.equal(blockersJson.includes('local-private-wrong-user-id'), false);
+  assert.equal(blockersJson.includes('local-private-wrong-user@example.test'), false);
+  assert.equal(blockersJson.includes('Local Private Wrong User'), false);
+  assert.equal(blockersJson.includes('local-private-malformed-user-usermeta'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks comment graph references when the remote post target is missing', () => {
   const commentResourceKey = 'row:["wp_comments","comment_ID:11"]';
   const targetPostResourceKey = 'row:["wp_posts","ID:2"]';

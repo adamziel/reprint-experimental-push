@@ -71,6 +71,16 @@ test('WordPress graph contracts mark serialized block references as detect-only'
   );
 });
 
+test('WordPress graph contracts bind user-target relationships to valid user rows', () => {
+  const contractsByType = new Map(
+    WORDPRESS_GRAPH_RELATIONSHIP_CONTRACTS.map((contract) => [contract.relationshipType, contract]),
+  );
+
+  for (const relationshipType of ['comment-user', 'link-owner', 'post-author', 'usermeta-user']) {
+    assert.equal(contractsByType.get(relationshipType)?.targetValidation, 'valid-user-row');
+  }
+});
+
 test('graph inventory carries explicit graph contract evidence without raw values', { concurrency: false }, () => {
   const inventory = generateGraphMappingInventory();
   const relationshipContracts = inventory.graphContract.relationshipContracts;

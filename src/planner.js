@@ -3156,25 +3156,44 @@ function wordpressGraphReferenceEvidence(
 }
 
 function wordpressGraphRelationshipTargetSupport(reference, { baseValue, localValue, remoteValue }) {
-  if (reference.relationshipType === 'comment-user') {
-    return wordpressGraphCommentUserTargetSupport(reference, { baseValue, localValue, remoteValue });
+  const contract = wordpressGraphRelationshipContractForType(reference.relationshipType);
+  const targetValidation = contract?.targetValidation || 'row-present';
+
+  if (targetValidation === 'row-present') {
+    return { supported: true };
   }
 
-  if (reference.relationshipType === 'commentmeta-comment') {
-    return wordpressGraphCommentmetaCommentTargetSupport(reference, { baseValue, localValue, remoteValue });
+  if (targetValidation === 'valid-user-row') {
+    return wordpressGraphPrimaryRowTargetSupport(reference, {
+      baseValue,
+      localValue,
+      remoteValue,
+      validTableName: 'wp_users',
+    });
   }
 
-  if (reference.relationshipType === 'serialized-block-attachment') {
+  if (targetValidation === 'valid-comment-row') {
+    return wordpressGraphPrimaryRowTargetSupport(reference, {
+      baseValue,
+      localValue,
+      remoteValue,
+      validTableName: 'wp_comments',
+    });
+  }
+
+  if (targetValidation === 'post-type:attachment') {
     return wordpressGraphPostTypeTargetSupport(reference, {
       baseValue,
       localValue,
       remoteValue,
       postType: 'attachment',
-      reason: `WordPress graph mutation ${reference.sourceResourceKey} references a serialized block attachment target that is not a supported attachment row.`,
+      reason: reference.relationshipType === 'featured-image-attachment'
+        ? `WordPress graph mutation ${reference.sourceResourceKey} references a _thumbnail_id target that is not a supported attachment row.`
+        : `WordPress graph mutation ${reference.sourceResourceKey} references a serialized block attachment target that is not a supported attachment row.`,
     });
   }
 
-  if (reference.relationshipType === 'serialized-block-reusable-block') {
+  if (targetValidation === 'post-type:wp_block') {
     return wordpressGraphPostTypeTargetSupport(reference, {
       baseValue,
       localValue,
@@ -3184,28 +3203,11 @@ function wordpressGraphRelationshipTargetSupport(reference, { baseValue, localVa
     });
   }
 
-  if (reference.relationshipType !== 'featured-image-attachment') {
-    return { supported: true };
-  }
-
-  const targetValue = wordpressGraphRelationshipTargetValue({ baseValue, localValue, remoteValue });
-  if (targetValue === ABSENT) {
-    return { supported: true };
-  }
-
-  if (
-    !targetValue
-    || typeof targetValue !== 'object'
-    || String(targetValue.post_type || '') !== 'attachment'
-  ) {
-    return {
-      supported: false,
-      className: 'stale-wordpress-graph-identity',
-      reason: `WordPress graph mutation ${reference.sourceResourceKey} references a _thumbnail_id target that is not a supported attachment row.`,
-    };
-  }
-
-  return { supported: true };
+  return {
+    supported: false,
+    className: 'stale-wordpress-graph-identity',
+    reason: `WordPress graph mutation ${reference.sourceResourceKey} declares unsupported target validation ${String(targetValidation)}.`,
+  };
 }
 
 function wordpressGraphPostTypeTargetSupport(reference, {
@@ -3239,44 +3241,29 @@ function wordpressGraphPostTypeTargetSupport(reference, {
   return { supported: true };
 }
 
-function wordpressGraphCommentmetaCommentTargetSupport(reference, { baseValue, localValue, remoteValue }) {
+function wordpressGraphPrimaryRowTargetSupport(reference, {
+  baseValue,
+  localValue,
+  remoteValue,
+  validTableName,
+}) {
   const targetValue = wordpressGraphRelationshipTargetValue({ baseValue, localValue, remoteValue });
   if (targetValue === ABSENT) {
     return { supported: true };
   }
 
-  const targetCommentId = normalizePositiveInteger(targetValue?.comment_ID);
-  const expectedCommentId = wordpressGraphResourcePrimaryInteger(reference.targetResource);
+  const targetPrimaryId = normalizePositiveInteger(
+    targetValue?.[wordpressGraphPrimaryIdField(wordpressGraphTableSuffix(reference.targetResource?.table))],
+  );
+  const expectedPrimaryId = wordpressGraphResourcePrimaryInteger(reference.targetResource);
   if (
-    expectedCommentId == null
-    || targetCommentId !== expectedCommentId
+    expectedPrimaryId == null
+    || targetPrimaryId !== expectedPrimaryId
   ) {
     return {
       supported: false,
       className: 'stale-wordpress-graph-identity',
-      reason: `WordPress graph mutation ${reference.sourceResourceKey} references an unsupported wp_commentmeta.comment_id target that is not a valid wp_comments row.`,
-    };
-  }
-
-  return { supported: true };
-}
-
-function wordpressGraphCommentUserTargetSupport(reference, { baseValue, localValue, remoteValue }) {
-  const targetValue = wordpressGraphRelationshipTargetValue({ baseValue, localValue, remoteValue });
-  if (targetValue === ABSENT) {
-    return { supported: true };
-  }
-
-  const targetUserId = normalizePositiveInteger(targetValue?.ID);
-  const expectedUserId = wordpressGraphResourcePrimaryInteger(reference.targetResource);
-  if (
-    expectedUserId == null
-    || targetUserId !== expectedUserId
-  ) {
-    return {
-      supported: false,
-      className: 'stale-wordpress-graph-identity',
-      reason: `WordPress graph mutation ${reference.sourceResourceKey} references an unsupported wp_comments.user_id target that is not a valid wp_users row.`,
+      reason: `WordPress graph mutation ${reference.sourceResourceKey} references an unsupported ${reference.relationshipKey} target that is not a valid ${validTableName} row.`,
     };
   }
 
