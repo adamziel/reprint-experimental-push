@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createPushPlan } from '../src/planner.js';
+import { applyPlan, PushPlanError } from '../src/apply.js';
 import { digest } from '../src/stable-json.js';
 import {
   productionPluginDriverBoundary,
@@ -19,6 +20,15 @@ const rawSentinels = Object.freeze([
 
 function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+function captureError(callback) {
+  try {
+    callback();
+    return null;
+  } catch (error) {
+    return error;
+  }
 }
 
 function releaseStateSnapshot(mode, version, marker, {
@@ -276,6 +286,74 @@ test('RPP-0483 release verifier carries exact custom-table allowlist through app
   assert.match(evidence.preconditionHash, /^[a-f0-9]{64}$/);
   assertNoRawSentinels(summary, 'release verifier summary');
   assertNoRawSentinels(evidence, 'focused evidence envelope');
+});
+
+test('RPP-0483 JS apply refuses forged contract-bound payload evidence before mutation', async (t) => {
+  const topology = releaseStateTopology();
+  const acceptedPlan = releaseStatePlan(topology);
+  const acceptedRemote = cloneJson(topology.remoteBaseSnapshot);
+  const acceptedResult = applyPlan(acceptedRemote, cloneJson(acceptedPlan));
+
+  assert.equal(acceptedResult.appliedMutations, 1);
+  assert.equal(
+    acceptedResult.site.db[boundary.table][boundary.rowId].payload.mode,
+    'local-update',
+  );
+
+  const forgedCases = [
+    {
+      label: 'missing payload evidence',
+      mutate(mutation) {
+        delete mutation.pluginOwnedResource.driverPayloadValidationEvidence;
+      },
+    },
+    {
+      label: 'forged payload action',
+      mutate(mutation) {
+        mutation.pluginOwnedResource.driverPayloadValidationEvidence.action = 'delete';
+      },
+    },
+    {
+      label: 'forged payload value hash',
+      mutate(mutation) {
+        mutation.pluginOwnedResource.driverPayloadValidationEvidence.value.hash = '0'.repeat(64);
+      },
+    },
+    {
+      label: 'forged payload contract-validation hash',
+      mutate(mutation) {
+        mutation.pluginOwnedResource.driverPayloadValidationEvidence.contractValidationHash = '0'.repeat(64);
+      },
+    },
+  ];
+
+  for (const forgedCase of forgedCases) {
+    await t.test(forgedCase.label, () => {
+      const plan = releaseStatePlan(topology);
+      const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey);
+      const remote = cloneJson(topology.remoteBaseSnapshot);
+      const remoteBeforeHash = digest(remote);
+      let hookCalls = 0;
+
+      forgedCase.mutate(mutation);
+      const error = captureError(() => applyPlan(remote, plan, {
+        beforeMutation() {
+          hookCalls++;
+        },
+      }));
+
+      assert.ok(error instanceof PushPlanError);
+      assert.equal(error.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+      assert.equal(error.details.resourceKey, boundary.resourceKey);
+      assert.equal(error.details.pluginOwner, boundary.owner);
+      assert.equal(error.details.driver, boundary.driver);
+      assert.equal(error.details.applyValidationEvidence.reasonCode, 'PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED');
+      assert.equal(error.details.applyValidationEvidence.outcome, 'refused-before-mutation');
+      assert.equal(hookCalls, 0);
+      assert.equal(digest(remote), remoteBeforeHash);
+      assertNoRawSentinels(error.details, forgedCase.label);
+    });
+  }
 });
 
 test('RPP-0483 release verifier blocks custom-table allowlist and apply carry-through near misses', async (t) => {

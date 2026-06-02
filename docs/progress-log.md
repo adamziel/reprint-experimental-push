@@ -4,6 +4,23 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Contract-Bound Plugin Payload Apply Revalidation
+
+- Last update: 2026-06-02 05:50 CEST +02:00.
+- JS apply now treats contract-bound custom row-driver payload evidence as a
+  carried proof, not just as planner decoration. For explicit
+  `plugin-owned-row-driver` contracts, apply recomputes the expected
+  `contract-bound-row-driver` payload validation evidence from the mutation and
+  refuses before mutation unless the carried evidence matches the recomputed
+  action, value state/hash, contract hash, and `contractValidationHash`.
+- RPP-0483 now includes executor-side forged-evidence regressions for missing
+  payload evidence, forged payload action, forged payload value hash, and forged
+  payload contract-validation hash. Each case refuses with
+  `UNSUPPORTED_PLUGIN_OWNED_RESOURCE` before any hook call or remote mutation.
+- Caveat: this hardens the local JS executor boundary for contract-bound plugin
+  rows. Final release remains `NO-GO` until plugin contracts are backed by real
+  production plugin integration evidence and durable production apply surfaces.
+
 ## 2026-06-02 - Graph Identity Map Contract Hash Binding
 
 - Last update: 2026-06-02 05:34 CEST +02:00.

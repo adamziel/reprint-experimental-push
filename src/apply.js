@@ -460,7 +460,8 @@ function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, planned
 
 function isContractBoundRowDriverMutation(mutation, owner, driver, plannedValue, driverPayloadSupport) {
   const contract = mutation.pluginOwnedResource?.contractValidationEvidence;
-  const validation = driverPayloadSupport?.evidence;
+  const carriedValidation = mutation.pluginOwnedResource?.driverPayloadValidationEvidence;
+  const expectedValidation = driverPayloadSupport?.evidence;
   const table = mutation.pluginOwnedResource?.table || contract?.table || null;
   const mutationSupportsDelete = mutation.pluginOwnedResource?.supportsDelete === true;
   const expectedContractHash = pluginOwnedRowDriverContractHash(contract);
@@ -485,16 +486,60 @@ function isContractBoundRowDriverMutation(mutation, owner, driver, plannedValue,
     && mutation.resource?.type === 'row'
     && mutation.resource.table === table
     && (plannedValue !== ABSENT || contract.supportsDelete === true)
-    && validation?.validator === PLUGIN_DRIVER_CONTRACT_BOUND_VALIDATOR
+    && contractBoundPayloadValidationEvidenceAccepted({
+      validation: carriedValidation,
+      expectedValidation,
+      contract,
+      mutation,
+      owner,
+      driver,
+      table,
+      mutationSupportsDelete,
+      plannedValue,
+    });
+}
+
+function contractBoundPayloadValidationEvidenceAccepted({
+  validation,
+  expectedValidation,
+  contract,
+  mutation,
+  owner,
+  driver,
+  table,
+  mutationSupportsDelete,
+  plannedValue,
+}) {
+  const valueEvidence = validation?.value && typeof validation.value === 'object' && !Array.isArray(validation.value)
+    ? validation.value
+    : null;
+  const expectedState = plannedValue === ABSENT ? 'absent' : 'present';
+  const expectedValueHash = digest(plannedValue);
+  const expectedContractValidationHash = digest(contract);
+
+  return validation?.schemaVersion === 1
+    && validation.operation === 'plugin-driver-payload-validation'
+    && validation.validator === PLUGIN_DRIVER_CONTRACT_BOUND_VALIDATOR
+    && validation.reasonCode === 'PLUGIN_DRIVER_CONTRACT_BOUND_PAYLOAD_ACCEPTED'
     && validation.outcome === 'accepted'
+    && Array.isArray(validation.issueCodes)
+    && validation.issueCodes.length === 0
+    && validation.format === 'hash-only'
+    && validation.rawValuesIncluded === false
     && validation.resourceKey === mutation.resourceKey
     && validation.pluginOwner === owner
     && validation.driver === driver
     && validation.table === table
+    && validation.action === mutation.action
     && validation.supportsDelete === mutationSupportsDelete
     && validation.contractSupportsDelete === contract.supportsDelete
     && validation.contractHash === contract.contractHash
-    && validation.rawValuesIncluded === false;
+    && validation.contractValidationHash === expectedContractValidationHash
+    && valueEvidence?.state === expectedState
+    && valueEvidence?.hash === expectedValueHash
+    && /^[a-f0-9]{64}$/.test(valueEvidence.hash || '')
+    && expectedValidation
+    && digest(validation) === digest(expectedValidation);
 }
 
 function validatePluginOwnedApplyValidation(mutation, owner, driver) {

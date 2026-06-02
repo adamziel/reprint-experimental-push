@@ -91,7 +91,9 @@ shape. For custom row drivers outside the built-in driver set, apply requires:
 - exact resource key, plugin owner, driver, table, and `supportsDelete` binding
   in both the contract evidence and the mutation envelope,
 - accepted `contract-bound-row-driver` payload validation evidence,
-- hash-only value and contract evidence, with `rawValuesIncluded: false`.
+- hash-only value and contract evidence, with `rawValuesIncluded: false`,
+- carried payload evidence that matches apply's recomputed mutation action,
+  value state/hash, contract hash, and `contractValidationHash`.
 
 Legacy fixture allowlists still work for focused tests, but generic production
 custom row drivers need the explicit contract path before the executor will
