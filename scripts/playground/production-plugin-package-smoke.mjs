@@ -290,12 +290,14 @@ echo wp_json_encode($results, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
 `);
   writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
-  if (shouldRunScenario('driver-receipt-guards')) {
+  const needsDriverFixtureServer = shouldRunScenario('driver-receipt-guards')
+    || shouldRunScenario('driver-noncanonical-contract-evidence-guard');
+  if (needsDriverFixtureServer) {
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardSnapshotBlueprintPath);
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
       activatePackagedPlugin: true,
       provisionAuth: true,
-      enableCredentialRevocationRoute: true,
+      enableCredentialRevocationRoute: shouldRunScenario('driver-receipt-guards'),
     });
   }
   if (!runDriverGuardOnly && shouldRunScenario('core-package-routes')) {
@@ -597,6 +599,97 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
         driverFixtureTableKey,
       });
       summary.arbitraryPluginFixturePackage = summarizeArbitraryPluginFixturePackageEvidence(summary);
+        },
+      );
+    });
+  }
+
+  if (shouldRunScenario('driver-noncanonical-contract-evidence-guard')) {
+    await runScenario('driver-noncanonical-contract-evidence-guard', async () => {
+      await withPlaygroundServer(
+        'production-plugin-driver-noncanonical-contract-evidence-guard',
+        driverGuardServerBlueprintPath,
+        pluginDir,
+        { authBootstrap: false, startupTimeoutMs: packagedDriverGuardStartupTimeoutMs },
+        async (server) => {
+          const client = authenticatedHttpClient({
+            sourceUrl: server.baseUrl,
+            credential: credentials,
+            routeProfile: 'production-shaped',
+          });
+
+          const preflight = await client.signedGet('/preflight');
+          assert.equal(preflight.status, 200);
+          assert.equal(preflight.body?.ok, true);
+          const session = preflight.body?.session?.id;
+          assert.equal(typeof session, 'string');
+          assert.ok(session.length > 0, 'signed preflight did not return a session id');
+
+          const remoteSnapshot = await client.get('/snapshot');
+          assert.equal(remoteSnapshot.status, 200);
+          assert.equal(remoteSnapshot.body?.ok, true);
+          const driverFixtureTableKey = Object.keys(remoteSnapshot.body.snapshot?.db || {}).find((key) =>
+            key.endsWith('reprint_push_driver_fixture'));
+          assert.ok(driverFixtureTableKey, 'packaged snapshot did not expose the arbitrary plugin-owned driver table');
+          const driverFixtureResourceKey = `row:[${JSON.stringify(driverFixtureTableKey)},"entry_id:1"]`;
+
+          const driverLocalUpdateSnapshot = deepClone(remoteSnapshot.body.snapshot);
+          driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].payload.mode = 'local-update';
+          driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].payload.version = 2;
+          driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].updated_marker = 'local-update';
+
+          const updatePlan = createPushPlan({
+            base: remoteSnapshot.body.snapshot,
+            local: driverLocalUpdateSnapshot,
+            remote: remoteSnapshot.body.snapshot,
+            now: new Date('2026-05-26T18:10:00.000Z'),
+          });
+          assert.equal(updatePlan.status, 'ready');
+          assert.equal(updatePlan.mutations.length, 1);
+          assert.equal(updatePlan.mutations[0].resourceKey, driverFixtureResourceKey);
+
+          const forgedPlan = deepClone(updatePlan);
+          const forgedMutation = forgedPlan.mutations.find((mutation) =>
+            mutation.resourceKey === driverFixtureResourceKey);
+          assert.ok(forgedMutation?.pluginOwnedResource?.contractValidationEvidence);
+          assert.ok(forgedMutation?.pluginOwnedResource?.driverPayloadValidationEvidence);
+          forgedMutation.pluginOwnedResource.contractValidationEvidence.unexpectedRawPayload =
+            'packaged-driver-private-payload';
+          forgedMutation.pluginOwnedResource.driverPayloadValidationEvidence.contractValidationHash =
+            digest(forgedMutation.pluginOwnedResource.contractValidationEvidence);
+
+          const forgedDryRun = await client.signedPost(
+            '/dry-run',
+            { plan: forgedPlan },
+            {
+              session,
+              idempotencyKey: 'production-plugin-driver-noncanonical-contract-evidence-dry-run',
+            },
+          );
+          assert.equal(forgedDryRun.status, 400);
+          assert.equal(forgedDryRun.body?.code, 'INVALID_PLAN');
+          assert.equal(forgedDryRun.body?.receipt, undefined);
+
+          const afterReject = await client.get('/snapshot');
+          assert.equal(afterReject.status, 200);
+          assert.equal(afterReject.body?.ok, true);
+          const retainedRow = afterReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1'];
+          assert.equal(retainedRow?.updated_marker, 'base');
+          assert.deepEqual(retainedRow?.payload, {
+            owner: driverFixture.pluginOwner,
+            mode: 'base',
+            version: 1,
+          });
+
+          summary.driverNoncanonicalContractEvidenceGuard = {
+            resourceKey: driverFixtureResourceKey,
+            planReady: updatePlan.status === 'ready',
+            dryRunRejectedCode: forgedDryRun.body?.code || null,
+            receiptMinted: Boolean(forgedDryRun.body?.receipt),
+            rowRetainedAfterReject: Boolean(retainedRow),
+            updatedMarkerAfterReject: retainedRow?.updated_marker || null,
+            payloadModeAfterReject: retainedRow?.payload?.mode || null,
+          };
         },
       );
     });

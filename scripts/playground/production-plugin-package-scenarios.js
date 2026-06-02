@@ -16,6 +16,7 @@ const scenarioGroups = {
   ],
   'driver-verifier-guards': [
     'driver-receipt-guards',
+    'driver-noncanonical-contract-evidence-guard',
     'driver-missing-export-guard',
     'driver-missing-apply-guard',
     'driver-missing-validate-guard',
@@ -68,6 +69,7 @@ const scenarioGroups = {
 const scenarioNames = [
   'core-package-routes',
   'driver-receipt-guards',
+  'driver-noncanonical-contract-evidence-guard',
   'driver-activation-hook-effects-boundary',
   'driver-delete-apply',
   'driver-missing-export-guard',

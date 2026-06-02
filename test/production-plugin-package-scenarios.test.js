@@ -75,6 +75,18 @@ test('scenario parser exposes activation-hook effects as a concrete support-only
   );
 });
 
+test('scenario parser exposes the noncanonical contract evidence guard as a concrete check', () => {
+  const selected = parseProductionPluginPackageSelectedScenarios(
+    ['--scenario=driver-noncanonical-contract-evidence-guard'],
+    undefined,
+  );
+
+  assert.deepEqual(
+    Array.from(selected),
+    ['driver-noncanonical-contract-evidence-guard'],
+  );
+});
+
 test('scenario groups only contain concrete plugin-driver smoke scenarios', () => {
   const concreteNames = new Set(scenarioNames);
   for (const [groupName, groupScenarios] of Object.entries(scenarioGroups)) {

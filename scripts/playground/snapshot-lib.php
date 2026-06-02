@@ -3496,6 +3496,27 @@ function reprint_push_plugin_driver_contract_evidence_accepted(
     if (!is_array($evidence)) {
         return false;
     }
+    if (!reprint_push_array_has_exact_keys($evidence, [
+        'schemaVersion',
+        'operation',
+        'contractKind',
+        'contractVersion',
+        'outcome',
+        'reasonCode',
+        'issueCodes',
+        'issues',
+        'source',
+        'evidenceScope',
+        'rawValuesIncluded',
+        'resourceKey',
+        'pluginOwner',
+        'driver',
+        'table',
+        'supportsDelete',
+        'contractHash',
+    ])) {
+        return false;
+    }
     return ($evidence['reasonCode'] ?? null) === 'PLUGIN_DRIVER_CONTRACT_ACCEPTED'
         && ($evidence['schemaVersion'] ?? null) === 1
         && ($evidence['operation'] ?? null) === 'plugin-driver-contract-validation'
@@ -3505,6 +3526,9 @@ function reprint_push_plugin_driver_contract_evidence_accepted(
         && isset($evidence['issueCodes'])
         && is_array($evidence['issueCodes'])
         && count($evidence['issueCodes']) === 0
+        && isset($evidence['issues'])
+        && is_array($evidence['issues'])
+        && count($evidence['issues']) === 0
         && ($evidence['rawValuesIncluded'] ?? null) === false
         && ($evidence['resourceKey'] ?? null) === $resource_key
         && ($evidence['pluginOwner'] ?? null) === $owner
@@ -3534,11 +3558,37 @@ function reprint_push_plugin_driver_payload_evidence_accepted(
     if (!is_array($evidence)) {
         return false;
     }
+    if (!reprint_push_array_has_exact_keys($evidence, [
+        'schemaVersion',
+        'operation',
+        'validator',
+        'reasonCode',
+        'outcome',
+        'issueCodes',
+        'issues',
+        'format',
+        'rawValuesIncluded',
+        'resourceKey',
+        'pluginOwner',
+        'driver',
+        'table',
+        'action',
+        'supportsDelete',
+        'contractSupportsDelete',
+        'contractHash',
+        'value',
+        'contractValidationHash',
+    ])) {
+        return false;
+    }
     $expected_state = !empty($planned['exists']) ? 'present' : 'absent';
     $expected_hash = !empty($planned['exists'])
         ? hash('sha256', reprint_push_stable_json($planned['value']))
         : hash('sha256', '"__REPRINT_PUSH_ABSENT__"');
     $value_evidence = is_array($evidence['value'] ?? null) ? $evidence['value'] : [];
+    if (!reprint_push_array_has_exact_keys($value_evidence, ['state', 'hash'])) {
+        return false;
+    }
     $planned_owner_matches = $action === 'delete'
         || empty($planned['exists'])
         || (
@@ -3554,6 +3604,9 @@ function reprint_push_plugin_driver_payload_evidence_accepted(
         && isset($evidence['issueCodes'])
         && is_array($evidence['issueCodes'])
         && count($evidence['issueCodes']) === 0
+        && isset($evidence['issues'])
+        && is_array($evidence['issues'])
+        && count($evidence['issues']) === 0
         && ($evidence['rawValuesIncluded'] ?? null) === false
         && ($evidence['resourceKey'] ?? null) === $resource_key
         && ($evidence['pluginOwner'] ?? null) === $owner
@@ -3567,6 +3620,15 @@ function reprint_push_plugin_driver_payload_evidence_accepted(
         && ($value_evidence['state'] ?? null) === $expected_state
         && ($value_evidence['hash'] ?? null) === $expected_hash
         && $planned_owner_matches;
+}
+
+function reprint_push_array_has_exact_keys(array $value, array $expected_keys): bool
+{
+    $actual_keys = array_map('strval', array_keys($value));
+    $expected = array_map('strval', $expected_keys);
+    sort($actual_keys);
+    sort($expected);
+    return $actual_keys === $expected;
 }
 
 function reprint_push_valid_fixture_forms_lab_driver_evidence($evidence, array $snapshot): bool

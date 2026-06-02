@@ -54,6 +54,33 @@ The support-only package smoke alias proved fail-closed registration guards for 
 
 Non-claim: an over-broad full run of `node --test test/production-plugin-package-scenarios.test.js test/production-shaped-proof.test.js` was stopped/failed after live Playground readiness timeouts in unrelated apply-revalidation smoke tests. It is not used as passing evidence for this lane.
 
+## Packaged PHP evidence canonicality guard
+
+The packaged PHP runtime now requires accepted plugin-driver evidence to be
+canonical, not merely value-compatible. Accepted contract validation evidence,
+driver payload validation evidence, and nested payload `value` evidence must
+carry the exact expected key sets. Surplus fields fail closed before the
+registered plugin-owned row driver callback and before mutation.
+
+Focused PHP probes cover surplus contract evidence, surplus payload evidence,
+and surplus nested payload evidence. The packaged smoke scenario
+`driver-noncanonical-contract-evidence-guard` forges a ready arbitrary
+custom-table plan, adds a surplus contract evidence field, recomputes the
+companion payload `contractValidationHash`, and proves production-shaped dry-run
+returns `INVALID_PLAN`, mints no receipt, and preserves the base row.
+
+Passing checks:
+
+```sh
+php -l scripts/playground/snapshot-lib.php
+node --test test/plugin-driver-registration-api.test.js test/rpp-0441-driver-registration-api-v3.test.js test/production-plugin-package-scenarios.test.js
+REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-guard-only REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-noncanonical-contract-evidence-guard node ./scripts/playground/production-plugin-package-smoke.mjs
+npm run test:playground:production-plugin-driver-verifier-guards
+```
+
+This remains a runtime evidence exactness guard. It does not broaden arbitrary
+plugin support or make fixture-scoped custom-table validation production-ready.
+
 ## Driver Apply Validation Hook
 
 RPP-0438 adds focused support-only evidence for the apply-time plugin-driver

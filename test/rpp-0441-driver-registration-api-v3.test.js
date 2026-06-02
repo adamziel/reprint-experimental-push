@@ -448,6 +448,69 @@ $validation = [
         ], $validation_snapshot);
         return true;
     }),
+    'surplusContractEvidence' => rpp_0441_capture(static function () use ($validation_snapshot): bool {
+        $value = ['id' => 7, 'marker' => 'accept', '__pluginOwner' => 'rpp-0441-alpha-plugin'];
+        $policy = rpp_0441_contract_bound_policy(
+            'row:["wp_rpp_0441_alpha_rows","id:7"]',
+            'wp_rpp_0441_alpha_rows',
+            'rpp-0441-alpha-plugin',
+            'rpp-0441-alpha-driver',
+            true,
+            'put',
+            $value
+        );
+        $policy['contractValidationEvidence']['unexpectedRawPayload'] = 'rpp-0441-private-payload';
+        reprint_push_assert_supported_plugin_owned_mutation([
+            'resourceKey' => 'row:["wp_rpp_0441_alpha_rows","id:7"]',
+            'resource' => ['type' => 'row', 'table' => 'wp_rpp_0441_alpha_rows', 'id' => 'id:7'],
+            'action' => 'put',
+            'value' => ['value' => $value],
+            'pluginOwnedResource' => $policy,
+        ], $validation_snapshot);
+        return true;
+    }),
+    'surplusPayloadEvidence' => rpp_0441_capture(static function () use ($validation_snapshot): bool {
+        $value = ['id' => 7, 'marker' => 'accept', '__pluginOwner' => 'rpp-0441-alpha-plugin'];
+        $policy = rpp_0441_contract_bound_policy(
+            'row:["wp_rpp_0441_alpha_rows","id:7"]',
+            'wp_rpp_0441_alpha_rows',
+            'rpp-0441-alpha-plugin',
+            'rpp-0441-alpha-driver',
+            true,
+            'put',
+            $value
+        );
+        $policy['driverPayloadValidationEvidence']['unexpectedRawPayload'] = 'rpp-0441-private-payload';
+        reprint_push_assert_supported_plugin_owned_mutation([
+            'resourceKey' => 'row:["wp_rpp_0441_alpha_rows","id:7"]',
+            'resource' => ['type' => 'row', 'table' => 'wp_rpp_0441_alpha_rows', 'id' => 'id:7'],
+            'action' => 'put',
+            'value' => ['value' => $value],
+            'pluginOwnedResource' => $policy,
+        ], $validation_snapshot);
+        return true;
+    }),
+    'surplusNestedPayloadEvidence' => rpp_0441_capture(static function () use ($validation_snapshot): bool {
+        $value = ['id' => 7, 'marker' => 'accept', '__pluginOwner' => 'rpp-0441-alpha-plugin'];
+        $policy = rpp_0441_contract_bound_policy(
+            'row:["wp_rpp_0441_alpha_rows","id:7"]',
+            'wp_rpp_0441_alpha_rows',
+            'rpp-0441-alpha-plugin',
+            'rpp-0441-alpha-driver',
+            true,
+            'put',
+            $value
+        );
+        $policy['driverPayloadValidationEvidence']['value']['unexpectedRawPayload'] = 'rpp-0441-private-payload';
+        reprint_push_assert_supported_plugin_owned_mutation([
+            'resourceKey' => 'row:["wp_rpp_0441_alpha_rows","id:7"]',
+            'resource' => ['type' => 'row', 'table' => 'wp_rpp_0441_alpha_rows', 'id' => 'id:7'],
+            'action' => 'put',
+            'value' => ['value' => $value],
+            'pluginOwnedResource' => $policy,
+        ], $validation_snapshot);
+        return true;
+    }),
     'forgedCanonicalResourceKey' => rpp_0441_capture(static function () use ($validation_snapshot): bool {
         $value = ['id' => 7, 'marker' => 'accept', '__pluginOwner' => 'rpp-0441-alpha-plugin'];
         $forged_resource_key = 'row:["wp_rpp_0441_alpha_rows","id:70"]';
@@ -746,6 +809,24 @@ echo json_encode([
   assert.equal(report.validation.forgedPayloadEvidence.error.class, 'RuntimeException');
   assert.equal(
     report.validation.forgedPayloadEvidence.error.message,
+    'Unsupported plugin-owned mutation payload evidence for row:["wp_rpp_0441_alpha_rows","id:7"]',
+  );
+  assert.equal(report.validation.surplusContractEvidence.ok, false);
+  assert.equal(report.validation.surplusContractEvidence.error.class, 'RuntimeException');
+  assert.equal(
+    report.validation.surplusContractEvidence.error.message,
+    'Unsupported plugin-owned mutation contract for row:["wp_rpp_0441_alpha_rows","id:7"]',
+  );
+  assert.equal(report.validation.surplusPayloadEvidence.ok, false);
+  assert.equal(report.validation.surplusPayloadEvidence.error.class, 'RuntimeException');
+  assert.equal(
+    report.validation.surplusPayloadEvidence.error.message,
+    'Unsupported plugin-owned mutation payload evidence for row:["wp_rpp_0441_alpha_rows","id:7"]',
+  );
+  assert.equal(report.validation.surplusNestedPayloadEvidence.ok, false);
+  assert.equal(report.validation.surplusNestedPayloadEvidence.error.class, 'RuntimeException');
+  assert.equal(
+    report.validation.surplusNestedPayloadEvidence.error.message,
     'Unsupported plugin-owned mutation payload evidence for row:["wp_rpp_0441_alpha_rows","id:7"]',
   );
   assert.equal(report.validation.forgedCanonicalResourceKey.ok, false);

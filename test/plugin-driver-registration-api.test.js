@@ -543,6 +543,12 @@ $refused_contract['pluginOwnedResource']['contractValidationEvidence']['outcome'
 $refused_contract['pluginOwnedResource']['contractValidationEvidence']['reasonCode'] = 'PLUGIN_DRIVER_CONTRACT_UNSUPPORTED_VERSION';
 $forged_payload = $base_mutation;
 $forged_payload['pluginOwnedResource']['driverPayloadValidationEvidence']['value']['hash'] = str_repeat('0', 64);
+$surplus_contract_evidence = $base_mutation;
+$surplus_contract_evidence['pluginOwnedResource']['contractValidationEvidence']['unexpectedRawPayload'] = 'contract-bound-private-payload';
+$surplus_payload_evidence = $base_mutation;
+$surplus_payload_evidence['pluginOwnedResource']['driverPayloadValidationEvidence']['unexpectedRawPayload'] = 'contract-bound-private-payload';
+$surplus_nested_payload_evidence = $base_mutation;
+$surplus_nested_payload_evidence['pluginOwnedResource']['driverPayloadValidationEvidence']['value']['unexpectedRawPayload'] = 'contract-bound-private-payload';
 $missing_owner_marker = $base_mutation;
 unset($missing_owner_marker['value']['value']['__pluginOwner']);
 $missing_owner_marker['pluginOwnedResource']['driverPayloadValidationEvidence']['value']['hash'] = hash(
@@ -580,6 +586,18 @@ echo json_encode([
         reprint_push_assert_supported_plugin_owned_mutation($forged_payload, $snapshot);
         return true;
     }),
+    'surplusContractEvidence' => rpp_driver_api_capture(static function () use ($surplus_contract_evidence, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($surplus_contract_evidence, $snapshot);
+        return true;
+    }),
+    'surplusPayloadEvidence' => rpp_driver_api_capture(static function () use ($surplus_payload_evidence, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($surplus_payload_evidence, $snapshot);
+        return true;
+    }),
+    'surplusNestedPayloadEvidence' => rpp_driver_api_capture(static function () use ($surplus_nested_payload_evidence, $snapshot): bool {
+        reprint_push_assert_supported_plugin_owned_mutation($surplus_nested_payload_evidence, $snapshot);
+        return true;
+    }),
     'missingOwnerMarker' => rpp_driver_api_capture(static function () use ($missing_owner_marker, $ownerless_snapshot): bool {
         reprint_push_assert_supported_plugin_owned_mutation($missing_owner_marker, $ownerless_snapshot);
         return true;
@@ -598,6 +616,12 @@ echo json_encode([
   assert.equal(report.refusedContract.error.message, 'Unsupported plugin-owned mutation contract for row:["wp_fixture_contract_bound_rows","id:7"]');
   assert.equal(report.forgedPayload.ok, false);
   assert.equal(report.forgedPayload.error.message, 'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
+  assert.equal(report.surplusContractEvidence.ok, false);
+  assert.equal(report.surplusContractEvidence.error.message, 'Unsupported plugin-owned mutation contract for row:["wp_fixture_contract_bound_rows","id:7"]');
+  assert.equal(report.surplusPayloadEvidence.ok, false);
+  assert.equal(report.surplusPayloadEvidence.error.message, 'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
+  assert.equal(report.surplusNestedPayloadEvidence.ok, false);
+  assert.equal(report.surplusNestedPayloadEvidence.error.message, 'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
   assert.equal(report.missingOwnerMarker.ok, false);
   assert.equal(report.missingOwnerMarker.error.message, 'Unsupported plugin-owned mutation payload evidence for row:["wp_fixture_contract_bound_rows","id:7"]');
   assert.equal(report.forgedResourceKey.ok, false);

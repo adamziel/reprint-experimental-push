@@ -4,6 +4,27 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-06-02 - Packaged Plugin Driver Evidence Canonicality
+
+- Last update: 2026-06-02 07:22 CEST +02:00.
+- The packaged PHP snapshot/apply runtime now rejects accepted plugin-driver
+  contract and payload evidence unless the evidence envelopes have the exact
+  canonical key set. Surplus top-level contract fields, surplus top-level
+  payload fields, and surplus nested payload `value` fields fail closed before
+  the registered driver callback and before mutation.
+- A new packaged smoke scenario for
+  `driver-noncanonical-contract-evidence-guard` forges a ready custom-table
+  driver plan, recomputes the companion payload `contractValidationHash`, and
+  proves production-shaped dry-run rejects the noncanonical contract evidence
+  with `INVALID_PLAN`, mints no receipt, and preserves the base row.
+- Verification: PHP syntax passed, focused PHP-probe tests passed 6/6, package
+  scenario parser tests passed 10/10, the combined focused plugin-driver suite
+  passed 16/16, the single packaged smoke passed, and the full
+  `driver-verifier-guards` package-smoke alias passed.
+- Caveat: this hardens the packaged PHP runtime evidence exactness boundary. It
+  is not a general production plugin validator, activation/update driver, or
+  hosted production plugin-driver proof.
+
 ## 2026-06-02 - Graph Rewrite Payload Target Binding
 
 - Last update: 2026-06-02 07:15 CEST +02:00.
